@@ -1,0 +1,3 @@
+---
+- import_playbook: ../playbooks/ossmplugin-deploy.yml
+- import_playbook: ../playbooks/ossmplugin-remove.yml

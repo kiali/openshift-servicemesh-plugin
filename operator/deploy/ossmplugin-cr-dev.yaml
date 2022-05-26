@@ -1,0 +1,14 @@
+apiVersion: kiali.io/v1alpha1
+kind: OSSMPlugin
+metadata:
+  name: ossmplugin
+  namespace: ossmplugin
+  annotations:
+    ansible.sdk.operatorframework.io/verbosity: "1"
+spec:
+  version: default
+  deployment:
+    imageName: quay.io/kiali/servicemesh-plugin
+    imageVersion: latest
+  kiali:
+    url: ${KIALI_URL}

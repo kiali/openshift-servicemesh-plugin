@@ -1,0 +1,49 @@
+- name: Prepare
+  hosts: localhost
+  connection: local
+  collections:
+  - kubernetes.core
+  tasks:
+
+  - name: Make sure the operator namespace exists
+    k8s:
+      state: present
+      api_version: v1
+      kind: Namespace
+      name: "{{ ossmplugin.operator_namespace }}"
+
+  - name: Wait for the CRD to be established
+    k8s_info:
+      api_version: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      name: ossmplugins.kiali.io
+      wait: yes
+      wait_condition:
+        type: Established
+
+  - name: Prepare initial OSSMPlugin CR definition based solely on the template
+    set_fact:
+      ossmplugin_cr_definition: "{{ lookup('template', cr_file_path) }}"
+
+  - name: Create OSSMPlugin CR
+    k8s:
+      namespace: "{{ cr_namespace }}"
+      definition: "{{ ossmplugin_cr_definition }}"
+
+  - name: Asserting that OSSMPlugin is Deployed
+    vars:
+      instance_name: "{{ ossmplugin.instance_name | default('ossmplugin') }}"
+    k8s_info:
+      api_version: v1
+      kind: Deployment
+      namespace: "{{ ossmplugin.install_namespace }}"
+      label_selectors:
+      - "app.kubernetes.io/name=ossmplugin"
+    register: ossmplugin_deployment
+    until:
+    - ossmplugin_deployment is success
+    - ossmplugin_deployment.resources | length == 1
+    - ossmplugin_deployment.resources[0].status.availableReplicas is defined
+    - ossmplugin_deployment.resources[0].status.availableReplicas == 1
+    retries: "{{ wait_retries }}"
+    delay: 5

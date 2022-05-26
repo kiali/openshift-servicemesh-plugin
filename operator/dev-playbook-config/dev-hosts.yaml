@@ -1,0 +1,33 @@
+all:
+  vars:
+
+    # Mimic OSSMPlugin CR settings found in dev-ossmplugin-cr.yaml
+
+    version: default
+
+    deployment:
+      imageVersion: dev
+
+    kiali:
+      url: https://kiali-istio-system.apps-crc.testing
+
+    # The Operator SDK creates a "ansible_operator_meta" variable
+    # that contains the name and namespace of the CR.
+    # Most times you can just run with these defaults.
+    # Make sure these match those in dev-ossmplugin-cr.yaml.
+
+    ansible_operator_meta:
+      name: ossmplugin
+      namespace: dev-ossmplugin
+
+    # The Operator SDK creates a "_kiali_io_ossmplugin" variable that
+    # mimics the OSSMPlugin CR but maintains camelCase in key names.
+    # The operator playbook expects this defined.
+    # Make sure these match those in dev-ossmplugin-cr.yaml.
+
+    _kiali_io_ossmplugin:
+      apiVersion: kiali.io/v1alpha1
+      kind: OSSMPlugin
+      metadata:
+        name: ossmplugin
+        namespace: dev-ossmplugin

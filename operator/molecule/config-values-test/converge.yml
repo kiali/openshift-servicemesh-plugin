@@ -1,0 +1,17 @@
+- name: Tests
+  hosts: localhost
+  connection: local
+  collections:
+  - kubernetes.core
+  vars:
+    custom_resource: "{{ lookup('template', cr_file_path) | from_yaml }}"
+  tasks:
+  - import_tasks: ../common/tasks.yml
+  - import_tasks: ../common/wait_for_ossmplugin_cr_changes.yml
+
+  - set_fact:
+      current_ossmplugin_cr: "{{ lookup('kubernetes.core.k8s', api_version='kiali.io/v1alpha1', kind='Kiali', namespace=cr_namespace, resource_name=custom_resource.metadata.name) }}"
+
+  - name: The current Kiali CR to be used as the base of the test
+    debug:
+      msg: "{{ current_ossmplugin_cr }}"

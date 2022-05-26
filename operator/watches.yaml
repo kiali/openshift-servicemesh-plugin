@@ -1,0 +1,12 @@
+---
+- version: v1alpha1
+  group: kiali.io
+  kind: OSSMPlugin
+  playbook: playbooks/ossmplugin-deploy.yml
+  reconcilePeriod: "0s"
+  watchDependentResources: False
+  watchClusterScopedResources: False
+  snakeCaseParameters: False
+  finalizer:
+    name: kiali.io/finalizer
+    playbook: playbooks/ossmplugin-remove.yml
