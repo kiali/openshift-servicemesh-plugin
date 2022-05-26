@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: servicemesh-plugin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servicemesh-plugin
+  namespace: servicemesh-plugin
+  labels:
+    app: servicemesh-plugin
+    app.kubernetes.io/component: servicemesh-plugin
+    app.kubernetes.io/instance: servicemesh-plugin
+    app.kubernetes.io/part-of: servicemesh-plugin
+    app.openshift.io/runtime-namespace: servicemesh-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: servicemesh-plugin
+  template:
+    metadata:
+      labels:
+        app: servicemesh-plugin
+    spec:
+      containers:
+        - name: servicemesh-plugin
+          image: quay.io/kiali/servicemesh-plugin:latest
+          ports:
+            - containerPort: 9443
+              protocol: TCP
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: plugin-serving-cert
+              readOnly: true
+              mountPath: /var/serving-cert
+            - name: nginx-conf
+              readOnly: true
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: plugin-conf
+              readOnly: true
+              mountPath: /usr/share/nginx/html/plugin-config.json
+              subPath: plugin-config.json
+      volumes:
+        - name: plugin-serving-cert
+          secret:
+            secretName: plugin-serving-cert
+            defaultMode: 420
+        - name: nginx-conf
+          configMap:
+            name: nginx-conf
+            defaultMode: 420
+        - name: plugin-conf
+          configMap:
+            name: plugin-conf
+            defaultMode: 420
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+  namespace: servicemesh-plugin
+  labels:
+    app: servicemesh-plugin
+    app.kubernetes.io/part-of: servicemesh-plugin
+data:
+  nginx.conf: |
+    error_log /dev/stdout info;
+    events {}
+    http {
+      access_log         /dev/stdout;
+      include            /etc/nginx/mime.types;
+      default_type       application/octet-stream;
+      keepalive_timeout  65;
+      server {
+        listen              9443 ssl;
+        ssl_certificate     /var/serving-cert/tls.crt;
+        ssl_certificate_key /var/serving-cert/tls.key;
+        location / {
+          root                /usr/share/nginx/html;
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plugin-conf
+  namespace: servicemesh-plugin
+  labels:
+    app: servicemesh-plugin
+    app.kubernetes.io/part-of: servicemesh-plugin
+data:
+  plugin-config.json: |
+    {
+      "kialiUrl": "https://kiali-istio-system.apps-crc.testing"
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: plugin-serving-cert
+  name: servicemesh-plugin
+  namespace: servicemesh-plugin
+  labels:
+    app: servicemesh-plugin
+    app.kubernetes.io/component: servicemesh-plugin
+    app.kubernetes.io/instance: servicemesh-plugin
+    app.kubernetes.io/part-of: servicemesh-plugin
+spec:
+  ports:
+    - name: 9443-tcp
+      protocol: TCP
+      port: 9443
+      targetPort: 9443
+  selector:
+    app: servicemesh-plugin
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: console.openshift.io/v1alpha1
+kind: ConsolePlugin
+metadata:
+  name: servicemesh
+spec:
+  displayName: 'OpenShift Service Mesh Plugin'
+  service:
+    name: servicemesh-plugin
+    namespace: servicemesh-plugin
+    port: 9443
+    basePath: '/'
