@@ -1,0 +1,4 @@
+FROM nginx:stable
+
+RUN chmod g+rwx /var/cache/nginx /var/run /var/log/nginx
+COPY ./dist /usr/share/nginx/html
