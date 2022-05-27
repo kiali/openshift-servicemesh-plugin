@@ -1,4 +1,4 @@
-# openshift-servicemesh-plugin
+# OpenShift Service Mesh Plugin
 Webpack Plugin to integrate Kiali into OpenShift Console
 
 ## Platform Setup
@@ -17,7 +17,7 @@ Webpack Plugin to integrate Kiali into OpenShift Console
 # i.e. https://kiali-istio-system.apps-crc.testing 
 
 make deploy-plugin
-make enabled-plugin 
+make enable-plugin 
 ```
 
 ## Local Development
