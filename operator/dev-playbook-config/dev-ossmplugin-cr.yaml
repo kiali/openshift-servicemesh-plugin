@@ -23,4 +23,4 @@ spec:
     imageVersion: dev
 
   kiali:
-    url: https://kiali-istio-system.apps-crc.testing
+    url: ""

@@ -11,4 +11,4 @@ spec:
     imageName: quay.io/kiali/servicemesh-plugin
     imageVersion: latest
   kiali:
-    url: ${KIALI_URL}
+    url: ""
