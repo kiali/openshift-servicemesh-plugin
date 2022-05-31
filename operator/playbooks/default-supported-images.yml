@@ -1,0 +1,2 @@
+default: {"imageName": "quay.io/kiali/servicemesh-plugin", "imageVersion": "operator_version"}
+v0_1:    {"imageName": "quay.io/kiali/servicemesh-plugin", "imageVersion": "v0.1"}

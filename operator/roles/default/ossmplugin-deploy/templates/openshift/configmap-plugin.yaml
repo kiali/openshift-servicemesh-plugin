@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plugin-conf
+  namespace: {{ ossmplugin_vars.deployment.namespace }}
+  labels: {{ ossmplugin_resource_metadata_labels }}
+data:
+  plugin-config.json: |
+    {
+      "kialiUrl": "{{ ossmplugin_vars.kiali.url }}"
+    }

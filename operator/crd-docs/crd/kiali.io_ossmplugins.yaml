@@ -1,0 +1,90 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: ossmplugins.kiali.io
+spec:
+  group: kiali.io
+  names:
+    kind: OSSMPlugin
+    listKind: OSSMPluginList
+    plural: ossmplugins
+    singular: ossmplugin
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    subresources:
+      status: {}
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          status:
+            description: "The processing status of this CR as reported by the operator."
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+          spec:
+            description: "This is the CRD for the resources called OSSMPlugin CRs. The OpenShift ServiceMesh Plugin Operator will watch for resources of this type and when it detects a OSSMPlugin CR has been added, deleted, or modified, it will install, uninstall, and update the associated OSSM Plugin installation."
+            type: object
+            properties:
+              version:
+                description: |
+                  The version of the Ansible playbook to execute in order to install that version of OSSM Plugin.
+                  It is rare you will want to set this - if you are thinking of setting this, know what you are doing first.
+                  The only supported value today is `default`.
+                  If not specified, a default version of Kiali will be installed which will be the most recent release of Kiali.
+                  Refer to this file to see where these values are defined in the master branch,
+                  https://github.com/kiali/openshift-servicemesh-plugin/tree/main/operator/playbooks/default-supported-images.yml
+                  This version setting affects the defaults of the deployment.imageName and
+                  deployment.imageVersion settings. See the comments for those settings
+                  below for additional details. But in short, this version setting will
+                  dictate which version of the OSSM Plugin image will be deployed by default.
+                  Note that if you explicitly set deployment.imageName and/or
+                  deployment.imageVersion you are responsible for ensuring those settings
+                  are compatible with this setting (i.e. the image must be compatible
+                  with the rest of the configuration and resources the operator will install).
+                type: string
+              deployment:
+                type: object
+                properties:
+                  imageDigest:
+                    description: "If `deployment.imageVersion` is a digest hash, this value indicates what type of digest it is. A typical value would be 'sha256'. Note: do NOT prefix this value with a '@'."
+                    type: string
+                  imageName:
+                    description: "Determines which OSSM Plugin image to download and install. If you set this to a specific name (i.e. you do not leave it as the default empty string), you must make sure that image is supported by the operator. If empty, the operator will use a known supported image name based on which `version` was defined. Note that, as a security measure, a cluster admin may have configured the OSSM Plugin operator to ignore this setting. A cluster admin may do this to ensure the OSSM Plugin operator only installs a single, specific OSSM Plugin version, thus this setting may have no effect depending on how the operator itself was configured."
+                    type: string
+                  imagePullPolicy:
+                    description: "The Kubernetes pull policy for the OSSM Plugin deployment. This is overridden to be 'Always' if `deployment.imageVersion` is set to 'latest'."
+                    type: string
+                  imagePullSecrets:
+                    description: "The names of the secrets to be used when container images are to be pulled."
+                    type: array
+                    items:
+                      type: string
+                  imageVersion:
+                    description: |
+                      Determines which version of OSSM Plugin to install.
+                      Choose 'lastrelease' to use the last Kiali release.
+                      Choose 'latest' to use the latest image (which may or may not be a released version of Kiali).
+                      Choose 'operator_version' to use the image whose version is the same as the operator version.
+                      Otherwise, you can set this to any valid OSSM Plugin version (such as 'v1.0') or any valid OSSM Plugin
+                      digest hash (if you set this to a digest hash, you must indicate the digest in `deployment.imageDigest`).
+                      Note that if this is set to 'latest' then the `deployment.imagePullPolicy` will be set to 'Always'.
+                      If you set this to a specific version (i.e. you do not leave it as the default empty string),
+                      you must make sure that image is supported by the operator.
+                      If empty, the operator will use a known supported image version based on which 'version' was defined.
+                      Note that, as a security measure, a cluster admin may have configured the OSSM Plugin operator to
+                      ignore this setting. A cluster admin may do this to ensure the OSSM Plugin operator only installs
+                      a single, specific OSSM Plugin version, thus this setting may have no effect depending on how the
+                      operator itself was configured.
+                    type: string
+                  namespace:
+                    description: "The namespace into which OSSM Plugin is to be installed. If this is empty or not defined, the default will be the namespace where the OSSMPlugin CR is located."
+                    type: string
+              kiali:
+                type: object
+                properties:
+                  url:
+                    description: "The main Kiali endpoint URL that the OSSM Plugin will use to communicate with Kiali."
+                    type: string

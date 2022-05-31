@@ -1,0 +1,5 @@
+apiVersion: kiali.io/v1alpha1
+kind: OSSMPlugin
+metadata:
+  name: ossmplugin
+spec:
