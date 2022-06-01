@@ -112,7 +112,7 @@ install-cr: create-test-namespace
 
 ## uninstall-cr: Deletes the test OSSM Plugin CR from the cluster and waits for the operator to finalize the deletion.
 uninstall-cr:
-	${OC} delete --ignore-not-found=true -f "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml"
+	(${OC} get crd ossmplugins.kiali.io &> /dev/null && ${OC} delete --ignore-not-found=true -f "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml") || true
 
 ## purge-all-crs: Purges all OSSM Plugin CRs from the cluster, forcing them to delete without the operator finalizing them.
 purge-all-crs: .ensure-oc-login
