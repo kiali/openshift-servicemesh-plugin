@@ -1,4 +1,4 @@
-The files in this directory are used for the `make run-operator-playbook` target. Configure these files to tell the operator playbook what to do when that target is executed.
+The files in this directory are used for the `make run-playbook` target. Configure these files to tell the operator playbook what to do when that target is executed.
 
 * `dev-hosts.yaml` - the Ansible inventory file. This should contain variables that the operator SDK would normally set when triggering an operator reconciliation run. Note that most of the values here will be values that mimic the values in the OSSMPlugin CR. You typically will want to make sure the values in `dev-ossmplugin-cr.yaml` match those in this `dev-hosts.yaml` file.
 
