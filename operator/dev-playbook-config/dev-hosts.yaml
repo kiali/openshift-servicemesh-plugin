@@ -9,7 +9,7 @@ all:
       imageVersion: dev
 
     kiali:
-      url: https://kiali-istio-system.apps-crc.testing
+      url: ""
 
     # The Operator SDK creates a "ansible_operator_meta" variable
     # that contains the name and namespace of the CR.

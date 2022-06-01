@@ -3,7 +3,7 @@ kind: OSSMPlugin
 metadata:
   name: ossmplugin
 spec:
+  version: "{{ ossmplugin.spec_version }}"
   deployment:
-    imageName: "{{ ossmplugin.imageName }}"
-    imagePullPolicy: "{{ ossmplugin.imagePullPolicy }}"
-    imageVersion: "{{ ossmplugin.imageVersion }}"
+    imageName: "{{ ossmplugin.image_name }}"
+    imageVersion: "{{ ossmplugin.image_version }}"

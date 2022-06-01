@@ -10,8 +10,12 @@
   - import_tasks: ../common/wait_for_ossmplugin_cr_changes.yml
 
   - set_fact:
-      current_ossmplugin_cr: "{{ lookup('kubernetes.core.k8s', api_version='kiali.io/v1alpha1', kind='Kiali', namespace=cr_namespace, resource_name=custom_resource.metadata.name) }}"
+      current_ossmplugin_cr: "{{ lookup('kubernetes.core.k8s', api_version='kiali.io/v1alpha1', kind='OSSMPlugin', namespace=cr_namespace, resource_name=custom_resource.metadata.name) }}"
 
-  - name: The current Kiali CR to be used as the base of the test
+  - name: The current CR to be used as the base of the test
     debug:
       msg: "{{ current_ossmplugin_cr }}"
+
+  - name: Confirm the Kiali URL is as expected
+    assert:
+      that: "{{ ossmplugin_configmap.kialiUrl == current_ossmplugin_cr.status.kiali.url }}"

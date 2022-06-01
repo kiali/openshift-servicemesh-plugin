@@ -105,15 +105,10 @@ uninstall-crd: purge-all-crs
 
 ## install-cr: Installs a test OSSM Plugin CR into the cluster.
 install-cr: create-test-namespace
-	@kiali_route="$$(${OC} get routes -l app.kubernetes.io/name=kiali --all-namespaces -o jsonpath='{.items[0].spec.host}' 2> /dev/null)" ;\
-	if [ -n "$${kiali_route}" ]; then \
-		echo -n "Waiting for the CRD to be established..." ;\
-		while ! ${OC} get crd ossmplugins.kiali.io &> /dev/null ; do echo -n '.'; sleep 1; done ;\
-		${OC} wait --for condition=established --timeout=60s crd ossmplugins.kiali.io ;\
-		cat "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml" | KIALI_URL="https://$${kiali_route}" envsubst | ${OC} apply -f - ;\
-	else \
-		echo "Could not find the Kiali route URL. You need to install Kiali first." && exit 1 ;\
-	fi
+	echo -n "Waiting for the CRD to be established..." ;\
+	while ! ${OC} get crd ossmplugins.kiali.io &> /dev/null ; do echo -n '.'; sleep 1; done ;\
+	${OC} wait --for condition=established --timeout=60s crd ossmplugins.kiali.io ;\
+	cat "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml" | envsubst | ${OC} apply -f - ;\
 
 ## uninstall-cr: Deletes the test OSSM Plugin CR from the cluster and waits for the operator to finalize the deletion.
 uninstall-cr:

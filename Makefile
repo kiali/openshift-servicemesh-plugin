@@ -26,6 +26,7 @@ include make/Makefile.plugin.mk
 include make/Makefile.operator.mk
 include make/Makefile.cluster.mk
 include make/Makefile.olm.mk
+include make/Makefile.molecule.mk
 
 help:
 	@echo
@@ -40,6 +41,9 @@ help:
 	@echo
 	@echo "OLM targets - used to deploy the operator via OLM"
 	@sed -n 's/^##//p' make/Makefile.olm.mk | column -t -s ':' |  sed -e 's/^/ /'
+	@echo
+	@echo "Molecule targets - used to run the operator molecule tests"
+	@sed -n 's/^##//p' make/Makefile.molecule.mk | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
 
 .ensure-oc-exists:

@@ -21,7 +21,7 @@ spec:
         type: object
         properties:
           status:
-            description: "The processing status of this CR as reported by the operator."
+            description: "The processing status of this CR as reported by the OpenShift Service Mesh Plugin Operator."
             type: object
             x-kubernetes-preserve-unknown-fields: true
           spec:
@@ -86,5 +86,5 @@ spec:
                 type: object
                 properties:
                   url:
-                    description: "The main Kiali endpoint URL that the OSSM Plugin will use to communicate with Kiali."
+                    description: "The main Kiali endpoint URL that the OSSM Plugin will use to communicate with Kiali. If empty, an attempt will be made to auto-discover it. If Kiali is installed in the same namespace as the CR, it will take precedence over any other Kiali installation. Otherwise, the first Kiali route found in the cluster will be used."
                     type: string

@@ -5,12 +5,21 @@
   - kubernetes.core
   tasks:
 
-  - name: Make sure the operator namespace exists
+  - name: Make sure the cr namespace exists
     k8s:
       state: present
       api_version: v1
       kind: Namespace
-      name: "{{ ossmplugin.operator_namespace }}"
+      name: "{{ cr_namespace }}"
+
+  - name: Make sure the install namespace exists
+    k8s:
+      state: present
+      api_version: v1
+      kind: Namespace
+      name: "{{ ossmplugin.install_namespace }}"
+    when:
+    - ossmplugin.install_namespace != cr_namespace
 
   - name: Wait for the CRD to be established
     k8s_info:
@@ -31,8 +40,6 @@
       definition: "{{ ossmplugin_cr_definition }}"
 
   - name: Asserting that OSSMPlugin is Deployed
-    vars:
-      instance_name: "{{ ossmplugin.instance_name | default('ossmplugin') }}"
     k8s_info:
       api_version: v1
       kind: Deployment
