@@ -82,12 +82,13 @@
 # If no Kiali URL is provided, try to auto-discover one, first in the CR's namespace then anywhere else. If Kiali is not found, abort.
 - name: Auto-discover the Kiali URL - preference goes to a Kiali installed in the same namespace as the CR
   vars:
-    kiali_in_namespace: "{{ lookup(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route', namespace=current_cr.metadata.namespace) }}"
-    kiali_anywhere: "{{ lookup(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route') }}"
+    kiali_in_namespace: "{{ query(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route', namespace=current_cr.metadata.namespace) }}"
+    kiali_anywhere: "{{ query(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route') }}"
   set_fact:
     kiali_route_host: "{{ kiali_in_namespace[0].spec.host if kiali_in_namespace | length > 0 else (kiali_anywhere[0].spec.host if kiali_anywhere | length > 0 else '') }}"
   when:
   - ossmplugin_vars.kiali.url == ""
+  ignore_errors: yes
 
 - fail:
     msg: "Failed to auto-discover the Kiali URL. Make sure Kiali is installed. You can specify 'kiali.url' in the CR if there is a Kiali URL endpoint the plugin can use but cannot be auto-discovered by this operator."
