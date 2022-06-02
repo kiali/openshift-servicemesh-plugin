@@ -1,22 +1,35 @@
 import * as React from 'react';
-import {properties} from "../properties";
-import {consoleFetchJSON} from "@openshift-console/dynamic-plugin-sdk";
+import {kioskUrl, properties} from "../properties";
+import {consoleFetch } from "@openshift-console/dynamic-plugin-sdk";
 
 const GraphPage = () => {
-    const [kialiBaseUrl, setKialiBaseUrl] = React.useState();
-
+    const [kialiUrl, setKialiUrl] = React.useState({
+        baseUrl: '',
+        token: '',
+    });
     React.useEffect(() => {
-        consoleFetchJSON(properties.pluginConfig)
+        consoleFetch(properties.pluginConfig)
             .then((response) => {
-                setKialiBaseUrl(response.kialiUrl);
+                const headerOauthToken = response.headers.get('oauth_token');
+                const kialiToken = 'oauth_token=';
+                response.json().then((payload) => {
+                    setKialiUrl({
+                        baseUrl: payload.kialiUrl,
+                        token: kialiToken  + (
+                            headerOauthToken && headerOauthToken.startsWith('Bearer ') ?
+                                headerOauthToken.substring('Bearer '.length) : ''
+                        ),
+                    });
+                });
             })
             .catch((e) => console.error(e));
     }, []);
 
+    const iFrameUrl = kialiUrl.baseUrl + '/console/graph/namespaces/?' + kioskUrl + '&' + kialiUrl.token;
     return (
         <>
             <iframe
-                src={kialiBaseUrl + '/console/graph/namespaces/?kiosk=true'}
+                src={iFrameUrl}
                 style={{overflow: 'hidden', height: '100%', width: '100%' }}
                 height="100%"
                 width="100%"

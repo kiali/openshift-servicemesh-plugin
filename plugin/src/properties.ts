@@ -10,8 +10,7 @@ export type Config = {
     kialiUrl: string;
 }
 
-
-
+export const kioskUrl = 'kiosk=true';
 
 
 
