@@ -154,3 +154,19 @@ make -e MOLECULE_SCENARIO="config-values-test" -e MOLECULE_USE_DEV_IMAGES="true"
 ```
 
 NOTE! This requires that you previously pushed your local image into your cluster via the make target `cluster-push-plugin-image`.
+
+## Releasing OpenShift Service Mesh Plugin
+
+To build and release the plugin, you can run this command either manually or inside a CI workflow.
+
+```sh
+make -e CONTAINER_VERSION=v0.0.1 build-plugin-image push-plugin-image
+```
+
+If you want to release a "latest" image, the command would be:
+
+```sh
+make -e CONTAINER_VERSION=latest build-plugin-image push-plugin-image
+```
+
+Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/servicemesh-plugin?tab=tags

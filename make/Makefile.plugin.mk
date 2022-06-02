@@ -6,7 +6,7 @@
 PLUGIN_IMAGE_ORG ?= kiali
 PLUGIN_IMAGE_NAME ?= servicemesh-plugin
 PLUGIN_CONTAINER_NAME ?= ${PLUGIN_IMAGE_ORG}/${PLUGIN_IMAGE_NAME}
-PLUGIN_CONTAINER_VERSION ?= ${VERSION}
+PLUGIN_CONTAINER_VERSION ?= ${CONTAINER_VERSION}
 PLUGIN_QUAY_NAME ?= quay.io/${PLUGIN_CONTAINER_NAME}
 PLUGIN_QUAY_TAG ?= ${PLUGIN_QUAY_NAME}:${PLUGIN_CONTAINER_VERSION}
 
@@ -21,13 +21,11 @@ build-plugin:
 
 ## build-plugin-image: Builds the plugin and its container image.
 build-plugin-image: build-plugin
-	cd ${PLUGIN_DIR} && ${DORP} build -t ${PLUGIN_QUAY_TAG} .
-	${DORP} tag ${PLUGIN_QUAY_TAG} ${PLUGIN_QUAY_NAME}:latest
+	${DORP} build -t ${PLUGIN_QUAY_TAG} ${PLUGIN_DIR}
 
 ## push-plugin-image: Pushes the plugin container image to quay.io.
 push-plugin-image:
 	${DORP} push ${PLUGIN_QUAY_TAG}
-	${DORP} push ${PLUGIN_QUAY_NAME}:latest
 
 ## deploy-plugin: Deploys the plugin quickly. This uses the quay.io "latest" image. This does not utilize the operator.
 deploy-plugin: .ensure-oc-login

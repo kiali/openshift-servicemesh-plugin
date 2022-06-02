@@ -100,3 +100,6 @@ else
 	@echo Pushing operator image to remote cluster using podman: ${CLUSTER_OPERATOR_TAG}
 	podman push --tls-verify=false ${CLUSTER_OPERATOR_TAG}
 endif
+
+## cluster-push: Builds and pushes both the plugin and the operator
+cluster-push: cluster-push-plugin-image cluster-push-operator
