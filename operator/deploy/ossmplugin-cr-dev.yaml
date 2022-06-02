@@ -2,7 +2,6 @@ apiVersion: kiali.io/v1alpha1
 kind: OSSMPlugin
 metadata:
   name: ossmplugin
-  namespace: ossmplugin
   annotations:
     ansible.sdk.operatorframework.io/verbosity: "1"
 spec:
