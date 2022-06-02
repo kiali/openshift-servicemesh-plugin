@@ -122,3 +122,35 @@ After you modify or add metadata to the manifests, run this make target to valid
 ### Generating Documentation
 
 You can generate reference documentation for the OSSMPlugin CRD by running `make gen-crd-doc`. The generated markdown document will be found in `operator/_output/crd-docs/` and can be used for publishing on a Hugo-generated doc site such as https://kiali.io.
+
+## Molecule tests
+
+You can run the molecule tests (called "scenarios") to confirm the basic functionality of the operator works. The [default scenario](https://github.com/kiali/openshift-servicemesh-plugin/tree/main/operator/molecule/default) can be run to simply confirm that the operator can deploy and undeploy the plugin. That default scenario provides the setup/teardown framework for the rest of the molecule tests. The other molecule tests that you can run have names ending with `-test` in the [molecule directory](https://github.com/kiali/openshift-servicemesh-plugin/tree/main/operator/molecule).
+
+### Molecule test image
+
+The molecule tests are run inside a container image that provide all the testing infrastructure needed to run the test scenarios. To build this container image, run `make molecule-build`. If you already built the image, that make target will be a no-op. If you need to re-build the image, set the `FORCE_MOLECULE_BUILD` env var to `true` (e.g. `make -e FORCE_MOLECULE_BUILD=true molecule-build`).
+
+### Running a test
+
+To run a molecule test, you first must install the operator via OLM. The molecule tests expect the operator to already be installed and running. You do this by running `make operator-create`.
+
+```sh
+make operator-create
+```
+
+Once the operator has been installed by OLM, you run a molecule test by setting the `MOLECULE_SCENARIO` env var to the name of the test you want to run and invoke the `molecule-test` make target. You can specify multiple tests to run by setting that env var to a space-separated list of test names.
+
+```sh
+make -e MOLECULE_SCENARIO="config-values-test" molecule-test
+```
+
+### Testing locally built images
+
+By default, the molecule tests will test the "latest" plugin image published on quay.io. If you want to test the image you are developing and building locally, set the `MOLECULE_USE_DEV_IMAGES` env var to `true`:
+
+```sh
+make -e MOLECULE_SCENARIO="config-values-test" -e MOLECULE_USE_DEV_IMAGES="true" molecule-test
+```
+
+NOTE! This requires that you previously pushed your local image into your cluster via the make target `cluster-push-plugin-image`.

@@ -26,7 +26,7 @@ MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION ?= default
 # If the x_IMAGE_NAME env vars are set to 'dev' then the molecule tests will use the internal OpenShift registry location.
 # An example MOLECULE_IMAGE_ENV_ARGS can be:
 #
-#   MOLECULE_IMAGE_ENV_ARGS = --env MOLECULE_OSSMPLUGIN_IMAGE_NAME=quay.io/myuser/kiali \
+#   MOLECULE_IMAGE_ENV_ARGS = --env MOLECULE_OSSMPLUGIN_IMAGE_NAME=quay.io/myuser/mypluginimage \
 #                             --env MOLECULE_OSSMPLUGIN_IMAGE_VERSION=test
 
 ifndef MOLECULE_IMAGE_ENV_ARGS
@@ -72,11 +72,11 @@ MOLECULE_WAIT_RETRIES ?= 360
 MOLECULE_WAIT_RETRIES_ARG ?= --env MOLECULE_WAIT_RETRIES=${MOLECULE_WAIT_RETRIES}
 
 .prepare-force-molecule-build:
-	@$(eval FORCE_MOLECULE_BUILD ?= $(shell ${DORP} inspect kiali-molecule:latest > /dev/null 2>&1 || echo "true"))
+	@$(eval FORCE_MOLECULE_BUILD ?= $(shell ${DORP} inspect ossmplugin-molecule:latest > /dev/null 2>&1 || echo "true"))
 
 ## molecule-build: Builds an image to run Molecule without requiring the host to have python/pip installed. If it already exists, and you want to build it again, set env var FORCE_MOLECULE_BUILD to "true".
 molecule-build: .prepare-force-molecule-build
-	@if [ "${FORCE_MOLECULE_BUILD}" == "true" ]; then ${DORP} build --no-cache -t kiali-molecule:latest ${OPERATOR_DIR}/molecule/docker; else echo "Will not rebuild kiali-molecule image."; fi
+	@if [ "${FORCE_MOLECULE_BUILD}" == "true" ]; then ${DORP} build --no-cache -t ossmplugin-molecule:latest ${OPERATOR_DIR}/molecule/docker; else echo "Will not rebuild ossmplugin-molecule image."; fi
 
 ifndef MOLECULE_ADD_HOST_ARGS
 .prepare-add-host-args: .prepare-cluster
@@ -98,8 +98,8 @@ endif
 ## molecule-test: Runs Molecule tests using the Molecule docker image
 molecule-test: .prepare-add-host-args molecule-build .prepare-molecule-data-volume .create-operator-pull-secret
 ifeq ($(DORP),docker)
-	for msn in ${MOLECULE_SCENARIO}; do ${DORP} run --rm ${MOLECULE_DOCKER_TERM_ARGS} --env KUBECONFIG="/tmp/molecule/kubeconfig" --env K8S_AUTH_KUBECONFIG="/tmp/molecule/kubeconfig" -v molecule-tests-volume:/tmp/molecule -w /tmp/molecule/operator --network="host" ${MOLECULE_ADD_HOST_ARGS} --add-host="api.crc.testing:192.168.130.11" --add-host="kiali-istio-system.apps-crc.testing:192.168.130.11" --add-host="prometheus-istio-system.apps-crc.testing:192.168.130.11" --env DORP=${DORP} --env OPERATOR_IMAGE_PULL_SECRET_NAME=${OPERATOR_IMAGE_PULL_SECRET_NAME} --env MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION=${MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION} ${MOLECULE_IMAGE_ENV_ARGS} ${MOLECULE_OPERATOR_PROFILER_ENABLED_ENV_VAR} ${MOLECULE_DUMP_LOGS_ON_ERROR_ENV_VAR} ${MOLECULE_WAIT_RETRIES_ARG} -v /var/run/docker.sock:/var/run/docker.sock kiali-molecule:latest molecule ${MOLECULE_DEBUG_ARG} test ${MOLECULE_DESTROY_NEVER_ARG} --scenario-name $${msn}; if [ "$$?" != "0" ]; then echo "Molecule test failed: $${msn}"; ${DORP} volume rm molecule-tests-volume; exit 1; fi; done
+	for msn in ${MOLECULE_SCENARIO}; do ${DORP} run --rm ${MOLECULE_DOCKER_TERM_ARGS} --env KUBECONFIG="/tmp/molecule/kubeconfig" --env K8S_AUTH_KUBECONFIG="/tmp/molecule/kubeconfig" -v molecule-tests-volume:/tmp/molecule -w /tmp/molecule/operator --network="host" ${MOLECULE_ADD_HOST_ARGS} --add-host="api.crc.testing:192.168.130.11" --add-host="kiali-istio-system.apps-crc.testing:192.168.130.11" --add-host="prometheus-istio-system.apps-crc.testing:192.168.130.11" --env DORP=${DORP} --env OPERATOR_IMAGE_PULL_SECRET_NAME=${OPERATOR_IMAGE_PULL_SECRET_NAME} --env MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION=${MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION} ${MOLECULE_IMAGE_ENV_ARGS} ${MOLECULE_OPERATOR_PROFILER_ENABLED_ENV_VAR} ${MOLECULE_DUMP_LOGS_ON_ERROR_ENV_VAR} ${MOLECULE_WAIT_RETRIES_ARG} -v /var/run/docker.sock:/var/run/docker.sock ossmplugin-molecule:latest molecule ${MOLECULE_DEBUG_ARG} test ${MOLECULE_DESTROY_NEVER_ARG} --scenario-name $${msn}; if [ "$$?" != "0" ]; then echo "Molecule test failed: $${msn}"; ${DORP} volume rm molecule-tests-volume; exit 1; fi; done
 else
-	for msn in ${MOLECULE_SCENARIO}; do ${DORP} run --rm ${MOLECULE_DOCKER_TERM_ARGS} --env KUBECONFIG="/tmp/molecule/kubeconfig" --env K8S_AUTH_KUBECONFIG="/tmp/molecule/kubeconfig" -v molecule-tests-volume:/tmp/molecule -w /tmp/molecule/operator --network="host" ${MOLECULE_ADD_HOST_ARGS} --add-host="api.crc.testing:192.168.130.11" --add-host="kiali-istio-system.apps-crc.testing:192.168.130.11" --add-host="prometheus-istio-system.apps-crc.testing:192.168.130.11" --env DORP=${DORP} --env OPERATOR_IMAGE_PULL_SECRET_NAME=${OPERATOR_IMAGE_PULL_SECRET_NAME} --env MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION=${MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION} ${MOLECULE_IMAGE_ENV_ARGS} ${MOLECULE_OPERATOR_PROFILER_ENABLED_ENV_VAR} ${MOLECULE_DUMP_LOGS_ON_ERROR_ENV_VAR} ${MOLECULE_WAIT_RETRIES_ARG}                                    localhost/kiali-molecule:latest molecule ${MOLECULE_DEBUG_ARG} test ${MOLECULE_DESTROY_NEVER_ARG} --scenario-name $${msn}; if [ "$$?" != "0" ]; then echo "Molecule test failed: $${msn}"; ${DORP} volume rm molecule-tests-volume; exit 1; fi; done
+	for msn in ${MOLECULE_SCENARIO}; do ${DORP} run --rm ${MOLECULE_DOCKER_TERM_ARGS} --env KUBECONFIG="/tmp/molecule/kubeconfig" --env K8S_AUTH_KUBECONFIG="/tmp/molecule/kubeconfig" -v molecule-tests-volume:/tmp/molecule -w /tmp/molecule/operator --network="host" ${MOLECULE_ADD_HOST_ARGS} --add-host="api.crc.testing:192.168.130.11" --add-host="kiali-istio-system.apps-crc.testing:192.168.130.11" --add-host="prometheus-istio-system.apps-crc.testing:192.168.130.11" --env DORP=${DORP} --env OPERATOR_IMAGE_PULL_SECRET_NAME=${OPERATOR_IMAGE_PULL_SECRET_NAME} --env MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION=${MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION} ${MOLECULE_IMAGE_ENV_ARGS} ${MOLECULE_OPERATOR_PROFILER_ENABLED_ENV_VAR} ${MOLECULE_DUMP_LOGS_ON_ERROR_ENV_VAR} ${MOLECULE_WAIT_RETRIES_ARG}                                    localhost/ossmplugin-molecule:latest molecule ${MOLECULE_DEBUG_ARG} test ${MOLECULE_DESTROY_NEVER_ARG} --scenario-name $${msn}; if [ "$$?" != "0" ]; then echo "Molecule test failed: $${msn}"; ${DORP} volume rm molecule-tests-volume; exit 1; fi; done
 endif
 	$(DORP) volume rm molecule-tests-volume

@@ -9,6 +9,10 @@
 .prepare-cluster: .prepare-ocp-image-registry
 	@$(eval CLUSTER_REPO_INTERNAL ?= $(shell ${OC} get image.config.openshift.io/cluster -o custom-columns=INT:.status.internalRegistryHostname --no-headers 2>/dev/null))
 	@$(eval CLUSTER_REPO ?= $(shell ${OC} get image.config.openshift.io/cluster -o custom-columns=EXT:.status.externalRegistryHostnames[0] --no-headers 2>/dev/null))
+	@$(eval CLUSTER_PLUGIN_INTERNAL_NAME ?= ${CLUSTER_REPO_INTERNAL}/${PLUGIN_CONTAINER_NAME})
+	@$(eval CLUSTER_PLUGIN_NAME ?= ${CLUSTER_REPO}/${PLUGIN_CONTAINER_NAME})
+	@$(eval CLUSTER_PLUGIN_INTERNAL_TAG ?= ${CLUSTER_PLUGIN_INTERNAL_NAME}:${PLUGIN_CONTAINER_VERSION})
+	@$(eval CLUSTER_PLUGIN_TAG ?= ${CLUSTER_PLUGIN_NAME}:${PLUGIN_CONTAINER_VERSION})
 	@$(eval CLUSTER_OPERATOR_INTERNAL_NAME ?= ${CLUSTER_REPO_INTERNAL}/${OPERATOR_CONTAINER_NAME})
 	@$(eval CLUSTER_OPERATOR_NAME ?= ${CLUSTER_REPO}/${OPERATOR_CONTAINER_NAME})
 	@$(eval CLUSTER_OPERATOR_INTERNAL_TAG ?= ${CLUSTER_OPERATOR_INTERNAL_NAME}:${OPERATOR_CONTAINER_VERSION})
@@ -65,6 +69,21 @@ ifeq ($(DORP),docker)
 else
 	@echo "Image Registry login: podman login --tls-verify=false -u $(shell ${OC} whoami | tr -d ':')" '-p $$(${OC} whoami -t)' "${CLUSTER_REPO}"
 	@echo "================================================================="
+endif
+
+## cluster-build-plugin-image: Builds the plugin image for development with a remote cluster
+cluster-build-plugin-image: .prepare-cluster build-plugin-image
+	@echo Re-tag the already built plugin image
+	${DORP} tag ${PLUGIN_QUAY_TAG} ${CLUSTER_PLUGIN_TAG}
+
+## cluster-push-plugin-image: Builds then pushes the plugin container image to a remote cluster
+cluster-push-plugin-image: cluster-build-plugin-image
+ifeq ($(DORP),docker)
+	@echo Pushing plugin image to remote cluster using docker: ${CLUSTER_PLUGIN_TAG}
+	docker push ${CLUSTER_PLUGIN_TAG}
+else
+	@echo Pushing plugin image to remote cluster using podman: ${CLUSTER_PLUGIN_TAG}
+	podman push --tls-verify=false ${CLUSTER_PLUGIN_TAG}
 endif
 
 ## cluster-build-operator: Builds the operator image for development with a remote cluster
