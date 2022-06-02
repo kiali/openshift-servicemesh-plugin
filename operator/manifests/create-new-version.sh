@@ -8,6 +8,7 @@ VERIFY_BUNDLE="true"
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
+    -c|--channels)                  CHANNELS="$2"               ; shift;shift ;;
     -nv|--new-version)              NEW_VERSION="$2"            ; shift;shift ;;
     -opin|--operator-image-name)    OPERATOR_IMAGE_NAME="$2"    ; shift;shift ;;
     -opiv|--operator-image-version) OPERATOR_IMAGE_VERSION="$2" ; shift;shift ;;
@@ -18,6 +19,10 @@ while [[ $# -gt 0 ]]; do
 $0 [option...]
 
 Valid options:
+  -c|--channels <channel list>
+      A comma-separate list of channels that will be associated with the bundle.
+      The first channel in the list will be considered the default channel.
+      Default: candidate
   -nv|--new-version <version string>
       The new version that is going to be released. New manifest files for this version will be created.
   -opin|--operator-image-name <repo/org/name>
@@ -81,6 +86,8 @@ NEW_MANIFEST_DIR="${SCRIPT_DIR}/ossmplugin-community/${NEW_VERSION}"
 OPERATOR_IMAGE_NAME="${OPERATOR_IMAGE_NAME:-quay.io/kiali/ossmplugin-operator}"
 OPERATOR_IMAGE_VERSION="${OPERATOR_IMAGE_VERSION:-v${NEW_VERSION}}"
 
+CHANNELS="${CHANNELS:-candidate}"
+
 if [ ! -d "${OLD_MANIFEST_DIR}" ]; then
   echo "Did not find the old version of the manifest: ${OLD_MANIFEST_DIR}"
   exit 1
@@ -104,7 +111,19 @@ if [ -z ${CSV_YAML} ]; then
   echo "Cannot find the CSV yaml file"
   exit 1
 fi
+ANNOTATIONS_YAML="$(ls -1 ${NEW_MANIFEST_DIR}/metadata/annotations.yaml)"
+if [ -z ${ANNOTATIONS_YAML} ]; then
+  echo "Cannot find the annotations.yaml file"
+  exit 1
+fi
+BUNDLE_DOCKERFILE="$(ls -1 ${NEW_MANIFEST_DIR}/bundle.Dockerfile)"
+if [ -z ${BUNDLE_DOCKERFILE} ]; then
+  echo "Cannot find the bundle.Dockerfile file"
+  exit 1
+fi
 ${SCRIPT_DIR}/generate-csv.sh -nv ${NEW_VERSION} -ov ${OLD_VERSION} -opin ${OPERATOR_IMAGE_NAME} -opiv ${OPERATOR_IMAGE_VERSION} > ${CSV_YAML}
+${SCRIPT_DIR}/generate-annotations.sh -c ${CHANNELS} > ${ANNOTATIONS_YAML}
+${SCRIPT_DIR}/generate-dockerfile.sh -c ${CHANNELS} > ${BUNDLE_DOCKERFILE}
 
 # Verify the correctness using operator-sdk tool
 

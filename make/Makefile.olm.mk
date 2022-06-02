@@ -45,6 +45,8 @@ build-olm-bundle: .prepare-cluster .determine-olm-bundle-version
 	@mkdir -p ${OPERATOR_OUTDIR}/bundle
 	cp -R ${OPERATOR_DIR}/manifests/template/* ${OPERATOR_OUTDIR}/bundle
 	${OPERATOR_DIR}/manifests/generate-csv.sh -ov "NONE" -nv "${BUNDLE_VERSION}" -opin "${CLUSTER_OPERATOR_INTERNAL_NAME}" -opiv "${OPERATOR_CONTAINER_VERSION}" > ${OPERATOR_OUTDIR}/bundle/manifests/ossmplugin.clusterserviceversion.yaml
+	${OPERATOR_DIR}/manifests/generate-annotations.sh -c candidate > ${OPERATOR_OUTDIR}/bundle/metadata/annotations.yaml
+	${OPERATOR_DIR}/manifests/generate-dockerfile.sh -c candidate > ${OPERATOR_OUTDIR}/bundle/bundle.Dockerfile
 	${DORP} build -f ${OPERATOR_OUTDIR}/bundle/bundle.Dockerfile -t ${CLUSTER_REPO}/${OLM_BUNDLE_NAME}:${BUNDLE_VERSION}
 
 ## cluster-push-olm-bundle: Builds then pushes the OLM bundle container image to a remote cluster
@@ -62,14 +64,14 @@ endif
 build-olm-index: .ensure-opm-exists cluster-push-olm-bundle
 	@rm -rf ${OPERATOR_OUTDIR}/index
 	@mkdir -p ${OPERATOR_OUTDIR}/index/ossmplugin-index
-	${OPM} init ossmplugin --default-channel=stable --output yaml > ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
+	${OPM} init ossmplugin --default-channel=candidate --output yaml > ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
 	${OPM} render --skip-tls-verify ${CLUSTER_REPO}/${OLM_BUNDLE_NAME}:${BUNDLE_VERSION} --output yaml >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
 	@# We need OLM to pull the index from the internal registry - change the index to only use the internal registry name
 	sed -i 's|${CLUSTER_REPO}|${CLUSTER_REPO_INTERNAL}|g' ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
 	@echo "---"                                               >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
 	@echo "schema: olm.channel"                               >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
 	@echo "package: ossmplugin"                               >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
-	@echo "name: stable"                                      >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
+	@echo "name: candidate"                                   >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
 	@echo "entries:"                                          >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
 	@echo "- name: ${OPERATOR_IMAGE_NAME}.${BUNDLE_VERSION}"  >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
 	${OPM} validate ${OPERATOR_OUTDIR}/index/ossmplugin-index
@@ -122,7 +124,7 @@ undeploy-catalog-source: .generate-catalog-source
 	@echo "  name: ossmplugin-subscription"           >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
 	@echo "  namespace: ${OPERATOR_NAMESPACE}"        >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
 	@echo "spec:"                                     >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "  channel: stable"                         >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
+	@echo "  channel: candidate"                      >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
 	@echo "  installPlanApproval: Automatic"          >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
 	@echo "  name: ossmplugin"                        >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
 	@echo "  source: ossmplugin-catalog"              >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
