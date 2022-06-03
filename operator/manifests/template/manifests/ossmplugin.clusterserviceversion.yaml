@@ -10,7 +10,7 @@ metadata:
     containerImage: ${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_VERSION}
     capabilities: Basic Install
     support: Kiali
-    description: "Kiali project provides answers to the questions: What microservices are part of my Istio service mesh and how are they connected?"
+    description: "Adds Kiali functionality to the OpenShift Console UI"
     repository: https://github.com/kiali/openshift-servicemesh-plugin
     createdAt: ${CREATED_AT}
     alm-examples: |-
@@ -38,6 +38,8 @@ spec:
 
     The OpenShift Service Mesh Plugin adds Kiali functionality to the OpenShift Console.
 
+    Before creating a OSSMPlugin CR to install the plugin, make sure OpenShift Service Mesh
+    is installed along with the Kiali UI.
   icon:
   - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIyLjAuMSwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAxMjgwIDEyODAiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDEyODAgMTI4MDsiIHhtbDpzcGFjZT0icHJlc2VydmUiPgo8c3R5bGUgdHlwZT0idGV4dC9jc3MiPgoJLnN0MHtmaWxsOiMwMTMxNDQ7fQoJLnN0MXtmaWxsOiMwMDkzREQ7fQo8L3N0eWxlPgo8Zz4KCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik04MTAuOSwxODAuOWMtMjUzLjYsMC00NTkuMSwyMDUuNS00NTkuMSw0NTkuMXMyMDUuNSw0NTkuMSw0NTkuMSw0NTkuMVMxMjcwLDg5My42LDEyNzAsNjQwCgkJUzEwNjQuNSwxODAuOSw4MTAuOSwxODAuOXogTTgxMC45LDEwMjkuMmMtMjE1LDAtMzg5LjItMTc0LjMtMzg5LjItMzg5LjJjMC0yMTUsMTc0LjMtMzg5LjIsMzg5LjItMzg5LjJTMTIwMC4xLDQyNSwxMjAwLjEsNjQwCgkJUzEwMjUuOSwxMDI5LjIsODEwLjksMTAyOS4yeiIvPgoJPHBhdGggY2xhc3M9InN0MSIgZD0iTTY1My4zLDI4NGMtMTM2LjQsNjAuNS0yMzEuNiwxOTcuMS0yMzEuNiwzNTZjMCwxNTguOCw5NS4yLDI5NS41LDIzMS42LDM1NmM5OC40LTg3LjEsMTYwLjQtMjE0LjMsMTYwLjQtMzU2CgkJQzgxMy43LDQ5OC4zLDc1MS42LDM3MS4xLDY1My4zLDI4NHoiLz4KCTxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik0zNTEuOCw2NDBjMC0xMDkuOCwzOC42LTIxMC41LDEwMi44LTI4OS41Yy0zOS42LTE4LjItODMuNi0yOC4zLTEzMC0yOC4zQzE1MC45LDMyMi4yLDEwLDQ2NC41LDEwLDY0MAoJCXMxNDAuOSwzMTcuOCwzMTQuNiwzMTcuOGM0Ni4zLDAsOTAuNC0xMC4xLDEzMC0yOC4zQzM5MC4zLDg1MC41LDM1MS44LDc0OS44LDM1MS44LDY0MHoiLz4KPC9nPgo8L3N2Zz4K
     mediatype: image/svg+xml
@@ -53,8 +55,10 @@ spec:
     matchLabels:
       name: ossmplugin-operator
   links:
-  - name: Operator Source Code
+  - name: OpenShift Service Mesh Plugin Project Source Code
     url: https://github.com/kiali/openshift-servicemesh-plugin
+  - name: Kiali Documentation
+    url: https://kiali.io
   installModes:
   - type: OwnNamespace
     supported: false
@@ -77,7 +81,14 @@ spec:
         version: apps/v1
       - kind: Pod
         version: v1
-      specDescriptors: []
+      - kind: ConfigMap
+        version: v1
+      specDescriptors:
+      - displayName: Kiali URL
+        description: "The root endpoint URL to the Kiali UI Console"
+        path: kiali.url
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:text'
   apiservicedefinitions: {}
   install:
     strategy: deployment
