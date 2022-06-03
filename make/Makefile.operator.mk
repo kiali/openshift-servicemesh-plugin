@@ -132,7 +132,16 @@ purge-all-crs: .ensure-oc-login
 
 ## run-operator: Runs the OSSM Plugin Operator via the ansible-operator.
 run-operator: install-crd install-cr get-ansible-operator
-	cd ${OPERATOR_DIR} && ALLOW_AD_HOC_OSSMPLUGIN_IMAGE=true POD_NAMESPACE="does-not-exist" ANSIBLE_ROLES_PATH="${OPERATOR_DIR}/roles" PATH="${PATH}:${OPERATOR_OUTDIR}/ansible-operator-install" ansible-operator run --zap-log-level=debug
+	cd ${OPERATOR_DIR} && \
+	ANSIBLE_ROLES_PATH="${OPERATOR_DIR}/roles" \
+	ALLOW_AD_HOC_OSSMPLUGIN_IMAGE="true" \
+	ANSIBLE_VERBOSITY_OSSMPLUGIN_KIALI_IO="1" \
+	ANSIBLE_DEBUG_LOGS="True" \
+	PROFILE_TASKS_TASK_OUTPUT_LIMIT="100" \
+	POD_NAMESPACE="does-not-exist" \
+	WATCH_NAMESPACE="" \
+	PATH="${PATH}:${OPERATOR_OUTDIR}/ansible-operator-install" \
+	ansible-operator run --zap-log-level=debug --leader-election-id=ossmplugin-operator
 
 ## run-playbook: Run the operator ansible playbooks directly. You must have Ansible installed for this to work.
 run-playbook: install-crd .wait-for-crd
