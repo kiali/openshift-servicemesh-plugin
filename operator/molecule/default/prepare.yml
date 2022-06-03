@@ -25,7 +25,7 @@
     set_fact:
       plugin_image_pull_secret_name: "ossmplugin-pull-secret"
     when:
-    - plugin_image_pull_secret_json != ''
+    - plugin_image_pull_secret_json != ""
 
   - name: Create the secret that will be used by the plugin pod to pull the image from the internal registry when needed
     k8s:
