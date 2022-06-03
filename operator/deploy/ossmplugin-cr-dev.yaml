@@ -7,7 +7,10 @@ metadata:
 spec:
   version: default
   deployment:
-    imageName: quay.io/kiali/servicemesh-plugin
-    imageVersion: latest
+    imageName: ${DEPLOYMENT_IMAGE_NAME}
+    imageVersion: ${DEPLOYMENT_IMAGE_VERSION}
+    imagePullPolicy: Always
+    imagePullSecrets:
+    - ${PULL_SECRET_NAME}
   kiali:
     url: ""

@@ -97,12 +97,10 @@ get-operator-sdk: .ensure-operator-sdk-exists
 get-ansible-operator: .ensure-ansible-operator-exists .ensure-ansible-runner-exists
 	@echo "Ansible Operator location: ${ANSIBLE_OPERATOR_BIN} (ansible-runner: ${ANSIBLE_RUNNER_BIN})"
 
-## create-test-namespace: Creates a namespace where you can install the test CR.
-create-test-namespace: .ensure-oc-login
+.create-test-namespace: .ensure-oc-login
 	${OC} get namespace ${PLUGIN_NAMESPACE} &> /dev/null || ${OC} create namespace ${PLUGIN_NAMESPACE}
 
-## delete-test-namespace: Removes the test namespace if it exists
-delete-test-namespace: .ensure-oc-login
+.delete-test-namespace: .ensure-oc-login
 	${OC} delete --ignore-not-found=true namespace ${PLUGIN_NAMESPACE}
 
 ## install-crd: Installs the OSSM Plugin CRD into the cluster.
@@ -114,11 +112,11 @@ uninstall-crd: purge-all-crs
 	${OC} delete --ignore-not-found=true -f "${OPERATOR_DIR}/manifests/template/manifests/ossmplugin.crd.yaml"
 
 ## install-cr: Installs a test OSSM Plugin CR into the cluster.
-install-cr: .wait-for-crd create-test-namespace
-	cat "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml" | envsubst | ${OC} apply -n ${PLUGIN_NAMESPACE} -f - ;\
+install-cr: .wait-for-crd .prepare-cluster .create-test-namespace .create-plugin-pull-secret
+	cat "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml" | DEPLOYMENT_IMAGE_NAME="${CLUSTER_PLUGIN_INTERNAL_NAME}" DEPLOYMENT_IMAGE_VERSION="${PLUGIN_CONTAINER_VERSION}" PULL_SECRET_NAME="${PLUGIN_IMAGE_PULL_SECRET_NAME}" envsubst | ${OC} apply -n ${PLUGIN_NAMESPACE} -f -
 
 ## uninstall-cr: Deletes the test OSSM Plugin CR from the cluster and waits for the operator to finalize the deletion.
-uninstall-cr:
+uninstall-cr: .remove-plugin-pull-secret
 	(${OC} get crd ossmplugins.kiali.io &> /dev/null && ${OC} delete --ignore-not-found=true -n ${PLUGIN_NAMESPACE} -f "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml") || true
 
 ## purge-all-crs: Purges all OSSM Plugin CRs from the cluster, forcing them to delete without the operator finalizing them.
@@ -157,7 +155,7 @@ push-operator:
 operator-create: deploy-catalog-source deploy-subscription
 
 ## operator-delete: Deletes the operator from the remote cluster via OLM
-operator-delete: uninstall-cr undeploy-subscription undeploy-catalog-source delete-test-namespace uninstall-crd
+operator-delete: uninstall-cr undeploy-subscription undeploy-catalog-source .delete-test-namespace uninstall-crd
 	@echo "Deleting OLM CSVs to fully uninstall OSSM Plugin operator and its related resources"
 	@for csv in $$(${OC} get csv --all-namespaces --no-headers -o custom-columns=NS:.metadata.namespace,N:.metadata.name | sed 's/  */:/g' | grep ossmplugin-operator) ;\
 	do \

@@ -113,7 +113,7 @@ deploy-catalog-source: .generate-catalog-source cluster-push-olm-index .create-o
 	${OC} apply -f "${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml"
 
 ## undeploy-catalog-source: Deletes the OLM CatalogSource from the remote cluster
-undeploy-catalog-source: .generate-catalog-source
+undeploy-catalog-source: .generate-catalog-source .remove-operator-pull-secret
 	${OC} delete --ignore-not-found=true -f "${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml"
 
 .generate-subscription:
