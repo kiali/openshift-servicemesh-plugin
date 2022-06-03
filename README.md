@@ -83,6 +83,12 @@ You can configure the behavior of this target by changing the files under the [o
 
 You do not have to use this make target if you do not want to (e.g. you do not have Ansible installed locally). You are free to ignore this make target and instead just use the other make targets to deploy the operator into your cluster and run the operator within the cluster.
 
+#### make run-operator
+
+Similar to the `run-playbook` target, this target also runs the operator on your local box. However, this runs within the context of the ansible-operator (i.e. the ansible operator SDK base image). In other words, this runs in a way that much more resembles how the operator will run inside the cluster. This target creates a CR first, and then it starts the operator in foreground. The operator will immediately reconcile the CR and then sit and wait for changes made to the CR, which will trigger another reconciliation. Thereafter, you can edit the CR and see how the operator behaves. You can also delete the CR and see how the operator performs a removal.
+
+As with the `run-playbook` target, you do not have to use this make target if you do not want to (e.g. you do not have Ansible installed locally). You are free to ignore this make target and instead just use the other make targets to deploy the operator into your cluster and run the operator within the cluster.
+
 #### make cluster-push-operator
 
 This target will build the operator image and push it into the cluster's internal image registry. You must perform this step prior to creating the operator in the cluster because the image must be available for the operator Pod.
