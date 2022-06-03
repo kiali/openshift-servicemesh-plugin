@@ -80,7 +80,7 @@ spec:
                       operator itself was configured.
                     type: string
                   namespace:
-                    description: "The namespace into which OSSM Plugin is to be installed. If this is empty or not defined, the default will be the namespace where the OSSMPlugin CR is located."
+                    description: "The namespace into which OSSM Plugin is to be installed. If this is empty or not defined, the default will be the namespace where the OSSMPlugin CR is located. Currently the only namespace supported is the namespace where the OSSMPlugin CR is located."
                     type: string
               kiali:
                 type: object

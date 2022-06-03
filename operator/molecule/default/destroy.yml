@@ -17,3 +17,19 @@
       wait: yes
       wait_timeout: 600
     ignore_errors: yes
+
+  - name: Remove the cr namespace
+    k8s:
+      state: absent
+      api_version: v1
+      kind: Namespace
+      name: "{{ cr_namespace }}"
+
+  - name: Remove the install namespace
+    k8s:
+      state: absent
+      api_version: v1
+      kind: Namespace
+      name: "{{ ossmplugin.install_namespace }}"
+    when:
+    - ossmplugin.install_namespace != cr_namespace

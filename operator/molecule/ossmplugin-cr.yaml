@@ -7,3 +7,5 @@ spec:
   deployment:
     imageName: "{{ ossmplugin.image_name }}"
     imageVersion: "{{ ossmplugin.image_version }}"
+    imagePullPolicy: Always
+    imagePullSecrets: [ {{ plugin_image_pull_secret_name | default('') }} ]

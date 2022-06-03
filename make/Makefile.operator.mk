@@ -9,7 +9,7 @@ OPERATOR_OUTDIR=${OPERATOR_DIR}/_output
 OPERATOR_IMAGE_ORG ?= kiali
 OPERATOR_IMAGE_NAME ?= ossmplugin-operator
 OPERATOR_CONTAINER_NAME ?= ${OPERATOR_IMAGE_ORG}/${OPERATOR_IMAGE_NAME}
-OPERATOR_CONTAINER_VERSION ?= ${VERSION}
+OPERATOR_CONTAINER_VERSION ?= ${CONTAINER_VERSION}
 OPERATOR_QUAY_NAME ?= quay.io/${OPERATOR_CONTAINER_NAME}
 OPERATOR_QUAY_TAG ?= ${OPERATOR_QUAY_NAME}:${OPERATOR_CONTAINER_VERSION}
 
@@ -83,17 +83,25 @@ get-operator-sdk: .ensure-operator-sdk-exists
 	@$(eval ANSIBLE_RUNNER_BIN ?= $(shell which ansible-runner 2>/dev/null || echo "${OPERATOR_OUTDIR}/ansible-operator-install/ansible-runner"))
 	@"${ANSIBLE_RUNNER_BIN}" --version
 
+.wait-for-crd:
+	@echo -n "Waiting for the CRD to be established"
+	@i=0 ;\
+	until [ $${i} -eq 30 ] || ${OC} get crd ossmplugins.kiali.io &> /dev/null; do \
+	    echo -n '.' ; sleep 1 ; (( i++ )) ;\
+	done ;\
+	echo ;\
+	[ $${i} -lt 30 ] || (echo "The CRD does not exist. You should install the operator." && exit 1)
+	${OC} wait --for condition=established --timeout=60s crd ossmplugins.kiali.io
+
 ## get-ansible-operator: Downloads the Ansible Operator binary if it is not already in PATH.
 get-ansible-operator: .ensure-ansible-operator-exists .ensure-ansible-runner-exists
 	@echo "Ansible Operator location: ${ANSIBLE_OPERATOR_BIN} (ansible-runner: ${ANSIBLE_RUNNER_BIN})"
 
-## create-test-namespace: Creates a namespace where you can install the test CR.
-create-test-namespace: .ensure-oc-login
-	${OC} get namespace ossmplugin &> /dev/null || ${OC} create namespace ossmplugin
+.create-test-namespace: .ensure-oc-login
+	${OC} get namespace ${PLUGIN_NAMESPACE} &> /dev/null || ${OC} create namespace ${PLUGIN_NAMESPACE}
 
-## delete-test-namespace: Removes the test namespace if it exists
-delete-test-namespace: .ensure-oc-login
-	${OC} delete --ignore-not-found=true namespace ossmplugin
+.delete-test-namespace: .ensure-oc-login
+	${OC} delete --ignore-not-found=true namespace ${PLUGIN_NAMESPACE}
 
 ## install-crd: Installs the OSSM Plugin CRD into the cluster.
 install-crd: .ensure-oc-login
@@ -104,15 +112,12 @@ uninstall-crd: purge-all-crs
 	${OC} delete --ignore-not-found=true -f "${OPERATOR_DIR}/manifests/template/manifests/ossmplugin.crd.yaml"
 
 ## install-cr: Installs a test OSSM Plugin CR into the cluster.
-install-cr: create-test-namespace
-	echo -n "Waiting for the CRD to be established..." ;\
-	while ! ${OC} get crd ossmplugins.kiali.io &> /dev/null ; do echo -n '.'; sleep 1; done ;\
-	${OC} wait --for condition=established --timeout=60s crd ossmplugins.kiali.io ;\
-	cat "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml" | envsubst | ${OC} apply -f - ;\
+install-cr: .wait-for-crd .prepare-cluster .create-test-namespace .create-plugin-pull-secret
+	cat "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml" | DEPLOYMENT_IMAGE_NAME="${CLUSTER_PLUGIN_INTERNAL_NAME}" DEPLOYMENT_IMAGE_VERSION="${PLUGIN_CONTAINER_VERSION}" PULL_SECRET_NAME="${PLUGIN_IMAGE_PULL_SECRET_NAME}" envsubst | ${OC} apply -n ${PLUGIN_NAMESPACE} -f -
 
 ## uninstall-cr: Deletes the test OSSM Plugin CR from the cluster and waits for the operator to finalize the deletion.
-uninstall-cr:
-	(${OC} get crd ossmplugins.kiali.io &> /dev/null && ${OC} delete --ignore-not-found=true -f "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml") || true
+uninstall-cr: .remove-plugin-pull-secret
+	(${OC} get crd ossmplugins.kiali.io &> /dev/null && ${OC} delete --ignore-not-found=true -n ${PLUGIN_NAMESPACE} -f "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml") || true
 
 ## purge-all-crs: Purges all OSSM Plugin CRs from the cluster, forcing them to delete without the operator finalizing them.
 purge-all-crs: .ensure-oc-login
@@ -130,7 +135,7 @@ run-operator: install-crd install-cr get-ansible-operator
 	cd ${OPERATOR_DIR} && ALLOW_AD_HOC_OSSMPLUGIN_IMAGE=true POD_NAMESPACE="does-not-exist" ANSIBLE_ROLES_PATH="${OPERATOR_DIR}/roles" PATH="${PATH}:${OPERATOR_OUTDIR}/ansible-operator-install" ansible-operator run --zap-log-level=debug
 
 ## run-playbook: Run the operator ansible playbooks directly. You must have Ansible installed for this to work.
-run-playbook: install-crd
+run-playbook: install-crd .wait-for-crd
 	@$(eval ANSIBLE_PYTHON_INTERPRETER ?= $(shell if (which python &> /dev/null && python --version 2>&1 | grep -q " 2\.*"); then echo "-e ansible_python_interpreter=python3"; else echo ""; fi))
 	@if [ ! -z "${ANSIBLE_PYTHON_INTERPRETER}" ]; then echo "ANSIBLE_PYTHON_INTERPRETER is [${ANSIBLE_PYTHON_INTERPRETER}]. Make sure that refers to a Python3 installation. If you do not have Python3 in that location, you must ensure you have Python3 and ANSIBLE_PYTHON_INTERPRETER is set to '-e ansible_python_interpreter=<full path to your python3 executable>"; fi
 	@echo "Create a dummy Kiali CR"; ${OC} apply -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmplugin-cr.yaml
@@ -150,7 +155,7 @@ push-operator:
 operator-create: deploy-catalog-source deploy-subscription
 
 ## operator-delete: Deletes the operator from the remote cluster via OLM
-operator-delete: uninstall-cr undeploy-subscription undeploy-catalog-source delete-test-namespace uninstall-crd
+operator-delete: uninstall-cr undeploy-subscription undeploy-catalog-source .delete-test-namespace uninstall-crd
 	@echo "Deleting OLM CSVs to fully uninstall OSSM Plugin operator and its related resources"
 	@for csv in $$(${OC} get csv --all-namespaces --no-headers -o custom-columns=NS:.metadata.namespace,N:.metadata.name | sed 's/  */:/g' | grep ossmplugin-operator) ;\
 	do \

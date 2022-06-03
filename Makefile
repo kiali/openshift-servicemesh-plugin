@@ -22,6 +22,10 @@ TARGET_ARCHS ?= amd64 arm64 s390x ppc64le
 OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH := $(shell uname -m | sed 's/x86_64/amd64/')
 
+# Container version used when tagging container images
+# When doing releases, you probably want to override this so it is set to the release version string.
+CONTAINER_VERSION ?= dev
+
 include make/Makefile.plugin.mk
 include make/Makefile.operator.mk
 include make/Makefile.cluster.mk

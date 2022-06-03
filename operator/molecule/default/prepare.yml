@@ -21,6 +21,27 @@
     when:
     - ossmplugin.install_namespace != cr_namespace
 
+  - name: Define the name of the pull secret if a secret is needed to pull the image from the internal image registry
+    set_fact:
+      plugin_image_pull_secret_name: "ossmplugin-pull-secret"
+    when:
+    - plugin_image_pull_secret_json != ""
+
+  - name: Create the secret that will be used by the plugin pod to pull the image from the internal registry when needed
+    k8s:
+      state: present
+      definition:
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: "{{ plugin_image_pull_secret_name }}"
+          namespace: "{{ ossmplugin.install_namespace }}"
+        type: kubernetes.io/dockerconfigjson
+        data:
+          .dockerconfigjson: "{{ plugin_image_pull_secret_json }}"
+    when:
+    - plugin_image_pull_secret_name is defined
+
   - name: Wait for the CRD to be established
     k8s_info:
       api_version: apiextensions.k8s.io/v1

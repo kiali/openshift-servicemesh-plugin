@@ -5,23 +5,23 @@ Webpack Plugin to integrate Kiali into OpenShift Console
 
 These are the things you need before you can start working with the OpenShift Service Mesh Plugin:
 
-1. OpenShift 4.10+ cluster with OpenShift ServiceMesh / Istio installed. 
+1. OpenShift 4.10+ cluster with OpenShift ServiceMesh / Istio installed.
 2. Kiali deployed in the cluster
 3. `oc` client available in the path
 4. `podman` client available in the path
 
 ## Quickly Deploy the Service Mesh Plugin
 
-To very quickly get the plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
+To very quickly get the latest plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
 
 ```sh
 # Step 1 - Login in OpenShift cluster i.e oc login ...
 
 # Step 2- Adjust the kialiUrl in the "plugin-conf" ConfigMap under plugin/manifest.yaml pointing to the Kiali public URL
-# i.e. https://kiali-istio-system.apps-crc.testing 
+# i.e. https://kiali-istio-system.apps-crc.testing
 
-# Step 3 - deploy the plugin then enable via the make targets:
-make deploy-plugin enable-plugin 
+# Step 3 - deploy the latest plugin published on quay.io and then enable the plugin via these make targets:
+make deploy-plugin enable-plugin
 ```
 
 ## How to Run the Plugin for Local Development
@@ -58,7 +58,7 @@ Developers will work with the operator mainly through the use of make targets. T
 
 ### Building and Deploying the Operator
 
-To build, deploy, and run the operator, use the make targets described below. 
+To build, deploy, and run the operator, use the make targets described below.
 
 #### Quick Summary
 
@@ -66,7 +66,7 @@ Here's a tl;dr summary to get the operator and plugin installed in your cluster.
 
 1. First run `make cluster-status` to expose the internal image registry and get the podman command needed to log into the internal image registry.
 2. Run the podman login command that will log into the internal image registry.
-3. Build, push, and deploy the operator and plugin by running `make cluster-push-operator operator-create install-cr`
+3. Build, push, and deploy the operator and plugin by running `make cluster-push operator-create install-cr`
 
 When you are finished and you want to uninstall the operator and plugin, run `make operator-delete`.
 
@@ -91,9 +91,17 @@ This target will build the operator image and push it into the cluster's interna
 
 This target performs alot of tasks under the covers but in the end will result in the operator deployed and running in your cluster. This target will perform tasks such as building the OLM catalog source and the OLM image index, deploying those images to your cluster, and creating an OLM subscription for your new operator, thus starting the operator.
 
+#### make cluster-push-plugin-image
+
+This target will build the plugin image and push it into the cluster's internal image registry. You must perform this step prior to installing an OSSMPlugin CR because this image must be available for the plugin Pod.
+
+#### make cluster-push
+
+This is simply a convenience target that runs both the `cluster-push-operator` and the `cluster-push-plugin-image` targets.
+
 #### make install-cr
 
-Once your operator is deployed and running, use this target to create a OSSMPlugin CR which instructs the operator to install the OpenShift Service Mesh  Plugin. Within a few seconds after this make target completes, your OpenShift Console will have the OpenShift Service Mesh Plugin installed. This provides you with Kiali functionality directly within the OpenShift Console itself.
+Once your operator is deployed and running, and you have built and pushed the plugin image to your cluster, you can use this target to create an OSSMPlugin CR which instructs the operator to install the OpenShift Service Mesh Plugin. Within a few seconds after this make target completes, your OpenShift Console will have the OpenShift Service Mesh Plugin installed. This provides you with Kiali functionality directly within the OpenShift Console itself.
 
 #### make uninstall-cr
 
@@ -122,3 +130,51 @@ After you modify or add metadata to the manifests, run this make target to valid
 ### Generating Documentation
 
 You can generate reference documentation for the OSSMPlugin CRD by running `make gen-crd-doc`. The generated markdown document will be found in `operator/_output/crd-docs/` and can be used for publishing on a Hugo-generated doc site such as https://kiali.io.
+
+## Molecule tests
+
+You can run the molecule tests (called "scenarios") to confirm the basic functionality of the operator works. The [default scenario](https://github.com/kiali/openshift-servicemesh-plugin/tree/main/operator/molecule/default) can be run to simply confirm that the operator can deploy and undeploy the plugin. That default scenario provides the setup/teardown framework for the rest of the molecule tests. The other molecule tests that you can run have names ending with `-test` in the [molecule directory](https://github.com/kiali/openshift-servicemesh-plugin/tree/main/operator/molecule).
+
+### Molecule test image
+
+The molecule tests are run inside a container image that provide all the testing infrastructure needed to run the test scenarios. To build this container image, run `make molecule-build`. If you already built the image, that make target will be a no-op. If you need to re-build the image, set the `FORCE_MOLECULE_BUILD` env var to `true` (e.g. `make -e FORCE_MOLECULE_BUILD=true molecule-build`).
+
+### Running a test
+
+To run a molecule test, you first must install the operator via OLM. The molecule tests expect the operator to already be installed and running. You do this by running `make operator-create`.
+
+```sh
+make operator-create
+```
+
+Once the operator has been installed by OLM, you run a molecule test by setting the `MOLECULE_SCENARIO` env var to the name of the test you want to run and invoke the `molecule-test` make target. You can specify multiple tests to run by setting that env var to a space-separated list of test names.
+
+```sh
+make -e MOLECULE_SCENARIO="config-values-test" molecule-test
+```
+
+### Testing locally built images
+
+By default, the molecule tests will test the "latest" plugin image published on quay.io. If you want to test the image you are developing and building locally, set the `MOLECULE_USE_DEV_IMAGES` env var to `true`:
+
+```sh
+make -e MOLECULE_SCENARIO="config-values-test" -e MOLECULE_USE_DEV_IMAGES="true" molecule-test
+```
+
+NOTE! This requires that you previously pushed your local image into your cluster via the make target `cluster-push-plugin-image`.
+
+## Releasing OpenShift Service Mesh Plugin
+
+To build and release the plugin, you can run this command either manually or inside a CI workflow.
+
+```sh
+make -e CONTAINER_VERSION=v0.0.1 build-plugin-image push-plugin-image
+```
+
+If you want to release a "latest" image, the command would be:
+
+```sh
+make -e CONTAINER_VERSION=latest build-plugin-image push-plugin-image
+```
+
+Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/servicemesh-plugin?tab=tags
