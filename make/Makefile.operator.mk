@@ -74,7 +74,7 @@ get-operator-sdk: .ensure-operator-sdk-exists
 	  else \
 	    echo "You do not have ansible-runner installed in your PATH. An attempt to install it will be made and a softlink to its binary placed at ${OPERATOR_OUTDIR}/ansible-operator-install/ansible-runner" ;\
 	    echo "If the installation fails, you must install it manually. See: https://ansible-runner.readthedocs.io/en/latest/install/" ;\
-	    python3 -m pip install ansible-runner ;\
+	    python3 -m pip install ansible-runner ansible-runner-http openshift ;\
 	    ln --force -s "${HOME}/.local/bin/ansible-runner" "${OPERATOR_OUTDIR}/ansible-operator-install/ansible-runner" ;\
 	  fi ;\
 	fi
