@@ -69,6 +69,12 @@
   when:
   - ossmplugin_vars.deployment.namespace is not defined or ossmplugin_vars.deployment.namespace == ""
 
+- name: Do not support installing in any namespace other than where the CR lives
+  fail:
+    msg: "The operator currently does not support installing the plugin in any namespace other than the namespace where the CR was created."
+  when:
+  - ossmplugin_vars.deployment.namespace != current_cr.metadata.namespace
+
 # Never allow deployment.namespace to change to avoid leaking resources - to uninstall resources you must delete the OSSMPlugin CR
 - name: Ensure the deployment.namespace has not changed
   fail:
