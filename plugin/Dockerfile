@@ -1,3 +1,4 @@
+# These pulls brings hundreds of CVEs
 FROM node:16 AS build
 
 ADD . /usr/src/app
