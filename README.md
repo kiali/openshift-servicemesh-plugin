@@ -5,23 +5,23 @@ Webpack Plugin to integrate Kiali into OpenShift Console
 
 These are the things you need before you can start working with the OpenShift Service Mesh Plugin:
 
-1. OpenShift 4.10+ cluster with OpenShift ServiceMesh / Istio installed. 
+1. OpenShift 4.10+ cluster with OpenShift ServiceMesh / Istio installed.
 2. Kiali deployed in the cluster
 3. `oc` client available in the path
 4. `podman` client available in the path
 
 ## Quickly Deploy the Service Mesh Plugin
 
-To very quickly get the plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
+To very quickly get the latest plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
 
 ```sh
 # Step 1 - Login in OpenShift cluster i.e oc login ...
 
 # Step 2- Adjust the kialiUrl in the "plugin-conf" ConfigMap under plugin/manifest.yaml pointing to the Kiali public URL
-# i.e. https://kiali-istio-system.apps-crc.testing 
+# i.e. https://kiali-istio-system.apps-crc.testing
 
-# Step 3 - deploy the plugin then enable via the make targets:
-make deploy-plugin enable-plugin 
+# Step 3 - deploy the latest plugin published on quay.io and then enable the plugin via these make targets:
+make deploy-plugin enable-plugin
 ```
 
 ## How to Run the Plugin for Local Development
@@ -58,7 +58,7 @@ Developers will work with the operator mainly through the use of make targets. T
 
 ### Building and Deploying the Operator
 
-To build, deploy, and run the operator, use the make targets described below. 
+To build, deploy, and run the operator, use the make targets described below.
 
 #### Quick Summary
 
@@ -66,7 +66,7 @@ Here's a tl;dr summary to get the operator and plugin installed in your cluster.
 
 1. First run `make cluster-status` to expose the internal image registry and get the podman command needed to log into the internal image registry.
 2. Run the podman login command that will log into the internal image registry.
-3. Build, push, and deploy the operator and plugin by running `make cluster-push-operator operator-create install-cr`
+3. Build, push, and deploy the operator and plugin by running `make cluster-push operator-create install-cr`
 
 When you are finished and you want to uninstall the operator and plugin, run `make operator-delete`.
 
@@ -91,9 +91,17 @@ This target will build the operator image and push it into the cluster's interna
 
 This target performs alot of tasks under the covers but in the end will result in the operator deployed and running in your cluster. This target will perform tasks such as building the OLM catalog source and the OLM image index, deploying those images to your cluster, and creating an OLM subscription for your new operator, thus starting the operator.
 
+#### make cluster-push-plugin-image
+
+This target will build the plugin image and push it into the cluster's internal image registry. You must perform this step prior to installing an OSSMPlugin CR because this image must be available for the plugin Pod.
+
+#### make cluster-push
+
+This is simply a convenience target that runs both the `cluster-push-operator` and the `cluster-push-plugin-image` targets.
+
 #### make install-cr
 
-Once your operator is deployed and running, use this target to create a OSSMPlugin CR which instructs the operator to install the OpenShift Service Mesh  Plugin. Within a few seconds after this make target completes, your OpenShift Console will have the OpenShift Service Mesh Plugin installed. This provides you with Kiali functionality directly within the OpenShift Console itself.
+Once your operator is deployed and running, and you have built and pushed the plugin image to your cluster, you can use this target to create an OSSMPlugin CR which instructs the operator to install the OpenShift Service Mesh Plugin. Within a few seconds after this make target completes, your OpenShift Console will have the OpenShift Service Mesh Plugin installed. This provides you with Kiali functionality directly within the OpenShift Console itself.
 
 #### make uninstall-cr
 
