@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {useHistory} from "react-router";
-import {properties} from "../properties";
-import {consoleFetchJSON} from "@openshift-console/dynamic-plugin-sdk";
+import {kioskUrl, properties} from "../properties";
+import {consoleFetch} from "@openshift-console/dynamic-plugin-sdk";
 
 
 const kialiTypes = {
@@ -13,12 +13,24 @@ const kialiTypes = {
 }
 
 const MeshTab = () => {
-    const [kialiBaseUrl, setKialiBaseUrl] = React.useState();
-
+    const [kialiUrl, setKialiUrl] = React.useState({
+        baseUrl: '',
+        token: '',
+    });
     React.useEffect(() => {
-        consoleFetchJSON(properties.pluginConfig)
+        consoleFetch(properties.pluginConfig)
             .then((response) => {
-                setKialiBaseUrl(response.kialiUrl);
+                const headerOauthToken = response.headers.get('oauth_token');
+                const kialiToken = 'oauth_token=';
+                response.json().then((payload) => {
+                    setKialiUrl({
+                        baseUrl: payload.kialiUrl,
+                        token: kialiToken  + (
+                            headerOauthToken && headerOauthToken.startsWith('Bearer ') ?
+                                headerOauthToken.substring('Bearer '.length) : ''
+                        ),
+                    });
+                });
             })
             .catch((e) => console.error(e));
     }, []);
@@ -46,16 +58,17 @@ const MeshTab = () => {
             id = id.substr(0, j);
         }
     }
-    let kialiUrl = kialiBaseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?kiosk=true';
+
+    let iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?' + kioskUrl + '&' + kialiUrl.token;
     // Projects is a special case that will forward the graph in the iframe
     if (items[1] === 'projects') {
-        kialiUrl = kialiBaseUrl +  '/console/graph/namespaces?namespaces=' + id + '&&kiosk=true';
+        iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + id + '&' + kioskUrl + '&' + kialiUrl.token;
     }
     // TODO Obviously, this iframe is a PoC
     return (
         <>
             <iframe
-                src={kialiUrl}
+                src={iFrameUrl}
                 style={{overflow: 'hidden', height: '100%', width: '100%' }}
                 height="100%"
                 width="100%"
