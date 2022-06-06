@@ -29,7 +29,7 @@ metadata:
           },
           "spec": {
             "kiali": {
-              "url": "https://kiali-istio-system.apps-crc.testing"
+              "url": ""
             }
           }
         }
@@ -79,7 +79,7 @@ spec:
     - name: ossmplugins.kiali.io
       group: kiali.io
       description: A configuration file for a OpenShift Service Mesh Plugin installation.
-      displayName: OpenShift ServiceMesh Plugin
+      displayName: OpenShift Service Mesh Plugin
       kind: OSSMPlugin
       version: v1alpha1
       resources:
@@ -91,7 +91,7 @@ spec:
         version: v1
       specDescriptors:
       - displayName: Kiali URL
-        description: "The root endpoint URL to the Kiali UI Console"
+        description: "The root endpoint URL to the Kiali UI Console. If empty, an attempt to auto-discover it will be made."
         path: kiali.url
         x-descriptors:
         - 'urn:alm:descriptor:com.tectonic.ui:text'
