@@ -184,3 +184,31 @@ make -e CONTAINER_VERSION=latest build-plugin-image push-plugin-image
 ```
 
 Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/servicemesh-plugin?tab=tags
+
+## Releasing OpenShift Service Mesh Plugin Operator
+
+The operator needs its image published to quay and its OLM metadata published to the community catalog.
+
+### Publishing Image
+
+Build and push the image to quay:
+
+```sh
+make -e CONTAINER_VERSION=v0.0.1 build-operator push-operator
+```
+
+### Publishing OLM Metadata
+
+First create a new bundle version using the  `create-new-version.sh` script. You need to tell the script what channels the new version of the operator will be available on. The operator must be available in at least one of these two channels - `candidate` (for alpha or tech-preview versions) and `stable`. If you want the new version to be available in both channels, use `--channels "stable,candidate"`.
+
+```sh
+create-new-version.sh --new-version 0.0.2 --channels candidate
+```
+
+The new metadata files will be created in the appropriate location. You should git commit them to the repo now once you confirm they look OK.
+
+Next you need to publish the new OLM metadata by running `prepare-community-prs.sh` and follow the instructions (specifically, you need to create and merge a PR to the upstream https://github.com/redhat-openshift-ecosystem/community-operators-prod git repo).
+
+```sh
+prepare-community-prs.sh
+```

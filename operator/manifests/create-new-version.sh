@@ -25,6 +25,7 @@ Valid options:
       Default: candidate
   -nv|--new-version <version string>
       The new version that is going to be released. New manifest files for this version will be created.
+      No default - this must be specified by the user.
   -opin|--operator-image-name <repo/org/name>
       The full image registry name of the operator without the version tag.
       Default: quay.io/kiali/ossmplugin-operator
@@ -35,6 +36,7 @@ Valid options:
       The old version that is going to be superceded with the new release. This must be the previous release
       prior to the new version. For example, if there is already versions 1.0 and 1.1 and the new version is
       2.0, the old version to be specified must be 1.1.
+      Default: a guess based on the version strings found in the directory of versions.
   -vb|--verify-bundle <true|false>
       Verify the validity of the bundle metadata via the operator-sdk tool. You must have operator-sdk
       installed and in your PATH or in _output for this to work (make get-operator-sdk).
@@ -49,21 +51,29 @@ HELPMSG
   esac
 done
 
-# Validate some things before trying to do anything
+# Some things we need in order to validate the config
 TEMPLATE_MANIFEST_DIR="${SCRIPT_DIR}/template"
+PARENT_MANIFEST_DIR="${SCRIPT_DIR}/ossmplugin-community"
+
+# Validate some things before trying to do anything
 if [ ! -d "${TEMPLATE_MANIFEST_DIR:-!notvalid!}" ]; then
   echo "Something is wrong. The template directory is missing in ${SCRIPT_DIR}"
   exit 1
 fi
 
-if [ -z "${NEW_VERSION}" ]; then
+if [ -z "${NEW_VERSION:-}" ]; then
   echo "You must specify a new version."
   exit 1
 fi
 
-if [ -z "${OLD_VERSION}" ]; then
-  echo "You must specify an old version."
-  exit 1
+if [ -z "${OLD_VERSION:-}" ]; then
+  OLD_VERSION="$(ls -1  "${PARENT_MANIFEST_DIR}" 2> /dev/null | grep -E "[0-9]+\.[0-9]+\.[0-9]+" | sort -V | tail -n 1)"
+  if [ -z "${OLD_VERSION}" ]; then
+    echo "You must specify an old version."
+    exit 1
+  else
+    echo "Will consider the old version to be [${OLD_VERSION}]"
+  fi
 fi
 
 if [ "${VERIFY_BUNDLE}" == "true" ]; then
@@ -80,8 +90,8 @@ if [ "${VERIFY_BUNDLE}" == "true" ]; then
   fi
 fi
 
-OLD_MANIFEST_DIR="${SCRIPT_DIR}/ossmplugin-community/${OLD_VERSION}"
-NEW_MANIFEST_DIR="${SCRIPT_DIR}/ossmplugin-community/${NEW_VERSION}"
+OLD_MANIFEST_DIR="${PARENT_MANIFEST_DIR}/${OLD_VERSION}"
+NEW_MANIFEST_DIR="${PARENT_MANIFEST_DIR}/${NEW_VERSION}"
 
 OPERATOR_IMAGE_NAME="${OPERATOR_IMAGE_NAME:-quay.io/kiali/ossmplugin-operator}"
 OPERATOR_IMAGE_VERSION="${OPERATOR_IMAGE_VERSION:-v${NEW_VERSION}}"
