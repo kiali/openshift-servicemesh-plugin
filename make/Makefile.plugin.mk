@@ -24,7 +24,7 @@ build-plugin:
 
 ## build-plugin-image: Builds the plugin and its container image.
 build-plugin-image: build-plugin
-	${DORP} build -t ${PLUGIN_QUAY_TAG} ${PLUGIN_DIR}
+	${DORP} build --build-arg VERSION="${VERSION}" --build-arg COMMIT_HASH="${COMMIT_HASH}" -t ${PLUGIN_QUAY_TAG} ${PLUGIN_DIR}
 
 ## push-plugin-image: Pushes the plugin container image to quay.io.
 push-plugin-image:
