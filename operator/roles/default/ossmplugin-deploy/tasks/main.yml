@@ -107,13 +107,20 @@
   when:
   - ossmplugin_vars.kiali.url == ""
 
+- name: Determine Kiali version
+  set_fact:
+    kiali_version: "{{ lookup('url', ossmplugin_vars.kiali.url + '/api', split_lines='no', validate_certs='no') | from_json | json_query(q) }}"
+  vars:
+    q: status."Kiali version"
+  ignore_errors: yes
+
 - set_fact:
     status_environment: "{{ status_environment | default({}) | combine({item.0: item.1}) }}"
   loop: "{{ data[0] | zip(data[1]) | list }}"
   vars:
     data:
-    - ['isMaistra', 'kubernetesVersion', 'openshiftVersion', 'operatorVersion']
-    - ["{{is_maistra}}", "{{k8s_version|default('')}}", "{{openshift_version|default('')}}", "{{operator_version}}"]
+    - ['isMaistra', 'kialiVersion', 'kubernetesVersion', 'openshiftVersion', 'operatorVersion']
+    - ["{{is_maistra}}", "{{kiali_version|default('unknown')}}", "{{k8s_version|default('')}}", "{{openshift_version|default('')}}", "{{operator_version}}"]
   when:
   - item.1 != ""
   - item.1 != "false"
