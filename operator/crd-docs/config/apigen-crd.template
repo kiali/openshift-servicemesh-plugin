@@ -6,7 +6,7 @@ description: |
 {{ .Description | indent 2 }}
 {{- else }}
   Reference page for the {{ .Title }} CR.
-  The OpenShift ServiceMesh Plugin Operator will watch for resources of this type and install the OSSM Plugin according to those resources' configurations.
+  The OpenShift Service Mesh Plugin Operator will watch for resources of this type and install the OSSM Plugin according to those resources' configurations.
 {{- end }}
 technical_name: {{ .NamePlural }}.{{ .Group }}
 source_repository: {{ .SourceRepository }}
