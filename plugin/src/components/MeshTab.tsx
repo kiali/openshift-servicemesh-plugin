@@ -1,8 +1,7 @@
 import * as React from 'react';
 import {useHistory} from "react-router";
-import {kioskUrl, properties} from "../properties";
+import {initKialiListeners, kioskUrl, properties} from "../properties";
 import {consoleFetch} from "@openshift-console/dynamic-plugin-sdk";
-
 
 const kialiTypes = {
     services: 'services',
@@ -17,6 +16,9 @@ const MeshTab = () => {
         baseUrl: '',
         token: '',
     });
+
+    initKialiListeners();
+
     React.useEffect(() => {
         consoleFetch(properties.pluginConfig)
             .then((response) => {
@@ -59,10 +61,10 @@ const MeshTab = () => {
         }
     }
 
-    let iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?' + kioskUrl + '&' + kialiUrl.token;
+    let iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?' + kioskUrl() + '&' + kialiUrl.token;
     // Projects is a special case that will forward the graph in the iframe
     if (items[1] === 'projects') {
-        iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + id + '&' + kioskUrl + '&' + kialiUrl.token;
+        iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + id + '&' + kioskUrl() + '&' + kialiUrl.token;
     }
     // TODO Obviously, this iframe is a PoC
     return (

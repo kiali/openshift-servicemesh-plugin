@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {kioskUrl, properties} from "../properties";
+import {initKialiListeners, kioskUrl, properties} from "../properties";
 import {consoleFetch } from "@openshift-console/dynamic-plugin-sdk";
 
 const GraphPage = () => {
@@ -7,6 +7,9 @@ const GraphPage = () => {
         baseUrl: '',
         token: '',
     });
+
+    initKialiListeners();
+
     React.useEffect(() => {
         consoleFetch(properties.pluginConfig)
             .then((response) => {
@@ -25,7 +28,7 @@ const GraphPage = () => {
             .catch((e) => console.error(e));
     }, []);
 
-    const iFrameUrl = kialiUrl.baseUrl + '/console/graph/namespaces/?' + kioskUrl + '&' + kialiUrl.token;
+    const iFrameUrl = kialiUrl.baseUrl + '/console/graph/namespaces/?' + kioskUrl() + '&' + kialiUrl.token;
     return (
         <>
             <iframe

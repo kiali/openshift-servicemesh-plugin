@@ -7,6 +7,7 @@ import {
     TableColumn,
     TableData, useK8sWatchResource, useListPageFilter, VirtualizedTable
 } from "@openshift-console/dynamic-plugin-sdk";
+import {initKialiListeners} from "../properties";
 
 const resources = [
     {
@@ -96,6 +97,9 @@ const VirtualServiceTable = ({
 };
 
 const IstioConfigList = () => {
+
+    initKialiListeners();
+
     const watches = resources.map(({ group, version, kind }) => {
         const [data, loaded, error] = useK8sWatchResource<VirtualService[]>({
             groupVersionKind: { group, version, kind },
