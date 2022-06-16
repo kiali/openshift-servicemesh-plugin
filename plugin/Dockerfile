@@ -29,8 +29,8 @@ RUN printf "\necho 'OpenShift Service Mesh Plugin: Version=[${VERSION}], Commit=
 USER 1001
 LABEL com.redhat.component="openshift-service-mesh-plugin" \
       name="openshift-service-mesh-plugin" \
-      summary="OpenShift Service Mesh Kiali Plugin" \
-      description="Kiali plugin for Openshift Service Mesh" \
+      summary="OpenShift Service Mesh Plugin" \
+      description="The OpenShift Service Mesh Plugin adds Kiali functionality to the OpenShift Console." \
       version=$VERSION \
       commit=$COMMIT_HASH
 
