@@ -22,16 +22,16 @@ RUN yum -y upgrade xz-libs
 COPY --from=build /usr/src/app/dist /usr/share/nginx/html/
 RUN chown -R 1001:0 /usr/share/nginx/html/
 
-ARG VERSION
+ARG VERSION_PLUGIN
 ARG COMMIT_HASH
-RUN printf "\necho 'OpenShift Service Mesh Plugin: Version=[${VERSION}], Commit=[${COMMIT_HASH}]' >> /proc/1/fd/1" >> ${NGINX_CONTAINER_SCRIPTS_PATH}/common.sh
+RUN printf "\necho 'OpenShift Service Mesh Plugin: Version=[${VERSION_PLUGIN}], Commit=[${COMMIT_HASH}]' >> /proc/1/fd/1" >> ${NGINX_CONTAINER_SCRIPTS_PATH}/common.sh
 
 USER 1001
 LABEL com.redhat.component="openshift-service-mesh-plugin" \
       name="openshift-service-mesh-plugin" \
       summary="OpenShift Service Mesh Plugin" \
       description="The OpenShift Service Mesh Plugin adds Kiali functionality to the OpenShift Console." \
-      version=$VERSION \
+      version=$VERSION_PLUGIN \
       commit=$COMMIT_HASH
 
 # Run script uses standard ways to run the application
