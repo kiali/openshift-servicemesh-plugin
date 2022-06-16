@@ -161,8 +161,6 @@ spec:
                   value: "/etc/ansible/ansible.cfg"
                 - name: RELATED_IMAGE_ossmplugin_default
                   value: "registry-proxy.engineering.redhat.com/rh-osbs/openshift-service-mesh-ossmplugin-rhel8${KIALI_0_1_TAG}"
-                - name: RELATED_IMAGE_ossmplugin_v0_1
-                  value: "registry-proxy.engineering.redhat.com/rh-osbs/openshift-service-mesh-ossmplugin-rhel8${KIALI_0_1_TAG}"
                 ports:
                 - name: http-metrics
                   containerPort: 8080
