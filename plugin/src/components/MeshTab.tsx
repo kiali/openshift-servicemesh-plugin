@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {useHistory} from "react-router";
-import {initKialiListeners, kioskUrl, properties} from "../properties";
+import {initKialiListeners, kioskUrl, properties} from "../utils";
 import {consoleFetch} from "@openshift-console/dynamic-plugin-sdk";
 
 const kialiTypes = {

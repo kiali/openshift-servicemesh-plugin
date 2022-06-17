@@ -7,7 +7,7 @@ import {
     TableColumn,
     TableData, useK8sWatchResource, useListPageFilter, VirtualizedTable
 } from "@openshift-console/dynamic-plugin-sdk";
-import {initKialiListeners} from "../properties";
+import {initKialiListeners} from "../utils";
 
 const resources = [
     {
