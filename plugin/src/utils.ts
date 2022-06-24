@@ -46,14 +46,11 @@ export const initKialiListeners = () => {
             if (kialiAction.startsWith('/namespaces')) {
                 const webParamsIndex = kialiAction.indexOf('?');
                 const webParams = webParamsIndex > -1 ? kialiAction.substring(webParamsIndex) : '';
-                console.log('TODELETE webParams: '+ webParams);
 
                 const namespacesLength = '/namespaces/'.length;
                 const namespace = kialiAction.substring(namespacesLength,  kialiAction.indexOf('/', namespacesLength + 1));
-                console.log('TODELETE namespace: '+ namespace);
 
                 const detail = kialiAction.substring(namespacesLength + namespace.length, webParamsIndex > -1 ? webParamsIndex : kialiAction.length);
-                console.log('TODELETE detail: '+ detail);
 
                 let detailUrl = '';
                 if (detail.startsWith('/applications')) {
@@ -76,7 +73,6 @@ export const initKialiListeners = () => {
                     detailUrl += webParamsIndex > -1 ? webParams : '';
                 }
 
-                console.log('TODELETE detailUrl: ' + detailUrl);
                 history.push(detailUrl);
             }
         };
