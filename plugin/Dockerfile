@@ -7,17 +7,11 @@ ADD . /usr/src/app
 WORKDIR /usr/src/app
 RUN yarn install && yarn build
 
-FROM registry.access.redhat.com/ubi8/nginx-120
+FROM registry.access.redhat.com/ubi8/nginx-120:1-38.1655143357
 
 # Add application sources to a directory that the assemble script expects them
 # and set permissions so that the container runs without root access
 USER 0
-
-# Install upgrades security
-#   xz-libs RHSA-2022:4991
-#   urllib3 CVE-2020-26137 CVE-2021-33503  Not available in the ubi8
-#
-RUN yum -y upgrade xz-libs
 
 COPY --from=build /usr/src/app/dist /usr/share/nginx/html/
 RUN chown -R 1001:0 /usr/share/nginx/html/
