@@ -1,0 +1,67 @@
+name: Nightly Pipeline
+
+on:
+  schedule:
+  # Every night at 04:00 (UTC)
+  - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: Branch to release
+        required: true
+        default: main
+        type: string
+      quay_repository:
+        description: Quay repository
+        type: string
+        default: quay.io/kiali/servicemesh-plugin
+        required: true
+
+jobs:
+  initialize:
+    name: Initialize
+    runs-on: ubuntu-20.04
+    outputs:
+      quay_tag: ${{ steps.quay_tag.outputs.quay_tag }}
+    steps:
+    - name: Determine Quay tag
+      id: quay_tag
+      run: |
+        if [ -z ${{ github.event.inputs.quay_repository }} ];
+        then
+          QUAY_REPO="quay.io/kiali/servicemesh-plugin"
+        else
+          QUAY_REPO="${{ github.event.inputs.quay_repository }}"
+        fi
+        
+        QUAY_TAG="$QUAY_REPO:latest"
+
+        echo "::set-output name=quay_tag::$QUAY_TAG"
+
+    - name: Log information
+      run: |
+        echo "Release type: latest"
+
+        echo "Quay tag": ${{ steps.quay_tag.outputs.quay_tag }}
+  
+  push:
+    name: Push latest
+    runs-on: ubuntu-20.04
+    needs: [initialize]
+    env:
+      PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.quay_tag }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.inputs.release_branch || github.ref_name }}
+      
+    - name: Build image
+      run: |
+        make build-plugin-image
+
+    - name: Push image
+      run: |
+        docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
+        
+        make push-plugin-image        
