@@ -21,6 +21,7 @@
     "@openshift-console/dynamic-plugin-sdk": "0.0.3",
     "@openshift-console/dynamic-plugin-sdk-webpack": "0.0.6",
     "@patternfly/react-core": "4.162.2",
+    "@patternfly/react-table": "^4.90.3",
     "@types/node": "^16.11.6",
     "@types/react": "^17.0.34",
     "@types/react-helmet": "^6.1.4",

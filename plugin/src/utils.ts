@@ -33,6 +33,9 @@ export const initKialiListeners = () => {
                 return;
             }
             console.log('ServiceMesh Listener: ' + kialiAction);
+
+            const webParamsIndex = kialiAction.indexOf('?');
+
             // const osConsole = window.location.protocol + '//' + window.location.host;
             // Transform Kiali domain messages into Plugin info that helps to navigate
             if (kialiAction.startsWith('/graph/namespaces')) {
@@ -40,11 +43,21 @@ export const initKialiListeners = () => {
                 history.push(servicemeshUrl);
             }
             if (kialiAction.startsWith('/istio')) {
-                const istioConfigUrl = kialiAction.replace('istio', 'istioconfig');
+                let istioConfigUrl = '/k8s';
+                if (webParamsIndex > -1) {
+                    const nsParamIndex = kialiAction.indexOf('namespaces=', webParamsIndex);
+                    // It assumes that the 'namespaces=' will not be added alone as a param
+                    // Under the plugin it will be used for a single namespace
+                    // TODO additional validations should be added to this parsing logic
+                    const endNsParamIndex = kialiAction.indexOf('&', nsParamIndex);
+                    const namespace = kialiAction.substring(nsParamIndex + 'namespaces='.length, endNsParamIndex);
+                    istioConfigUrl += '/ns/' + namespace + '/istio';
+                } else {
+                    istioConfigUrl += '/all-namespaces/istio';
+                }
                 history.push(istioConfigUrl);
             }
             if (kialiAction.startsWith('/namespaces')) {
-                const webParamsIndex = kialiAction.indexOf('?');
                 const webParams = webParamsIndex > -1 ? kialiAction.substring(webParamsIndex) : '';
 
                 const namespacesLength = '/namespaces/'.length;
