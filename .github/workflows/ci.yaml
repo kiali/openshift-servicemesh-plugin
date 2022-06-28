@@ -1,0 +1,63 @@
+name: CI Pipeline
+
+on:
+  # Run on main and release branches
+  push:
+    branches: [main, "^v\\d+\\.\\d+$"]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '**/*.adoc'
+  pull_request:
+    branches: [main, "^v\\d+\\.\\d+$"]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '**/*.adoc'
+
+jobs:
+  initialize:
+    name: Initialize
+    runs-on: ubuntu-20.04
+    outputs:
+      target_branch: ${{ steps.target_branch.outputs.target_branch }}
+      build-branch: ${{ steps.build_branch.outputs.build_branch || steps.branch-pr.outputs.branch-pr }}
+    steps:
+    - name: Determine target branch
+      id: target_branch
+      run: |
+        echo "::set-output name=target_branch::${{ github.base_ref || github.ref_name }}"
+
+    # For the building branch, if we are running agains a PR, we need to indicate in the branch that is coming from a PR
+    - name: Determine build branch
+      id: build_branch
+      run: |
+        if [ -z ${{ github.base_ref }} ];
+        then
+          BUILD_BRANCH="${{ github.ref_name }}"
+        else
+          BUILD_BRANCH="${{ github.base_ref }}"
+        fi
+
+        echo "::set-output name=build_branch::$BUILD_BRANCH"
+
+    - name: Log information
+      run: |
+        echo "Target branch: ${{ steps.target_branch.outputs.target_branch }}"
+
+        echo "Build branch: ${{ steps.build_branch.outputs.build_branch }}"
+  
+  build_plugin:
+    name: Build plugin    
+    runs-on: ubuntu-20.04
+    needs: [initialize]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.build_branch }}
+    
+    - name: Build image
+      run: |
+        make -e CONTAINER_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile) build-plugin-image
+
