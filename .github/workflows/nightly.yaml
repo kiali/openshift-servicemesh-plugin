@@ -62,4 +62,6 @@ jobs:
 
     - name: Push image
       run: |
+        docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
+        
         make push-plugin-image        
