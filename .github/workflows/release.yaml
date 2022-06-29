@@ -1,4 +1,4 @@
-name: Release
+name: Release Pipeline
 
 on:
   schedule:
@@ -175,7 +175,7 @@ jobs:
 
   release:
     name: Release
-    if: ${{ needs.initialize.outputs.release_type != 'skip' && ((github.event_name == 'schedule' && github.repository == 'kiali/kiali') || github.event_name != 'schedule') }}
+    if: ${{ needs.initialize.outputs.release_type != 'skip' && ((github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule') }}
     runs-on: ubuntu-20.04
     needs: [initialize]
     env:  
