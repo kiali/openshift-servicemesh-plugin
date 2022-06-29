@@ -1,9 +1,6 @@
 name: Release Pipeline
 
 on:
-  schedule:
-  # Every Monday at 07:00 (UTC)
-  - cron: '00 7 * * MON'
   workflow_dispatch:
     inputs:
       release_type:
@@ -36,6 +33,7 @@ jobs:
       branch_version: ${{ steps.branch_version.outputs.branch_version }}
       next_version: ${{ steps.next_version.outputs.next_version }}
       quay_tag: ${{ steps.quay_tag.outputs.quay_tag }}
+      quay_repo: ${{ steps.quay_tag.outputs.quay_repo }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -154,9 +152,10 @@ jobs:
           QUAY_REPO="${{ github.event.inputs.quay_repository }}"
         fi
         
-        QUAY_TAG="$QUAY_REPO:$RELEASE_VERSION $QUAY_REPO:$BRANCH_VERSION"
+        QUAY_TAG="$QUAY_REPO:$RELEASE_VERSION"
         
         echo "::set-output name=quay_tag::$QUAY_TAG"
+        echo "::set-output name=quay_repo::$QUAY_REPO"
     
     - name: Cleanup
       run: rm bump.py minor.py
