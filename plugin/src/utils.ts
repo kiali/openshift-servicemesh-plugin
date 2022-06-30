@@ -1,4 +1,5 @@
 import { useHistory } from "react-router";
+import {refForKialiIstio} from "./k8s/resources";
 
 export const properties = {
     // This API is hardcoded but:
@@ -85,7 +86,14 @@ export const initKialiListeners = () => {
                     detailUrl = '/k8s/ns/' + namespace + detail + '/servicemesh';
                     detailUrl += webParamsIndex > -1 ? webParams : '';
                 }
-
+                if (detail.startsWith('/istio')) {
+                    detailUrl = refForKialiIstio(detail);
+                    if (detailUrl.length === 0) {
+                        detailUrl = '/k8s/all-namespaces/istio';
+                    } else {
+                        detailUrl = '/k8s/ns/' + namespace + detailUrl;
+                    }
+                }
                 history.push(detailUrl);
             }
         };
