@@ -9,75 +9,7 @@ import {
 import {initKialiListeners} from "../utils";
 import {useParams} from "react-router";
 import { sortable } from '@patternfly/react-table';
-
-const resources = [
-    {
-        group: 'extensions.istio.io',
-        version: 'v1alpha1',
-        kind: 'WasmPlugin',
-    },
-    {
-        group: 'networking.istio.io',
-        version: 'v1beta1',
-        kind: 'DestinationRule',
-    },
-    {
-        group: 'networking.istio.io',
-        version: 'v1beta1',
-        kind: 'Gateway',
-    },
-    {
-        group: 'networking.istio.io',
-        version: 'v1beta1',
-        kind: 'ProxyConfig',
-    },
-    {
-        group: 'networking.istio.io',
-        version: 'v1beta1',
-        kind: 'ServiceEntry',
-    },
-    {
-        group: 'networking.istio.io',
-        version: 'v1beta1',
-        kind: 'Sidecar',
-    },
-    {
-        group: 'networking.istio.io',
-        version: 'v1beta1',
-        kind: 'VirtualService',
-    },
-    {
-        group: 'networking.istio.io',
-        version: 'v1beta1',
-        kind: 'WorkloadEntry',
-    },
-    {
-        group: 'networking.istio.io',
-        version: 'v1beta1',
-        kind: 'WorkloadGroup',
-    },
-    {
-        group: 'security.istio.io',
-        version: 'v1beta1',
-        kind: 'AuthorizationPolicy',
-    },
-    {
-        group: 'security.istio.io',
-        version: 'v1beta1',
-        kind: 'PeerAuthentication',
-    },
-    {
-        group: 'security.istio.io',
-        version: 'v1beta1',
-        kind: 'RequestAuthentication',
-    },
-    {
-        group: 'telemetry.istio.io',
-        version: 'v1alpha1',
-        kind: 'Telemetry',
-    },
-
-];
+import {istioResources} from "../k8s/resources";
 
 const useIstioTableColumns = (namespace: string) => {
     const columns: TableColumn<K8sResourceCommon>[] = [
@@ -166,7 +98,7 @@ export const filters: RowFilter[] = [
 
             return input.selected.includes(obj.kind);
         },
-        items: resources.map(({ kind }) => ({ id: kind, title: kind })),
+        items: istioResources.map(({ kind }) => ({ id: kind, title: kind })),
     },
 ];
 
@@ -204,7 +136,7 @@ const IstioConfigList = () => {
 
     initKialiListeners();
 
-    const watches = resources.map(({ group, version, kind }) => {
+    const watches = istioResources.map(({ group, version, kind }) => {
         const [data, loaded, error] = useK8sWatchResource<K8sResourceCommon[]>({
             groupVersionKind: { group, version, kind },
             isList: true,
