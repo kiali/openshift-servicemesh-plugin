@@ -232,6 +232,12 @@ jobs:
 
         git config user.name 'kiali-bot'
 
+    - name: Create new version bundle (OLM)
+      run: |
+        ./operator/manifests/create-new-version.sh --new-version ${RELEASE_VERSION:1} --channels candidate
+
+        git add operator/manifests/
+
     - name: Create tag
       run: |
         git add Makefile
