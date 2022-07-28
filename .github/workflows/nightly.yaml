@@ -11,10 +11,15 @@ on:
         required: true
         default: main
         type: string
-      quay_repository:
-        description: Quay repository
+      plugin_quay_repository:
+        description: Plugin Quay repository
         type: string
         default: quay.io/kiali/servicemesh-plugin
+        required: true
+      operator_quay_repository:
+        description: Operator Quay repository
+        type: string
+        default: quay.io/kiali/ossmplugin-operator
         required: true
 
 jobs:
@@ -22,46 +27,68 @@ jobs:
     name: Initialize
     runs-on: ubuntu-20.04
     outputs:
-      quay_tag: ${{ steps.quay_tag.outputs.quay_tag }}
+      plugin_quay_tag: ${{ steps.quay_tag.outputs.plugin_quay_tag }}
+      operator_quay_tag: ${{ steps.quay_tag.outputs.operator_quay_tag }}
     steps:
     - name: Determine Quay tag
       id: quay_tag
       run: |
-        if [ -z ${{ github.event.inputs.quay_repository }} ];
+        if [ -z ${{ github.event.inputs.plugin_quay_repository }} ];
         then
-          QUAY_REPO="quay.io/kiali/servicemesh-plugin"
+          PLUGIN_QUAY_REPO="quay.io/kiali/servicemesh-plugin"
         else
-          QUAY_REPO="${{ github.event.inputs.quay_repository }}"
+          PLUGIN_QUAY_REPO="${{ github.event.inputs.plugin_quay_repository }}"
+        fi
+
+        if [ -z ${{ github.event.inputs.operator_quay_repository }} ];
+        then
+          OPERATOR_QUAY_REPO="quay.io/kiali/ossmplugin-operator"
+        else
+          OPERATOR_QUAY_REPO="${{ github.event.inputs.operator_quay_repository }}"
         fi
         
-        QUAY_TAG="$QUAY_REPO:latest"
+        PLUGIN_QUAY_TAG="$PLUGIN_QUAY_REPO:latest"
+        OPERATOR_QUAY_TAG="$OPERATOR_QUAY_REPO:latest"
 
-        echo "::set-output name=quay_tag::$QUAY_TAG"
+        echo "::set-output name=plugin_quay_tag::$PLUGIN_QUAY_TAG"
+        echo "::set-output name=operator_quay_tag::$OPERATOR_QUAY_TAG"
 
     - name: Log information
       run: |
         echo "Release type: latest"
 
-        echo "Quay tag": ${{ steps.quay_tag.outputs.quay_tag }}
+        echo "Plugin Quay tag": ${{ steps.quay_tag.outputs.plugin_quay_tag }}
+        echo "Operator Quay tag": ${{ steps.quay_tag.outputs.operator_quay_tag }}
   
   push:
     name: Push latest
     runs-on: ubuntu-20.04
     needs: [initialize]
     env:
-      PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.quay_tag }}
+      PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
+      OPERATOR_QUAY_TAG: ${{ needs.initialize.outputs.operator_quay_tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
         ref: ${{ github.event.inputs.release_branch || github.ref_name }}
       
-    - name: Build image
+    - name: Build plugin image
       run: |
         make build-plugin-image
 
-    - name: Push image
+    - name: Push plugin image
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
         
-        make push-plugin-image        
+        make push-plugin-image
+
+    - name: Build operator image
+      run: |
+        make build-operator
+
+    - name: Push operator image
+      run: |
+        docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
+        
+        make push-operator           
