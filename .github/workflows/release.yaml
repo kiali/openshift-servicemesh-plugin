@@ -234,6 +234,8 @@ jobs:
 
     - name: Create new version bundle (OLM)
       run: |
+        make get-operator-sdk
+
         ./operator/manifests/create-new-version.sh --new-version ${RELEASE_VERSION:1} --channels candidate
 
         git add operator/manifests/
