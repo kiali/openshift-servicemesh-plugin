@@ -83,12 +83,8 @@ jobs:
         
         make push-plugin-image
 
-    - name: Build operator image
-      run: |
-        make build-operator
-
-    - name: Push operator image
+    - name: Build and push operator image
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
         
-        make push-operator           
+        make build-push-operator-multi-arch

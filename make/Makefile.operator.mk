@@ -236,7 +236,7 @@ gen-crd-doc:
 	  fi \
 	fi
 
-## build-push-multi-arch: Pushes the OSSM Plugin Operator multi-arch image to quay.io.
-build-push-multi-arch: .ensure-buildx-builder
+## build-push-operator-multi-arch: Pushes the OSSM Plugin Operator multi-arch image to quay.io.
+build-push-operator-multi-arch: .ensure-buildx-builder
 	@echo Pushing OSSM Plugin Operator multi-arch image to ${OPERATOR_QUAY_TAG} using docker buildx
 	docker buildx build --build-arg OPERATOR_BASE_IMAGE_REPO=${OPERATOR_BASE_IMAGE_REPO} --build-arg OPERATOR_BASE_IMAGE_VERSION=${OPERATOR_BASE_IMAGE_VERSION} --push --pull --no-cache --builder=ossmplugin-builder $(foreach arch,${TARGET_ARCHS},--platform=linux/${arch}) $(foreach tag,${OPERATOR_QUAY_TAG},--tag=${tag}) -f ${OPERATOR_DIR}/build/Dockerfile ${OPERATOR_DIR}
