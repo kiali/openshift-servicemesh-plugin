@@ -62,91 +62,108 @@
     }
   },
   {
-    "type": "console.page/resource/tab",
+    "type": "console.tab/horizontalNav",
     "properties": {
       "model": {
-        "version": "v1",
         "group": "project.openshift.io",
-        "kind": "Project"
+        "kind": "Project",
+        "version": "v1"
       },
-      "component": { "$codeRef": "MeshTab" },
-      "name": "Service Mesh",
-      "href": "servicemesh"
+      "page": {
+        "name": "Service Mesh",
+        "href": "servicemesh"
+      },
+      "component": { "$codeRef": "MeshTab" }
     }
   },
   {
-    "type": "console.page/resource/tab",
+    "type": "console.tab/horizontalNav",
     "properties": {
       "model": {
-        "version": "v1",
         "group": "",
-        "kind": "Pod"
+        "kind": "Pod",
+        "version": "v1"
       },
-      "component": { "$codeRef": "MeshTab" },
-      "name": "Service Mesh",
-      "href": "servicemesh"
+      "page": {
+        "name": "Service Mesh",
+        "href": "servicemesh"
+      },
+      "component": { "$codeRef": "MeshTab" }
     }
   },
   {
-    "type": "console.page/resource/tab",
+    "type": "console.tab/horizontalNav",
     "properties": {
       "model": {
         "group": "apps",
-        "kind": "Deployment"
+        "kind": "Deployment",
+        "version": "v1"
       },
-      "component": { "$codeRef": "MeshTab" },
-      "name": "Service Mesh",
-      "href": "servicemesh"
+      "page": {
+        "name": "Service Mesh",
+        "href": "servicemesh"
+      },
+      "component": { "$codeRef": "MeshTab" }
     }
   },
   {
-    "type": "console.page/resource/tab",
+    "type": "console.tab/horizontalNav",
     "properties": {
       "model": {
         "group": "apps.openshift.io",
-        "kind": "DeploymentConfig"
+        "kind": "DeploymentConfig",
+        "version": "v1"
       },
-      "component": { "$codeRef": "MeshTab" },
-      "name": "Service Mesh",
-      "href": "servicemesh"
+      "page": {
+        "name": "Service Mesh",
+        "href": "servicemesh"
+      },
+      "component": { "$codeRef": "MeshTab" }
     }
   },
   {
-    "type": "console.page/resource/tab",
+    "type": "console.tab/horizontalNav",
     "properties": {
       "model": {
         "group": "apps",
-        "kind": "StatefulSet"
+        "kind": "StatefulSet",
+        "version": "v1"
       },
-      "component": { "$codeRef": "MeshTab" },
-      "name": "Service Mesh",
-      "href": "servicemesh"
+      "page": {
+        "name": "Service Mesh",
+        "href": "servicemesh"
+      },
+      "component": { "$codeRef": "MeshTab" }
     }
   },
   {
-    "type": "console.page/resource/tab",
+    "type": "console.tab/horizontalNav",
     "properties": {
       "model": {
-        "version": "v1",
         "group": "",
-        "kind": "Service"
+        "kind": "Service",
+        "version": "v1"
       },
-      "component": { "$codeRef": "MeshTab" },
-      "name": "Service Mesh",
-      "href": "servicemesh"
+      "page": {
+        "name": "Service Mesh",
+        "href": "servicemesh"
+      },
+      "component": { "$codeRef": "MeshTab" }
     }
   },
   {
-    "type": "console.page/resource/tab",
+    "type": "console.tab/horizontalNav",
     "properties": {
       "model": {
-        "version": "v1beta",
         "group": "networking.istio.io",
-        "kind": "VirtualService"
+        "kind": "VirtualService",
+        "version": "v1beta1"
       },
-      "component": { "$codeRef": "MeshTab" },
-      "name": "Service Mesh",
-      "href": "servicemesh"
+      "page": {
+        "name": "Service Mesh",
+        "href": "servicemesh"
+      },
+      "component": { "$codeRef": "MeshTab" }
     }
   }
 ]
