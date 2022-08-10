@@ -47,7 +47,7 @@
     "type": "console.page/route",
     "properties": {
       "exact": true,
-      "path": ["/k8s/ns/:ns/istio", "/k8s/all-namespaces/istio"],
+      "path": ["/servicemeshconfig"],
       "component": { "$codeRef": "IstioConfigList" }
     }
   },
@@ -56,7 +56,7 @@
     "properties": {
       "id": "istioconfig",
       "name": "Istio Config",
-      "href": "/k8s/all-namespaces/istio",
+      "href": "/servicemeshconfig",
       "perspective": "admin",
       "section": "servicemesh"
     }
