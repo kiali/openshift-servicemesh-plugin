@@ -10,6 +10,8 @@ These are the things you need before you can start working with the OpenShift Se
 3. `oc` client available in the path
 4. `podman` client available in the path
 
+This plugin is based on OpenShift Console [Dynamic plugin-ins](https://docs.openshift.com/container-platform/4.10/web_console/dynamic-plug-ins.html) framework.
+
 ## Quickly Deploy the Service Mesh Plugin
 
 To very quickly get the latest plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
