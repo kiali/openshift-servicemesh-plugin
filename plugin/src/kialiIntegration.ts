@@ -1,5 +1,6 @@
 import { useHistory } from "react-router";
 import {refForKialiIstio} from "./k8s/resources";
+import {consoleFetch} from "@openshift-console/dynamic-plugin-sdk";
 
 export const properties = {
     // This API is hardcoded but:
@@ -13,6 +14,49 @@ export type Config = {
     kialiUrl: string;
 }
 
+export type KialiUrl = {
+    baseUrl: string;
+    token: string;
+}
+
+export const getKialiUrl = async function(): Promise<KialiUrl> {
+    const kialiToken = 'oauth_token=';
+    const kialiUrl = {
+        baseUrl: '',
+        token: '',
+    };
+    let headerOauthToken = '';
+
+    return await new Promise((resolve, reject) => {
+        consoleFetch(properties.pluginConfig)
+            .then((response) => {
+                headerOauthToken = response.headers.get('oauth_token');
+                return response.json();
+            })
+            .then((json) => {
+                kialiUrl.baseUrl = json.kialiUrl;
+                // Kiali uses OpenShift Authentication on these scenarios
+                // The url used in iFrames requires a token to propagate this authentication
+                // This token is already present in the browser once is logged, but we will use the plugin nginx
+                // response to re-use the same token
+                //
+                // This requires the entry:
+                //      ...
+                //      add_header oauth_token "$http_Authorization";
+                //      ...
+                // in the nginx configuration managed by the operator.
+                kialiUrl.token = kialiToken  + (
+                    headerOauthToken && headerOauthToken.startsWith('Bearer ') ?
+                        headerOauthToken.substring('Bearer '.length) : ''
+                );
+                resolve(kialiUrl);
+            })
+            .catch((e) => reject(e));
+    });
+}
+
+// Kiali expects a "kiosk" web parameter to render the "embedded" mode of the pages
+// When the "kiosk" parameter is populated with the parent "host", then Kiali enables iframe "parent-child" communication
 export const kioskUrl = () => {
     let kiosk = 'kiosk=' +  window.location.protocol + '//' + window.location.host;
     // We assume that the url web params are in a format that can be added to a Kiali URL passed to the iframe
@@ -22,8 +66,12 @@ export const kioskUrl = () => {
     return kiosk;
 }
 
+// Global scope variable to hold the kiali listener
 let kialiListener = undefined;
 
+// This listener is responsible to receive the Kiali event that is sent inside the iframe page to the plugin
+// When users "clicks" a link in Kiali, there is no navigation in the Kiali side; and event it's send to the parent
+// And the "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
 export const initKialiListeners = () => {
     if (!kialiListener) {
         const history = useHistory();

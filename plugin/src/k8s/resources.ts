@@ -1,5 +1,6 @@
 import { K8sResourceCommon } from '@openshift-console/dynamic-plugin-sdk';
 
+// List of Istio resources that the OpenShift Console watches for building the Istio Config page in a "native" way
 export const istioResources = [
   {
     group: 'extensions.istio.io',
@@ -90,7 +91,6 @@ export const kialiIstioResources = {
   '/istio/telemetries':             '/telemetry.istio.io~v1alpha1~Telemetry',
 };
 
-// TODO: Use utility when available in the SDK.
 export const referenceFor = (group: string, version: string, kind: string) =>
   `${group}~${version}~${kind}`;
 
@@ -104,7 +104,11 @@ export const referenceForObj = (obj: K8sResourceCommon) => {
   return referenceFor(group, version, kind);
 };
 
-// This helper would translate Istio Kiali formast
+export const referenceForRsc = (obj: K8sResourceCommon) => {
+  return referenceForObj(obj) + '-' + obj.metadata.namespace + '-' + obj.metadata.name + '-' + obj.metadata.resourceVersion;
+};
+
+// This helper would translate Istio Kiali format
 // i.e. /istio/destinationrules/reviews
 // Into the regular format used for resources in OpenShift
 // i.e. /networking.istio.io~v1beta1~DestinationRule/reviews

@@ -17,6 +17,9 @@
     "ts-node": "ts-node -O '{\"module\":\"commonjs\"}'",
     "lint": "eslint ./src --fix"
   },
+  "dependencies": {
+    "axios": "0.27.2"
+  },
   "devDependencies": {
     "@openshift-console/dynamic-plugin-sdk": "0.0.13",
     "@openshift-console/dynamic-plugin-sdk-webpack": "0.0.8",
