@@ -85,6 +85,15 @@ spec:
               kiali:
                 type: object
                 properties:
+                  serviceName:
+                    description: "The internal Kiali service that the OS Console will use to proxy API calls. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route."
+                    type: string
+                  serviceNamespace:
+                    description: "The namespace where the Kiali service is deployed. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route. It will assume that the OpenShift Route and the Kiali service are deployed in the same namespace."
+                    type: string
+                  servicePort:
+                    description: "The internal port used by the Kiali service for the API. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route."
+                    type: integer
                   url:
                     description: "The main Kiali endpoint URL that the OSSM Plugin will use to communicate with Kiali. If empty, an attempt will be made to auto-discover it. If Kiali is installed in the same namespace as the CR, it will take precedence over any other Kiali installation. Otherwise, the first Kiali route found in the cluster will be used."
                     type: string

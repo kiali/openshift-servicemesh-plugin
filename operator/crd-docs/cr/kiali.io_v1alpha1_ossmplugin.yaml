@@ -17,4 +17,7 @@ spec:
     namespace: ""
 
   kiali:
+    serviceName: ""
+    serviceNamespace: ""
+    servicePort: 0
     url: ""

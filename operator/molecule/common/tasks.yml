@@ -48,3 +48,10 @@
 - name: Dump OSSMPlugin ConfigMap
   debug:
     msg: "{{ ossmplugin_configmap }}"
+
+- name: Get OSSMPlugin ConsolePlugin
+  set_fact:
+    ossmplugin_consoleplugin: "{{ lookup('kubernetes.core.k8s', api_version='console.openshift.io/v1alpha1', kind='ConsolePlugin', namespace=ossmplugin.install_namespace, resource_name='servicemesh') }}"
+- name: Dump OSSMPlugin ConsolePlugin
+  debug:
+    msg: "{{ ossmplugin_consoleplugin }}"
