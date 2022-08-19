@@ -19,6 +19,23 @@ export type KialiUrl = {
     token: string;
 }
 
+// The ConsolePlugin resource defines a proxy to the internal Kiali Service.
+// This is the main mechanism provided by the OpenShift Console backend to proxy internal requests.
+// This "proxy" is defined under the same domain of the browser and it's mapped to:
+// https://github.com/openshift/enhancements/blob/master/enhancements/console/dynamic-plugins.md#delivering-plugins
+export const CONSOLE_PROXY = '/api/proxy/plugin/servicemesh/kiali';
+
+// Direct requests from the Plugin to Kiali API should use the KialiProxy host.
+// This can be relative to the same domain in production environments but for development it requires a different config.
+export const getKialiProxy = (): string => {
+    if (process.env.NODE_ENV === 'development') {
+        return process.env.KIALI_API_HOST;
+    }
+    return CONSOLE_PROXY;
+}
+
+// The iframes used by the plugin require a public Kiali Url.
+// This url is in a different domain from the OpenShift Console and it would require a token propagation.
 export const getKialiUrl = async function(): Promise<KialiUrl> {
     const kialiToken = 'oauth_token=';
     const kialiUrl = {

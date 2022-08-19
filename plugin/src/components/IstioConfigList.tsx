@@ -6,12 +6,12 @@ import {
     TableColumn,
     TableData, useActiveColumns, useK8sWatchResource, useListPageFilter, VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { getKialiUrl, initKialiListeners } from '../kialiIntegration';
+import {getKialiProxy, initKialiListeners} from '../kialiIntegration';
 import { useParams } from 'react-router';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceForRsc } from '../k8s/resources';
 import * as API from '../k8s/api';
-import {getValidation, IstioConfigsMap} from '../types/IstioConfigList';
+import { getValidation, IstioConfigsMap } from '../types/IstioConfigList';
 
 const useIstioTableColumns = (namespace: string) => {
     const columns: TableColumn<K8sResourceCommon>[] = [
@@ -186,16 +186,17 @@ const IstioConfigList = () => {
             resourceVersion.some(v => !prevResourceVersion.current.includes(v));
 
         if (loaded && newUpdates) {
-            getKialiUrl()
-                .then(kialiUrl => {
-                    API.getAllIstioConfigs(kialiUrl.baseUrl, kialiUrl.token)
-                        .then(response => response.data)
-                        .then((kialiValidations) => {
-                            // Update the list of resources present when last fech of Kiali Validations
-                            // Hooks need to maintain this "when to update" logic inside to avoid unnecessary fetches and renders
-                            prevResourceVersion.current = Array.from(resourceVersion);
-                            setKialiValidations(kialiValidations);
-                        });
+            // The OSSM Plugin is in the same domain of the OpenShift Console,
+            // then direct requests to the Kiali API should use the KialiProxy url.
+            // This proxy url is different from the url used for iframes that have a different domain.
+            const kialiProxy = getKialiProxy();
+            API.getAllIstioConfigs(kialiProxy)
+                .then(response => response.data)
+                .then((kialiValidations) => {
+                    // Update the list of resources present when last fech of Kiali Validations
+                    // Hooks need to maintain this "when to update" logic inside to avoid unnecessary fetches and renders
+                    prevResourceVersion.current = Array.from(resourceVersion);
+                    setKialiValidations(kialiValidations);
                 })
                 .catch(error => console.error('Could not connect to Kiali API', error));
         }

@@ -21,10 +21,10 @@ export enum HTTP_VERBS {
     PUT = 'put'
 }
 
-const newRequest = <P>(method: HTTP_VERBS, url: string, token: string, queryParams: any, data: any) =>
+const newRequest = <P>(method: HTTP_VERBS, url: string, queryParams: any, data: any) =>
   axios.request<P>({
     method: method,
-    url: url + '?' + token,
+    url: url,
     data: data,
     headers: getHeadersWithMethod(method),
     params: queryParams
@@ -32,10 +32,9 @@ const newRequest = <P>(method: HTTP_VERBS, url: string, token: string, queryPara
 
 export const getAllIstioConfigs = (
     kialiUrl: string,
-    accessToken: string,
 ): Promise<Response<IstioConfigsMap>> => {
   const params: any = {};
 
   params.validate = true;
-  return newRequest<IstioConfigsMap>(HTTP_VERBS.GET, kialiUrl + ALL_ISTIO_CONFIGS, accessToken, params, {});
+  return newRequest<IstioConfigsMap>(HTTP_VERBS.GET, kialiUrl + ALL_ISTIO_CONFIGS, params, {});
 };
