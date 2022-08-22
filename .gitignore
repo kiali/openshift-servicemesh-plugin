@@ -7,6 +7,7 @@ plugin/.vscode
 
 # testing
 plugin/coverage
+plugin/cypress/videos
 
 # production
 plugin/dist
@@ -21,4 +22,5 @@ plugin/.env.production.local
 plugin/npm-debug.log*
 plugin/yarn-debug.log*
 plugin/yarn-error.log*
+
 
