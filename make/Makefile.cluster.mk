@@ -29,8 +29,8 @@
 	@for i in {1..5}; do ${OC} get sa default -n ${ALL_IMAGES_NAMESPACE} &> /dev/null && break || echo -n "." && sleep 1; done; echo
 
 .prepare-operator-pull-secret: .prepare-cluster
-	@# base64 encode a pull secret (using the 'default' sa secret) that can be used to pull the bundle index image from the internal image registry
-	@$(eval OPERATOR_IMAGE_PULL_SECRET_JSON = $(shell ${OC} registry login --registry="$(shell ${OC} registry info --internal)" --namespace=${ALL_IMAGES_NAMESPACE} -z default --to=- | base64 -w0))
+	@# base64 encode a pull secret (using the logged in user token) that can be used to pull the bundle index image from the internal image registry
+	@$(eval OPERATOR_IMAGE_PULL_SECRET_JSON = $(shell ${OC} registry login --registry="$(shell ${OC} registry info --internal)" --namespace=${ALL_IMAGES_NAMESPACE} --to=- | base64 -w0))
 	@$(eval OPERATOR_IMAGE_PULL_SECRET_NAME ?= ossmplugin-operator-pull-secret)
 
 .create-operator-pull-secret: .prepare-operator-pull-secret
