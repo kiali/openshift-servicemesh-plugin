@@ -2,7 +2,13 @@
 
 ## Requirements
 
-The OpenShift Service Mesh Plugin requires OpenShift 4.10+ with Service Mesh and Kiali installed. Please refer to their documentation for details on how to install those components.
+The OpenShift Service Mesh Plugin requires OpenShift v4.10+ with one of:
+
+- Istio v1.14 with Kiali v1.56
+- Istio v1.15+ with a compatible version of Kiali
+- OpenShift Service Mesh (OSSM) v2.3+
+
+Please refer to the relevant documentation for details on how to install those components.
 
 ## Installing the Operator
 
@@ -10,7 +16,7 @@ Before you can install the plugin itself, you first must install its operator vi
 
 ### Installing Operator via OpenShift Console
 
-The easiest way to install the operator is through the OpenShift Console UI. Log into the console as an Administrator (i.e. a user with kubeadmin priviledges) and select `Operators > OperatorHub` from the left-hand menu. From there, find the _OpenShift Service Mesh Plugin_ operator in the list of available operators (look for the Kiali logo; it is published by the Kiali project team).
+The easiest way to install the operator is through the OpenShift Console UI. Log into the console as an Administrator (i.e. a user with kubeadmin privileges) and select `Operators > OperatorHub` from the left-hand menu. From there, find the _OpenShift Service Mesh Plugin_ operator in the list of available operators (look for the Kiali logo; it is published by the Kiali project team).
 
 ![Card](01-hub-card.png)
 
@@ -28,7 +34,7 @@ Once complete the operator will be installed within seconds.
 
 ### Installing Operator via "oc" CLI
 
-If you want to install the operator via the CLI, you first need to use `oc` to log into the cluster as a user that has kubeadmin priviledges. Once logged in, create a Subscription resource - this will install the operator:
+If you want to install the operator via the CLI, you first need to use `oc` to log into the cluster as a user that has kubeadmin privileges. Once logged in, create a Subscription resource - this will install the operator:
 
 ```bash
 cat <<EOM | oc apply -f -
@@ -47,7 +53,7 @@ EOM
 
 ### Operator Installation Details
 
-After the operator is installed, you can look at its details in the OpenShift Console UI. Within the OpenShift Console UI, select `Operators > Installed Operators` from the left-hand menu. From there, you will see the list of operators installed which should now include the _OpenShift Service Mesh Plugin_ operator.
+After the operator is installed, you can look at its details in the OpenShift Console UI. Within the OpenShift Console UI, select `Operators > Installed Operators` from the left-hand menu. From there, you will see that the list of installed operators should now include the _OpenShift Service Mesh Plugin_ operator.
 
 ![Installed Operator](05-ui-installed-ops.png)
 
@@ -57,7 +63,7 @@ Click the operator list entry to view the operator details page.
 
 ## Installing the Plugin
 
-With the operator installed and running, you tell it to install the OpenShift Service Mesh Plugin. Again, you can do this via the Console or through the "oc" CLI.
+With the operator installed and running you can install the OpenShift Service Mesh Plugin. Again, you can do this via the Console or through the "oc" CLI.
 
 ### Installing Plugin via OpenShift Console
 
@@ -97,7 +103,7 @@ After the plugin is installed, you can see the "OSSMPlugin" resource that was cr
 
 You can uninstall the OpenShift Service Mesh Plugin and its operator either through the OpenShift Console UI or the "oc" CLI.
 
-:warning: Regardless of which mechanism you use to perform the uninstall, it is very important to remember that you must uninstall the plugin first (i.e. uninstall the OSSMPlugin CR first) before uninstalling the operator. If you uninstall the operator first before ensuring the OSSMPlugin CR is deleted then you may have difficulty removing that CR and its namespace. If this occurs then you must manually remove the finalizer on the CR in order to delete it and the namespace where it is found. You can do this via: `oc patch ossmplugins <CR name> -n <CR namespace> -p '{"metadata":{"finalizers": []}}' --type=merge `
+:warning: Regardless of which mechanism you use to perform the uninstall, it is very important to first uninstall the plugin (i.e. uninstall the OSSMPlugin CR first) and then uninstall the operator. If you uninstall the operator before ensuring the OSSMPlugin CR is deleted then you may have difficulty removing that CR and its namespace. If this occurs then you must manually remove the finalizer on the CR in order to delete it and its namespace. You can do this via: `oc patch ossmplugins <CR name> -n <CR namespace> -p '{"metadata":{"finalizers": []}}' --type=merge `
 
 ### Uninstalling the Plugin
 
@@ -105,7 +111,7 @@ You first must uninstall the plugin. Make sure this is complete before uninstall
 
 #### Uninstalling Plugin via OpenShift Console
 
-Remove the OSSMPlugin CR by navigating to the operator details page in the OpenShift Console UI. From the operator details page, select the _OpenShift Service Mesh Plugin_ tab and then select the Delete option in the kabob menu.
+Remove the OSSMPlugin CR by navigating to the operator details page in the OpenShift Console UI. From the operator details page, select the _OpenShift Service Mesh Plugin_ tab and then select the Delete option in the kebab menu.
 
 ![Uninstall Plugin](09-ui-uninstall-cr.png)
 
