@@ -86,11 +86,11 @@ get-operator-sdk: .ensure-operator-sdk-exists
 .wait-for-crd:
 	@echo -n "Waiting for the CRD to be established"
 	@i=0 ;\
-	until [ $${i} -eq 30 ] || ${OC} get crd ossmplugins.kiali.io &> /dev/null; do \
+	until [ $${i} -eq 360 ] || ${OC} get crd ossmplugins.kiali.io &> /dev/null; do \
 	    echo -n '.' ; sleep 1 ; (( i++ )) ;\
 	done ;\
 	echo ;\
-	[ $${i} -lt 30 ] || (echo "The CRD does not exist. You should install the operator." && exit 1)
+	[ $${i} -lt 360 ] || (echo "The CRD does not exist. You should install the operator." && exit 1)
 	${OC} wait --for condition=established --timeout=60s crd ossmplugins.kiali.io
 
 ## get-ansible-operator: Downloads the Ansible Operator binary if it is not already in PATH.
