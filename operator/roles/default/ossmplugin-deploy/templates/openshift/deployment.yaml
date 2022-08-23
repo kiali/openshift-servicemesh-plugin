@@ -31,14 +31,14 @@ spec:
         - containerPort: 9443
           protocol: TCP
         securityContext:
-￼         allowPrivilegeEscalation: false
-￼         privileged: false
-￼         runAsNonRoot: true
-￼         seccompProfile:
-￼           type: RuntimeDefault
-￼         capabilities:
-￼           drop:
-￼           - ALL
+          allowPrivilegeEscalation: false
+          privileged: false
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            drop:
+            - ALL
         volumeMounts:
         - name: ossmplugin-cert-secret
           readOnly: true
