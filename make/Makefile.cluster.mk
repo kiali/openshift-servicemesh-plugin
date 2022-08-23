@@ -46,8 +46,8 @@
 	${OC} delete --ignore-not-found=true secret ${OPERATOR_IMAGE_PULL_SECRET_NAME} --namespace=${OPERATOR_NAMESPACE}
 
 .prepare-plugin-pull-secret: .prepare-cluster
-	@# base64 encode a pull secret (using the 'default' sa secret) that can be used to pull the plugin image from the internal image registry
-	@$(eval PLUGIN_IMAGE_PULL_SECRET_JSON = $(shell ${OC} registry login --registry="$(shell ${OC} registry info --internal)" --namespace=${ALL_IMAGES_NAMESPACE} -z default --to=- | base64 -w0))
+	@# base64 encode a pull secret (using the logged in user token) that can be used to pull the plugin image from the internal image registry
+	@$(eval PLUGIN_IMAGE_PULL_SECRET_JSON = $(shell ${OC} registry login --registry="$(shell ${OC} registry info --internal)" --namespace=${ALL_IMAGES_NAMESPACE} --to=- | base64 -w0))
 	@$(eval PLUGIN_IMAGE_PULL_SECRET_NAME ?= ossmplugin-plugin-pull-secret)
 
 .create-plugin-pull-secret: .prepare-plugin-pull-secret
