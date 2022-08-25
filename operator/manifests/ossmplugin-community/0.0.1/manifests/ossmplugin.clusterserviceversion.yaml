@@ -119,7 +119,7 @@ spec:
               containers:
               - name: operator
                 image: quay.io/kiali/ossmplugin-operator:v0.0.1
-                imagePullPolicy: "Always"
+                imagePullPolicy: IfNotPresent
                 args:
                 - "--zap-log-level=info"
                 - "--leader-election-id=ossmplugin-operator"
