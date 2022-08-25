@@ -44,7 +44,7 @@ build-olm-bundle: .prepare-cluster .determine-olm-bundle-version
 	@echo Will bundle version [${BUNDLE_VERSION}]
 	@mkdir -p ${OPERATOR_OUTDIR}/bundle
 	cp -R ${OPERATOR_DIR}/manifests/template/* ${OPERATOR_OUTDIR}/bundle
-	${OPERATOR_DIR}/manifests/generate-csv.sh -ov "NONE" -nv "${BUNDLE_VERSION}" -opin "${CLUSTER_OPERATOR_INTERNAL_NAME}" -opiv "${OPERATOR_CONTAINER_VERSION}" > ${OPERATOR_OUTDIR}/bundle/manifests/ossmplugin.clusterserviceversion.yaml
+	${OPERATOR_DIR}/manifests/generate-csv.sh -ov "NONE" -nv "${BUNDLE_VERSION}" -opin "${CLUSTER_OPERATOR_INTERNAL_NAME}" -opiv "${OPERATOR_CONTAINER_VERSION}" -ipp "Always" > ${OPERATOR_OUTDIR}/bundle/manifests/ossmplugin.clusterserviceversion.yaml
 	${OPERATOR_DIR}/manifests/generate-annotations.sh -c candidate > ${OPERATOR_OUTDIR}/bundle/metadata/annotations.yaml
 	${OPERATOR_DIR}/manifests/generate-dockerfile.sh -c candidate > ${OPERATOR_OUTDIR}/bundle/bundle.Dockerfile
 	${DORP} build -f ${OPERATOR_OUTDIR}/bundle/bundle.Dockerfile -t ${CLUSTER_REPO}/${OLM_BUNDLE_NAME}:${BUNDLE_VERSION}

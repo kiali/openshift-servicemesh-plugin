@@ -125,7 +125,7 @@ spec:
               containers:
               - name: operator
                 image: registry-proxy.engineering.redhat.com/rh-osbs/openshift-service-mesh-ossmplugin-rhel8-operator${OSSMPLUGIN_OPERATOR_TAG}
-                imagePullPolicy: "Always"
+                imagePullPolicy: IfNotPresent
                 args:
                 - "--zap-log-level=info"
                 - "--leader-election-id=ossmplugin-operator"

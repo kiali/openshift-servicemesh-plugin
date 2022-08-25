@@ -7,6 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
+    -ipp|--image-pull-policy)       IMAGE_PULL_POLICY="$2"      ; shift;shift ;;
     -nv|--new-version)              NEW_VERSION="$2"            ; shift;shift ;;
     -opin|--operator-image-name)    OPERATOR_IMAGE_NAME="$2"    ; shift;shift ;;
     -opiv|--operator-image-version) OPERATOR_IMAGE_VERSION="$2" ; shift;shift ;;
@@ -18,6 +19,9 @@ $0 [option...]
 Using the settings passed to this script, this will print to stdout a new CSV generated from the template CSV.
 
 Valid options:
+  -ipp|--image-pull-policy <policy>
+      The operator container image pull policy. Set to "Always" if you are debugging.
+      Default: IfNotPresent
   -nv|--new-version <version string>
       The new version of the CSV.
   -opin|--operator-image-name <repo/org/name>
@@ -78,6 +82,7 @@ fi
 export CSV_NEW_VERSION="${NEW_VERSION}"
 export CSV_PREVIOUS_VERSION="${OLD_VERSION}"
 export CSV_REPLACES_COMMENT
+export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-IfNotPresent}"
 export OPERATOR_IMAGE_NAME
 export OPERATOR_IMAGE_VERSION
 export CREATED_AT="$(date --utc +'%FT%TZ')"

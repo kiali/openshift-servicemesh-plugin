@@ -119,7 +119,7 @@ spec:
               containers:
               - name: operator
                 image: ${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_VERSION}
-                imagePullPolicy: "Always"
+                imagePullPolicy: ${IMAGE_PULL_POLICY}
                 args:
                 - "--zap-log-level=info"
                 - "--leader-election-id=ossmplugin-operator"
