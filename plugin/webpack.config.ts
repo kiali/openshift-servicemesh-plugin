@@ -1,6 +1,6 @@
 /* eslint-env node */
 
-import { Configuration as WebpackConfiguration } from "webpack";
+import { Configuration as WebpackConfiguration, DefinePlugin as DefinePlugin } from "webpack";
 import { Configuration as WebpackDevServerConfiguration } from "webpack-dev-server";
 import * as path from "path";
 import { ConsoleRemotePlugin } from "@openshift-console/dynamic-plugin-sdk-webpack";
@@ -69,7 +69,13 @@ const config: Configuration = {
       writeToDisk: true,
     },
   },
-  plugins: [new ConsoleRemotePlugin()],
+  plugins: [
+      new ConsoleRemotePlugin(),
+      new DefinePlugin({
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+        'process.env.KIALI_API_HOST': JSON.stringify(process.env.KIALI_API_HOST),
+      }),
+  ],
   devtool: "source-map",
   optimization: {
     chunkIds: "named",

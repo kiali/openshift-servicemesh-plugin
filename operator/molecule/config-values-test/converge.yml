@@ -16,6 +16,18 @@
     debug:
       msg: "{{ current_ossmplugin_cr }}"
 
+  - name: Confirm the Kiali Service Name is as expected
+    assert:
+      that: "{{ ossmplugin_consoleplugin.spec.proxy[0].service.name == current_ossmplugin_cr.status.kiali.serviceName }}"
+
+  - name: Confirm the Kiali Service Namespace is as expected
+    assert:
+      that: "{{ ossmplugin_consoleplugin.spec.proxy[0].service.namespace == current_ossmplugin_cr.status.kiali.serviceNamespace }}"
+
+  - name: Confirm the Kiali Service Port is as expected
+    assert:
+      that: "{{ ossmplugin_consoleplugin.spec.proxy[0].service.port == (current_ossmplugin_cr.status.kiali.servicePort | int) }}"
+
   - name: Confirm the Kiali URL is as expected
     assert:
       that: "{{ ossmplugin_configmap.kialiUrl == current_ossmplugin_cr.status.kiali.url }}"

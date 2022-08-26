@@ -10,12 +10,15 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "yarn clean && NODE_ENV=production yarn ts-node node_modules/.bin/webpack",
-    "build-dev": "yarn clean && yarn ts-node node_modules/.bin/webpack",
-    "start": "yarn ts-node node_modules/.bin/webpack serve",
+    "build-dev": "yarn clean && NODE_ENV=development yarn ts-node node_modules/.bin/webpack",
+    "start": "NODE_ENV=development KIALI_API_HOST=http://localhost:3000 yarn ts-node node_modules/.bin/webpack serve",
     "start-console": "./start-console.sh",
     "i18n": "i18next \"src/**/*.{js,jsx,ts,tsx}\" [-oc] -c i18next-parser.config.js",
     "ts-node": "ts-node -O '{\"module\":\"commonjs\"}'",
     "lint": "eslint ./src --fix"
+  },
+  "dependencies": {
+    "axios": "0.27.2"
   },
   "devDependencies": {
     "@openshift-console/dynamic-plugin-sdk": "0.0.13",

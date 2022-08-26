@@ -19,4 +19,7 @@ ossmplugin_defaults:
     namespace: ""
 
   kiali:
+    serviceName: ""
+    serviceNamespace: ""
+    servicePort: 0
     url: ""

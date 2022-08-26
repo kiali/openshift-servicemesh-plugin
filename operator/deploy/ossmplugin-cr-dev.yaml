@@ -13,4 +13,8 @@ spec:
     imagePullSecrets:
     - ${PULL_SECRET_NAME}
   kiali:
+    serviceName: ""
+    serviceNamespace: ""
+    servicePort: 0
     url: ""
+

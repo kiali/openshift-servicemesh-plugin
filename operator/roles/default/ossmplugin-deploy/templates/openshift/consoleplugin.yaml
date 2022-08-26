@@ -9,3 +9,11 @@ spec:
     namespace: ossmplugin
     port: 9443
     basePath: "/"
+  proxy:
+  - type: Service
+    alias: kiali
+    authorize: true
+    service:
+      name: {{ ossmplugin_vars.kiali.serviceName }}
+      namespace: {{ ossmplugin_vars.kiali.serviceNamespace }}
+      port: {{ ossmplugin_vars.kiali.servicePort }}

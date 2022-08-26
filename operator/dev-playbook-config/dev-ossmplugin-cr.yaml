@@ -23,4 +23,7 @@ spec:
     imageVersion: dev
 
   kiali:
+    serviceName: ""
+    serviceNamespace: ""
+    servicePort: 0
     url: ""

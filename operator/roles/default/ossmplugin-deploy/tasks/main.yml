@@ -85,6 +85,36 @@
   - current_cr.status.deployment.namespace is defined
   - current_cr.status.deployment.namespace != ossmplugin_vars.deployment.namespace
 
+- name: Auto-discover the Kiali Service Name - preference goes to a Kiali installed in the same namespace as the CR
+  vars:
+    kiali_in_namespace: "{{ query(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route', namespace=current_cr.metadata.namespace) }}"
+    kiali_anywhere: "{{ query(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route') }}"
+  set_fact:
+    kiali_service_name: "{{ kiali_in_namespace[0].spec.to.name if kiali_in_namespace | length > 0 else (kiali_anywhere[0].spec.to.name if kiali_anywhere | length > 0 else '') }}"
+  when:
+  - ossmplugin_vars.kiali.serviceName == ""
+  ignore_errors: yes
+
+- name: Auto-discover the Kiali Service Namespace - preference goes to a Kiali installed in the same namespace as the CR
+  vars:
+    kiali_in_namespace: "{{ query(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route', namespace=current_cr.metadata.namespace) }}"
+    kiali_anywhere: "{{ query(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route') }}"
+  set_fact:
+    kiali_service_namespace: "{{ kiali_in_namespace[0].metadata.namespace if kiali_in_namespace | length > 0 else (kiali_anywhere[0].metadata.namespace if kiali_anywhere | length > 0 else '') }}"
+  when:
+  - ossmplugin_vars.kiali.serviceNamespace == ""
+  ignore_errors: yes
+
+- name: Auto-discover the Kiali Service Port - preference goes to a Kiali installed in the same namespace as the CR
+  vars:
+    kiali_in_namespace: "{{ query(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route', namespace=current_cr.metadata.namespace) }}"
+    kiali_anywhere: "{{ query(k8s_plugin, label_selector='app.kubernetes.io/name=kiali', api_version='route.openshift.io/v1', kind='Route') }}"
+  set_fact:
+    kiali_service_port: "{{ kiali_in_namespace[0].spec.port.targetPort if kiali_in_namespace | length > 0 else (kiali_anywhere[0].spec.port.targetPort if kiali_anywhere | length > 0 else 20001) }}"
+  when:
+  - ossmplugin_vars.kiali.servicePort == 0
+  ignore_errors: yes
+
 # If no Kiali URL is provided, try to auto-discover one, first in the CR's namespace then anywhere else. If Kiali is not found, abort.
 - name: Auto-discover the Kiali URL - preference goes to a Kiali installed in the same namespace as the CR
   vars:
@@ -97,15 +127,33 @@
   ignore_errors: yes
 
 - fail:
+    msg: "Failed to auto-discover the Kiali Service Name. Make sure Kiali is installed. You can specify 'kiali.serviceName' in the CR if there is a Kiali Service the plugin can use but cannot be auto-discovered by this operator."
+  when:
+    - ossmplugin_vars.kiali.serviceName == ""
+    - kiali_service_name is not defined or kiali_service_name == ""
+
+- fail:
+    msg: "Failed to auto-discover the Kiali Service Namespace. Make sure Kiali is installed. You can specify 'kiali.serviceNamespace' in the CR if there is a Kiali Service the plugin can use but cannot be auto-discovered by this operator."
+  when:
+  - ossmplugin_vars.kiali.serviceNamespace == ""
+  - kiali_service_namespace is not defined or kiali_service_namespace == ""
+
+- fail:
+    msg: "Failed to auto-discover the Kiali Service Port. Make sure Kiali is installed. You can specify 'kiali.servicePort' in the CR if there is a Kiali Service the plugin can use but cannot be auto-discovered by this operator."
+  when:
+  - ossmplugin_vars.kiali.servicePort == 0
+  - kiali_service_port is not defined or kiali_service_port == ""
+
+- fail:
     msg: "Failed to auto-discover the Kiali URL. Make sure Kiali is installed. You can specify 'kiali.url' in the CR if there is a Kiali URL endpoint the plugin can use but cannot be auto-discovered by this operator."
   when:
   - ossmplugin_vars.kiali.url == ""
   - kiali_route_host is not defined or kiali_route_host == ""
 
 - set_fact:
-    ossmplugin_vars: "{{ ossmplugin_vars | combine({'kiali': {'url': 'https://' + kiali_route_host}}, recursive=True) }}"
+    ossmplugin_vars: "{{ ossmplugin_vars | combine({'kiali': {'serviceName': kiali_service_name, 'serviceNamespace': kiali_service_namespace, 'servicePort': kiali_service_port, 'url': 'https://' + kiali_route_host}}, recursive=True) }}"
   when:
-  - ossmplugin_vars.kiali.url == ""
+  - ossmplugin_vars.kiali.serviceName == "" or ossmplugin_vars.kiali.serviceNamespace == "" or ossmplugin_vars.kiali.servicePort == 0 or ossmplugin_vars.kiali.url == ""
 
 - name: Determine Kiali version
   set_fact:
@@ -134,6 +182,9 @@
       deployment:
         namespace: "{{ ossmplugin_vars.deployment.namespace }}"
       kiali:
+        serviceName: "{{ ossmplugin_vars.kiali.serviceName }}"
+        serviceNamespace: "{{ ossmplugin_vars.kiali.serviceNamespace }}"
+        servicePort: "{{ ossmplugin_vars.kiali.servicePort }}"
         url: "{{ ossmplugin_vars.kiali.url }}"
 
 - name: Only allow ad-hoc OSSM Plugin image when appropriate

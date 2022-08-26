@@ -5,11 +5,13 @@ import {
     RowProps,
     TableColumn,
     TableData, useActiveColumns, useK8sWatchResource, useListPageFilter, VirtualizedTable
-} from "@openshift-console/dynamic-plugin-sdk";
-import {initKialiListeners} from "../utils";
-import {useParams} from "react-router";
+} from '@openshift-console/dynamic-plugin-sdk';
+import {getKialiProxy, initKialiListeners} from '../kialiIntegration';
+import { useParams } from 'react-router';
 import { sortable } from '@patternfly/react-table';
-import {istioResources} from "../k8s/resources";
+import { istioResources, referenceForRsc } from '../k8s/resources';
+import * as API from '../k8s/api';
+import { getValidation, IstioConfigsMap } from '../types/IstioConfigList';
 
 const useIstioTableColumns = (namespace: string) => {
     const columns: TableColumn<K8sResourceCommon>[] = [
@@ -30,6 +32,12 @@ const useIstioTableColumns = (namespace: string) => {
             id: 'kind',
             sort: 'kind',
             title: 'Kind',
+            transforms: [sortable],
+        },
+        {
+            id: 'configuration',
+            sort: 'validations',
+            title: 'Configuration',
             transforms: [sortable],
         },
     ];
@@ -63,6 +71,12 @@ const columns: TableColumn<K8sResourceCommon>[] = [
         title: 'Kind',
         transforms: [sortable],
     },
+    {
+        id: 'configuration',
+        sort: 'validations',
+        title: 'Configuration',
+        transforms: [sortable],
+    },
 ];
 
 const Row = ({ obj, activeColumnIDs }: RowProps<K8sResourceCommon>) => {
@@ -81,6 +95,9 @@ const Row = ({ obj, activeColumnIDs }: RowProps<K8sResourceCommon>) => {
             </TableData>
             <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
                 {obj.kind}
+            </TableData>
+            <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
+                {obj['validations'] ? obj['validations'] : 'N/A'}
             </TableData>
         </>
     );
@@ -136,6 +153,9 @@ const IstioConfigList = () => {
 
     initKialiListeners();
 
+    const [kialiValidations, setKialiValidations] = React.useState<IstioConfigsMap>(undefined);
+    const prevResourceVersion = React.useRef<string[]>([]);
+
     const watches = istioResources.map(({ group, version, kind }) => {
         const [data, loaded, error] = useK8sWatchResource<K8sResourceCommon[]>({
             groupVersionKind: { group, version, kind },
@@ -150,11 +170,54 @@ const IstioConfigList = () => {
     });
 
     const flatData = watches.map(([list]) => list).flat();
+    const resourceVersion = flatData.map(r => referenceForRsc(r));
     const loaded = watches.every(([, loaded, error]) => !!(loaded || error));
+
+    React.useEffect(() => {
+        // Kiali validations should be fetched when:
+        // - All watchers are loaded
+        // - No new updates on the list of the objects
+        const newUpdates =
+            // Initial fetch
+            (resourceVersion.length === 0 && prevResourceVersion.current.length === 0) ||
+            // Different sizes
+            resourceVersion.length != prevResourceVersion.current.length ||
+            // Same size but different elements
+            resourceVersion.some(v => !prevResourceVersion.current.includes(v));
+
+        if (loaded && newUpdates) {
+            // The OSSM Plugin is in the same domain of the OpenShift Console,
+            // then direct requests to the Kiali API should use the KialiProxy url.
+            // This proxy url is different from the url used for iframes that have a different domain.
+            const kialiProxy = getKialiProxy();
+            API.getAllIstioConfigs(kialiProxy)
+                .then(response => response.data)
+                .then((kialiValidations) => {
+                    // Update the list of resources present when last fech of Kiali Validations
+                    // Hooks need to maintain this "when to update" logic inside to avoid unnecessary fetches and renders
+                    prevResourceVersion.current = Array.from(resourceVersion);
+                    setKialiValidations(kialiValidations);
+                })
+                .catch(error => console.error('Could not connect to Kiali API', error));
+        }
+        // Deps trigger the hook, but those are not "enough", inner logic is needed to check changes
+    }, [loaded, resourceVersion, prevResourceVersion]);
+
+    // On new resources and/or validations, a combination task is required
+    // This uses a "trick" to add a dynamic "validations" field to the K8sResourceCommon type
+    // Probably it can be added a custom type, but that will trigger more refactoring on the standard classes used for tables and filters
+    const combinedData = React.useMemo(() => {
+        if (loaded && kialiValidations) {
+            flatData.forEach(d => d['validations'] = getValidation(kialiValidations, d.kind, d.metadata.name, d.metadata.namespace))
+        }
+        return flatData;
+    }, [flatData, kialiValidations, loaded])
+
     const [data, filteredData, onFilterChange] = useListPageFilter(
-        flatData,
+        combinedData,
         filters,
     );
+
     const columns = useIstioTableColumns(ns);
     return (
         <>

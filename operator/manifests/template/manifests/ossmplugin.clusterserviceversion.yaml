@@ -23,6 +23,9 @@ metadata:
           },
           "spec": {
             "kiali": {
+              "serviceName": "",
+              "serviceNamespace": "",
+              "servicePort": 0,      
               "url": ""
             }
           }
@@ -84,6 +87,21 @@ spec:
       - kind: ConfigMap
         version: v1
       specDescriptors:
+      - displayName: Kiali Service Name
+        description: "The internal Kiali service that the OS Console will use to proxy API calls. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route."
+        path: kiali.serviceName
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - displayName: Kiali Service Namespace
+        description: "The namespace where the Kiali service is deployed. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route. It will assume that the OpenShift Route and the Kiali service are deployed in the same namespace."
+        path: kiali.serviceNamespace
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:text'
+      - displayName: Kiali Service Port
+        description: "The internal port used by the Kiali service for the API. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route."
+        path: kiali.servicePort
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:text'
       - displayName: Kiali URL
         description: "The root endpoint URL to the Kiali UI Console. If empty, an attempt to auto-discover it will be made."
         path: kiali.url
