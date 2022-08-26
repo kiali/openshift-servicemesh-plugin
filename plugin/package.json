@@ -1,6 +1,6 @@
 {
   "name": "servicemesh-plugin",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "repository": {
     "type": "git",
@@ -60,7 +60,7 @@
   },
   "consolePlugin": {
     "name": "servicemesh",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "displayName": "OpenShift Service Mesh Plugin",
     "description": "OpenShift integration with Istio",
     "exposedModules": {
