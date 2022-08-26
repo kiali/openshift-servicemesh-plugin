@@ -176,7 +176,7 @@ NOTE! This requires that you previously pushed your local image into your cluste
 To build and release the plugin, you can run this command either manually or inside a CI workflow.
 
 ```sh
-make -e CONTAINER_VERSION=v0.0.1 build-plugin-image push-plugin-image
+make -e CONTAINER_VERSION=v0.1.0 build-plugin-image push-plugin-image
 ```
 
 If you want to release a "latest" image, the command would be:
@@ -196,8 +196,16 @@ The operator needs its image published to quay and its OLM metadata published to
 Build and push the image to quay:
 
 ```sh
-make -e CONTAINER_VERSION=v0.0.1 build-operator push-operator
+make -e CONTAINER_VERSION=v0.1.0 build-operator push-operator
 ```
+
+Or for a multi-arch container:
+
+```sh
+make -e CONTAINER_VERSION=v0.1.0 build-operator build-push-operator-multi-arch
+```
+
+Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossmplugin-operator?tab=tags
 
 ### Publishing OLM Metadata
 

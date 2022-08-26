@@ -1,13 +1,13 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: ossmplugin-operator.v0.0.1
+  name: ossmplugin-operator.v0.1.0
   namespace: placeholder
   annotations:
-    #olm.skipRange: '>=0.0.1 <0.0.1'
+    #olm.skipRange: '>=0.1.0 <0.1.0'
     categories: Monitoring,Logging & Tracing
     certified: "false"
-    containerImage: quay.io/kiali/ossmplugin-operator:v0.0.1
+    containerImage: quay.io/kiali/ossmplugin-operator:v0.1.0
     capabilities: Basic Install
     support: Kiali
     description: "Adds Kiali functionality to the OpenShift Console UI"
@@ -29,9 +29,9 @@ metadata:
         }
       ]
 spec:
-  version: 0.0.1
+  version: 0.1.0
   maturity: alpha
-  #replaces: ossmplugin-operator.v0.0.1
+  #replaces: ossmplugin-operator.v0.1.0
   displayName: OpenShift Service Mesh Plugin
   description: |-
     ## About the managed application
@@ -122,10 +122,10 @@ spec:
                 app: ossmplugin-operator
                 # required for the operator SDK metric service selector
                 name: ossmplugin-operator
-                version: v0.0.1
+                version: v0.1.0
                 app.kubernetes.io/name: ossmplugin-operator
                 app.kubernetes.io/instance: ossmplugin-operator
-                app.kubernetes.io/version: v0.0.1
+                app.kubernetes.io/version: v0.1.0
                 app.kubernetes.io/part-of: ossmplugin-operator
               annotations:
                 prometheus.io/scrape: "true"
@@ -133,7 +133,7 @@ spec:
               serviceAccountName: ossmplugin-operator
               containers:
               - name: operator
-                image: quay.io/kiali/ossmplugin-operator:v0.0.1
+                image: quay.io/kiali/ossmplugin-operator:v0.1.0
                 imagePullPolicy: IfNotPresent
                 args:
                 - "--zap-log-level=info"
