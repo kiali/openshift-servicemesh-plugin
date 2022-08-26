@@ -10,6 +10,13 @@
     status_progress_message: "Initializing"
     status_vars:
       specVersion: "{{ ossmplugin_vars.version }}"
+      deployment:
+        namespace: null
+      kiali:
+        serviceName: null
+        serviceNamespace: null
+        servicePort: null
+        url: null
 
 - name: Get information about the cluster
   set_fact:
