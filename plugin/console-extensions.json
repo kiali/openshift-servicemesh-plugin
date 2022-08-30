@@ -2,7 +2,7 @@
   {
     "type": "console.navigation/section",
     "properties": {
-      "id": "servicemesh",
+      "id": "ossmconsole",
       "perspective": "admin",
       "name": "Service Mesh"
     }
@@ -11,36 +11,36 @@
     "type": "console.page/route",
     "properties": {
       "exact": true,
-      "path": "/servicemeshoverview",
+      "path": "/ossmconsoleoverview",
       "component": { "$codeRef": "OverviewPage" }
     }
   },
   {
     "type": "console.navigation/href",
     "properties": {
-      "id": "servicemeshoverview",
+      "id": "ossmconsoleoverview",
       "name": "Overview",
-      "href": "/servicemeshoverview",
+      "href": "/ossmconsoleoverview",
       "perspective": "admin",
-      "section": "servicemesh"
+      "section": "ossmconsole"
     }
   },
   {
     "type": "console.page/route",
     "properties": {
       "exact": true,
-      "path": "/servicemeshgraph",
+      "path": "/ossmconsolegraph",
       "component": { "$codeRef": "GraphPage" }
     }
   },
   {
     "type": "console.navigation/href",
     "properties": {
-      "id": "servicemeshgraph",
+      "id": "ossmconsolegraph",
       "name": "Graph",
-      "href": "/servicemeshgraph",
+      "href": "/ossmconsolegraph",
       "perspective": "admin",
-      "section": "servicemesh",
+      "section": "ossmconsole"
     }
   },
   {
@@ -58,7 +58,7 @@
       "name": "Istio Config",
       "href": "/k8s/all-namespaces/istio",
       "perspective": "admin",
-      "section": "servicemesh"
+      "section": "ossmconsole"
     }
   },
   {
@@ -71,7 +71,7 @@
       },
       "page": {
         "name": "Service Mesh",
-        "href": "servicemesh"
+        "href": "ossmconsole"
       },
       "component": { "$codeRef": "MeshTab" }
     }
@@ -86,7 +86,7 @@
       },
       "page": {
         "name": "Service Mesh",
-        "href": "servicemesh"
+        "href": "ossmconsole"
       },
       "component": { "$codeRef": "MeshTab" }
     }
@@ -101,7 +101,7 @@
       },
       "page": {
         "name": "Service Mesh",
-        "href": "servicemesh"
+        "href": "ossmconsole"
       },
       "component": { "$codeRef": "MeshTab" }
     }
@@ -116,7 +116,7 @@
       },
       "page": {
         "name": "Service Mesh",
-        "href": "servicemesh"
+        "href": "ossmconsole"
       },
       "component": { "$codeRef": "MeshTab" }
     }
@@ -131,7 +131,7 @@
       },
       "page": {
         "name": "Service Mesh",
-        "href": "servicemesh"
+        "href": "ossmconsole"
       },
       "component": { "$codeRef": "MeshTab" }
     }
@@ -146,7 +146,7 @@
       },
       "page": {
         "name": "Service Mesh",
-        "href": "servicemesh"
+        "href": "ossmconsole"
       },
       "component": { "$codeRef": "MeshTab" }
     }
@@ -161,7 +161,7 @@
       },
       "page": {
         "name": "Service Mesh",
-        "href": "servicemesh"
+        "href": "ossmconsole"
       },
       "component": { "$codeRef": "MeshTab" }
     }

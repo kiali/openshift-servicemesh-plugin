@@ -186,7 +186,7 @@ const IstioConfigList = () => {
             resourceVersion.some(v => !prevResourceVersion.current.includes(v));
 
         if (loaded && newUpdates) {
-            // The OSSM Plugin is in the same domain of the OpenShift Console,
+            // The OSSM Console plugin is in the same domain of the OpenShift Console,
             // then direct requests to the Kiali API should use the KialiProxy url.
             // This proxy url is different from the url used for iframes that have a different domain.
             const kialiProxy = getKialiProxy();

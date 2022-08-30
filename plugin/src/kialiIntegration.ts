@@ -4,9 +4,9 @@ import {consoleFetch} from "@openshift-console/dynamic-plugin-sdk";
 
 export const properties = {
     // This API is hardcoded but:
-    // 'servicemesh' is the name of the plugin, it can be considered "fixed" in the project
+    // 'ossmconsole' is the name of the plugin, it can be considered "fixed" in the project
     // 'plugin-config.json' is a resource mounted from a ConfigMap, so, the UI app can read config from that file
-    pluginConfig: '/api/plugins/servicemesh/plugin-config.json',
+    pluginConfig: '/api/plugins/ossmconsole/plugin-config.json',
 }
 
 // This Config type should be mapped with the 'plugin-config.json' file
@@ -23,7 +23,7 @@ export type KialiUrl = {
 // This is the main mechanism provided by the OpenShift Console backend to proxy internal requests.
 // This "proxy" is defined under the same domain of the browser and it's mapped to:
 // https://github.com/openshift/enhancements/blob/master/enhancements/console/dynamic-plugins.md#delivering-plugins
-export const CONSOLE_PROXY = '/api/proxy/plugin/servicemesh/kiali';
+export const CONSOLE_PROXY = '/api/proxy/plugin/ossmconsole/kiali';
 
 // Direct requests from the Plugin to Kiali API should use the KialiProxy host.
 // This can be relative to the same domain in production environments but for development it requires a different config.
@@ -105,7 +105,7 @@ export const initKialiListeners = () => {
             // const osConsole = window.location.protocol + '//' + window.location.host;
             // Transform Kiali domain messages into Plugin info that helps to navigate
             if (kialiAction.startsWith('/graph/namespaces')) {
-                const servicemeshUrl = kialiAction.replace('graph/namespaces', 'servicemeshgraph');
+                const servicemeshUrl = kialiAction.replace('graph/namespaces', 'ossmconsolegraph');
                 history.push(servicemeshUrl);
             }
             if (kialiAction.startsWith('/istio')) {
@@ -143,12 +143,12 @@ export const initKialiListeners = () => {
                     // OpenShift Console doesn't have a "generic" workloads page
                     // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
                     // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
-                    detailUrl = '/k8s/ns/' + namespace + '/deployments' + detail.substring('/workloads'.length) + '/servicemesh';
+                    detailUrl = '/k8s/ns/' + namespace + '/deployments' + detail.substring('/workloads'.length) + '/ossmconsole';
                     detailUrl += webParamsIndex > -1 ? webParams : '';
                 }
                 if (detail.startsWith('/services')) {
                     // OpenShift Console has a "services" list page
-                    detailUrl = '/k8s/ns/' + namespace + detail + '/servicemesh';
+                    detailUrl = '/k8s/ns/' + namespace + detail + '/ossmconsole';
                     detailUrl += webParamsIndex > -1 ? webParams : '';
                 }
                 if (detail.startsWith('/istio')) {

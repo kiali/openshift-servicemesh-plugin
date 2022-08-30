@@ -1,1 +1,1 @@
-default: {"imageName": "quay.io/kiali/servicemesh-plugin", "imageVersion": "operator_version"}
+default: {"imageName": "quay.io/kiali/ossm-console", "imageVersion": "operator_version"}

@@ -1,20 +1,22 @@
-# OpenShift Service Mesh Plugin
-Webpack Plugin to integrate Kiali into OpenShift Console
+# OpenShift Service Mesh Console (OSSM Console)
+Webpack Plugin to integrate Kiali into OpenShift Console. The official title of the project is "OpenShift Service Mesh Console" but you may see this abbreviated in documentation and code as "OSSM Console" or "ossm-console".
+
+The main component is a plugin based on OpenShift Console [Dynamic plugin-ins](https://docs.openshift.com/container-platform/4.10/web_console/dynamic-plug-ins.html) framework. When the plugin is installed and enabled in the OpenShift Console, you will see additional functionality added to the OpenShift Console that allows you to interact with OpenShift Service Mesh via the Kiali user interface. Note also that the OSSM Console may work with upstream Istio installed (as opposed to OpenShift Service Mesh).
+
+The main installation mechanism is an OLM operator.
 
 ## Platform Setup
 
-These are the things you need before you can start working with the OpenShift Service Mesh Plugin:
+These are the things you need before you can start working with the OpenShift Service Mesh Console:
 
 1. OpenShift 4.10+ cluster with OpenShift ServiceMesh / Istio installed.
 2. Kiali deployed in the cluster
 3. `oc` client available in the path
 4. `podman` client available in the path
 
-This plugin is based on OpenShift Console [Dynamic plugin-ins](https://docs.openshift.com/container-platform/4.10/web_console/dynamic-plug-ins.html) framework.
+## Quickly Deploy the OSSM Console
 
-## Quickly Deploy the Service Mesh Plugin
-
-To very quickly get the latest plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
+To very quickly get the latest OSSM Console plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
 
 ```sh
 # Step 1 - Login in OpenShift cluster i.e oc login ...
@@ -54,7 +56,7 @@ yarn run start-console
 
 ## Operator
 
-The OpenShift Service Mesh Plugin will be installed by end users using an operator. The following describes the different make targets and files involved in developing, running, and testing the operator.
+The OpenShift Service Mesh Console will be installed by end users using an operator. The following describes the different make targets and files involved in developing, running, and testing the operator.
 
 Developers will work with the operator mainly through the use of make targets. To see all the make targets available today, run `make help` - a description of all the available targets will be displayed. The more common ones you will want to use will be described in the next few sections.
 
@@ -79,7 +81,7 @@ This target prints out details about the OpenShift cluster you are currently log
 
 #### make run-playbook
 
-This target runs the [`ossmplugin-deploy`](operator/playbooks/ossmplugin-deploy.yml) and then the [`ossmplugin-remove`](operator/playbooks/ossmplugin-remove.yml) Ansible playbooks on the local machine (which in turn run the [deploy](operator/roles/default/ossmplugin-deploy) and [remove](operator/roles/default/ossmplugin-remove) roles; this is where the main action happens). This allows you to develop/test/debug the playbooks without having to package or deploy the operator. This is the fastest way to work with the playbooks, however, it requires that you have Ansible installed on your local machine. For more instructions on setting up your local Ansible install, consult the [operator/requirements.yml file](operator/requirements.yml)
+This target runs the [`ossmconsole-deploy`](operator/playbooks/ossmconsole-deploy.yml) and then the [`ossmconsole-remove`](operator/playbooks/ossmconsole-remove.yml) Ansible playbooks on the local machine (which in turn run the [deploy](operator/roles/default/ossmconsole-deploy) and [remove](operator/roles/default/ossmconsole-remove) roles; this is where the main action happens). This allows you to develop/test/debug the playbooks without having to package or deploy the operator. This is the fastest way to work with the playbooks, however, it requires that you have Ansible installed on your local machine. For more instructions on setting up your local Ansible install, consult the [operator/requirements.yml file](operator/requirements.yml)
 
 You can configure the behavior of this target by changing the files under the [operator/dev-playbook-config](operator/dev-playbook-config/README.adoc) directory.
 
@@ -101,7 +103,7 @@ This target performs alot of tasks under the covers but in the end will result i
 
 #### make cluster-push-plugin-image
 
-This target will build the plugin image and push it into the cluster's internal image registry. You must perform this step prior to installing an OSSMPlugin CR because this image must be available for the plugin Pod.
+This target will build the plugin image and push it into the cluster's internal image registry. You must perform this step prior to installing an OSSMConsole CR because this image must be available for the plugin Pod.
 
 #### make cluster-push
 
@@ -109,11 +111,11 @@ This is simply a convenience target that runs both the `cluster-push-operator` a
 
 #### make install-cr
 
-Once your operator is deployed and running, and you have built and pushed the plugin image to your cluster, you can use this target to create an OSSMPlugin CR which instructs the operator to install the OpenShift Service Mesh Plugin. Within a few seconds after this make target completes, your OpenShift Console will have the OpenShift Service Mesh Plugin installed. This provides you with Kiali functionality directly within the OpenShift Console itself.
+Once your operator is deployed and running, and you have built and pushed the plugin image to your cluster, you can use this target to create an OSSMConsole CR which instructs the operator to install the OpenShift Service Mesh Console plugin. Within a few seconds after this make target completes, your OpenShift Console will have the OpenShift Service Mesh Console plugin installed. This provides you with Kiali functionality directly within the OpenShift Console itself.
 
 #### make uninstall-cr
 
-If you wish to uninstall the plugin from your OpenShift Console, run this target. This will delete the OSSMPlugin CR that was created via the `install-cr` target, which instructs the operator to uninstall the plugin. The operator will continue to be running. You can re-install the plugin by simply creating another OSSMPlugin CR by running `make install-cr` again.
+If you wish to uninstall the plugin from your OpenShift Console, run this target. This will delete the OSSMConsole CR that was created via the `install-cr` target, which instructs the operator to uninstall the plugin. The operator will continue to be running. You can re-install the plugin by simply creating another OSSMConsole CR by running `make install-cr` again.
 
 #### make purge-all-crs
 
@@ -121,7 +123,7 @@ If you get into a state where one or more CRs cannot be deleted (e.g. the `oc de
 
 #### make operator-delete
 
-This make target completely removes the plugin and operator. It will first remove the OSSMPlugin CR which instructs the operator to uninstall the plugin. It will then remove the operator along with its CRD, OLM subscription, OLM catalog source, OLM image index, and all underlying OLM CSVs. After this make target completes, all remnants of the plugin and operator will be removed. The only thing that will remain in the cluster are the images that were pushed into the internal image registry.
+This make target completely removes the plugin and operator. It will first remove the OSSMConsole CR which instructs the operator to uninstall the plugin. It will then remove the operator along with its CRD, OLM subscription, OLM catalog source, OLM image index, and all underlying OLM CSVs. After this make target completes, all remnants of the plugin and operator will be removed. The only thing that will remain in the cluster are the images that were pushed into the internal image registry.
 
 ### OLM manifests
 
@@ -137,7 +139,7 @@ After you modify or add metadata to the manifests, run this make target to valid
 
 ### Generating Documentation
 
-You can generate reference documentation for the OSSMPlugin CRD by running `make gen-crd-doc`. The generated markdown document will be found in `operator/_output/crd-docs/` and can be used for publishing on a Hugo-generated doc site such as https://kiali.io.
+You can generate reference documentation for the OSSMConsole CRD by running `make gen-crd-doc`. The generated markdown document will be found in `operator/_output/crd-docs/` and can be used for publishing on a Hugo-generated doc site such as https://kiali.io.
 
 ## Molecule tests
 
@@ -171,7 +173,7 @@ make -e MOLECULE_SCENARIO="config-values-test" -e MOLECULE_USE_DEV_IMAGES="true"
 
 NOTE! This requires that you previously pushed your local image into your cluster via the make target `cluster-push-plugin-image`.
 
-## Releasing OpenShift Service Mesh Plugin
+## Releasing OpenShift Service Mesh Console
 
 To build and release the plugin, you can run this command either manually or inside a CI workflow.
 
@@ -185,9 +187,9 @@ If you want to release a "latest" image, the command would be:
 make -e CONTAINER_VERSION=latest build-plugin-image push-plugin-image
 ```
 
-Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/servicemesh-plugin?tab=tags
+Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossm-console?tab=tags
 
-## Releasing OpenShift Service Mesh Plugin Operator
+## Releasing OpenShift Service Mesh Console Operator
 
 The operator needs its image published to quay and its OLM metadata published to the community catalog.
 
@@ -205,7 +207,7 @@ Or for a multi-arch container:
 make -e CONTAINER_VERSION=v0.1.0 build-operator build-push-operator-multi-arch
 ```
 
-Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossmplugin-operator?tab=tags
+Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossm-console-operator?tab=tags
 
 ### Publishing OLM Metadata
 

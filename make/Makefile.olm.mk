@@ -4,8 +4,8 @@
 
 # Identifies the bundle and index images that will be built
 OLM_IMAGE_ORG ?= ${OPERATOR_IMAGE_ORG}
-OLM_BUNDLE_NAME ?= ${OLM_IMAGE_ORG}/ossmplugin-operator-bundle
-OLM_INDEX_NAME ?= ${OLM_IMAGE_ORG}/ossmplugin-operator-index
+OLM_BUNDLE_NAME ?= ${OLM_IMAGE_ORG}/ossmconsole-operator-bundle
+OLM_INDEX_NAME ?= ${OLM_IMAGE_ORG}/ossmconsole-operator-index
 
 OLM_INDEX_BASE_IMAGE ?= quay.io/openshift/origin-operator-registry:4.10
 
@@ -31,10 +31,10 @@ get-opm: .ensure-opm-exists
 
 ## validate-olm-metadata: Checks the latest version of the OLM bundle metadata for correctness.
 validate-olm-metadata: .ensure-operator-sdk-exists
-	@printf "==========\nValidating ossmplugin-ossm metadata\n==========\n"
-	@mkdir -p ${OPERATOR_OUTDIR}/ossmplugin-ossm && rm -rf ${OPERATOR_OUTDIR}/ossmplugin-ossm/* && cp -R ${OPERATOR_DIR}/manifests/ossmplugin-ossm ${OPERATOR_OUTDIR} && cat ${OPERATOR_DIR}/manifests/ossmplugin-ossm/manifests/ossmplugin.clusterserviceversion.yaml | OSSMPLUGIN_OPERATOR_VERSION="2.0.0" OSSMPLUGIN_OLD_OPERATOR_VERSION="1.0.0" OSSMPLUGIN_OPERATOR_TAG=":2.0.0" OSSMPLUGIN_0_1_TAG=":1.0.0" CREATED_AT="2021-01-01T00:00:00Z" envsubst > ${OPERATOR_OUTDIR}/ossmplugin-ossm/manifests/ossmplugin.clusterserviceversion.yaml && ${OP_SDK} bundle validate --verbose ${OPERATOR_OUTDIR}/ossmplugin-ossm
-	@printf "==========\nValidating the latest version of ossmplugin-community metadata\n==========\n"
-	@for d in $$(ls -1d ${OPERATOR_DIR}/manifests/ossmplugin-community/* | sort -V | grep -v ci.yaml | tail -n 1); do ${OP_SDK} bundle --verbose validate $$d; done
+	@printf "==========\nValidating ossmconsole-ossm metadata\n==========\n"
+	@mkdir -p ${OPERATOR_OUTDIR}/ossmconsole-ossm && rm -rf ${OPERATOR_OUTDIR}/ossmconsole-ossm/* && cp -R ${OPERATOR_DIR}/manifests/ossmconsole-ossm ${OPERATOR_OUTDIR} && cat ${OPERATOR_DIR}/manifests/ossmconsole-ossm/manifests/ossmconsole.clusterserviceversion.yaml | OSSMCONSOLE_OPERATOR_VERSION="2.0.0" OSSMCONSOLE_OLD_OPERATOR_VERSION="1.0.0" OSSMCONSOLE_OPERATOR_TAG=":2.0.0" OSSMCONSOLE_0_1_TAG=":1.0.0" CREATED_AT="2021-01-01T00:00:00Z" envsubst > ${OPERATOR_OUTDIR}/ossmconsole-ossm/manifests/ossmconsole.clusterserviceversion.yaml && ${OP_SDK} bundle validate --verbose ${OPERATOR_OUTDIR}/ossmconsole-ossm
+	@printf "==========\nValidating the latest version of ossmconsole-community metadata\n==========\n"
+	@for d in $$(ls -1d ${OPERATOR_DIR}/manifests/ossmconsole-community/* | sort -V | grep -v ci.yaml | tail -n 1); do ${OP_SDK} bundle --verbose validate $$d; done
 
 .determine-olm-bundle-version:
 	@$(eval BUNDLE_VERSION ?= $(shell echo -n "${VERSION}" | sed 's/-SNAPSHOT//' ))
@@ -44,7 +44,7 @@ build-olm-bundle: .prepare-cluster .determine-olm-bundle-version
 	@echo Will bundle version [${BUNDLE_VERSION}]
 	@mkdir -p ${OPERATOR_OUTDIR}/bundle
 	cp -R ${OPERATOR_DIR}/manifests/template/* ${OPERATOR_OUTDIR}/bundle
-	${OPERATOR_DIR}/manifests/generate-csv.sh -ov "NONE" -nv "${BUNDLE_VERSION}" -opin "${CLUSTER_OPERATOR_INTERNAL_NAME}" -opiv "${OPERATOR_CONTAINER_VERSION}" -ipp "Always" > ${OPERATOR_OUTDIR}/bundle/manifests/ossmplugin.clusterserviceversion.yaml
+	${OPERATOR_DIR}/manifests/generate-csv.sh -ov "NONE" -nv "${BUNDLE_VERSION}" -opin "${CLUSTER_OPERATOR_INTERNAL_NAME}" -opiv "${OPERATOR_CONTAINER_VERSION}" -ipp "Always" > ${OPERATOR_OUTDIR}/bundle/manifests/ossmconsole.clusterserviceversion.yaml
 	${OPERATOR_DIR}/manifests/generate-annotations.sh -c candidate > ${OPERATOR_OUTDIR}/bundle/metadata/annotations.yaml
 	${OPERATOR_DIR}/manifests/generate-dockerfile.sh -c candidate > ${OPERATOR_OUTDIR}/bundle/bundle.Dockerfile
 	${DORP} build -f ${OPERATOR_OUTDIR}/bundle/bundle.Dockerfile -t ${CLUSTER_REPO}/${OLM_BUNDLE_NAME}:${BUNDLE_VERSION}
@@ -63,25 +63,25 @@ endif
 # See https://docs.openshift.com/container-platform/4.10/operators/admin/olm-managing-custom-catalogs.html
 build-olm-index: .ensure-opm-exists cluster-push-olm-bundle
 	@rm -rf ${OPERATOR_OUTDIR}/index
-	@mkdir -p ${OPERATOR_OUTDIR}/index/ossmplugin-index
-	${OPM} init ossmplugin --default-channel=candidate --output yaml > ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
-	${OPM} render --skip-tls-verify ${CLUSTER_REPO}/${OLM_BUNDLE_NAME}:${BUNDLE_VERSION} --output yaml >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
+	@mkdir -p ${OPERATOR_OUTDIR}/index/ossmconsole-index
+	${OPM} init ossmconsole --default-channel=candidate --output yaml > ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	${OPM} render --skip-tls-verify ${CLUSTER_REPO}/${OLM_BUNDLE_NAME}:${BUNDLE_VERSION} --output yaml >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
 	@# We need OLM to pull the index from the internal registry - change the index to only use the internal registry name
-	sed -i 's|${CLUSTER_REPO}|${CLUSTER_REPO_INTERNAL}|g' ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
-	@echo "---"                                               >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
-	@echo "schema: olm.channel"                               >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
-	@echo "package: ossmplugin"                               >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
-	@echo "name: candidate"                                   >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
-	@echo "entries:"                                          >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
-	@echo "- name: ${OPERATOR_IMAGE_NAME}.${BUNDLE_VERSION}"  >> ${OPERATOR_OUTDIR}/index/ossmplugin-index/index.yaml
-	${OPM} validate ${OPERATOR_OUTDIR}/index/ossmplugin-index
+	sed -i 's|${CLUSTER_REPO}|${CLUSTER_REPO_INTERNAL}|g' ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	@echo "---"                                               >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	@echo "schema: olm.channel"                               >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	@echo "package: ossmconsole"                              >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	@echo "name: candidate"                                   >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	@echo "entries:"                                          >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	@echo "- name: ${OPERATOR_IMAGE_NAME}.${BUNDLE_VERSION}"  >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	${OPM} validate ${OPERATOR_OUTDIR}/index/ossmconsole-index
 	@# Now generate the Dockerfile
-	@echo "FROM ${OLM_INDEX_BASE_IMAGE}"                                   >  ${OPERATOR_OUTDIR}/index/ossmplugin-index.Dockerfile
-	@echo 'ENTRYPOINT ["/bin/opm"]'                                        >> ${OPERATOR_OUTDIR}/index/ossmplugin-index.Dockerfile
-	@echo 'CMD ["serve", "/configs"]'                                      >> ${OPERATOR_OUTDIR}/index/ossmplugin-index.Dockerfile
-	@echo "ADD ossmplugin-index /configs"                                  >> ${OPERATOR_OUTDIR}/index/ossmplugin-index.Dockerfile
-	@echo "LABEL operators.operatorframework.io.index.configs.v1=/configs" >> ${OPERATOR_OUTDIR}/index/ossmplugin-index.Dockerfile
-	cd ${OPERATOR_OUTDIR}/index && ${DORP} build . -f ossmplugin-index.Dockerfile -t ${CLUSTER_REPO}/${OLM_INDEX_NAME}:${BUNDLE_VERSION}
+	@echo "FROM ${OLM_INDEX_BASE_IMAGE}"                                   >  ${OPERATOR_OUTDIR}/index/ossmconsole-index.Dockerfile
+	@echo 'ENTRYPOINT ["/bin/opm"]'                                        >> ${OPERATOR_OUTDIR}/index/ossmconsole-index.Dockerfile
+	@echo 'CMD ["serve", "/configs"]'                                      >> ${OPERATOR_OUTDIR}/index/ossmconsole-index.Dockerfile
+	@echo "ADD ossmconsole-index /configs"                                 >> ${OPERATOR_OUTDIR}/index/ossmconsole-index.Dockerfile
+	@echo "LABEL operators.operatorframework.io.index.configs.v1=/configs" >> ${OPERATOR_OUTDIR}/index/ossmconsole-index.Dockerfile
+	cd ${OPERATOR_OUTDIR}/index && ${DORP} build . -f ossmconsole-index.Dockerfile -t ${CLUSTER_REPO}/${OLM_INDEX_NAME}:${BUNDLE_VERSION}
 
 ## cluster-push-olm-index: Pushes the OLM bundle and then builds and pushes the OLM index to the cluster
 cluster-push-olm-index: build-olm-index
@@ -95,50 +95,50 @@ endif
 
 .generate-catalog-source: .prepare-cluster .determine-olm-bundle-version .prepare-operator-pull-secret
 	@mkdir -p "${OPERATOR_OUTDIR}"
-	@echo "apiVersion: operators.coreos.com/v1alpha1" >  ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "kind: CatalogSource"                       >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "metadata:"                                 >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "  name: ossmplugin-catalog"                >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "  namespace: ${OPERATOR_NAMESPACE}"        >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "spec:"                                     >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "  displayName: Test OSSM Plugin Operator"  >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "  publisher: Local Developer"              >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "  secrets:"                                >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "  - ${OPERATOR_IMAGE_PULL_SECRET_NAME}"    >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "  sourceType: grpc"                        >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
-	@echo "  image: ${CLUSTER_REPO_INTERNAL}/${OLM_INDEX_NAME}:${BUNDLE_VERSION}" >> ${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml
+	@echo "apiVersion: operators.coreos.com/v1alpha1" >  ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "kind: CatalogSource"                       >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "metadata:"                                 >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "  name: ossmconsole-catalog"               >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "  namespace: ${OPERATOR_NAMESPACE}"        >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "spec:"                                     >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "  displayName: Test OSSM Console Operator" >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "  publisher: Local Developer"              >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "  secrets:"                                >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "  - ${OPERATOR_IMAGE_PULL_SECRET_NAME}"    >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "  sourceType: grpc"                        >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
+	@echo "  image: ${CLUSTER_REPO_INTERNAL}/${OLM_INDEX_NAME}:${BUNDLE_VERSION}" >> ${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml
 
 ## deploy-catalog-source: Creates the OLM CatalogSource on the remote cluster
 deploy-catalog-source: .generate-catalog-source cluster-push-olm-index .create-operator-pull-secret
-	${OC} apply -f "${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml"
+	${OC} apply -f "${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml"
 
 ## undeploy-catalog-source: Deletes the OLM CatalogSource from the remote cluster
 undeploy-catalog-source: .generate-catalog-source .remove-operator-pull-secret
-	${OC} delete --ignore-not-found=true -f "${OPERATOR_OUTDIR}/ossmplugin-catalogsource.yaml"
+	${OC} delete --ignore-not-found=true -f "${OPERATOR_OUTDIR}/ossmconsole-catalogsource.yaml"
 
 .generate-subscription:
 	@mkdir -p "${OPERATOR_OUTDIR}"
-	@echo "apiVersion: operators.coreos.com/v1alpha1" >  ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "kind: Subscription"                        >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "metadata:"                                 >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "  name: ossmplugin-subscription"           >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "  namespace: ${OPERATOR_NAMESPACE}"        >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "spec:"                                     >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "  channel: candidate"                      >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "  installPlanApproval: Automatic"          >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "  name: ossmplugin"                        >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "  source: ossmplugin-catalog"              >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "  sourceNamespace: ${OPERATOR_NAMESPACE}"  >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "  config:"                                 >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "    env:"                                  >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo "    - name: ALLOW_AD_HOC_OSSMPLUGIN_IMAGE" >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
-	@echo '      value: "true"'                       >> ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
+	@echo "apiVersion: operators.coreos.com/v1alpha1"  >  ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "kind: Subscription"                         >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "metadata:"                                  >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "  name: ossmconsole-subscription"           >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "  namespace: ${OPERATOR_NAMESPACE}"         >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "spec:"                                      >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "  channel: candidate"                       >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "  installPlanApproval: Automatic"           >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "  name: ossmconsole"                        >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "  source: ossmconsole-catalog"              >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "  sourceNamespace: ${OPERATOR_NAMESPACE}"   >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "  config:"                                  >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "    env:"                                   >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo "    - name: ALLOW_AD_HOC_OSSMCONSOLE_IMAGE" >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
+	@echo '      value: "true"'                        >> ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
 
 ## deploy-subscription: Creates the OLM Subscription on the remote cluster which installs the operator
 deploy-subscription: .ensure-oc-login .generate-subscription
-	${OC} apply -f ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
+	${OC} apply -f ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
 
 ## undeploy-subscription: Deletes the OLM Subscription from the remote cluster which uninstalls the operator
 undeploy-subscription: .ensure-oc-login .generate-subscription
-	${OC} delete --ignore-not-found=true -f ${OPERATOR_OUTDIR}/ossmplugin-subscription.yaml
+	${OC} delete --ignore-not-found=true -f ${OPERATOR_OUTDIR}/ossmconsole-subscription.yaml
 

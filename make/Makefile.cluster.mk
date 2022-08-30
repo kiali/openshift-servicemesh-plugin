@@ -31,15 +31,15 @@
 .prepare-operator-pull-secret: .prepare-cluster
 	@# base64 encode a pull secret (using the logged in user token) that can be used to pull the bundle index image from the internal image registry
 	@$(eval OPERATOR_IMAGE_PULL_SECRET_JSON = $(shell ${OC} registry login --registry="$(shell ${OC} registry info --internal)" --namespace=${ALL_IMAGES_NAMESPACE} --to=- | base64 -w0))
-	@$(eval OPERATOR_IMAGE_PULL_SECRET_NAME ?= ossmplugin-operator-pull-secret)
+	@$(eval OPERATOR_IMAGE_PULL_SECRET_NAME ?= ossmconsole-operator-pull-secret)
 
 .create-operator-pull-secret: .prepare-operator-pull-secret
 	@if [ -n "${OPERATOR_IMAGE_PULL_SECRET_JSON}" ] && ! (${OC} get secret ${OPERATOR_IMAGE_PULL_SECRET_NAME} --namespace ${OPERATOR_NAMESPACE} &> /dev/null); then \
-		echo "${OPERATOR_IMAGE_PULL_SECRET_JSON}" | base64 -d > /tmp/ossmplugin-operator-pull-secret.json ;\
+		echo "${OPERATOR_IMAGE_PULL_SECRET_JSON}" | base64 -d > /tmp/ossmconsole-operator-pull-secret.json ;\
 		${OC} get namespace ${OPERATOR_NAMESPACE} &> /dev/null || ${OC} create namespace ${OPERATOR_NAMESPACE} ;\
-		${OC} create secret generic ${OPERATOR_IMAGE_PULL_SECRET_NAME} --from-file=.dockerconfigjson=/tmp/ossmplugin-operator-pull-secret.json --type=kubernetes.io/dockerconfigjson --namespace=${OPERATOR_NAMESPACE} ;\
-		${OC} label secret ${OPERATOR_IMAGE_PULL_SECRET_NAME} --namespace ${OPERATOR_NAMESPACE} app.kubernetes.io/name=ossmplugin-operator ;\
-		rm /tmp/ossmplugin-operator-pull-secret.json ;\
+		${OC} create secret generic ${OPERATOR_IMAGE_PULL_SECRET_NAME} --from-file=.dockerconfigjson=/tmp/ossmconsole-operator-pull-secret.json --type=kubernetes.io/dockerconfigjson --namespace=${OPERATOR_NAMESPACE} ;\
+		${OC} label secret ${OPERATOR_IMAGE_PULL_SECRET_NAME} --namespace ${OPERATOR_NAMESPACE} app.kubernetes.io/name=ossmconsole-operator ;\
+		rm /tmp/ossmconsole-operator-pull-secret.json ;\
 	fi
 
 .remove-operator-pull-secret: .prepare-operator-pull-secret
@@ -48,15 +48,15 @@
 .prepare-plugin-pull-secret: .prepare-cluster
 	@# base64 encode a pull secret (using the logged in user token) that can be used to pull the plugin image from the internal image registry
 	@$(eval PLUGIN_IMAGE_PULL_SECRET_JSON = $(shell ${OC} registry login --registry="$(shell ${OC} registry info --internal)" --namespace=${ALL_IMAGES_NAMESPACE} --to=- | base64 -w0))
-	@$(eval PLUGIN_IMAGE_PULL_SECRET_NAME ?= ossmplugin-plugin-pull-secret)
+	@$(eval PLUGIN_IMAGE_PULL_SECRET_NAME ?= ossmconsole-plugin-pull-secret)
 
 .create-plugin-pull-secret: .prepare-plugin-pull-secret
 	@if [ -n "${PLUGIN_IMAGE_PULL_SECRET_JSON}" ] && ! (${OC} get secret ${PLUGIN_IMAGE_PULL_SECRET_NAME} --namespace ${PLUGIN_NAMESPACE} &> /dev/null); then \
-		echo "${PLUGIN_IMAGE_PULL_SECRET_JSON}" | base64 -d > /tmp/ossmplugin-plugin-pull-secret.json ;\
+		echo "${PLUGIN_IMAGE_PULL_SECRET_JSON}" | base64 -d > /tmp/ossmconsole-plugin-pull-secret.json ;\
 		${OC} get namespace ${PLUGIN_NAMESPACE} &> /dev/null || ${OC} create namespace ${PLUGIN_NAMESPACE} ;\
-		${OC} create secret generic ${PLUGIN_IMAGE_PULL_SECRET_NAME} --from-file=.dockerconfigjson=/tmp/ossmplugin-plugin-pull-secret.json --type=kubernetes.io/dockerconfigjson --namespace=${PLUGIN_NAMESPACE} ;\
-		${OC} label secret ${PLUGIN_IMAGE_PULL_SECRET_NAME} --namespace ${PLUGIN_NAMESPACE} app.kubernetes.io/name=ossmplugin ;\
-		rm /tmp/ossmplugin-plugin-pull-secret.json ;\
+		${OC} create secret generic ${PLUGIN_IMAGE_PULL_SECRET_NAME} --from-file=.dockerconfigjson=/tmp/ossmconsole-plugin-pull-secret.json --type=kubernetes.io/dockerconfigjson --namespace=${PLUGIN_NAMESPACE} ;\
+		${OC} label secret ${PLUGIN_IMAGE_PULL_SECRET_NAME} --namespace ${PLUGIN_NAMESPACE} app.kubernetes.io/name=ossmconsole ;\
+		rm /tmp/ossmconsole-plugin-pull-secret.json ;\
 	fi
 
 .remove-plugin-pull-secret: .prepare-plugin-pull-secret

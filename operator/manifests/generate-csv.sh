@@ -26,7 +26,7 @@ Valid options:
       The new version of the CSV.
   -opin|--operator-image-name <repo/org/name>
       The full image registry name of the operator without the version tag.
-      Default: quay.io/kiali/ossmplugin-operator
+      Default: quay.io/kiali/ossm-console-operator
   -opiv|--operator-image-version <version>
       The version tag that identifies the operator image that is used by the new manifest.
       Default: <the --new-version value> prefixed with "v"
@@ -67,7 +67,7 @@ OLD_VERSION="$(echo -n ${OLD_VERSION} | sed 's/^v//')"
 
 # determine what the operator image is
 OPERATOR_IMAGE_VERSION="${OPERATOR_IMAGE_VERSION:-v${NEW_VERSION}}"
-OPERATOR_IMAGE_NAME="${OPERATOR_IMAGE_NAME:-quay.io/kiali/ossmplugin-operator}"
+OPERATOR_IMAGE_NAME="${OPERATOR_IMAGE_NAME:-quay.io/kiali/ossm-console-operator}"
 
 CSV_YAML="$(ls -1 ${SCRIPT_DIR}/template/manifests/*.clusterserviceversion.yaml)"
 if [ -z ${CSV_YAML} ]; then

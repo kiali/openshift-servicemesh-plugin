@@ -1,32 +1,37 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: servicemesh-plugin
+  name: ossmconsole
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: servicemesh-plugin
-  namespace: servicemesh-plugin
+  name: ossmconsole
+  namespace: ossmconsole
   labels:
-    app: servicemesh-plugin
-    app.kubernetes.io/component: servicemesh-plugin
-    app.kubernetes.io/instance: servicemesh-plugin
-    app.kubernetes.io/part-of: servicemesh-plugin
-    app.openshift.io/runtime-namespace: servicemesh-plugin
+    app: ossmconsole
+    app.kubernetes.io/component: ossmconsole
+    app.kubernetes.io/instance: ossmconsole
+    app.kubernetes.io/name: ossmconsole
+    app.kubernetes.io/part-of: ossmconsole
+    app.openshift.io/runtime-namespace: ossmconsole
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: servicemesh-plugin
+      app: ossmconsole
   template:
     metadata:
       labels:
-        app: servicemesh-plugin
+        app: ossmconsole
+        app.kubernetes.io/component: ossmconsole
+        app.kubernetes.io/instance: ossmconsole
+        app.kubernetes.io/name: ossmconsole
+        app.kubernetes.io/part-of: ossmconsole
     spec:
       containers:
-        - name: servicemesh-plugin
-          image: quay.io/kiali/servicemesh-plugin:latest
+        - name: ossmconsole
+          image: quay.io/kiali/ossm-console:latest
           ports:
             - containerPort: 9443
               protocol: TCP
@@ -68,10 +73,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nginx-conf
-  namespace: servicemesh-plugin
+  namespace: ossmconsole
   labels:
-    app: servicemesh-plugin
-    app.kubernetes.io/part-of: servicemesh-plugin
+    app: ossmconsole
+    app.kubernetes.io/component: ossmconsole
+    app.kubernetes.io/instance: ossmconsole
+    app.kubernetes.io/name: ossmconsole
+    app.kubernetes.io/part-of: ossmconsole
 data:
   nginx.conf: |
     error_log /dev/stdout;
@@ -99,10 +107,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: plugin-conf
-  namespace: servicemesh-plugin
+  namespace: ossmconsole
   labels:
-    app: servicemesh-plugin
-    app.kubernetes.io/part-of: servicemesh-plugin
+    app: ossmconsole
+    app.kubernetes.io/component: ossmconsole
+    app.kubernetes.io/instance: ossmconsole
+    app.kubernetes.io/name: ossmconsole
+    app.kubernetes.io/part-of: ossmconsole
 data:
   plugin-config.json: |
     {
@@ -114,13 +125,14 @@ kind: Service
 metadata:
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: plugin-serving-cert
-  name: servicemesh-plugin
-  namespace: servicemesh-plugin
+  name: ossmconsole
+  namespace: ossmconsole
   labels:
-    app: servicemesh-plugin
-    app.kubernetes.io/component: servicemesh-plugin
-    app.kubernetes.io/instance: servicemesh-plugin
-    app.kubernetes.io/part-of: servicemesh-plugin
+    app: ossmconsole
+    app.kubernetes.io/component: ossmconsole
+    app.kubernetes.io/instance: ossmconsole
+    app.kubernetes.io/name: ossmconsole
+    app.kubernetes.io/part-of: ossmconsole
 spec:
   ports:
     - name: 9443-tcp
@@ -128,18 +140,18 @@ spec:
       port: 9443
       targetPort: 9443
   selector:
-    app: servicemesh-plugin
+    app: ossmconsole
   type: ClusterIP
   sessionAffinity: None
 ---
 apiVersion: console.openshift.io/v1alpha1
 kind: ConsolePlugin
 metadata:
-  name: servicemesh
+  name: ossmconsole
 spec:
-  displayName: 'OpenShift Service Mesh Plugin'
+  displayName: 'OpenShift Service Mesh Console'
   service:
-    name: servicemesh-plugin
-    namespace: servicemesh-plugin
+    name: ossmconsole
+    namespace: ossmconsole
     port: 9443
     basePath: '/'

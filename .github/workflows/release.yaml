@@ -19,12 +19,12 @@ on:
       plugin_quay_repository:
         description: Plugin Quay repository
         type: string
-        default: quay.io/kiali/servicemesh-plugin
+        default: quay.io/kiali/ossm-console
         required: true
       operator_quay_repository:
         description: Operator Quay repository
         type: string
-        default: quay.io/kiali/ossmplugin-operator
+        default: quay.io/kiali/ossm-console-operator
         required: true
 
 jobs:
@@ -154,14 +154,14 @@ jobs:
       run: |
         if [ -z ${{ github.event.inputs.plugin_quay_repository }} ];
         then
-          PLUGIN_QUAY_REPO="quay.io/kiali/servicemesh-plugin"
+          PLUGIN_QUAY_REPO="quay.io/kiali/ossm-console"
         else
           PLUGIN_QUAY_REPO="${{ github.event.inputs.plugin_quay_repository }}"
         fi
 
         if [ -z ${{ github.event.inputs.operator_quay_repository }} ];
         then
-          OPERATOR_QUAY_REPO="quay.io/kiali/ossmplugin-operator"
+          OPERATOR_QUAY_REPO="quay.io/kiali/ossm-console-operator"
         else
           OPERATOR_QUAY_REPO="${{ github.event.inputs.operator_quay_repository }}"
         fi
@@ -252,7 +252,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh release create $RELEASE_VERSION -t "OpenShift Service Mesh Plugin $RELEASE_VERSION"
+        gh release create $RELEASE_VERSION -t "OpenShift Service Mesh Console $RELEASE_VERSION"
 
     - name: Create or update version branch
       run: git push origin $(git rev-parse HEAD):refs/heads/$BRANCH_VERSION

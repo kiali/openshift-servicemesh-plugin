@@ -1,5 +1,5 @@
 #
-# Targets for working with the OSSM Plugin Operator.
+# Targets for working with the OSSM Console Operator.
 #
 
 # Where operator generated or downloaded files will go
@@ -7,7 +7,7 @@ OPERATOR_OUTDIR=${OPERATOR_DIR}/_output
 
 # Identifies the operator container image that will be built
 OPERATOR_IMAGE_ORG ?= kiali
-OPERATOR_IMAGE_NAME ?= ossmplugin-operator
+OPERATOR_IMAGE_NAME ?= ossm-console-operator
 OPERATOR_CONTAINER_NAME ?= ${OPERATOR_IMAGE_ORG}/${OPERATOR_IMAGE_NAME}
 OPERATOR_CONTAINER_VERSION ?= ${CONTAINER_VERSION}
 OPERATOR_QUAY_NAME ?= quay.io/${OPERATOR_CONTAINER_NAME}
@@ -86,12 +86,12 @@ get-operator-sdk: .ensure-operator-sdk-exists
 .wait-for-crd:
 	@echo -n "Waiting for the CRD to be established"
 	@i=0 ;\
-	until [ $${i} -eq 360 ] || ${OC} get crd ossmplugins.kiali.io &> /dev/null; do \
+	until [ $${i} -eq 360 ] || ${OC} get crd ossmconsoles.kiali.io &> /dev/null; do \
 	    echo -n '.' ; sleep 1 ; (( i++ )) ;\
 	done ;\
 	echo ;\
 	[ $${i} -lt 360 ] || (echo "The CRD does not exist. You should install the operator." && exit 1)
-	${OC} wait --for condition=established --timeout=60s crd ossmplugins.kiali.io
+	${OC} wait --for condition=established --timeout=60s crd ossmconsoles.kiali.io
 
 ## get-ansible-operator: Downloads the Ansible Operator binary if it is not already in PATH.
 get-ansible-operator: .ensure-ansible-operator-exists .ensure-ansible-runner-exists
@@ -103,54 +103,54 @@ get-ansible-operator: .ensure-ansible-operator-exists .ensure-ansible-runner-exi
 .delete-test-namespace: .ensure-oc-login
 	${OC} delete --ignore-not-found=true namespace ${PLUGIN_NAMESPACE}
 
-## install-crd: Installs the OSSM Plugin CRD into the cluster.
+## install-crd: Installs the OSSMConsole CRD into the cluster.
 install-crd: .ensure-oc-login
-	${OC} apply -f "${OPERATOR_DIR}/manifests/template/manifests/ossmplugin.crd.yaml"
+	${OC} apply -f "${OPERATOR_DIR}/manifests/template/manifests/ossmconsole.crd.yaml"
 
-## uninstall-crd: Removes the OSSM Plugin CRD from the cluster along with all CRs that may exist.
+## uninstall-crd: Removes the OSSMConsole CRD from the cluster along with all CRs that may exist.
 uninstall-crd: purge-all-crs
-	${OC} delete --ignore-not-found=true -f "${OPERATOR_DIR}/manifests/template/manifests/ossmplugin.crd.yaml"
+	${OC} delete --ignore-not-found=true -f "${OPERATOR_DIR}/manifests/template/manifests/ossmconsole.crd.yaml"
 
-## install-cr: Installs a test OSSM Plugin CR into the cluster.
+## install-cr: Installs a test OSSMConsole CR into the cluster.
 install-cr: .wait-for-crd .prepare-cluster .create-test-namespace .create-plugin-pull-secret
-	cat "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml" | DEPLOYMENT_IMAGE_NAME="${CLUSTER_PLUGIN_INTERNAL_NAME}" DEPLOYMENT_IMAGE_VERSION="${PLUGIN_CONTAINER_VERSION}" PULL_SECRET_NAME="${PLUGIN_IMAGE_PULL_SECRET_NAME}" envsubst | ${OC} apply -n ${PLUGIN_NAMESPACE} -f -
+	cat "${OPERATOR_DIR}/deploy/ossmconsole-cr-dev.yaml" | DEPLOYMENT_IMAGE_NAME="${CLUSTER_PLUGIN_INTERNAL_NAME}" DEPLOYMENT_IMAGE_VERSION="${PLUGIN_CONTAINER_VERSION}" PULL_SECRET_NAME="${PLUGIN_IMAGE_PULL_SECRET_NAME}" envsubst | ${OC} apply -n ${PLUGIN_NAMESPACE} -f -
 
-## uninstall-cr: Deletes the test OSSM Plugin CR from the cluster and waits for the operator to finalize the deletion.
+## uninstall-cr: Deletes the test OSSMConsole CR from the cluster and waits for the operator to finalize the deletion.
 uninstall-cr: .remove-plugin-pull-secret
-	(${OC} get crd ossmplugins.kiali.io &> /dev/null && ${OC} delete --ignore-not-found=true -n ${PLUGIN_NAMESPACE} -f "${OPERATOR_DIR}/deploy/ossmplugin-cr-dev.yaml") || true
+	(${OC} get crd ossmconsoles.kiali.io &> /dev/null && ${OC} delete --ignore-not-found=true -n ${PLUGIN_NAMESPACE} -f "${OPERATOR_DIR}/deploy/ossmconsole-cr-dev.yaml") || true
 
-## purge-all-crs: Purges all OSSM Plugin CRs from the cluster, forcing them to delete without the operator finalizing them.
+## purge-all-crs: Purges all OSSMConsole CRs from the cluster, forcing them to delete without the operator finalizing them.
 purge-all-crs: .ensure-oc-login
-	@for k in $(shell ${OC} get ossmplugin --ignore-not-found=true --all-namespaces -o custom-columns=NS:.metadata.namespace,N:.metadata.name --no-headers | sed 's/  */:/g') ;\
+	@for k in $(shell ${OC} get ossmconsole --ignore-not-found=true --all-namespaces -o custom-columns=NS:.metadata.namespace,N:.metadata.name --no-headers | sed 's/  */:/g') ;\
 	  do \
 	    cr_namespace="$$(echo $${k} | cut -d: -f1)" ;\
 	    cr_name="$$(echo $${k} | cut -d: -f2)" ;\
 	    echo "Deleting Kiali CR [$${cr_name}] in namespace [$${cr_namespace}]" ;\
-	    ${OC} patch  ossmplugin $${cr_name} -n $${cr_namespace} -p '{"metadata":{"finalizers": []}}' --type=merge ;\
-	    ${OC} delete ossmplugin $${cr_name} -n $${cr_namespace} ;\
+	    ${OC} patch  ossmconsole $${cr_name} -n $${cr_namespace} -p '{"metadata":{"finalizers": []}}' --type=merge ;\
+	    ${OC} delete ossmconsole $${cr_name} -n $${cr_namespace} ;\
 	  done
 
-## run-operator: Runs the OSSM Plugin Operator via the ansible-operator.
+## run-operator: Runs the OSSM Console Operator via the ansible-operator.
 run-operator: install-crd install-cr get-ansible-operator
 	cd ${OPERATOR_DIR} && \
 	ANSIBLE_ROLES_PATH="${OPERATOR_DIR}/roles" \
-	ALLOW_AD_HOC_OSSMPLUGIN_IMAGE="true" \
-	ANSIBLE_VERBOSITY_OSSMPLUGIN_KIALI_IO="1" \
+	ALLOW_AD_HOC_OSSMCONSOLE_IMAGE="true" \
+	ANSIBLE_VERBOSITY_OSSMCONSOLE_KIALI_IO="1" \
 	ANSIBLE_DEBUG_LOGS="True" \
 	PROFILE_TASKS_TASK_OUTPUT_LIMIT="100" \
 	POD_NAMESPACE="does-not-exist" \
 	WATCH_NAMESPACE="" \
 	PATH="${PATH}:${OPERATOR_OUTDIR}/ansible-operator-install" \
-	ansible-operator run --zap-log-level=debug --leader-election-id=ossmplugin-operator
+	ansible-operator run --zap-log-level=debug --leader-election-id=ossmconsole-operator
 
 ## run-playbook: Run the operator ansible playbooks directly. You must have Ansible installed for this to work.
 run-playbook: install-crd .wait-for-crd
 	@$(eval ANSIBLE_PYTHON_INTERPRETER ?= $(shell if (which python &> /dev/null && python --version 2>&1 | grep -q " 2\.*"); then echo "-e ansible_python_interpreter=python3"; else echo ""; fi))
 	@if [ ! -z "${ANSIBLE_PYTHON_INTERPRETER}" ]; then echo "ANSIBLE_PYTHON_INTERPRETER is [${ANSIBLE_PYTHON_INTERPRETER}]. Make sure that refers to a Python3 installation. If you do not have Python3 in that location, you must ensure you have Python3 and ANSIBLE_PYTHON_INTERPRETER is set to '-e ansible_python_interpreter=<full path to your python3 executable>"; fi
-	@echo "Create a dummy Kiali CR"; ${OC} apply -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmplugin-cr.yaml
+	@echo "Create a dummy Kiali CR"; ${OC} apply -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmconsole-cr.yaml
 	ansible-galaxy collection install operator_sdk.util community.kubernetes
-	ALLOW_AD_HOC_OSSMPLUGIN_IMAGE=true POD_NAMESPACE="does-not-exist" ANSIBLE_ROLES_PATH=${OPERATOR_DIR}/roles ansible-playbook -vvv ${ANSIBLE_PYTHON_INTERPRETER} -i ${OPERATOR_DIR}/dev-playbook-config/dev-hosts.yaml ${OPERATOR_DIR}/dev-playbook-config/dev-playbook.yaml
-	@echo "Remove the dummy Kiali CR"; ${OC} delete -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmplugin-cr.yaml
+	ALLOW_AD_HOC_OSSMCONSOLE_IMAGE=true POD_NAMESPACE="does-not-exist" ANSIBLE_ROLES_PATH=${OPERATOR_DIR}/roles ansible-playbook -vvv ${ANSIBLE_PYTHON_INTERPRETER} -i ${OPERATOR_DIR}/dev-playbook-config/dev-hosts.yaml ${OPERATOR_DIR}/dev-playbook-config/dev-playbook.yaml
+	@echo "Remove the dummy Kiali CR"; ${OC} delete -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmconsole-cr.yaml
 
 ## build-operator: Build operator container image.
 build-operator:
@@ -165,17 +165,17 @@ operator-create: deploy-catalog-source deploy-subscription
 
 ## operator-delete: Deletes the operator from the remote cluster via OLM
 operator-delete: uninstall-cr undeploy-subscription undeploy-catalog-source .delete-test-namespace uninstall-crd
-	@echo "Deleting OLM CSVs to fully uninstall OSSM Plugin operator and its related resources"
-	@for csv in $$(${OC} get csv --all-namespaces --no-headers -o custom-columns=NS:.metadata.namespace,N:.metadata.name | sed 's/  */:/g' | grep ossmplugin-operator) ;\
+	@echo "Deleting OLM CSVs to fully uninstall OSSM Console operator and its related resources"
+	@for csv in $$(${OC} get csv --all-namespaces --no-headers -o custom-columns=NS:.metadata.namespace,N:.metadata.name | sed 's/  */:/g' | grep ossmconsole-operator) ;\
 	do \
 		${OC} delete --ignore-not-found=true csv -n $$(echo -n $${csv} | cut -d: -f1) $$(echo -n $${csv} | cut -d: -f2) ;\
 	done
 
 ## validate-cr: Ensures the example CR is valid according to the CRD schema
 validate-cr:
-	${OPERATOR_DIR}/crd-docs/bin/validate-ossmplugin-cr.sh --cr-file ${OPERATOR_DIR}/crd-docs/cr/kiali.io_v1alpha1_ossmplugin.yaml
+	${OPERATOR_DIR}/crd-docs/bin/validate-ossmconsole-cr.sh --cr-file ${OPERATOR_DIR}/crd-docs/cr/kiali.io_v1alpha1_ossmconsole.yaml
 
-## gen-crd-doc: Generates documentation for the OSSM Plugin CR configuration
+## gen-crd-doc: Generates documentation for the OSSM Console CR configuration
 gen-crd-doc:
 	mkdir -p ${OPERATOR_OUTDIR}/crd-docs
 	${DORP} run -v ${OPERATOR_OUTDIR}/crd-docs:/opt/crd-docs-generator/output -v ${OPERATOR_DIR}/crd-docs/config:/opt/crd-docs-generator/config quay.io/giantswarm/crd-docs-generator:0.9.0 --config /opt/crd-docs-generator/config/apigen-config.yaml
@@ -222,10 +222,10 @@ gen-crd-doc:
 
 # Ensure a local builder for multi-arch build. For more details, see: https://github.com/docker/buildx/blob/master/README.md#building-multi-platform-images
 .ensure-buildx-builder: .ensure-docker-buildx
-	@if ! docker buildx inspect ossmplugin-builder > /dev/null 2>&1; then \
-	  echo "The buildx builder instance named 'ossmplugin-builder' does not exist. Creating one now."; \
-	  if ! docker buildx create --name=ossmplugin-builder --driver-opt=image=moby/buildkit:v0.8.0; then \
-	    echo "Failed to create the buildx builder 'ossmplugin-builder'"; \
+	@if ! docker buildx inspect ossmconsole-builder > /dev/null 2>&1; then \
+	  echo "The buildx builder instance named 'ossmconsole-builder' does not exist. Creating one now."; \
+	  if ! docker buildx create --name=ossmconsole-builder --driver-opt=image=moby/buildkit:v0.8.0; then \
+	    echo "Failed to create the buildx builder 'ossmconsole-builder'"; \
 	    exit 1; \
 	  fi \
 	fi; \
@@ -236,7 +236,7 @@ gen-crd-doc:
 	  fi \
 	fi
 
-## build-push-operator-multi-arch: Pushes the OSSM Plugin Operator multi-arch image to quay.io.
+## build-push-operator-multi-arch: Pushes the OSSM Console Operator multi-arch image to quay.io.
 build-push-operator-multi-arch: .ensure-buildx-builder
-	@echo Pushing OSSM Plugin Operator multi-arch image to ${OPERATOR_QUAY_TAG} using docker buildx
-	docker buildx build --build-arg OPERATOR_BASE_IMAGE_REPO=${OPERATOR_BASE_IMAGE_REPO} --build-arg OPERATOR_BASE_IMAGE_VERSION=${OPERATOR_BASE_IMAGE_VERSION} --push --pull --no-cache --builder=ossmplugin-builder $(foreach arch,${TARGET_ARCHS},--platform=linux/${arch}) $(foreach tag,${OPERATOR_QUAY_TAG},--tag=${tag}) -f ${OPERATOR_DIR}/build/Dockerfile ${OPERATOR_DIR}
+	@echo Pushing OSSM Console Operator multi-arch image to ${OPERATOR_QUAY_TAG} using docker buildx
+	docker buildx build --build-arg OPERATOR_BASE_IMAGE_REPO=${OPERATOR_BASE_IMAGE_REPO} --build-arg OPERATOR_BASE_IMAGE_VERSION=${OPERATOR_BASE_IMAGE_VERSION} --push --pull --no-cache --builder=ossmconsole-builder $(foreach arch,${TARGET_ARCHS},--platform=linux/${arch}) $(foreach tag,${OPERATOR_QUAY_TAG},--tag=${tag}) -f ${OPERATOR_DIR}/build/Dockerfile ${OPERATOR_DIR}

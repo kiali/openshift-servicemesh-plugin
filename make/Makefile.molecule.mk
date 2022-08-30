@@ -7,18 +7,18 @@
 # To run multiple scenarios sequentially, specify a space-separated list: make -e MOLECULE_SCENARIO="first-test second-test" molecule-test
 MOLECULE_SCENARIO ?= default
 
-# Defines what playbook version to test. This is the value to put in the tests' OSSMPlugin CR spec.version field.
-MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION ?= default
+# Defines what playbook version to test. This is the value to put in the tests' OSSMConsole CR spec.version field.
+MOLECULE_OSSMCONSOLE_CR_SPEC_VERSION ?= default
 
-# Set MOLECULE_USE_DEV_IMAGES to true to use your local OSSM Plugin dev builds (not released images from quay.io).
+# Set MOLECULE_USE_DEV_IMAGES to true to use your local OSSM Console plugin dev builds (not released images from quay.io).
 # To use this, you must have first pushed your local dev builds via the cluster-push targets.
 #
 # If MOLECULE_USE_DEV_IMAGES is not set or set to 'false', that usually means you want to pick up the latest images
 # published on quay.io. However, if you want to test the default plugin image that the operator will install, you
-# can set MOLECULE_USE_DEFAULT_OSSMPLUGIN_IMAGE=true. When that is set (in conjunction with MOLECULE_USE_DEV_IMAGES=false),
+# can set MOLECULE_USE_DEFAULT_OSSMCONSOLE_IMAGE=true. When that is set (in conjunction with MOLECULE_USE_DEV_IMAGES=false),
 # the molecule tests will set the spec.deployment.imageVersion and spec.deployment.imageName override fields to an
 # empty string thus causing the plugin image to be the default image installed by the operator. This is useful
-# when you are installing via OLM and you want to test with a specific CR spec.version (MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION)
+# when you are installing via OLM and you want to test with a specific CR spec.version (MOLECULE_OSSMCONSOLE_CR_SPEC_VERSION)
 # and the default plugin that is installed by the operator for that spec.version.
 #
 # Note that you can override everything mentioned above in order to use your own image names/versions. You can do this by
@@ -26,14 +26,14 @@ MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION ?= default
 # If the x_IMAGE_NAME env vars are set to 'dev' then the molecule tests will use the internal OpenShift registry location.
 # An example MOLECULE_IMAGE_ENV_ARGS can be:
 #
-#   MOLECULE_IMAGE_ENV_ARGS = --env MOLECULE_OSSMPLUGIN_IMAGE_NAME=quay.io/myuser/mypluginimage \
-#                             --env MOLECULE_OSSMPLUGIN_IMAGE_VERSION=test
+#   MOLECULE_IMAGE_ENV_ARGS = --env MOLECULE_PLUGIN_IMAGE_NAME=quay.io/myuser/mypluginimage \
+#                             --env MOLECULE_PLUGIN_IMAGE_VERSION=test
 
 ifndef MOLECULE_IMAGE_ENV_ARGS
 ifeq ($(MOLECULE_USE_DEV_IMAGES),true)
-MOLECULE_IMAGE_ENV_ARGS = --env MOLECULE_OSSMPLUGIN_IMAGE_NAME=dev --env MOLECULE_OSSMPLUGIN_IMAGE_VERSION=dev
-else ifeq ($(MOLECULE_USE_DEFAULT_OSSMPLUGIN_IMAGE),true)
-MOLECULE_IMAGE_ENV_ARGS = --env 'MOLECULE_OSSMPLUGIN_IMAGE_NAME=' --env 'MOLECULE_OSSMPLUGIN_IMAGE_VERSION='
+MOLECULE_IMAGE_ENV_ARGS = --env MOLECULE_PLUGIN_IMAGE_NAME=dev --env MOLECULE_PLUGIN_IMAGE_VERSION=dev
+else ifeq ($(MOLECULE_USE_DEFAULT_OSSMCONSOLE_IMAGE),true)
+MOLECULE_IMAGE_ENV_ARGS = --env 'MOLECULE_PLUGIN_IMAGE_NAME=' --env 'MOLECULE_PLUGIN_IMAGE_VERSION='
 endif
 endif
 
@@ -72,11 +72,11 @@ MOLECULE_WAIT_RETRIES ?= 360
 MOLECULE_WAIT_RETRIES_ARG ?= --env MOLECULE_WAIT_RETRIES=${MOLECULE_WAIT_RETRIES}
 
 .prepare-force-molecule-build:
-	@$(eval FORCE_MOLECULE_BUILD ?= $(shell ${DORP} inspect ossmplugin-molecule:latest > /dev/null 2>&1 || echo "true"))
+	@$(eval FORCE_MOLECULE_BUILD ?= $(shell ${DORP} inspect ossm-console-molecule:latest > /dev/null 2>&1 || echo "true"))
 
 ## molecule-build: Builds an image to run Molecule without requiring the host to have python/pip installed. If it already exists, and you want to build it again, set env var FORCE_MOLECULE_BUILD to "true".
 molecule-build: .prepare-force-molecule-build
-	@if [ "${FORCE_MOLECULE_BUILD}" == "true" ]; then ${DORP} build --no-cache -t ossmplugin-molecule:latest ${OPERATOR_DIR}/molecule/docker; else echo "Will not rebuild ossmplugin-molecule image."; fi
+	@if [ "${FORCE_MOLECULE_BUILD}" == "true" ]; then ${DORP} build --no-cache -t ossm-console-molecule:latest ${OPERATOR_DIR}/molecule/docker; else echo "Will not rebuild ossm-console-molecule image."; fi
 
 ifndef MOLECULE_ADD_HOST_ARGS
 .prepare-add-host-args: .prepare-cluster
@@ -102,8 +102,8 @@ else
 molecule-test: molecule-build .wait-for-crd .prepare-add-host-args .prepare-molecule-data-volume
 endif
 ifeq ($(DORP),docker)
-	for msn in ${MOLECULE_SCENARIO}; do ${DORP} run --rm ${MOLECULE_DOCKER_TERM_ARGS} --env KUBECONFIG="/tmp/molecule/kubeconfig" --env K8S_AUTH_KUBECONFIG="/tmp/molecule/kubeconfig" -v molecule-tests-volume:/tmp/molecule -w /tmp/molecule/operator --network="host" ${MOLECULE_ADD_HOST_ARGS} --add-host="api.crc.testing:192.168.130.11" --add-host="kiali-istio-system.apps-crc.testing:192.168.130.11" --add-host="prometheus-istio-system.apps-crc.testing:192.168.130.11" --env DORP=${DORP} --env PLUGIN_IMAGE_PULL_SECRET_JSON="${PLUGIN_IMAGE_PULL_SECRET_JSON}" --env MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION="${MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION}" ${MOLECULE_IMAGE_ENV_ARGS} ${MOLECULE_OPERATOR_PROFILER_ENABLED_ENV_VAR} ${MOLECULE_DUMP_LOGS_ON_ERROR_ENV_VAR} ${MOLECULE_WAIT_RETRIES_ARG} -v /var/run/docker.sock:/var/run/docker.sock ossmplugin-molecule:latest molecule ${MOLECULE_DEBUG_ARG} test ${MOLECULE_DESTROY_NEVER_ARG} --scenario-name $${msn}; if [ "$$?" != "0" ]; then echo "Molecule test failed: $${msn}"; ${DORP} volume rm molecule-tests-volume; exit 1; fi; done
+	for msn in ${MOLECULE_SCENARIO}; do ${DORP} run --rm ${MOLECULE_DOCKER_TERM_ARGS} --env KUBECONFIG="/tmp/molecule/kubeconfig" --env K8S_AUTH_KUBECONFIG="/tmp/molecule/kubeconfig" -v molecule-tests-volume:/tmp/molecule -w /tmp/molecule/operator --network="host" ${MOLECULE_ADD_HOST_ARGS} --add-host="api.crc.testing:192.168.130.11" --add-host="kiali-istio-system.apps-crc.testing:192.168.130.11" --add-host="prometheus-istio-system.apps-crc.testing:192.168.130.11" --env DORP=${DORP} --env PLUGIN_IMAGE_PULL_SECRET_JSON="${PLUGIN_IMAGE_PULL_SECRET_JSON}" --env MOLECULE_OSSMCONSOLE_CR_SPEC_VERSION="${MOLECULE_OSSMCONSOLE_CR_SPEC_VERSION}" ${MOLECULE_IMAGE_ENV_ARGS} ${MOLECULE_OPERATOR_PROFILER_ENABLED_ENV_VAR} ${MOLECULE_DUMP_LOGS_ON_ERROR_ENV_VAR} ${MOLECULE_WAIT_RETRIES_ARG} -v /var/run/docker.sock:/var/run/docker.sock ossm-console-molecule:latest molecule ${MOLECULE_DEBUG_ARG} test ${MOLECULE_DESTROY_NEVER_ARG} --scenario-name $${msn}; if [ "$$?" != "0" ]; then echo "Molecule test failed: $${msn}"; ${DORP} volume rm molecule-tests-volume; exit 1; fi; done
 else
-	for msn in ${MOLECULE_SCENARIO}; do ${DORP} run --rm ${MOLECULE_DOCKER_TERM_ARGS} --env KUBECONFIG="/tmp/molecule/kubeconfig" --env K8S_AUTH_KUBECONFIG="/tmp/molecule/kubeconfig" -v molecule-tests-volume:/tmp/molecule -w /tmp/molecule/operator --network="host" ${MOLECULE_ADD_HOST_ARGS} --add-host="api.crc.testing:192.168.130.11" --add-host="kiali-istio-system.apps-crc.testing:192.168.130.11" --add-host="prometheus-istio-system.apps-crc.testing:192.168.130.11" --env DORP=${DORP} --env PLUGIN_IMAGE_PULL_SECRET_JSON="${PLUGIN_IMAGE_PULL_SECRET_JSON}" --env MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION="${MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION}" ${MOLECULE_IMAGE_ENV_ARGS} ${MOLECULE_OPERATOR_PROFILER_ENABLED_ENV_VAR} ${MOLECULE_DUMP_LOGS_ON_ERROR_ENV_VAR} ${MOLECULE_WAIT_RETRIES_ARG}                                    localhost/ossmplugin-molecule:latest molecule ${MOLECULE_DEBUG_ARG} test ${MOLECULE_DESTROY_NEVER_ARG} --scenario-name $${msn}; if [ "$$?" != "0" ]; then echo "Molecule test failed: $${msn}"; ${DORP} volume rm molecule-tests-volume; exit 1; fi; done
+	for msn in ${MOLECULE_SCENARIO}; do ${DORP} run --rm ${MOLECULE_DOCKER_TERM_ARGS} --env KUBECONFIG="/tmp/molecule/kubeconfig" --env K8S_AUTH_KUBECONFIG="/tmp/molecule/kubeconfig" -v molecule-tests-volume:/tmp/molecule -w /tmp/molecule/operator --network="host" ${MOLECULE_ADD_HOST_ARGS} --add-host="api.crc.testing:192.168.130.11" --add-host="kiali-istio-system.apps-crc.testing:192.168.130.11" --add-host="prometheus-istio-system.apps-crc.testing:192.168.130.11" --env DORP=${DORP} --env PLUGIN_IMAGE_PULL_SECRET_JSON="${PLUGIN_IMAGE_PULL_SECRET_JSON}" --env MOLECULE_OSSMCONSOLE_CR_SPEC_VERSION="${MOLECULE_OSSMCONSOLE_CR_SPEC_VERSION}" ${MOLECULE_IMAGE_ENV_ARGS} ${MOLECULE_OPERATOR_PROFILER_ENABLED_ENV_VAR} ${MOLECULE_DUMP_LOGS_ON_ERROR_ENV_VAR} ${MOLECULE_WAIT_RETRIES_ARG}                                    localhost/ossm-console-molecule:latest molecule ${MOLECULE_DEBUG_ARG} test ${MOLECULE_DESTROY_NEVER_ARG} --scenario-name $${msn}; if [ "$$?" != "0" ]; then echo "Molecule test failed: $${msn}"; ${DORP} volume rm molecule-tests-volume; exit 1; fi; done
 endif
 	$(DORP) volume rm molecule-tests-volume
