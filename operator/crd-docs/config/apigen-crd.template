@@ -30,7 +30,7 @@ source_repository_ref: {{ .SourceRepositoryRef }}
 
 A tool is available to allow you to check your own OSSMConsole CR to ensure it is valid. Simply download [the validation script](https://raw.githubusercontent.com/kiali/openshift-servicemesh-plugin/main/operator/crd-docs/bin/validate-ossmconsole-cr.sh) and run it, passing in the location of the OSSMConsole CRD you wish to validate with (e.g. the latest version is found [here](https://raw.githubusercontent.com/kiali/openshift-servicemesh-plugin/main/operator/crd-docs/crd/kiali.io_ossmconsoles.yaml)) and the location of your OSSMConsole CR. You must be connected to/logged into a cluster for this validation tool to work.
 
-For example, to validate a OSSMConsole CR named `ossmconsole` in the namespace `istio-system` using the latest version of the OSSMConsole CRD, run the following:
+For example, to validate an OSSMConsole CR named `ossmconsole` in the namespace `istio-system` using the latest version of the OSSMConsole CRD, run the following:
 <pre>
 bash <(curl -sL https://raw.githubusercontent.com/kiali/openshift-servicemesh-plugin/main/operator/crd-docs/bin/validate-ossmconsole-cr.sh) \
   -crd https://raw.githubusercontent.com/kiali/openshift-servicemesh-plugin/main/operator/crd-docs/crd/kiali.io_ossmconsoles.yaml \

@@ -3,7 +3,7 @@
 ##############################################################################
 # validate-ossmconsole-cr.sh
 #
-# This script can be used to validate a OSSMConsole CR.
+# This script can be used to validate an OSSMConsole CR.
 #
 # To use this script, you must:
 # * Have "oc" or "kubectl"
