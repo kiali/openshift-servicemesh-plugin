@@ -18,15 +18,11 @@ These are the things you need before you can start working with the OpenShift Se
 
 To very quickly get the latest OSSM Console plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
 
-```sh
-# Step 1 - Login in OpenShift cluster i.e oc login ...
+1. Log into your OpenShift cluster with `oc login`
+2. Adjust the `kialiUrl` setting in the "plugin-conf" ConfigMap under `plugin/manifest.yaml` so it points to your Kiali public URL. Examples: `https://kiali-istio-system.apps-crc.testing` or if deploying Kiali locally `http://localhost:3000`
+3. Run `make deploy-plugin enable-plugin` to deploy the `latest` plugin published on quay.io and then enable the plugin
 
-# Step 2- Adjust the kialiUrl in the "plugin-conf" ConfigMap under plugin/manifest.yaml pointing to the Kiali public URL
-# i.e. https://kiali-istio-system.apps-crc.testing
-
-# Step 3 - deploy the latest plugin published on quay.io and then enable the plugin via these make targets:
-make deploy-plugin enable-plugin
-```
+You can undeploy/disable the plugin using `make undeploy-plugin`.
 
 ## How to Run the Plugin for Local Development
 

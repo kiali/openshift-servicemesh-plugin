@@ -40,12 +40,17 @@ deploy-plugin: .ensure-oc-login
 	cd ${PLUGIN_DIR} && ${OC} apply -f manifest.yaml
 
 ## undeploy-plugin: Removes the plugin quickly. This does not utilize the operator.
-undeploy-plugin: .ensure-oc-login
-	cd ${PLUGIN_DIR} && ${OC} delete -f manifest.yaml
+undeploy-plugin: .ensure-oc-login disable-plugin
+	cd ${PLUGIN_DIR} && ${OC} delete --ignore-not-found=true -f manifest.yaml
 
 ## enable-plugin: Enables the plugin within the OpenShift Console.
 enable-plugin: .ensure-oc-login
-	${OC} patch consoles.operator.openshift.io cluster --patch '{ "spec": { "plugins": ["ossmconsole"] } }' --type=merge
+	${OC} patch consoles.operator.openshift.io cluster --type=json -p '[{"op":"add","path":"/spec/plugins/-","value":"ossmconsole"}]'
+
+## disable-plugin: Disables the plugin within the OpenShift Console.
+disable-plugin: .ensure-oc-login
+	index="$$(${OC} get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins | index("ossmconsole")')" && \
+	  [ "$${index}" != "null" ] && ${OC} patch consoles.operator.openshift.io cluster --type=json -p '[{"op":"remove","path":"/spec/plugins/'$${index}'"}]' || true
 
 ## restart-plugin: Restarts the plugin.
 restart-plugin: .ensure-oc-login
