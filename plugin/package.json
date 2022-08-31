@@ -62,7 +62,7 @@
     "name": "ossmconsole",
     "version": "0.1.0",
     "displayName": "OpenShift Service Mesh Console",
-    "description": "OpenShift Console integration with Kiali and Istio",
+    "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {
       "OverviewPage": "./components/OverviewPage",
       "GraphPage": "./components/GraphPage",
