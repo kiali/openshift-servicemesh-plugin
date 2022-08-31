@@ -32,23 +32,25 @@ In one command line window, perform the following steps:
 cd plugin
 yarn install
 
-# Copy a plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment
-# (make sure you adjust the kialiUrl in the config file so it points to your Kiali public endpoint URL)
+# Copy the plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment.
 cp plugin-config.json dist
 
-yarn run start
+# If necessary, make sure you adjust the kialiUrl in the config file so it points to your Kiali public endpoint URL
+# vi dist/plugin-config.json
 
-# Plugin will start at http://localhost:9001
+yarn run start
 ```
+
+At this point, the plugin will start and be accessible at http://localhost:9001
 
 In a second command line window, perform the following steps:
 
 ```sh
 cd plugin
 yarn run start-console
-
-# OpenShift Console will start at http://localhost:9000
 ```
+
+At this point, the OpenShift Console will start and be accessible at http://localhost:9000
 
 ## Operator
 
