@@ -18,15 +18,11 @@ These are the things you need before you can start working with the OpenShift Se
 
 To very quickly get the latest OSSM Console plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
 
-```sh
-# Step 1 - Login in OpenShift cluster i.e oc login ...
+1. Log into your OpenShift cluster with `oc login`
+2. Adjust the `kialiUrl` setting in the "plugin-conf" ConfigMap under `plugin/manifest.yaml` so it points to your Kiali public URL. Examples: `https://kiali-istio-system.apps-crc.testing` or if deploying Kiali locally `http://localhost:3000`
+3. Run `make deploy-plugin enable-plugin` to deploy the `latest` plugin published on quay.io and then enable the plugin
 
-# Step 2- Adjust the kialiUrl in the "plugin-conf" ConfigMap under plugin/manifest.yaml pointing to the Kiali public URL
-# i.e. https://kiali-istio-system.apps-crc.testing
-
-# Step 3 - deploy the latest plugin published on quay.io and then enable the plugin via these make targets:
-make deploy-plugin enable-plugin
-```
+You can undeploy/disable the plugin using `make undeploy-plugin`.
 
 ## How to Run the Plugin for Local Development
 
@@ -36,23 +32,25 @@ In one command line window, perform the following steps:
 cd plugin
 yarn install
 
-# Copy a plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment
-# (make sure you adjust the kialiUrl in the config file so it points to your Kiali public endpoint URL)
+# Copy the plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment.
 cp plugin-config.json dist
 
-yarn run start
+# If necessary, make sure you adjust the kialiUrl in the config file so it points to your Kiali public endpoint URL
+# vi dist/plugin-config.json
 
-# Plugin will start at http://localhost:9001
+yarn run start
 ```
+
+At this point, the plugin will start and be accessible at http://localhost:9001
 
 In a second command line window, perform the following steps:
 
 ```sh
 cd plugin
 yarn run start-console
-
-# OpenShift Console will start at http://localhost:9000
 ```
+
+At this point, the OpenShift Console will start and be accessible at http://localhost:9000
 
 ## Operator
 
