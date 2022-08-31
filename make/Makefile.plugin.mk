@@ -4,7 +4,7 @@
 
 # Identifies the plugin container image that will be built
 PLUGIN_IMAGE_ORG ?= kiali
-PLUGIN_IMAGE_NAME ?= ossm-console
+PLUGIN_IMAGE_NAME ?= ossmconsole
 PLUGIN_CONTAINER_NAME ?= ${PLUGIN_IMAGE_ORG}/${PLUGIN_IMAGE_NAME}
 PLUGIN_CONTAINER_VERSION ?= ${CONTAINER_VERSION}
 PLUGIN_QUAY_NAME ?= quay.io/${PLUGIN_CONTAINER_NAME}

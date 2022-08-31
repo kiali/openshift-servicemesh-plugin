@@ -7,7 +7,7 @@ metadata:
     #olm.skipRange: '>=0.1.0 <0.1.0'
     categories: Monitoring,Logging & Tracing
     certified: "false"
-    containerImage: quay.io/kiali/ossm-console-operator:v0.1.0
+    containerImage: quay.io/kiali/ossmconsole-operator:v0.1.0
     capabilities: Basic Install
     support: Kiali
     description: "Adds Kiali functionality to the OpenShift Console UI"
@@ -133,7 +133,7 @@ spec:
               serviceAccountName: ossmconsole-operator
               containers:
               - name: operator
-                image: quay.io/kiali/ossm-console-operator:v0.1.0
+                image: quay.io/kiali/ossmconsole-operator:v0.1.0
                 imagePullPolicy: IfNotPresent
                 args:
                 - "--zap-log-level=info"

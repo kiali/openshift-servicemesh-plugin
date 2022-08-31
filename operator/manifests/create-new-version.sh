@@ -28,7 +28,7 @@ Valid options:
       No default - this must be specified by the user.
   -opin|--operator-image-name <repo/org/name>
       The full image registry name of the operator without the version tag.
-      Default: quay.io/kiali/ossm-console-operator
+      Default: quay.io/kiali/ossmconsole-operator
   -opiv|--operator-image-version <version>
       The version tag that identifies the operator image that is used by the new manifest.
       Default: <the --new-version value> prefixed with "v"
@@ -93,7 +93,7 @@ fi
 OLD_MANIFEST_DIR="${PARENT_MANIFEST_DIR}/${OLD_VERSION}"
 NEW_MANIFEST_DIR="${PARENT_MANIFEST_DIR}/${NEW_VERSION}"
 
-OPERATOR_IMAGE_NAME="${OPERATOR_IMAGE_NAME:-quay.io/kiali/ossm-console-operator}"
+OPERATOR_IMAGE_NAME="${OPERATOR_IMAGE_NAME:-quay.io/kiali/ossmconsole-operator}"
 OPERATOR_IMAGE_VERSION="${OPERATOR_IMAGE_VERSION:-v${NEW_VERSION}}"
 
 CHANNELS="${CHANNELS:-candidate}"

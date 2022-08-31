@@ -7,7 +7,7 @@ OPERATOR_OUTDIR=${OPERATOR_DIR}/_output
 
 # Identifies the operator container image that will be built
 OPERATOR_IMAGE_ORG ?= kiali
-OPERATOR_IMAGE_NAME ?= ossm-console-operator
+OPERATOR_IMAGE_NAME ?= ossmconsole-operator
 OPERATOR_CONTAINER_NAME ?= ${OPERATOR_IMAGE_ORG}/${OPERATOR_IMAGE_NAME}
 OPERATOR_CONTAINER_VERSION ?= ${CONTAINER_VERSION}
 OPERATOR_QUAY_NAME ?= quay.io/${OPERATOR_CONTAINER_NAME}

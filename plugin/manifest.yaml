@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: ossmconsole
-          image: quay.io/kiali/ossm-console:latest
+          image: quay.io/kiali/ossmconsole:latest
           ports:
             - containerPort: 9443
               protocol: TCP

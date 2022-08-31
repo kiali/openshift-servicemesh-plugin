@@ -1,5 +1,5 @@
 # OpenShift Service Mesh Console (OSSM Console)
-Webpack Plugin to integrate Kiali into OpenShift Console. The official title of the project is "OpenShift Service Mesh Console" but you may see this abbreviated in documentation and code as "OSSM Console" or "ossm-console".
+Webpack Plugin to integrate Kiali into OpenShift Console. The official title of the project is "OpenShift Service Mesh Console" but you may see this abbreviated in documentation and code as "OSSM Console" or "ossmconsole".
 
 The main component is a plugin based on OpenShift Console [Dynamic plugin-ins](https://docs.openshift.com/container-platform/4.10/web_console/dynamic-plug-ins.html) framework. When the plugin is installed and enabled in the OpenShift Console, you will see additional functionality added to the OpenShift Console that allows you to interact with OpenShift Service Mesh via the Kiali user interface. Note also that the OSSM Console may work with upstream Istio installed (as opposed to OpenShift Service Mesh).
 
@@ -187,7 +187,7 @@ If you want to release a "latest" image, the command would be:
 make -e CONTAINER_VERSION=latest build-plugin-image push-plugin-image
 ```
 
-Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossm-console?tab=tags
+Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossmconsole?tab=tags
 
 ## Releasing OpenShift Service Mesh Console Operator
 
@@ -207,7 +207,7 @@ Or for a multi-arch container:
 make -e CONTAINER_VERSION=v0.1.0 build-operator build-push-operator-multi-arch
 ```
 
-Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossm-console-operator?tab=tags
+Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossmconsole-operator?tab=tags
 
 ### Publishing OLM Metadata
 

@@ -27,7 +27,7 @@ provisioner:
           spec_version: "{{ lookup('env', 'MOLECULE_OSSMCONSOLE_CR_SPEC_VERSION') | default('default', True) }}"
           install_namespace: "ossmconsole"
           operator_namespace: "{{ 'openshift-operators' }}"
-          image_name: "{{ 'image-registry.openshift-image-registry.svc:5000/kiali/ossm-console' if lookup('env', 'MOLECULE_PLUGIN_IMAGE_NAME') == 'dev' else ('quay.io/kiali/ossm-console' if ansible_env.MOLECULE_PLUGIN_IMAGE_NAME is not defined else lookup('env', 'MOLECULE_PLUGIN_IMAGE_NAME')) }}"
+          image_name: "{{ 'image-registry.openshift-image-registry.svc:5000/kiali/ossmconsole' if lookup('env', 'MOLECULE_PLUGIN_IMAGE_NAME') == 'dev' else ('quay.io/kiali/ossmconsole' if ansible_env.MOLECULE_PLUGIN_IMAGE_NAME is not defined else lookup('env', 'MOLECULE_PLUGIN_IMAGE_NAME')) }}"
           image_version: "{{ 'latest' if ansible_env.MOLECULE_PLUGIN_IMAGE_VERSION is not defined else lookup('env', 'MOLECULE_PLUGIN_IMAGE_VERSION') }}"
 scenario:
   name: default
