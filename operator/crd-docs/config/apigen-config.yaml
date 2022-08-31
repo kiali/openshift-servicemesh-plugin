@@ -10,6 +10,6 @@ source_repositories:
   cr_paths:
   - operator/crd-docs/cr
   metadata:
-    ossmplugins.kiali.io:
+    ossmconsoles.kiali.io:
       owner:
       - https://github.com/orgs/kiali/teams/maintainers

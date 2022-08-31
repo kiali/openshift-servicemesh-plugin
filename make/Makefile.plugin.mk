@@ -4,14 +4,14 @@
 
 # Identifies the plugin container image that will be built
 PLUGIN_IMAGE_ORG ?= kiali
-PLUGIN_IMAGE_NAME ?= servicemesh-plugin
+PLUGIN_IMAGE_NAME ?= ossmconsole
 PLUGIN_CONTAINER_NAME ?= ${PLUGIN_IMAGE_ORG}/${PLUGIN_IMAGE_NAME}
 PLUGIN_CONTAINER_VERSION ?= ${CONTAINER_VERSION}
 PLUGIN_QUAY_NAME ?= quay.io/${PLUGIN_CONTAINER_NAME}
 PLUGIN_QUAY_TAG ?= ${PLUGIN_QUAY_NAME}:${PLUGIN_CONTAINER_VERSION}
 
 # The namespace where the plugin will be deployed
-PLUGIN_NAMESPACE ?= ossmplugin
+PLUGIN_NAMESPACE ?= ossmconsole
 
 ## clean-plugin: Delete generated code.
 clean-plugin:
@@ -32,7 +32,7 @@ push-plugin-image:
 
 #
 # The targets below are for quickly deploying the plugin.
-# They will manage the plugin in "servicemesh-plugin" namespace and will not utilize any other make targets or the operator.
+# They will manage the plugin in "ossmconsole" namespace and will not utilize any other make targets or the operator.
 #
 
 ## deploy-plugin: Deploys the plugin quickly. This uses the quay.io "latest" image. This does not utilize the operator.
@@ -45,8 +45,8 @@ undeploy-plugin: .ensure-oc-login
 
 ## enable-plugin: Enables the plugin within the OpenShift Console.
 enable-plugin: .ensure-oc-login
-	${OC} patch consoles.operator.openshift.io cluster --patch '{ "spec": { "plugins": ["servicemesh"] } }' --type=merge
+	${OC} patch consoles.operator.openshift.io cluster --patch '{ "spec": { "plugins": ["ossmconsole"] } }' --type=merge
 
 ## restart-plugin: Restarts the plugin.
 restart-plugin: .ensure-oc-login
-	${OC} rollout restart deployments/servicemesh-plugin -n servicemesh-plugin
+	@${OC} rollout restart deployments/ossmconsole -n "$$(${OC} get deployments -l app.kubernetes.io/name=ossmconsole --all-namespaces -o jsonpath='{.items[0].metadata.namespace}')"

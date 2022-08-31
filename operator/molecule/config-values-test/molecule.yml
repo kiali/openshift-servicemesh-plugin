@@ -19,16 +19,16 @@ provisioner:
   inventory:
     group_vars:
       all:
-        cr_file_path: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/molecule/ossmplugin-cr.yaml"
-        cr_namespace: "{{ 'ossmplugin' }}"
+        cr_file_path: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/molecule/ossmconsole-cr.yaml"
+        cr_namespace: "{{ 'ossmconsole' }}"
         wait_retries: "{{ lookup('env', 'MOLECULE_WAIT_RETRIES') | default('360', True) }}"
         plugin_image_pull_secret_json: "{{ lookup('env', 'PLUGIN_IMAGE_PULL_SECRET_JSON') | default('') }}"
-        ossmplugin:
-          spec_version: "{{ lookup('env', 'MOLECULE_OSSMPLUGIN_CR_SPEC_VERSION') | default('default', True) }}"
-          install_namespace: "ossmplugin"
+        ossmconsole:
+          spec_version: "{{ lookup('env', 'MOLECULE_OSSMCONSOLE_CR_SPEC_VERSION') | default('default', True) }}"
+          install_namespace: "ossmconsole"
           operator_namespace: "{{ 'openshift-operators' }}"
-          image_name: "{{ 'image-registry.openshift-image-registry.svc:5000/kiali/servicemesh-plugin' if lookup('env', 'MOLECULE_OSSMPLUGIN_IMAGE_NAME') == 'dev' else ('quay.io/kiali/servicemesh-plugin' if ansible_env.MOLECULE_OSSMPLUGIN_IMAGE_NAME is not defined else lookup('env', 'MOLECULE_OSSMPLUGIN_IMAGE_NAME')) }}"
-          image_version: "{{ 'latest' if ansible_env.MOLECULE_OSSMPLUGIN_IMAGE_VERSION is not defined else lookup('env', 'MOLECULE_OSSMPLUGIN_IMAGE_VERSION') }}"
+          image_name: "{{ 'image-registry.openshift-image-registry.svc:5000/kiali/ossmconsole' if lookup('env', 'MOLECULE_PLUGIN_IMAGE_NAME') == 'dev' else ('quay.io/kiali/ossmconsole' if ansible_env.MOLECULE_PLUGIN_IMAGE_NAME is not defined else lookup('env', 'MOLECULE_PLUGIN_IMAGE_NAME')) }}"
+          image_version: "{{ 'latest' if ansible_env.MOLECULE_PLUGIN_IMAGE_VERSION is not defined else lookup('env', 'MOLECULE_PLUGIN_IMAGE_VERSION') }}"
 scenario:
   name: config-values-test
   test_sequence:

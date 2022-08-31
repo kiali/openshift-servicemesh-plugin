@@ -5,13 +5,13 @@
   - kubernetes.core
   tasks:
 
-  - name: Remove OSSMPlugin CR
+  - name: Remove OSSMConsole CR
     vars:
       custom_resource: "{{ lookup('template', cr_file_path) | from_yaml }}"
     k8s:
       state: absent
       api_version: kiali.io/v1alpha1
-      kind: OSSMPlugin
+      kind: OSSMConsole
       namespace: "{{ cr_namespace }}"
       name: "{{ custom_resource.metadata.name }}"
       wait: yes
@@ -30,6 +30,6 @@
       state: absent
       api_version: v1
       kind: Namespace
-      name: "{{ ossmplugin.install_namespace }}"
+      name: "{{ ossmconsole.install_namespace }}"
     when:
-    - ossmplugin.install_namespace != cr_namespace
+    - ossmconsole.install_namespace != cr_namespace

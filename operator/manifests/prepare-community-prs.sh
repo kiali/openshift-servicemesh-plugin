@@ -49,7 +49,7 @@ if [ ! -d "${GIT_REPO_REDHAT}" ]; then
   exit 1
 fi
 
-COMMUNITY_MANIFEST_DIR="${SCRIPT_DIR}/ossmplugin-community"
+COMMUNITY_MANIFEST_DIR="${SCRIPT_DIR}/ossmconsole-community"
 
 if [ ! -d "${COMMUNITY_MANIFEST_DIR}" ]; then
   echo "Did not find the community manifest directory: ${COMMUNITY_MANIFEST_DIR}"
@@ -59,16 +59,16 @@ fi
 # Determine branch names to use for the new data.
 
 DATETIME_NOW="$(date --utc +'%F-%H-%M-%S')"
-GIT_REPO_COMMUNITY_BRANCH_NAME="ossmplugin-community-${DATETIME_NOW}"
+GIT_REPO_COMMUNITY_BRANCH_NAME="ossmconsole-community-${DATETIME_NOW}"
 
 cd ${GIT_REPO_REDHAT}
 git fetch origin --verbose
 git checkout -b ${GIT_REPO_COMMUNITY_BRANCH_NAME} origin/main
-cp -R ${COMMUNITY_MANIFEST_DIR}/* ${GIT_REPO_REDHAT}/operators/ossmplugin
+cp -R ${COMMUNITY_MANIFEST_DIR}/* ${GIT_REPO_REDHAT}/operators/ossmconsole
 git add -A
-git commit --signoff -m '[ossmplugin] update ossmplugin'
+git commit --signoff -m '[ossmconsole] update ossmconsole'
 
 # Completed!
-echo "New OSSMPlugin metadata has been added to a new branch in the community git repo."
+echo "New metadata has been added to a new branch in the community git repo."
 echo "Create a PR based on this branch:"
 echo "1. cd ${GIT_REPO_REDHAT} && git push <your git remote name> ${GIT_REPO_COMMUNITY_BRANCH_NAME}"

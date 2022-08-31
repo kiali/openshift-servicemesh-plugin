@@ -1,7 +1,0 @@
-ossmplugin_vars:
-  deployment: |
-    {%- if deployment is defined and deployment is iterable -%}
-    {{ ossmplugin_defaults.deployment | combine((deployment | stripnone), recursive=True) }}
-    {%- else -%}
-    {{ ossmplugin_defaults.deployment }}
-    {%- endif -%}

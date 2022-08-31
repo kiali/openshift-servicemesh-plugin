@@ -1,3 +1,3 @@
-# OpenShift Service Mesh Plugin User's Guide
+# OpenShift Service Mesh Console User's Guide
 
 TODO

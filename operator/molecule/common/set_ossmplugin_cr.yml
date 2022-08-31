@@ -1,4 +1,0 @@
-- name: Change OSSMPlugin CR with new OSSMPlugin CR
-  k8s:
-    namespace: '{{ cr_namespace }}'
-    definition: "{{ new_ossmplugin_cr }}"

@@ -1,3 +1,0 @@
-ossmplugin_defaults:
-  deployment:
-    namespace: ""
