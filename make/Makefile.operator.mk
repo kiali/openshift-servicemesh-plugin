@@ -125,7 +125,7 @@ purge-all-crs: .ensure-oc-login
 	  do \
 	    cr_namespace="$$(echo $${k} | cut -d: -f1)" ;\
 	    cr_name="$$(echo $${k} | cut -d: -f2)" ;\
-	    echo "Deleting Kiali CR [$${cr_name}] in namespace [$${cr_namespace}]" ;\
+	    echo "Deleting OSSMConsole CR [$${cr_name}] in namespace [$${cr_namespace}]" ;\
 	    ${OC} patch  ossmconsole $${cr_name} -n $${cr_namespace} -p '{"metadata":{"finalizers": []}}' --type=merge ;\
 	    ${OC} delete ossmconsole $${cr_name} -n $${cr_namespace} ;\
 	  done
@@ -147,10 +147,10 @@ run-operator: install-crd install-cr get-ansible-operator
 run-playbook: install-crd .wait-for-crd
 	@$(eval ANSIBLE_PYTHON_INTERPRETER ?= $(shell if (which python &> /dev/null && python --version 2>&1 | grep -q " 2\.*"); then echo "-e ansible_python_interpreter=python3"; else echo ""; fi))
 	@if [ ! -z "${ANSIBLE_PYTHON_INTERPRETER}" ]; then echo "ANSIBLE_PYTHON_INTERPRETER is [${ANSIBLE_PYTHON_INTERPRETER}]. Make sure that refers to a Python3 installation. If you do not have Python3 in that location, you must ensure you have Python3 and ANSIBLE_PYTHON_INTERPRETER is set to '-e ansible_python_interpreter=<full path to your python3 executable>"; fi
-	@echo "Create a dummy Kiali CR"; ${OC} apply -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmconsole-cr.yaml
+	@echo "Create a dummy OSSMConsole CR"; ${OC} apply -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmconsole-cr.yaml
 	ansible-galaxy collection install operator_sdk.util community.kubernetes
 	ALLOW_AD_HOC_OSSMCONSOLE_IMAGE=true POD_NAMESPACE="does-not-exist" ANSIBLE_ROLES_PATH=${OPERATOR_DIR}/roles ansible-playbook -vvv ${ANSIBLE_PYTHON_INTERPRETER} -i ${OPERATOR_DIR}/dev-playbook-config/dev-hosts.yaml ${OPERATOR_DIR}/dev-playbook-config/dev-playbook.yaml
-	@echo "Remove the dummy Kiali CR"; ${OC} delete -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmconsole-cr.yaml
+	@echo "Remove the dummy OSSMConsole CR"; ${OC} delete -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmconsole-cr.yaml
 
 ## build-operator: Build operator container image.
 build-operator:
