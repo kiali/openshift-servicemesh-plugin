@@ -35,3 +35,20 @@ export interface ObjectReference {
   name: string;
   namespace: string;
 }
+
+export interface ValidationMessage {
+  description?: string;
+  documentationUrl: string;
+  level?: string;
+  type: ValidationMessageType;
+}
+
+export interface StatusCondition {
+  type: string;
+  status: boolean;
+  message: string;
+}
+
+export interface ValidationMessageType {
+  code: string;
+}

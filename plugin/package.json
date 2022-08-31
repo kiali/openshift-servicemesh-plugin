@@ -18,7 +18,8 @@
     "lint": "eslint ./src --fix"
   },
   "dependencies": {
-    "axios": "0.27.2"
+    "axios": "0.27.2",
+    "typestyle": "2.0.4"
   },
   "devDependencies": {
     "@openshift-console/dynamic-plugin-sdk": "0.0.13",

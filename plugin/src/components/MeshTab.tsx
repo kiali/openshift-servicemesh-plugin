@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {useHistory} from 'react-router';
 import {getKialiUrl, initKialiListeners, kioskUrl} from '../kialiIntegration';
+import {IstioConfigsMap} from "../types/IstioConfigList";
 
 const kialiTypes = {
     services: 'services',
@@ -8,6 +9,20 @@ const kialiTypes = {
     deployments: 'workloads',
     deploymentconfigs: 'workloads',
     statefulsets: 'workloads',
+}
+
+const configTypes = {
+    DestinationRule: 'DestinationRules',
+    EnvoyFilter: 'EnvoyFilters',
+    Gateway: 'Gateways',
+    VirtualService: 'VirtualServices',
+    ServiceEntry: 'ServiceEntries',
+    Sidecar: 'Sidecars',
+    WorkloadEntry: 'WorkloadEntries',
+    WorkloadGroup: 'WorkloadGroups',
+    AuthorizationPolicy: 'AuthorizationPolicies',
+    PeerAuthentication: 'PeerAuthentications',
+    RequestAuthentication: 'RequestAuthentications',
 }
 
 const MeshTab = () => {
@@ -58,24 +73,33 @@ const MeshTab = () => {
             id = id.substr(0, j);
         }
     }
+    if (!type) {
+        const configType = configTypes[items[1].substring(items[1].lastIndexOf('~')+1)];
 
-    let iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?' + kioskUrl() + '&' + kialiUrl.token;
-    // Projects is a special case that will forward the graph in the iframe
-    if (items[1] === 'projects') {
-        iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + id + '&' + kioskUrl() + '&' + kialiUrl.token;
+        return (
+            <>
+                <span>{configType}</span>
+            </>
+        )
+    } else {
+        let iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?' + kioskUrl() + '&' + kialiUrl.token;
+        // Projects is a special case that will forward the graph in the iframe
+        if (items[1] === 'projects') {
+            iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + id + '&' + kioskUrl() + '&' + kialiUrl.token;
+        }
+        // TODO Obviously, this iframe is a PoC
+        return (
+            <>
+                <iframe
+                    src={iFrameUrl}
+                    style={{overflow: 'hidden', height: '100%', width: '100%' }}
+                    height="100%"
+                    width="100%"
+                />
+
+            </>
+        );
     }
-    // TODO Obviously, this iframe is a PoC
-    return (
-        <>
-            <iframe
-                src={iFrameUrl}
-                style={{overflow: 'hidden', height: '100%', width: '100%' }}
-                height="100%"
-                width="100%"
-            />
-
-        </>
-    );
 };
 
 export default MeshTab;

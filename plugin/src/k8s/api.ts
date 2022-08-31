@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { IstioConfigsMap } from '../types/IstioConfigList';
+import {IstioConfigDetails} from "../../../../kiali/frontend/src/types/IstioConfigDetails";
 
 export interface Response<T> {
   data: T;
@@ -37,4 +38,16 @@ export const getAllIstioConfigs = (
 
   params.validate = true;
   return newRequest<IstioConfigsMap>(HTTP_VERBS.GET, kialiUrl + ALL_ISTIO_CONFIGS, params, {});
+};
+
+export const getIstioConfig = (
+    kialiUrl: string,
+    namespace: string,
+    object_type: string,
+    object: string,
+): Promise<Response<IstioConfigDetails>> => {
+    const params: any = {};
+
+    params.validate = true;
+    return newRequest<IstioConfigDetails>(HTTP_VERBS.GET, `${kialiUrl}/api/namespaces/${namespace}/istio/${object_type}/${object}`, params, {});
 };
