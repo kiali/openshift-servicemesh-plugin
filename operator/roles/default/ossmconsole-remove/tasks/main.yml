@@ -42,7 +42,7 @@
     name: cluster
     definition:
       spec:
-        plugins: "{{ existing_plugins | difference(['servicemesh']) }}"
+        plugins: "{{ existing_plugins | difference(['ossmconsole']) }}"
 
 - name: Delete OSSM Console resources
   ignore_errors: yes
@@ -67,6 +67,6 @@
   - "{{ query(k8s_plugin, namespace=ossmconsole_vars.deployment.namespace, kind='ConfigMap',      resource_name='plugin-config', api_version='v1') }}"
   - "{{ query(k8s_plugin, namespace=ossmconsole_vars.deployment.namespace, kind='Deployment',     resource_name='ossmconsole',    api_version='apps/v1') }}"
   - "{{ query(k8s_plugin, namespace=ossmconsole_vars.deployment.namespace, kind='Service',        resource_name='ossmconsole',    api_version='v1') }}"
-  - "{{ query(k8s_plugin, kind='ConsolePlugin', resource_name='servicemesh', api_version='console.openshift.io/v1alpha1') }}"
+  - "{{ query(k8s_plugin, kind='ConsolePlugin', resource_name='ossmconsole', api_version='console.openshift.io/v1alpha1') }}"
   loop_control:
     loop_var: k8s_item

@@ -347,7 +347,7 @@
     name: cluster
     definition:
       spec:
-        plugins: "{{ (existing_plugins | difference(['servicemesh'])) + ['servicemesh'] }}"
+        plugins: "{{ (existing_plugins | difference(['ossmconsole'])) + ['ossmconsole'] }}"
 
 - include_tasks: update-status-progress.yml
   vars:
