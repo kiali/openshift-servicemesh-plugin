@@ -214,7 +214,7 @@
 
 - name: Only allow ad-hoc OSSM Console image when appropriate
   fail:
-    msg: "The operator is forbidden from accepting a OSSMConsole CR that defines an ad hoc OSSM Console image [{{ ossmconsole_vars.deployment.imageName }}{{ '@' + ossmconsole_vars.deployment.imageDigest if ossmconsole_vars.deployment.imageDigest != '' else '' }}:{{ ossmconsole_vars.deployment.imageVersion }}]. Remove spec.deployment.imageName, spec.deployment.imageVersion, and spec.deployment.imageDigest from the OSSMConsole CR."
+    msg: "The operator is forbidden from accepting an OSSMConsole CR that defines an ad hoc OSSM Console image [{{ ossmconsole_vars.deployment.imageName }}{{ '@' + ossmconsole_vars.deployment.imageDigest if ossmconsole_vars.deployment.imageDigest != '' else '' }}:{{ ossmconsole_vars.deployment.imageVersion }}]. Remove spec.deployment.imageName, spec.deployment.imageVersion, and spec.deployment.imageDigest from the OSSMConsole CR."
   when:
   - ossmconsole_vars.deployment.imageName != "" or ossmconsole_vars.deployment.imageVersion != "" or ossmconsole_vars.deployment.imageDigest != ""
   - lookup('env', 'ALLOW_AD_HOC_OSSMCONSOLE_IMAGE') | default('false', True) != "true"

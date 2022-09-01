@@ -25,7 +25,7 @@ spec:
             type: object
             x-kubernetes-preserve-unknown-fields: true
           spec:
-            description: "This is the CRD for the resources called OSSMConsole CRs. The OpenShift Service Mesh Console Operator will watch for resources of this type and when it detects a OSSMConsole CR has been added, deleted, or modified, it will install, uninstall, and update the associated OSSM Console installation."
+            description: "This is the CRD for the resources called OSSMConsole CRs. The OpenShift Service Mesh Console Operator will watch for resources of this type and when it detects an OSSMConsole CR has been added, deleted, or modified, it will install, uninstall, and update the associated OSSM Console installation."
             type: object
             properties:
               version:

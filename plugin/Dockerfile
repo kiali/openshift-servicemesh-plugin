@@ -26,7 +26,7 @@ USER 1001
 LABEL com.redhat.component="openshift-service-mesh-console" \
       name="openshift-service-mesh-console" \
       summary="OpenShift Service Mesh Console" \
-      description="The OpenShift Service Mesh Console adds Kiali functionality to the OpenShift Console via a Dynamic Plugin." \
+      description="The OpenShift Service Mesh Console adds Kiali observability, configuration and validation into the OpenShift Console." \
       version=$VERSION_PLUGIN \
       commit=$COMMIT_HASH
 

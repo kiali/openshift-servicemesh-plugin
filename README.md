@@ -1,7 +1,7 @@
 # OpenShift Service Mesh Console (OSSM Console)
 Webpack Plugin to integrate Kiali into OpenShift Console. The official title of the project is "OpenShift Service Mesh Console" but you may see this abbreviated in documentation and code as "OSSM Console" or "ossmconsole".
 
-The main component is a plugin based on OpenShift Console [Dynamic plugin-ins](https://docs.openshift.com/container-platform/4.10/web_console/dynamic-plug-ins.html) framework. When the plugin is installed and enabled in the OpenShift Console, you will see additional functionality added to the OpenShift Console that allows you to interact with OpenShift Service Mesh via the Kiali user interface. Note also that the OSSM Console may work with upstream Istio installed (as opposed to OpenShift Service Mesh).
+The main component is a plugin based on OpenShift Console [Dynamic plugin-ins](https://docs.openshift.com/container-platform/4.10/web_console/dynamic-plug-ins.html) framework. Installing and enabling the plugin will add OpenShift Service Mesh support into the OpenShift Console. The new "Service Mesh" menu item and tabs allow you to interact with your mesh via the Kiali user interface. Note that the OSSM Console may also work with upstream Istio installed (as opposed to OpenShift Service Mesh).
 
 The main installation mechanism is an OLM operator.
 
@@ -109,7 +109,7 @@ This is simply a convenience target that runs both the `cluster-push-operator` a
 
 #### make install-cr
 
-Once your operator is deployed and running, and you have built and pushed the plugin image to your cluster, you can use this target to create an OSSMConsole CR which instructs the operator to install the OpenShift Service Mesh Console plugin. Within a few seconds after this make target completes, your OpenShift Console will have the OpenShift Service Mesh Console plugin installed. This provides you with Kiali functionality directly within the OpenShift Console itself.
+Once your operator is deployed and running, and you have built and pushed the plugin image to your cluster, you can use this target to create an OSSMConsole CR which instructs the operator to install the OpenShift Service Mesh Console plugin. Within a few seconds after this make target completes, your OpenShift Console will have the OpenShift Service Mesh Console plugin installed. This provides you with Kiali features directly within the OpenShift Console itself.
 
 #### make uninstall-cr
 

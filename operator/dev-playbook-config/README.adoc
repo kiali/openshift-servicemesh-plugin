@@ -4,4 +4,4 @@ The files in this directory are used for the `make run-playbook` target. Configu
 
 * `dev-ossmconsole-cr.yaml` - the "dummy" OSSMConsole CR that will be created. This is needed because the operator will sometimes need to access the OSSMConsole CR that is being reconciled, so one needs to be created in the cluster for the operator to run correctly. In particular, the operator will update the `status` field of the OSSMConsole CR.
 
-* `dev-playbook.yaml` - the main playbook that will be run. By default it will run the `ossmconsole-deploy` playbook (which will install a OSSM Console) and then immediately run the `ossmconsole-remove` playbook (which will uninstall that OSSM Console). You can comment out one or the other if you wish to test just one of those playbooks.
+* `dev-playbook.yaml` - the main playbook that will be run. By default it will run the `ossmconsole-deploy` playbook (which will install an OSSM Console) and then immediately run the `ossmconsole-remove` playbook (which will uninstall that OSSM Console). You can comment out one or the other if you wish to test just one of those playbooks.
