@@ -24,7 +24,7 @@ The _Istio Config_ page provides a list of all Istio configuration files in your
 
 # Workload
 
-The _Workloads_ view has a tab _Service Mesh_ that provides a lot of mesh-related detail for the selected workload. The details are groups into several sub-tabs: Overview, Traffic, Logs, Inbound Metrics, Outbound Metrics, Traces, and Envoy.
+The _Workloads_ view has a tab _Service Mesh_ that provides a lot of mesh-related detail for the selected workload. The details are grouped into several sub-tabs: Overview, Traffic, Logs, Inbound Metrics, Outbound Metrics, Traces, and Envoy.
 
 ![Workload](23-workload.png)
 
@@ -69,3 +69,10 @@ If you hover over a cell in a heatmap, a tooltip will give some details on the c
 The _Envoy_ sub-tab provides information about the Envoy sidecar configuration. This is useful when you need to dig down deep into the sidecar configuration when debugging things such as connectivity issues.
 
 ![Workload: Envoy](30-workload-envoy.png)
+
+# Services
+
+The _Services_ view has a tab _Service Mesh_ that provides mesh-related detail for the selected service. The details are grouped into several sub-tabs: Overview, Traffic, Inbound Metrics, Traces. These sub-tabs are similar in nature as the Workload sub-tabs with the same names and serve the same functions.
+
+![Services: Overview](31-services-overview.png)
+
