@@ -42,7 +42,7 @@ The _Workload: Traffic_ sub-tab provides information about all inbound and outbo
 
 ## Workload: Logs
 
-The _Workload: Logs_ sub-tab provides the logs for the workload's containers. You can view each container logs individual or see them intermixed ordered by log time. This is especially helpful to see the Envoy sidecar proxy logs and how they relate to your workload's own logs. You can enable the tracing span integration which allows you to see which logs correspond to tracing spans.
+The _Workload: Logs_ sub-tab provides the logs for the workload's containers. You can view container logs individually or in a unified fashion, ordered by log time. This is especially helpful to see how the Envoy sidecar proxy logs relate to your workload's application logs. You can enable the tracing span integration which then allows you to see which logs correspond to trace spans.
 
 ![Workload: Logs](25-workload-logs.png)
 
