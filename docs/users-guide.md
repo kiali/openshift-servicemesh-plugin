@@ -54,7 +54,7 @@ You can see both inbound and outbound metric graphs in the corresponding sub-tab
 
 ## Workload: Traces
 
-The _Traces_ sub-tab provides a graph that illustrates the trace spans that were collected over the given timeframe. Click on a bubble to drill down into those trace spans; the trace spans can provide you the most low-level detail within your workload application, down to the individual request level.
+The _Traces_ sub-tab provides a chart showing the trace spans collected over the given timeframe. Click on a bubble to drill down into those trace spans; the trace spans can provide you the most low-level detail within your workload application, down to the individual request level.
 
 ![Workload: Traces](27-workload-traces.png)
 
