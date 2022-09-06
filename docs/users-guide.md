@@ -1,6 +1,6 @@
 # OpenShift Service Mesh Console User Guide
 
-The OpenShift Service Mesh Console (aka OSSMC) is an extension to the OpenShift Console which provides visibility into your Service Mesh. With OSSMC installed you will see a new _Service Mesh_ menu option on the left-hand side of the Console, as well as new _Service Mesh_ tabs that enhance existing Console pages such as the _Workloads_ and _Services_ pages.
+The OpenShift Service Mesh Console (aka OSSMC) is an extension to the OpenShift Console which provides visibility into your Service Mesh. With OSSMC installed you will see a new **Service Mesh** menu option on the left-hand side of the Console, as well as new **Service Mesh** tabs that enhance existing Console pages such as the **Workloads** and **Services** pages.
 
 The features you see described here are very similar to those of the standalone Kiali Console (see https://kiali.io). In fact, you can still access the standalone Kiali Console if you wish. This User Guide, however, will discuss the extensions you see from within the OpenShift Console itself.
 
@@ -8,41 +8,41 @@ The features you see described here are very similar to those of the standalone 
 
 # Overview
 
-The _Overview_ page provides a summary of your mesh by showing cards representing the namespaces participating in the mesh. Each namespace card has summary metric graphs and additional health details. There are links in the cards that take you to other pages within OSSMC.
+The **Overview** page provides a summary of your mesh by showing cards representing the namespaces participating in the mesh. Each namespace card has summary metric graphs and additional health details. There are links in the cards that take you to other pages within OSSMC.
 
 ![Overview](20-overview.png)
 
 # Graph
 
-The _Graph_ page provides the full topology view of your mesh. The mesh is represented by nodes and edges - each node representing a component of the mesh and each edge representing traffic flowing through the mesh between components.
+The **Graph** page provides the full topology view of your mesh. The mesh is represented by nodes and edges - each node representing a component of the mesh and each edge representing traffic flowing through the mesh between components.
 
 ![Graph](21-graph.png)
 
 # Istio Config
 
-The _Istio Config_ page provides a list of all Istio configuration files in your mesh with a column that provides a quick way to know if the configuration for each resource is valid.
+The **Istio Config** page provides a list of all Istio configuration files in your mesh with a column that provides a quick way to know if the configuration for each resource is valid.
 
 ![Istio Config](22-istioconfig.png)
 
 # Workload
 
-The _Workloads_ view has a tab _Service Mesh_ that provides a lot of mesh-related detail for the selected workload. The details are grouped into several sub-tabs: Overview, Traffic, Logs, Inbound Metrics, Outbound Metrics, Traces, and Envoy.
+The **Workloads** view has a tab **Service Mesh** that provides a lot of mesh-related detail for the selected workload. The details are grouped into several sub-tabs: Overview, Traffic, Logs, Inbound Metrics, Outbound Metrics, Traces, and Envoy.
 
 ![Workload](23-workload.png)
 
 ## Workload: Overview
 
-The _Workload: Overview_ sub-tab provides a summary of the selected workload including a localized topology graph showing the workload with all inbound and outbound edges and nodes.
+The **Workload: Overview** sub-tab provides a summary of the selected workload including a localized topology graph showing the workload with all inbound and outbound edges and nodes.
 
 ## Workload: Traffic
 
-The _Workload: Traffic_ sub-tab provides information about all inbound and outbound traffic to the workload.
+The **Workload: Traffic** sub-tab provides information about all inbound and outbound traffic to the workload.
 
 ![Workload: Traffic](24-workload-traffic.png)
 
 ## Workload: Logs
 
-The _Workload: Logs_ sub-tab provides the logs for the workload's containers. You can view container logs individually or in a unified fashion, ordered by log time. This is especially helpful to see how the Envoy sidecar proxy logs relate to your workload's application logs. You can enable the tracing span integration which then allows you to see which logs correspond to trace spans.
+The **Workload: Logs** sub-tab provides the logs for the workload's containers. You can view container logs individually or in a unified fashion, ordered by log time. This is especially helpful to see how the Envoy sidecar proxy logs relate to your workload's application logs. You can enable the tracing span integration which then allows you to see which logs correspond to trace spans.
 
 ![Workload: Logs](25-workload-logs.png)
 
@@ -54,7 +54,7 @@ You can see both inbound and outbound metric graphs in the corresponding sub-tab
 
 ## Workload: Traces
 
-The _Traces_ sub-tab provides a chart showing the trace spans collected over the given timeframe. Click on a bubble to drill down into those trace spans; the trace spans can provide you the most low-level detail within your workload application, down to the individual request level.
+The **Traces** sub-tab provides a chart showing the trace spans collected over the given timeframe. Click on a bubble to drill down into those trace spans; the trace spans can provide you the most low-level detail within your workload application, down to the individual request level.
 
 ![Workload: Traces](27-workload-traces.png)
 
@@ -68,13 +68,13 @@ If you hover over a cell in a heatmap, a tooltip will give some details on the c
 
 ## Workload: Envoy
 
-The _Envoy_ sub-tab provides information about the Envoy sidecar configuration. This is useful when you need to dig down deep into the sidecar configuration when debugging things such as connectivity issues.
+The **Envoy** sub-tab provides information about the Envoy sidecar configuration. This is useful when you need to dig down deep into the sidecar configuration when debugging things such as connectivity issues.
 
 ![Workload: Envoy](30-workload-envoy.png)
 
 # Services
 
-The _Services_ view has a tab _Service Mesh_ that provides mesh-related detail for the selected service. The details are grouped into several sub-tabs: Overview, Traffic, Inbound Metrics, Traces. These sub-tabs are similar in nature as the Workload sub-tabs with the same names and serve the same functions.
+The **Services** view has a tab **Service Mesh** that provides mesh-related detail for the selected service. The details are grouped into several sub-tabs: Overview, Traffic, Inbound Metrics, Traces. These sub-tabs are similar in nature as the Workload sub-tabs with the same names and serve the same functions.
 
 ![Services: Overview](31-services-overview.png)
 
