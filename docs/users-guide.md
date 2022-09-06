@@ -1,4 +1,4 @@
-# OpenShift Service Mesh Console User's Guide
+# OpenShift Service Mesh Console User Guide
 
 The OpenShift Service Mesh Console (aka OSSMC) is an extension to the OpenShift Console which provides visibility into your Service Mesh. With OSSMC installed you will see a new _Service Mesh_ menu option on the left-hand side of the Console, as well as new _Service Mesh_ tabs that enhance existing Console pages such as the _Workloads_ and _Services_ pages.
 
