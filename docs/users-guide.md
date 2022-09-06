@@ -2,7 +2,7 @@
 
 The OpenShift Service Mesh Console (aka OSSMC) is an extension to the OpenShift Console which provides visibility into your Service Mesh. With OSSMC installed you will see a new _Service Mesh_ menu option on the left-hand side of the Console, as well as new _Service Mesh_ tabs that enhance existing Console pages such as the _Workloads_ and _Services_ pages.
 
-The features you see described here are very similar to those of the standalone Kiali Console (see https://kiali.io). In fact, you can still access the standalone Kiali Console if you wish. This User's Guide, however, will discuss the functionality that you see from within the OpenShift Console itself.
+The features you see described here are very similar to those of the standalone Kiali Console (see https://kiali.io). In fact, you can still access the standalone Kiali Console if you wish. This User Guide, however, will discuss the extensions you see from within the OpenShift Console itself.
 
 :warning: The OSSMC [only supports a single tenant today](https://github.com/kiali/openshift-servicemesh-plugin/issues/28). Whether that tenant is configured to access only a subset of OpenShift projects or has access cluster-wide to all projects does not matter, however, only a single tenant can be accessed.
 
