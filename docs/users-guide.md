@@ -58,7 +58,7 @@ The _Traces_ sub-tab provides a graph that illustrates the trace spans that were
 
 ![Workload: Traces](27-workload-traces.png)
 
-The trace details view will give further details, including heatmaps that provide you with a comparision of one span in relation to other requests and spans in the same timeframe.
+The trace details view will give further details, including heatmaps that provide you with a comparison of one span in relation to other requests and spans in the same timeframe.
 
 ![Workload: Traces Details](28-workload-traces-details.png)
 
