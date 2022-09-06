@@ -20,7 +20,7 @@ The _Graph_ page provides the full topology view of your mesh. The mesh is repre
 
 # Istio Config
 
-The _Istio Config_ page provides a list of all Istio configuration files in your mesh with a column that provides a quick way to know if the configuration for each resource is valid or not.
+The _Istio Config_ page provides a list of all Istio configuration files in your mesh with a column that provides a quick way to know if the configuration for each resource is valid.
 
 ![Istio Config](22-istioconfig.png)
 
