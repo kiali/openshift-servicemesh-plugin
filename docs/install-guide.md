@@ -22,6 +22,8 @@ Please refer to the relevant documentation for details on how to install those c
 
 Before you can install the plugin itself, you first must install its operator via OLM. Once installed, the operator will help with the installation of the plugin.
 
+:bulb: You can install the operator in one of two ways - either via the OpenShift Console or via the "oc" CLI. Both methods are described below. You choose the method you want to use.
+
 ### Installing Operator via OpenShift Console
 
 The easiest way to install the operator is through the OpenShift Console UI. Log into the console as an Administrator (i.e. a user with kubeadmin privileges) and select `Operators > OperatorHub` from the left-hand menu. From there, find the _OpenShift Service Mesh Console_ operator in the list of available operators (look for the Kiali logo; it is published by the Kiali project team).
@@ -71,7 +73,9 @@ Click the operator list entry to view the operator details page.
 
 ## Installing the Plugin
 
-With the operator installed and running you can install the OpenShift Service Mesh Console plugin. Again, you can do this via the OpenShift Console or through the "oc" CLI.
+With the operator installed and running you can install the OpenShift Service Mesh Console plugin.
+
+:bulb: You can install the plugin in one of two ways - either via the OpenShift Console or via the "oc" CLI. Both methods are described below. You choose the method you want to use.
 
 ### Installing Plugin via OpenShift Console
 
@@ -109,7 +113,9 @@ After the plugin is installed, you can see the "OSSMConsole" resource that was c
 
 ## Uninstalling
 
-You can uninstall the OpenShift Service Mesh Console plugin and its operator either through the OpenShift Console UI or the "oc" CLI.
+This section will describe how to uninstall the OpenShift Service Mesh Console plugin and its operator.
+
+:bulb: You can uninstall the operator and plugin in one of two ways - either via the OpenShift Console or via the "oc" CLI. Both methods are described in the sections below. You choose the method you want to use.
 
 :warning: Regardless of which mechanism you use to perform the uninstall, it is very important to first uninstall the plugin (i.e. uninstall the OSSMConsole CR first) and then uninstall the operator. If you uninstall the operator before ensuring the OSSMConsole CR is deleted then you may have difficulty removing that CR and its namespace. If this occurs then you must manually remove the finalizer on the CR in order to delete it and its namespace. You can do this via: `oc patch ossmconsoles <CR name> -n <CR namespace> -p '{"metadata":{"finalizers": []}}' --type=merge `
 
@@ -132,6 +138,8 @@ for r in $(oc get ossmconsoles --ignore-not-found=true --all-namespaces -o custo
 ```
 
 ### Uninstalling the Operator
+
+:warning: Make sure you have already uninstalled the plugin before uninstalling the operator.
 
 #### Uninstalling Operator via OpenShift Console
 
