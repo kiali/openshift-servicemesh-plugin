@@ -36,6 +36,7 @@ Valid options:
       The old version that is going to be superceded with the new release. This must be the previous release
       prior to the new version. For example, if there is already versions 1.0 and 1.1 and the new version is
       2.0, the old version to be specified must be 1.1.
+      Note: If there is no old version (i.e. you are building the very first version) pass in "NONE".
       Default: a guess based on the version strings found in the directory of versions.
   -vb|--verify-bundle <true|false>
       Verify the validity of the bundle metadata via the operator-sdk tool. You must have operator-sdk
@@ -98,7 +99,7 @@ OPERATOR_IMAGE_VERSION="${OPERATOR_IMAGE_VERSION:-v${NEW_VERSION}}"
 
 CHANNELS="${CHANNELS:-candidate}"
 
-if [ ! -d "${OLD_MANIFEST_DIR}" ]; then
+if [ "${OLD_VERSION}" != "NONE" -a ! -d "${OLD_MANIFEST_DIR}" ]; then
   echo "Did not find the old version of the manifest: ${OLD_MANIFEST_DIR}"
   exit 1
 fi

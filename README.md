@@ -182,11 +182,13 @@ To build and release the plugin, you can run this command either manually or ins
 make -e CONTAINER_VERSION=v0.1.0 build-plugin-image push-plugin-image
 ```
 
-If you want to release a "latest" image, the command would be:
+Or for a multi-arch container:
 
 ```sh
-make -e CONTAINER_VERSION=latest build-plugin-image push-plugin-image
+make -e CONTAINER_VERSION=v0.1.0 build-push-plugin-multi-arch
 ```
+
+If you want to release a "latest" image, set `CONTAINER_VERSION` to "latest".
 
 Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossmconsole?tab=tags
 

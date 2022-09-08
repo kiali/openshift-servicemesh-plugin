@@ -74,15 +74,11 @@ jobs:
       with:
         ref: ${{ github.event.inputs.release_branch || github.ref_name }}
       
-    - name: Build plugin image
-      run: |
-        make build-plugin-image
-
-    - name: Push plugin image
+    - name: Build and push plugin image
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
         
-        make push-plugin-image
+        make build-push-plugin-multi-arch
 
     - name: Build and push operator image
       run: |
