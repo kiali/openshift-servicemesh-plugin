@@ -7,5 +7,7 @@ LABEL operators.operatorframework.io.bundle.package.v1=ossmconsole
 LABEL operators.operatorframework.io.bundle.channels.v1=${CHANNELS}
 LABEL operators.operatorframework.io.bundle.channel.default.v1=${DEFAULT_CHANNEL}
 
+LABEL com.redhat.openshift.versions=v4.10
+
 COPY manifests /manifests/
 COPY metadata /metadata/
