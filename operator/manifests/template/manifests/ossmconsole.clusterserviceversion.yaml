@@ -3,6 +3,10 @@ kind: ClusterServiceVersion
 metadata:
   name: ossmconsole-operator.v${CSV_NEW_VERSION}
   namespace: placeholder
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.s390x: supported
+    operatorframework.io/arch.ppc64le: supported
   annotations:
     #olm.skipRange: '>=0.1.0 <${CSV_NEW_VERSION}'
     categories: Monitoring,Logging & Tracing
