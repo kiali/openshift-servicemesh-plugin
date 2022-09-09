@@ -12,8 +12,7 @@ Although Kiali is considered a component of the OpenShift Service Mesh Console, 
 
 The OpenShift Service Mesh Console requires OpenShift v4.10+ with one of:
 
-- Istio v1.14 with Kiali v1.56
-- Istio v1.15+ with a compatible version of Kiali
+- Istio v1.14+ with Kiali v1.56.1+
 - OpenShift Service Mesh (OSSM) v2.3+
 
 Please refer to the relevant documentation for details on how to install those components.
