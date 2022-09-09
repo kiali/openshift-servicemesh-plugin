@@ -1,12 +1,11 @@
 {
   "name": "ossmconsole",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kiali/kiali.git"
   },
-
   "scripts": {
     "clean": "rm -rf dist",
     "build": "yarn clean && NODE_ENV=production yarn ts-node node_modules/.bin/webpack",
