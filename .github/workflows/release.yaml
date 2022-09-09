@@ -222,7 +222,7 @@ jobs:
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
-        make build-plugin-image push-plugin-image
+        make build-push-plugin-multi-arch
 
         make build-push-operator-multi-arch
 
@@ -236,7 +236,8 @@ jobs:
       run: |
         make get-operator-sdk
 
-        ./operator/manifests/create-new-version.sh --new-version ${RELEASE_VERSION:1} --channels candidate
+        # TODO: after the first release, completely remove "--old-version NONE" from the command line below
+        ./operator/manifests/create-new-version.sh --old-version NONE --new-version ${RELEASE_VERSION:1} --channels candidate
 
         git add operator/manifests/
 

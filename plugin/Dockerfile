@@ -5,7 +5,7 @@ RUN command -v yarn || npm i -g yarn
 
 ADD . /usr/src/app
 WORKDIR /usr/src/app
-RUN yarn install && yarn build
+RUN yarn install --network-timeout 7200000 && yarn build
 
 FROM registry.access.redhat.com/ubi8/nginx-120:1-38.1655143357
 
