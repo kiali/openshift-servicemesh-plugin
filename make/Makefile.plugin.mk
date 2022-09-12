@@ -59,4 +59,4 @@ restart-plugin: .ensure-oc-login
 ## build-push-plugin-multi-arch: Pushes the OSSM Console plugin multi-arch image to quay.io.
 build-push-plugin-multi-arch: .ensure-buildx-builder
 	@echo Pushing OSSM Console plugin multi-arch image to ${PLUGIN_QUAY_TAG} using docker buildx
-	docker buildx build --push --pull --no-cache --builder=ossmconsole-builder $(foreach arch,${TARGET_ARCHS},--platform=linux/${arch}) $(foreach tag,${PLUGIN_QUAY_TAG},--tag=${tag}) -f ${PLUGIN_DIR}/Dockerfile ${PLUGIN_DIR}
+	docker buildx build --build-arg VERSION_PLUGIN="${VERSION}" --build-arg COMMIT_HASH="${COMMIT_HASH}" --push --pull --no-cache --builder=ossmconsole-builder $(foreach arch,${TARGET_ARCHS},--platform=linux/${arch}) $(foreach tag,${PLUGIN_QUAY_TAG},--tag=${tag}) -f ${PLUGIN_DIR}/Dockerfile ${PLUGIN_DIR}
