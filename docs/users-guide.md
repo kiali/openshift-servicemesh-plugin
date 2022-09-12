@@ -6,6 +6,8 @@ The features you see described here are very similar to those of the standalone 
 
 :warning: The OSSMC [only supports a single tenant today](https://github.com/kiali/openshift-servicemesh-plugin/issues/28). Whether that tenant is configured to access only a subset of OpenShift projects or has access cluster-wide to all projects does not matter, however, only a single tenant can be accessed.
 
+:warning: If you are using a certificate that your browser does not initially trust, you must tell your browser to trust the certificate first before you are able to access the OpenShift Service Mesh Console. You can go to the Kiali standalone UI and tell the browser to accept its certificate in order to do this.
+
 # Overview
 
 The **Overview** page provides a summary of your mesh by showing cards representing the namespaces participating in the mesh. Each namespace card has summary metric graphs and additional health details. There are links in the cards that take you to other pages within OSSMC.

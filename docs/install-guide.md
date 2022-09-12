@@ -78,6 +78,8 @@ With the operator installed and running you can install the OpenShift Service Me
 
 ### Installing Plugin via OpenShift Console
 
+:warning: Installing via the `Form view` does not currently work. You must create the CR in a separate namespace which requires the use of the `YAML view`. Create the CR in namespace `ossmconsole` by adding the setting `namespace: ossmconsole` in the `metadata` section. You may need to create the `ossmconsole` namespace first.)
+
 From the operator details page, create an instance of the "OpenShift Service Mesh Console" resource. Accept the defaults on the installation form and press "Create".
 
 ![Install Plugin](07-ui-install-cr.png)
@@ -102,7 +104,7 @@ metadata:
 EOM
 ```
 
-Note that the operator will deploy the plugin resources in the same namespace where you create this OSSMConsole CR.
+Note that the operator will deploy the plugin resources in the same namespace where you create this OSSMConsole CR - in this case, `ossmconsole`.
 
 ### Plugin Installation Details
 
