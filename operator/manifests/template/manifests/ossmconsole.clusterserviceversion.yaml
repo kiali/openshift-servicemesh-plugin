@@ -8,7 +8,7 @@ metadata:
     operatorframework.io/arch.s390x: supported
     operatorframework.io/arch.ppc64le: supported
   annotations:
-    #olm.skipRange: '>=0.1.0 <${CSV_NEW_VERSION}'
+    olm.skipRange: '>=0.1.0 <${CSV_NEW_VERSION}'
     categories: Monitoring,Logging & Tracing
     certified: "false"
     containerImage: ${OPERATOR_IMAGE_NAME}:${OPERATOR_IMAGE_VERSION}

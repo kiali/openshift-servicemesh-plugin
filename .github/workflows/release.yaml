@@ -236,8 +236,7 @@ jobs:
       run: |
         make get-operator-sdk
 
-        # TODO: after the first release, completely remove "--old-version NONE" from the command line below
-        ./operator/manifests/create-new-version.sh --old-version NONE --new-version ${RELEASE_VERSION:1} --channels candidate
+        ./operator/manifests/create-new-version.sh --new-version ${RELEASE_VERSION:1} --channels candidate
 
         git add operator/manifests/
 
