@@ -7,7 +7,7 @@ spec:
   displayName: "OpenShift Service Mesh Console"
   service:
     name: ossmconsole
-    namespace: ossmconsole
+    namespace: {{ ossmconsole_vars.deployment.namespace }}
     port: 9443
     basePath: "/"
   proxy:
