@@ -86,6 +86,14 @@ export const kioskUrl = () => {
 // Global scope variable to hold the kiali listener
 let kialiListener = undefined;
 
+// Use to keep the time props between pages
+// Should be imported if required in other new pages
+const userProps = {
+    duration: '',
+    refresh: '',
+}
+export default userProps
+
 // This listener is responsible to receive the Kiali event that is sent inside the iframe page to the plugin
 // When users "clicks" a link in Kiali, there is no navigation in the Kiali side; and event it's send to the parent
 // And the "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
@@ -95,6 +103,7 @@ export const initKialiListeners = () => {
 
         kialiListener = (ev) => {
             const kialiAction= ev.data;
+
             if (typeof kialiAction !== "string") {
                 return;
             }
@@ -160,6 +169,14 @@ export const initKialiListeners = () => {
                     }
                 }
                 history.push(detailUrl);
+            }
+            if (kialiAction.startsWith('duration')) {
+                const duration = kialiAction.split("=")
+                userProps.duration = duration[1]
+            }
+            if (kialiAction.startsWith('refresh')) {
+                const refresh = kialiAction.split("=")
+                userProps.refresh = refresh[1]
             }
         };
         window.addEventListener('message', kialiListener);

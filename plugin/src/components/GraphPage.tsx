@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { getKialiUrl, initKialiListeners, kioskUrl } from '../kialiIntegration';
+import userProps, { getKialiUrl, initKialiListeners, kioskUrl } from '../kialiIntegration';
 
 const GraphPage = () => {
     const [kialiUrl, setKialiUrl] = React.useState({
@@ -15,7 +15,7 @@ const GraphPage = () => {
             .catch(e => console.error(e));
     }, []);
 
-    const iFrameUrl = kialiUrl.baseUrl + '/console/graph/namespaces/?' + kioskUrl() + '&' + kialiUrl.token;
+    const iFrameUrl = kialiUrl.baseUrl + '/console/graph/namespaces/?' + kioskUrl() + '&' + kialiUrl.token + '&duration=' + userProps.duration + '&refreshtime' + userProps.refresh;
     return (
         <>
             <iframe

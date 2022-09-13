@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {getKialiUrl, initKialiListeners, kioskUrl} from '../kialiIntegration';
+import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../kialiIntegration';
 
 const OverviewPage = () => {
     const [kialiUrl, setKialiUrl] = React.useState({
@@ -15,7 +15,7 @@ const OverviewPage = () => {
             .catch(e => console.error(e));
     }, []);
 
-    const iFrameUrl = kialiUrl.baseUrl + '/console/overview/?' + kioskUrl() + '&' + kialiUrl.token;
+    const iFrameUrl = kialiUrl.baseUrl + '/console/overview/?' + kioskUrl() + '&' + kialiUrl.token + '&duration=' + userProps.duration + '&refreshtime' + userProps.refresh;
     return (
         <>
             <iframe
