@@ -91,6 +91,7 @@ let kialiListener = undefined;
 const userProps = {
     duration: '',
     refresh: '',
+    timeRange: '',
 }
 export default userProps
 
@@ -177,6 +178,10 @@ export const initKialiListeners = () => {
             if (kialiAction.startsWith('refresh')) {
                 const refresh = kialiAction.split("=")
                 userProps.refresh = refresh[1]
+            }
+            if (kialiAction.startsWith('timeRange')) {
+                const timeRange = kialiAction.split("=")
+                userProps.timeRange = timeRange[1]
             }
         };
         window.addEventListener('message', kialiListener);
