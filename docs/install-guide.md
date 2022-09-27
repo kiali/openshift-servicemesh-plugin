@@ -12,7 +12,7 @@ Although Kiali is considered a component of the OpenShift Service Mesh Console, 
 
 The OpenShift Service Mesh Console requires OpenShift v4.10+ with one of:
 
-- Istio v1.14+ with Kiali v1.56.1+
+- Istio v1.14+ with Kiali v1.57+
 - OpenShift Service Mesh (OSSM) v2.3+
 
 Please refer to the relevant documentation for details on how to install those components.
@@ -77,8 +77,6 @@ With the operator installed and running you can install the OpenShift Service Me
 :bulb: You can install the plugin in one of two ways - either via the OpenShift Console or via the "oc" CLI. Both methods are described below. You choose the method you want to use.
 
 ### Installing Plugin via OpenShift Console
-
-:warning: Installing via the `Form view` does not currently work. You must create the CR in a separate namespace which requires the use of the `YAML view`. Create the CR in namespace `ossmconsole` by adding the setting `namespace: ossmconsole` in the `metadata` section. You may need to create the `ossmconsole` namespace first.)
 
 From the operator details page, create an instance of the "OpenShift Service Mesh Console" resource. Accept the defaults on the installation form and press "Create".
 
