@@ -88,21 +88,15 @@ To instruct the operator to install the plugin, simply create a small OSSMConsol
 
 ```bash
 cat <<EOM | oc apply -f -
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ossmconsole
----
 apiVersion: kiali.io/v1alpha1
 kind: OSSMConsole
 metadata:
-  namespace: ossmconsole
+  namespace: openshift-operators
   name: ossmconsole
 EOM
 ```
 
-Note that the operator will deploy the plugin resources in the same namespace where you create this OSSMConsole CR - in this case, `ossmconsole`.
+Note that the operator will deploy the plugin resources in the same namespace where you create this OSSMConsole CR - in this case, `openshift-operators`.
 
 ### Plugin Installation Details
 
