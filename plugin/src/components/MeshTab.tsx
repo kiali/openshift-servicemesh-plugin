@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {useHistory} from 'react-router';
-import {getKialiUrl, initKialiListeners, kioskUrl} from '../kialiIntegration';
+import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../kialiIntegration';
 
 const kialiTypes = {
     services: 'services',
@@ -59,11 +59,14 @@ const MeshTab = () => {
         }
     }
 
-    let iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?' + kioskUrl() + '&' + kialiUrl.token;
+    let iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?' + kioskUrl() + '&'
+        + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
     // Projects is a special case that will forward the graph in the iframe
     if (items[1] === 'projects') {
-        iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + id + '&' + kioskUrl() + '&' + kialiUrl.token;
+        iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + id + '&' + kioskUrl() + '&' + kialiUrl.token
+            + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
     }
+
     // TODO Obviously, this iframe is a PoC
     return (
         <>
