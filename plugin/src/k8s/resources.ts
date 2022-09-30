@@ -8,6 +8,18 @@ export const istioResources = [
     kind: 'WasmPlugin',
   },
   {
+    group: 'gateway.networking.k8s.io',
+    version: 'v1alpha2',
+    kind: 'Gateway',
+    title: 'Gateway (K8s)'
+  },
+  {
+    group: 'gateway.networking.k8s.io',
+    version: 'v1alpha2',
+    kind: 'HTTPRoute',
+    title: 'HTTPRoute (K8s)'
+  },
+  {
     group: 'networking.istio.io',
     version: 'v1alpha3',
     kind: 'EnvoyFilter',
@@ -76,6 +88,8 @@ export const istioResources = [
 
 export const kialiIstioResources = {
   '/istio/wasmplugins':             '/extensions.istio.io~v1alpha1~WasmPlugin',
+  '/istio/k8sgateways':             '/gateway.networking.k8s.io~v1alpha2~Gateway',
+  '/istio/k8shttproutes':           '/gateway.networking.k8s.io~v1alpha2~HTTPRoute',
   '/istio/envoyfilters':            '/networking.istio.io~v1alpha3~EnvoyFilter',
   '/istio/destinationrules':        '/networking.istio.io~v1beta1~DestinationRule',
   '/istio/gateways':                '/networking.istio.io~v1beta1~Gateway',
