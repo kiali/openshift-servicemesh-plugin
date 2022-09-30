@@ -94,7 +94,7 @@ const Row = ({ obj, activeColumnIDs }: RowProps<K8sResourceCommon>) => {
                 {obj.metadata.namespace}
             </TableData>
             <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-                {obj.kind}
+                {obj.kind + (obj.apiVersion.includes("k8s") ? " (K8s)" : "")}
             </TableData>
             <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
                 {obj['validations'] ? obj['validations'] : 'N/A'}
@@ -107,15 +107,15 @@ export const filters: RowFilter[] = [
     {
         filterGroupName: 'Kind',
         type: 'kind',
-        reducer: (obj: K8sResourceCommon) => obj.kind,
+        reducer: (obj: K8sResourceCommon) => obj.apiVersion + '.' + obj.kind,
         filter: (input, obj: K8sResourceCommon) => {
             if (!input.selected?.length) {
                 return true;
             }
 
-            return input.selected.includes(obj.kind);
+            return input.selected.includes(obj.apiVersion + '.' + obj.kind);
         },
-        items: istioResources.map(({ kind }) => ({ id: kind, title: kind })),
+        items: istioResources.map(({ group, version, kind, title }) => ({ id: (group + '/' + version + '.' + kind), title: (title? title : kind) })),
     },
 ];
 
