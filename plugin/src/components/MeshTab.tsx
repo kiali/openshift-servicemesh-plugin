@@ -78,7 +78,6 @@ const MeshTab = () => {
         const configType = configTypes[items[1].substring(items[1].lastIndexOf('~')+1)].toLowerCase();
         iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/istio/' + configType + '/' + id + '?' + kioskUrl() + '&'
             + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
-        console.log("URL " + iFrameUrl)
     }
 
     // Projects is a special case that will forward the graph in the iframe
