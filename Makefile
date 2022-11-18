@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 
 # Identifies the current build.
-VERSION ?= v0.3.0-SNAPSHOT
+VERSION ?= v0.4.0-SNAPSHOT
 COMMIT_HASH ?= $(shell git rev-parse HEAD)
 
 # Directories based on the root project directory
