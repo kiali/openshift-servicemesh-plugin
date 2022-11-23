@@ -10,6 +10,20 @@ const kialiTypes = {
     statefulsets: 'workloads',
 }
 
+const configTypes = {
+    DestinationRule: 'DestinationRules',
+    EnvoyFilter: 'EnvoyFilters',
+    Gateway: 'Gateways',
+    VirtualService: 'VirtualServices',
+    ServiceEntry: 'ServiceEntries',
+    Sidecar: 'Sidecars',
+    WorkloadEntry: 'WorkloadEntries',
+    WorkloadGroup: 'WorkloadGroups',
+    AuthorizationPolicy: 'AuthorizationPolicies',
+    PeerAuthentication: 'PeerAuthentications',
+    RequestAuthentication: 'RequestAuthentications',
+}
+
 const MeshTab = () => {
     const [kialiUrl, setKialiUrl] = React.useState({
         baseUrl: '',
@@ -58,9 +72,14 @@ const MeshTab = () => {
             id = id.substr(0, j);
         }
     }
-
     let iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?' + kioskUrl() + '&'
         + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
+    if (!type) {
+        const configType = configTypes[items[1].substring(items[1].lastIndexOf('~')+1)].toLowerCase();
+        iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/istio/' + configType + '/' + id + '?' + kioskUrl() + '&'
+            + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
+    }
+
     // Projects is a special case that will forward the graph in the iframe
     if (items[1] === 'projects') {
         iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + id + '&' + kioskUrl() + '&' + kialiUrl.token
