@@ -14,13 +14,13 @@ OPERATOR_QUAY_NAME ?= quay.io/${OPERATOR_CONTAINER_NAME}
 OPERATOR_QUAY_TAG ?= ${OPERATOR_QUAY_NAME}:${OPERATOR_CONTAINER_VERSION}
 
 # The version of the SDK this Makefile will download if needed, and the corresponding base image
-OPERATOR_SDK_VERSION ?= 1.22.0
+OPERATOR_SDK_VERSION ?= 1.25.0
 OPERATOR_BASE_IMAGE_VERSION ?= v${OPERATOR_SDK_VERSION}
 OPERATOR_BASE_IMAGE_REPO ?= quay.io/operator-framework/ansible-operator
 # These are what we really want - but origin-ansible-operator does not support multiarch today.
 # When that is fixed, we want to use this image instead of the image above.
-# See: https://issues.redhat.com/browse/DPTP-2630
-#OPERATOR_BASE_IMAGE_VERSION ?= 4.11
+# See: https://issues.redhat.com/browse/DPTP-2946
+#OPERATOR_BASE_IMAGE_VERSION ?= 4.12
 #OPERATOR_BASE_IMAGE_REPO ?= quay.io/openshift/origin-ansible-operator
 
 # The OLM Namespace where catalog sources, subscriptions, and operators are deployed
@@ -148,7 +148,7 @@ run-playbook: install-crd .wait-for-crd
 	@$(eval ANSIBLE_PYTHON_INTERPRETER ?= $(shell if (which python &> /dev/null && python --version 2>&1 | grep -q " 2\.*"); then echo "-e ansible_python_interpreter=python3"; else echo ""; fi))
 	@if [ ! -z "${ANSIBLE_PYTHON_INTERPRETER}" ]; then echo "ANSIBLE_PYTHON_INTERPRETER is [${ANSIBLE_PYTHON_INTERPRETER}]. Make sure that refers to a Python3 installation. If you do not have Python3 in that location, you must ensure you have Python3 and ANSIBLE_PYTHON_INTERPRETER is set to '-e ansible_python_interpreter=<full path to your python3 executable>"; fi
 	@echo "Create a dummy OSSMConsole CR"; ${OC} apply -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmconsole-cr.yaml
-	ansible-galaxy collection install operator_sdk.util community.kubernetes
+	ansible-galaxy collection install operator_sdk.util kubernetes.core
 	ALLOW_AD_HOC_OSSMCONSOLE_IMAGE=true POD_NAMESPACE="does-not-exist" ANSIBLE_ROLES_PATH=${OPERATOR_DIR}/roles ansible-playbook -vvv ${ANSIBLE_PYTHON_INTERPRETER} -i ${OPERATOR_DIR}/dev-playbook-config/dev-hosts.yaml ${OPERATOR_DIR}/dev-playbook-config/dev-playbook.yaml
 	@echo "Remove the dummy OSSMConsole CR"; ${OC} delete -f ${OPERATOR_DIR}/dev-playbook-config/dev-ossmconsole-cr.yaml
 

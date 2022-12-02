@@ -7,7 +7,8 @@ OLM_IMAGE_ORG ?= ${OPERATOR_IMAGE_ORG}
 OLM_BUNDLE_NAME ?= ${OLM_IMAGE_ORG}/ossmconsole-operator-bundle
 OLM_INDEX_NAME ?= ${OLM_IMAGE_ORG}/ossmconsole-operator-index
 
-OLM_INDEX_BASE_IMAGE ?= quay.io/openshift/origin-operator-registry:4.10
+OLM_INDEX_BASE_IMAGE ?= quay.io/openshift/origin-operator-registry:4.11
+OPM_VERSION ?= 1.25.0
 
 .download-opm-if-needed:
 	@if [ "$(shell which opm 2>/dev/null || echo -n "")" == "" ]; then \
@@ -16,7 +17,7 @@ OLM_INDEX_BASE_IMAGE ?= quay.io/openshift/origin-operator-registry:4.10
 	    echo "You do not have opm installed in your PATH. Will use the one found here: ${OPERATOR_OUTDIR}/operator-sdk-install/opm" ;\
 	  else \
 	    echo "You do not have opm installed in your PATH. The binary will be downloaded to ${OPERATOR_OUTDIR}/operator-sdk-install/opm" ;\
-	    curl -L https://github.com/operator-framework/operator-registry/releases/download/v1.22.1/${OS}-${ARCH}-opm > "${OPERATOR_OUTDIR}/operator-sdk-install/opm" ;\
+	    curl -L https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/${OS}-${ARCH}-opm > "${OPERATOR_OUTDIR}/operator-sdk-install/opm" ;\
 	    chmod +x "${OPERATOR_OUTDIR}/operator-sdk-install/opm" ;\
 	  fi ;\
 	fi
