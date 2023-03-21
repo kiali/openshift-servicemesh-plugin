@@ -18,6 +18,11 @@ clean-plugin:
 	@rm -rf ${PLUGIN_DIR}/node_modules
 	@rm -rf ${PLUGIN_DIR}/dist
 
+## clean-core-ui: Delete core ui generated code.
+clean-core-ui:
+	@rm -rf ${PLUGIN_DIR}/../core-ui/node_modules
+	@rm -rf ${PLUGIN_DIR}/../core-ui/lib
+
 ## build-plugin: Builds the plugin.
 build-plugin:
 	cd ${PLUGIN_DIR} && yarn install --network-timeout 7200000 && yarn build

@@ -17,6 +17,20 @@ These are the things you need before you can start working with the OpenShift Se
 3. `oc` client available in the path
 4. `podman` client available in the path
 
+Once you have the platform setup, you can get and build the code with the following script:
+
+```
+# Checkout the source code
+mkdir ossmc_plugin
+cd ossmc_plugin
+export OSSMC_PLUGIN=$(pwd)
+
+git clone https://github.com/kiali/openshift-servicemesh-plugin.git
+git clone https://github.com/kiali/core-ui.git
+
+ln -s $OSSMC_PLUGIN/core-ui openshift-servicemesh-plugin/core-ui
+```
+
 ## Quickly Deploy the OSSM Console
 
 To very quickly get the latest OSSM Console plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
@@ -54,6 +68,13 @@ yarn run start-console
 ```
 
 At this point, the OpenShift Console will start and be accessible at http://localhost:9000
+
+
+OSSMC plugin takes most of the components from [Kiali core-ui library](https://github.com/kiali/core-ui). By default the library is downloaded from [NPM registry](https://www.npmjs.com/package/@kiali/core). In case you need to link core ui library source code for development purposes perform the following actions:
+
+1. Run the command `make link-core-ui`.
+2. Go to core-ui folder and run `yarn build:watch` to build the library automatically on any source code change and propagate it to the plugin.
+
 
 ## Operator
 

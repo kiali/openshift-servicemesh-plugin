@@ -31,6 +31,7 @@ include make/Makefile.operator.mk
 include make/Makefile.cluster.mk
 include make/Makefile.olm.mk
 include make/Makefile.molecule.mk
+include make/Makefile.ui.mk
 
 help:
 	@echo

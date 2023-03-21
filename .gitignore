@@ -5,6 +5,9 @@ plugin/node_modules
 plugin/.idea
 plugin/.vscode
 
+# kiali core-ui library
+core-ui
+
 # testing
 plugin/coverage
 
