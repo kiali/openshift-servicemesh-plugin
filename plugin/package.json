@@ -17,12 +17,13 @@
     "lint": "eslint ./src --fix"
   },
   "dependencies": {
+    "@kiali/core-ui": "0.1.2",
     "axios": "0.27.2"
   },
   "devDependencies": {
     "@openshift-console/dynamic-plugin-sdk": "0.0.13",
-    "@openshift-console/dynamic-plugin-sdk-webpack": "0.0.8",
     "@openshift-console/dynamic-plugin-sdk-internal": "0.0.11",
+    "@openshift-console/dynamic-plugin-sdk-webpack": "0.0.8",
     "@openshift-console/plugin-shared": "^0.0.1",
     "@patternfly/quickstarts": "2.0.1",
     "@patternfly/react-core": "4.206.2",
@@ -41,6 +42,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.26.1",
     "i18next": "^19.8.3",
+    "node-polyfill-webpack-plugin": "^2.0.1",
     "prettier": "^2.4.1",
     "react": "17.0.2",
     "react-dom": "^17.0.2",
