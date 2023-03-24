@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
   getGroupVersionKindForResource,
+  K8sGroupVersionKind,
   K8sResourceCommon,
   ListPageBody,
   ListPageFilter,
@@ -107,13 +108,22 @@ const columns: TableColumn<K8sResourceCommon>[] = [
 
 const Row = ({ obj, activeColumnIDs }: RowProps<K8sResourceCommon>) => {
   const groupVersionKind = getGroupVersionKindForResource(obj);
+  const nsGroupVersionKind: K8sGroupVersionKind = {
+    group: '',
+    version: 'v1',
+    kind: 'Namespace'
+  };
   return (
     <>
       <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
         <ResourceLink groupVersionKind={groupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
       </TableData>
       <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-        {obj.metadata.namespace}
+        <ResourceLink
+          groupVersionKind={nsGroupVersionKind}
+          name={obj.metadata.namespace}
+          namespace={obj.metadata.namespace}
+        />
       </TableData>
       <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
         {obj.kind + (obj.apiVersion.includes('k8s') ? ' (K8s)' : '')}
