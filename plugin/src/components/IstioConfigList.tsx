@@ -10,8 +10,26 @@ import {getKialiProxy, initKialiListeners} from '../kialiIntegration';
 import { useParams } from 'react-router';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceForRsc } from '../k8s/resources';
-import * as API from '../k8s/api';
-import { getValidation, IstioConfigsMap } from '../types/IstioConfigList';
+import { getAllIstioConfigs } from '@kiali/core-ui/';
+import { validationKey, IstioConfigsMap } from '@kiali/core-ui';
+
+  
+const getValidation = (istioConfigs: IstioConfigsMap, kind: string, name: string, namespace: string): string => {
+if (istioConfigs[namespace] && istioConfigs[namespace].validations[kind.toLowerCase()] && istioConfigs[namespace].validations[kind.toLowerCase()][validationKey(name, namespace)]) {
+    let validation = istioConfigs[namespace].validations[kind.toLowerCase()][validationKey(name, namespace)]
+    if (validation.checks.filter(i => i.severity === 'error').length > 0) {
+    return "Error"
+    } else {
+    if (validation.checks.filter(i => i.severity === 'warning').length > 0) {
+        return "Warning"
+    } else {
+        return "Valid"
+    }
+    }
+} else {
+    return "N/A"
+}
+}
 
 const useIstioTableColumns = (namespace: string) => {
     const columns: TableColumn<K8sResourceCommon>[] = [
@@ -190,7 +208,7 @@ const IstioConfigList = () => {
             // then direct requests to the Kiali API should use the KialiProxy url.
             // This proxy url is different from the url used for iframes that have a different domain.
             const kialiProxy = getKialiProxy();
-            API.getAllIstioConfigs(kialiProxy)
+            getAllIstioConfigs([],[],true,'','',kialiProxy)
                 .then(response => response.data)
                 .then((kialiValidations) => {
                     // Update the list of resources present when last fech of Kiali Validations

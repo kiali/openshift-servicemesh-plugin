@@ -9,6 +9,8 @@ interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
 }
 
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin")
+
 const config: Configuration = {
   mode: "development",
   // No regular entry points. The remote container entry is handled by ConsoleRemotePlugin.
@@ -75,6 +77,7 @@ const config: Configuration = {
         'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
         'process.env.KIALI_API_HOST': JSON.stringify(process.env.KIALI_API_HOST),
       }),
+      new NodePolyfillPlugin()
   ],
   devtool: "source-map",
   optimization: {
