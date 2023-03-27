@@ -24,7 +24,6 @@ export const getAllIstioConfigs = (
     kialiUrl: string,
 ): Promise<Response<IstioConfigsMap>> => {
   const params: any = {};
-
   params.validate = true;
-  return newRequest<IstioConfigsMap>(HTTP_VERBS.GET, kialiUrl + config.api.urls.allIstioConfigs, params, {});
+  return newRequest<IstioConfigsMap>(HTTP_VERBS.GET, kialiUrl + '/' + config.api.urls.allIstioConfigs(), params, {});
 };
