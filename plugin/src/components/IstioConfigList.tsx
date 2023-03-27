@@ -10,7 +10,8 @@ import {getKialiProxy, initKialiListeners} from '../kialiIntegration';
 import { useParams } from 'react-router';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceForRsc } from '../k8s/resources';
-import { getAllIstioConfigs } from '@kiali/core-ui/';
+import * as API from '../k8s/api';
+// import { getAllIstioConfigs } from '@kiali/core-ui/';
 import { validationKey, IstioConfigsMap } from '@kiali/core-ui';
 
   
@@ -208,7 +209,8 @@ const IstioConfigList = () => {
             // then direct requests to the Kiali API should use the KialiProxy url.
             // This proxy url is different from the url used for iframes that have a different domain.
             const kialiProxy = getKialiProxy();
-            getAllIstioConfigs([],[],true,'','',kialiProxy)
+            // getAllIstioConfigs([],[],true,'','',kialiProxy)
+            API.getAllIstioConfigs(kialiProxy)
                 .then(response => response.data)
                 .then((kialiValidations) => {
                     // Update the list of resources present when last fech of Kiali Validations
