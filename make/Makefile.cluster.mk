@@ -30,8 +30,9 @@
 
 .prepare-operator-pull-secret: .prepare-cluster
 	@# base64 encode a pull secret (using the logged in user token) that can be used to pull the bundle index image from the internal image registry
-	@$(eval OPERATOR_IMAGE_PULL_SECRET_JSON = $(shell ${OC} registry login --registry="$(shell ${OC} registry info --internal)" --namespace=${ALL_IMAGES_NAMESPACE} --to=- | base64 -w0))
+	@$(eval OPERATOR_IMAGE_PULL_SECRET_JSON = $(shell ${OC} registry login --registry="$(shell ${OC} registry info --internal)" --namespace=${ALL_IMAGES_NAMESPACE} --to=/tmp/json &>/dev/null && cat /tmp/json | base64 -w0))
 	@$(eval OPERATOR_IMAGE_PULL_SECRET_NAME ?= ossmconsole-operator-pull-secret)
+	@rm /tmp/json
 
 .create-operator-pull-secret: .prepare-operator-pull-secret
 	@if [ -n "${OPERATOR_IMAGE_PULL_SECRET_JSON}" ] && ! (${OC} get secret ${OPERATOR_IMAGE_PULL_SECRET_NAME} --namespace ${OPERATOR_NAMESPACE} &> /dev/null); then \
