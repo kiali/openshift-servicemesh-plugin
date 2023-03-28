@@ -112,7 +112,7 @@ uninstall-crd: purge-all-crs
 	${OC} delete --ignore-not-found=true -f "${OPERATOR_DIR}/manifests/template/manifests/ossmconsole.crd.yaml"
 
 ## install-cr: Installs a test OSSMConsole CR into the cluster.
-install-cr: .wait-for-crd .prepare-cluster .create-test-namespace .create-plugin-pull-secret
+install-cr: install-crd .wait-for-crd .prepare-cluster .create-test-namespace .create-plugin-pull-secret
 	cat "${OPERATOR_DIR}/deploy/ossmconsole-cr-dev.yaml" | DEPLOYMENT_IMAGE_NAME="${CLUSTER_PLUGIN_INTERNAL_NAME}" DEPLOYMENT_IMAGE_VERSION="${PLUGIN_CONTAINER_VERSION}" PULL_SECRET_NAME="${PLUGIN_IMAGE_PULL_SECRET_NAME}" envsubst | ${OC} apply -n ${PLUGIN_NAMESPACE} -f -
 
 ## uninstall-cr: Deletes the test OSSMConsole CR from the cluster and waits for the operator to finalize the deletion.
@@ -131,7 +131,7 @@ purge-all-crs: .ensure-oc-login
 	  done
 
 ## run-operator: Runs the OSSM Console Operator via the ansible-operator.
-run-operator: install-crd install-cr get-ansible-operator
+run-operator: install-cr get-ansible-operator
 	cd ${OPERATOR_DIR} && \
 	ANSIBLE_ROLES_PATH="${OPERATOR_DIR}/roles" \
 	ALLOW_AD_HOC_OSSMCONSOLE_IMAGE="true" \
