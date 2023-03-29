@@ -71,7 +71,7 @@ Here's a tl;dr summary to get the operator and plugin installed in your cluster.
 
 1. First run `make cluster-status` to expose the internal image registry and get the podman command needed to log into the internal image registry.
 2. Run the podman login command that will log into the internal image registry.
-3. Build, push, and deploy the operator and plugin by running `make cluster-push operator-create install-cr`
+3. Build, push, and deploy the operator and plugin by running `make cluster-push operator-create install-crd install-cr`
 
 When you are finished and you want to uninstall the operator and plugin, run `make operator-delete`.
 
@@ -117,6 +117,14 @@ Once your operator is deployed and running, and you have built and pushed the pl
 #### make uninstall-cr
 
 If you wish to uninstall the plugin from your OpenShift Console, run this target. This will delete the OSSMConsole CR that was created via the `install-cr` target, which instructs the operator to uninstall the plugin. The operator will continue to be running. You can re-install the plugin by simply creating another OSSMConsole CR by running `make install-cr` again.
+
+#### make install-crd
+
+This target installs the OSSMConsole CRD (Custom Resource Definition) that describe the properties of the OSSMConsole CR within Openshift.
+
+#### make uninstall-crd
+
+This will delete the OSSMConsole CRD (Custom Resource Definition) that was created via the `install-crd` target.
 
 #### make purge-all-crs
 
