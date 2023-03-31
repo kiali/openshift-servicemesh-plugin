@@ -1,6 +1,7 @@
 import { useHistory } from "react-router";
 import {refForKialiIstio} from "./k8s/resources";
 import {consoleFetch} from "@openshift-console/dynamic-plugin-sdk";
+import { CertsInfo, ComputedServerConfig, defaultServerConfig, PromisesRegistry, getServerConfig, getMeshTls, INITIAL_STATUS_STATE, TLSStatus, getStatus, getIstioCertsInfo, setServerConfig, StatusState } from "@kiali/core-ui";
 
 export const properties = {
     // This API is hardcoded but:
@@ -25,13 +26,62 @@ export type KialiUrl = {
 // https://github.com/openshift/enhancements/blob/master/enhancements/console/dynamic-plugins.md#delivering-plugins
 export const CONSOLE_PROXY = '/api/proxy/plugin/ossmconsole/kiali';
 
-// Direct requests from the Plugin to Kiali API should use the KialiProxy host.
-// This can be relative to the same domain in production environments but for development it requires a different config.
-export const getKialiProxy = (): string => {
-    if (process.env.NODE_ENV === 'development') {
-        return process.env.KIALI_API_HOST;
+
+// ServerConfig
+export type KialiConfig = {
+    kialiProxy: string;
+    server: ComputedServerConfig;
+    status: StatusState;
+    istioCerts: CertsInfo[];
+    meshTLSStatus: TLSStatus;
+}
+
+let KialiConfig: KialiConfig = {
+    kialiProxy: process.env.NODE_ENV === 'development' ? process.env.KIALI_API_HOST : CONSOLE_PROXY,
+    server: defaultServerConfig,
+    status : INITIAL_STATUS_STATE,
+    istioCerts: [],
+    meshTLSStatus: {status:'', autoMTLSEnabled: false, minTLS: ''}
+}
+let loadedConfig = false;
+
+// Loader of ServerConfig, proxy and status
+
+export const getKialiConfig = async (): Promise<KialiConfig> => {
+    try {
+        if (!loadedConfig) {
+            const promises =  new PromisesRegistry();
+            const getStatusPromise = promises
+                .register('getStatus', getStatus(KialiConfig.kialiProxy))
+                .then(response => KialiConfig.status = response.data)
+                .catch(error => {
+                    console.error('Could not connect to Kiali API Status', error)
+                });
+            const getConfigPromise = promises
+                .register('getServerConfig', getServerConfig(KialiConfig.kialiProxy))
+                .then(response => KialiConfig.server = setServerConfig(KialiConfig.server, response.data))
+                .catch(error => {
+                    console.error('Could not connect to Kiali API Config', error)
+                });    
+            const getIstioCertsPromise = promises
+                .register('getIstioCertsInfo', getIstioCertsInfo(KialiConfig.kialiProxy))
+                .then(response => KialiConfig.istioCerts = response.data)
+                .catch(error => {
+                    console.error('Could not connect to Kiali API Istio Certs', error)
+                });    
+            const getMeshTlsPromise = promises    
+                .register('getMeshTls', getMeshTls(KialiConfig.kialiProxy))
+                .then(response => KialiConfig.meshTLSStatus = response.data)
+                .catch(error => {
+                    console.error('Could not connect to Kiali API Istio Certs', error)
+                }); 
+            await Promise.all([getStatusPromise, getConfigPromise, getIstioCertsPromise, getMeshTlsPromise]);    
+            loadedConfig = true; 
+        }    
+        return KialiConfig;   
+    }catch (err) {
+        console.error('Error loading Kiali config & status', err);
     }
-    return CONSOLE_PROXY;
 }
 
 // The iframes used by the plugin require a public Kiali Url.
@@ -187,6 +237,5 @@ export const initKialiListeners = () => {
         window.addEventListener('message', kialiListener);
     }
 }
-
 
 

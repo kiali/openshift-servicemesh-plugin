@@ -6,7 +6,7 @@ import {
     TableColumn,
     TableData, useActiveColumns, useK8sWatchResource, useListPageFilter, VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import {getKialiProxy, initKialiListeners} from '../kialiIntegration';
+import {getKialiConfig, initKialiListeners, KialiConfig} from '../kialiIntegration';
 import { useParams } from 'react-router';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceForRsc } from '../k8s/resources';
@@ -172,6 +172,7 @@ const IstioConfigList = () => {
     initKialiListeners();
 
     const [kialiValidations, setKialiValidations] = React.useState<IstioConfigsMap>(undefined);
+    const [_, setKialiConfig] = React.useState<KialiConfig>(undefined);
     const prevResourceVersion = React.useRef<string[]>([]);
 
     const watches = istioResources.map(({ group, version, kind }) => {
@@ -204,11 +205,13 @@ const IstioConfigList = () => {
             resourceVersion.some(v => !prevResourceVersion.current.includes(v));
 
         if (loaded && newUpdates) {
-            // The OSSM Console plugin is in the same domain of the OpenShift Console,
-            // then direct requests to the Kiali API should use the KialiProxy url.
-            // This proxy url is different from the url used for iframes that have a different domain.
-            const kialiProxy = getKialiProxy();
-            getAllIstioConfigs([],[],true,'','',kialiProxy)
+            getKialiConfig()
+            .then(kialiConfig => {
+                setKialiConfig(kialiConfig)
+                // The OSSM Console plugin is in the same domain of the OpenShift Console,
+                // then direct requests to the Kiali API should use the KialiProxy url.
+                // This proxy url is different from the url used for iframes that have a different domain.           
+                getAllIstioConfigs([],[],true,'','',kialiConfig.kialiProxy)
                 .then(response => response.data)
                 .then((kialiValidations) => {
                     // Update the list of resources present when last fech of Kiali Validations
@@ -217,6 +220,8 @@ const IstioConfigList = () => {
                     setKialiValidations(kialiValidations);
                 })
                 .catch(error => console.error('Could not connect to Kiali API', error));
+            })
+            .catch(error => console.error('Error getting Kiali API config', error));   
         }
         // Deps trigger the hook, but those are not "enough", inner logic is needed to check changes
     }, [loaded, resourceVersion, prevResourceVersion]);
