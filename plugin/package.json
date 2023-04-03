@@ -81,10 +81,5 @@
     "dependencies": {
       "@console/pluginAPI": "*"
     }
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "yarn run pretty-quick --staged --pattern \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\" && npm run lint:precommit"
-    }
   }
 }
