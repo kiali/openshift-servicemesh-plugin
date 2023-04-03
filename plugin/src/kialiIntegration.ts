@@ -52,25 +52,25 @@ export const getKialiConfig = async (): Promise<KialiConfig> => {
         if (!loadedConfig) {
             const promises =  new PromisesRegistry();
             const getStatusPromise = promises
-                .register('getStatus', getStatus(KialiConfig.kialiProxy))
+                .register('getStatus', getStatus())
                 .then(response => KialiConfig.status = response.data)
                 .catch(error => {
                     console.error('Could not connect to Kiali API Status', error)
                 });
             const getConfigPromise = promises
-                .register('getServerConfig', getServerConfig(KialiConfig.kialiProxy))
+                .register('getServerConfig', getServerConfig())
                 .then(response => KialiConfig.server = setServerConfig(KialiConfig.server, response.data))
                 .catch(error => {
                     console.error('Could not connect to Kiali API Config', error)
                 });    
             const getIstioCertsPromise = promises
-                .register('getIstioCertsInfo', getIstioCertsInfo(KialiConfig.kialiProxy))
+                .register('getIstioCertsInfo', getIstioCertsInfo())
                 .then(response => KialiConfig.istioCerts = response.data)
                 .catch(error => {
                     console.error('Could not connect to Kiali API Istio Certs', error)
                 });    
             const getMeshTlsPromise = promises    
-                .register('getMeshTls', getMeshTls(KialiConfig.kialiProxy))
+                .register('getMeshTls', getMeshTls())
                 .then(response => KialiConfig.meshTLSStatus = response.data)
                 .catch(error => {
                     console.error('Could not connect to Kiali API Istio Certs', error)
