@@ -25,13 +25,17 @@ import {
   getNamespaces,
   getReconciliationCondition,
   IstioConfigItem,
+  IstioConfigList,
+  IstioConfigsMap,
   IstioObject,
+  Namespace,
   ObjectValidation,
   PromisesRegistry,
   StatusCondition,
   toIstioItems,
   ValidationObjectSummary
 } from '@kiali/core-ui/';
+import { AxiosResponse } from 'axios';
 
 interface IstioConfigObject extends IstioObject {
   validation: ObjectValidation;
@@ -162,10 +166,11 @@ const IstioConfigList = () => {
 
   const promises = new PromisesRegistry();
 
-  // Fetch the Istio configs, apply filters and map them into flattened list items
-  const fetchIstioConfigs = (kialiProxy: string, istioAPIEnabled: boolean) => {
+  // Fetch the Istio configs, convert to istio items and map them into flattened list items
+  const fetchIstioConfigs = async (kialiProxy: string, istioAPIEnabled: boolean): Promise<IstioConfigItem[]> => {
     const validate = istioAPIEnabled ? true : false;
-    let getIstioConfigData, getNamespacesData;
+    let getNamespacesData: Promise<AxiosResponse<Namespace[]>>;
+    let getIstioConfigData: Promise<AxiosResponse<IstioConfigList | IstioConfigsMap>>;
     if (ns) {
       getIstioConfigData = promises.register('getIstioConfig', getIstioConfig(ns, [], validate, '', '', kialiProxy));
     } else {
@@ -178,11 +183,11 @@ const IstioConfigList = () => {
     }
     return Promise.all([getNamespacesData, getIstioConfigData]).then(response => {
       if (ns) {
-        return toIstioItems(response[1].data);
+        return toIstioItems(response[1].data as IstioConfigList);
       } else {
         let istioItems: IstioConfigItem[] = [];
         // convert istio objects from all namespaces
-        const namespaces = response[0].data;
+        const namespaces: Namespace[] = response[0].data;
         namespaces.forEach(namespace => {
           istioItems = istioItems.concat(toIstioItems(response[1].data[namespace.name]));
         });
