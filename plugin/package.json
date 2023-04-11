@@ -17,7 +17,7 @@
     "lint": "eslint ./src --fix"
   },
   "dependencies": {
-    "@kiali/core-ui": "0.2.0",
+    "@kiali/core-ui": "0.8.0",
     "axios": "0.27.2"
   },
   "devDependencies": {
@@ -65,7 +65,7 @@
     "displayName": "OpenShift Service Mesh Console",
     "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {
-      "OverviewPage": "./components/OverviewPage",
+      "OverviewPage": "./components/Overview/OverviewPage",
       "GraphPage": "./components/GraphPage",
       "IstioConfigList": "./components/IstioConfigList",
       "MeshTab": "./components/MeshTab"
