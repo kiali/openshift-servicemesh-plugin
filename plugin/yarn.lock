@@ -90,10 +90,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
-"@kiali/core-ui@0.8.0":
-  version "0.8.0"
-  resolved "https://registry.npmjs.org/@kiali/core-ui/-/core-ui-0.8.0.tgz#158ae4dbfa46815e7285134473a1a869770afc39"
-  integrity sha512-cEV9x9PpRR5S8tSscXsMtnj11pSGMfa+FuDuimYP5yApjjgt/Tt9fjM9BtzO8fnm+Mpbp6mUZOyfb4xJnv/QrA==
+"@kiali/core-ui@0.9.0":
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/@kiali/core-ui/-/core-ui-0.9.0.tgz#264316c2250f0e87cfe098ff2b7d863eb041504c"
+  integrity sha512-T+6N94aWmxe6h7PQsAhy11f1MaZWv7SGO/+M0WnOF/X5gulJMldDsJ1kAGdGNkGwvJsILpNvOmI3EpEWS1H9gA==
   dependencies:
     "@patternfly/patternfly" "4.179.1"
     "@patternfly/react-charts" "6.51.5"
