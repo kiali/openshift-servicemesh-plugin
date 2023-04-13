@@ -202,6 +202,21 @@
       "model": {
         "group": "networking.istio.io",
         "kind": "Gateway",
+        "version": "v1alpha3"
+      },
+      "page": {
+        "name": "Service Mesh",
+        "href": "ossmconsole"
+      },
+      "component": { "$codeRef": "MeshTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "model": {
+        "group": "networking.istio.io",
+        "kind": "Gateway",
         "version": "v1beta1"
       },
       "page": {

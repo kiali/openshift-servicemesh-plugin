@@ -26,7 +26,6 @@ import {
   getReconciliationCondition,
   IstioConfigItem,
   IstioConfigList,
-  IstioConfigsMap,
   IstioObject,
   Namespace,
   ObjectValidation,
@@ -35,7 +34,6 @@ import {
   toIstioItems,
   ValidationObjectSummary
 } from '@kiali/core-ui/';
-import { AxiosResponse } from 'axios';
 
 interface IstioConfigObject extends IstioObject {
   validation: ObjectValidation;
@@ -167,19 +165,15 @@ const IstioConfigList = () => {
   const promises = new PromisesRegistry();
 
   // Fetch the Istio configs, convert to istio items and map them into flattened list items
-  const fetchIstioConfigs = async (kialiProxy: string, istioAPIEnabled: boolean): Promise<IstioConfigItem[]> => {
+  const fetchIstioConfigs = async (istioAPIEnabled: boolean): Promise<IstioConfigItem[]> => {
     const validate = istioAPIEnabled ? true : false;
-    let getNamespacesData: Promise<AxiosResponse<Namespace[]>>;
-    let getIstioConfigData: Promise<AxiosResponse<IstioConfigList | IstioConfigsMap>>;
+    let getNamespacesData, getIstioConfigData;
     if (ns) {
-      getIstioConfigData = promises.register('getIstioConfig', getIstioConfig(ns, [], validate, '', '', kialiProxy));
+      getIstioConfigData = promises.register('getIstioConfig', getIstioConfig(ns, [], validate, '', ''));
     } else {
       // If no namespace is selected, get istio config for all namespaces
-      getNamespacesData = promises.register('getNamespaces', getNamespaces(kialiProxy));
-      getIstioConfigData = promises.register(
-        'getIstioConfig',
-        getAllIstioConfigs([], [], validate, '', '', kialiProxy)
-      );
+      getNamespacesData = promises.register('getNamespaces', getNamespaces());
+      getIstioConfigData = promises.register('getIstioConfig', getAllIstioConfigs([], [], validate, '', ''));
     }
     return Promise.all([getNamespacesData, getIstioConfigData]).then(response => {
       if (ns) {
@@ -206,19 +200,17 @@ const IstioConfigList = () => {
 
   React.useEffect(() => {
     if (kialiConfig) {
-      fetchIstioConfigs(kialiConfig.kialiProxy, kialiConfig.status.istioEnvironment.istioAPIEnabled).then(
-        istioConfigs => {
-          const istioConfigObjects = istioConfigs.map(istioConfig => {
-            const istioConfigObject = getIstioObject(istioConfig) as IstioConfigObject;
-            istioConfigObject.validation = istioConfig.validation;
-            istioConfigObject.reconciledCondition = getReconciliationCondition(istioConfig);
+      fetchIstioConfigs(kialiConfig.status.istioEnvironment.istioAPIEnabled).then(istioConfigs => {
+        const istioConfigObjects = istioConfigs.map(istioConfig => {
+          const istioConfigObject = getIstioObject(istioConfig) as IstioConfigObject;
+          istioConfigObject.validation = istioConfig.validation;
+          istioConfigObject.reconciledCondition = getReconciliationCondition(istioConfig);
 
-            return istioConfigObject;
-          });
-          setListItems(istioConfigObjects);
-          setLoaded(true);
-        }
-      );
+          return istioConfigObject;
+        });
+        setListItems(istioConfigObjects);
+        setLoaded(true);
+      });
     }
   }, [kialiConfig, ns]);
 
