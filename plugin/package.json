@@ -68,7 +68,7 @@
       "OverviewPage": "./components/Overview/OverviewPage",
       "GraphPage": "./components/GraphPage",
       "IstioConfigList": "./components/IstioConfigList",
-      "MeshTab": "./components/MeshTab"
+      "MeshTab": "./components/MeshTab/MeshTab"
     },
     "dependencies": {
       "@console/pluginAPI": "*"

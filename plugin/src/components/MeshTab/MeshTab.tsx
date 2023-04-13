@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {useHistory} from 'react-router';
-import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../kialiIntegration';
+import { IstioMesh, ProjectMesh, ServiceMesh, WorkloadMesh } from './';
+
 
 const kialiTypes = {
     services: 'services',
@@ -24,19 +25,7 @@ const configTypes = {
     RequestAuthentication: 'RequestAuthentications',
 }
 
-const MeshTab = () => {
-    const [kialiUrl, setKialiUrl] = React.useState({
-        baseUrl: '',
-        token: '',
-    });
-
-    initKialiListeners();
-
-    React.useEffect(() => {
-        getKialiUrl()
-            .then(ku => setKialiUrl(ku))
-            .catch(e => console.error(e));
-    }, []);
+const MeshTab = () => {  
 
     // This parsing logic maps the location of the user in the OpenShift console to populate the iFrame url to
     // the proper target in the Kiali side
@@ -72,32 +61,19 @@ const MeshTab = () => {
             id = id.substr(0, j);
         }
     }
-    let iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/' + type + '/' + id + '?' + kioskUrl() + '&'
-        + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
+    let component = type === 'workloads' ? <WorkloadMesh namespace={namespace} idObject={id} />: <ServiceMesh namespace={namespace} idObject={id} />;
+
     if (!type) {
         const configType = configTypes[items[1].substring(items[1].lastIndexOf('~')+1)].toLowerCase();
-        iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + namespace + '/istio/' + configType + '/' + id + '?' + kioskUrl() + '&'
-            + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
+        component = <IstioMesh configType={configType} namespace={namespace}  idObject={id} />
     }
 
     // Projects is a special case that will forward the graph in the iframe
     if (items[1] === 'projects') {
-        iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + id + '&' + kioskUrl() + '&' + kialiUrl.token
-            + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
+        component = <ProjectMesh idObject={id}/>     
     }
 
-    // TODO Obviously, this iframe is a PoC
-    return (
-        <>
-            <iframe
-                src={iFrameUrl}
-                style={{overflow: 'hidden', height: '100%', width: '100%' }}
-                height="100%"
-                width="100%"
-            />
-
-        </>
-    );
+    return component;
 };
 
 export default MeshTab;
