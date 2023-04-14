@@ -157,13 +157,28 @@
       "model": {
         "group": "networking.istio.io",
         "kind": "VirtualService",
+        "version": "v1alpha3"
+      },
+      "page": {
+        "name": "Service Mesh",
+        "href": "ossmconsole"
+      },
+      "component": { "$codeRef": "IstioMeshTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "model": {
+        "group": "networking.istio.io",
+        "kind": "VirtualService",
         "version": "v1beta1"
       },
       "page": {
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
