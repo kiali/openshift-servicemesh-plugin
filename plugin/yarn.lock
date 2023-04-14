@@ -1109,6 +1109,7 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
+<<<<<<< HEAD
 "@hypnosphi/create-react-context@^0.3.1":
   version "0.3.1"
   resolved "https://registry.yarnpkg.com/@hypnosphi/create-react-context/-/create-react-context-0.3.1.tgz#f8bfebdc7665f5d426cba3753e0e9c7d3154d7c6"
@@ -1197,6 +1198,12 @@
   version "0.15.0"
   resolved "https://registry.yarnpkg.com/@kiali/types/-/types-0.15.0.tgz#e0035d72897fd6c75ecdb8ba6de393221b774112"
   integrity sha512-WsXTiAOG3nD6SbRXQ0A77YCxr4EiJ9ClElsDeS3p75Z8M6FEjnXFgKO8pTdTnBRlLjwewUD4e5d+Qj0LsCa2sA==
+=======
+"@kiali/core-ui@0.12.0":
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/@kiali/core-ui/-/core-ui-0.12.0.tgz#c2d819b49c147ab70322d8d8955fa5898c0c4e23"
+  integrity sha512-RQ7aZRtRbCUrDVw2zyq/3iFvPI8EN20EuYjmk40zAsV/xAkvBehmo72ic3V3JN3a+BFnaNjqY9G3ph9w5Qq5Mw==
+>>>>>>> 05b8767 (Upgrade core-ui to version 0.12.0)
   dependencies:
     "@patternfly/patternfly" "4.179.1"
     "@patternfly/react-charts" "6.51.5"
