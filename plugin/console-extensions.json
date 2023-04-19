@@ -193,7 +193,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -208,7 +208,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -223,7 +223,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -238,7 +238,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -253,7 +253,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -268,7 +268,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -283,7 +283,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -298,7 +298,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -313,7 +313,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   }
 ]
