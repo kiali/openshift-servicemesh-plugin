@@ -3,6 +3,7 @@ import {
   getGroupVersionKindForResource,
   K8sGroupVersionKind,
   ListPageBody,
+  ListPageCreateDropdown,
   ListPageFilter,
   ListPageHeader,
   ResourceLink,
@@ -15,9 +16,9 @@ import {
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
 import { getKialiConfig, KialiConfig } from '../kialiIntegration';
-import { useParams } from 'react-router';
+import { useHistory, useParams } from 'react-router';
 import { sortable } from '@patternfly/react-table';
-import { istioResources } from '../k8s/resources';
+import { istioResources, referenceFor } from '../k8s/resources';
 import {
   getAllIstioConfigs,
   getIstioConfig,
@@ -118,16 +119,20 @@ const filters: RowFilter[] = [
   {
     filterGroupName: 'Kind',
     type: 'kind',
-    reducer: (obj: IstioConfigObject) => obj.apiVersion + '.' + obj.kind,
+    reducer: (obj: IstioConfigObject) => {
+      const groupVersionKind = getGroupVersionKindForResource(obj);
+      return groupVersionKind.group + '.' + obj.kind;
+    },
     filter: (input, obj: IstioConfigObject) => {
       if (!input.selected?.length) {
         return true;
       }
 
-      return input.selected.includes(obj.apiVersion + '.' + obj.kind);
+      const groupVersionKind = getGroupVersionKindForResource(obj);
+      return input.selected.includes(groupVersionKind.group + '.' + obj.kind);
     },
-    items: istioResources.map(({ group, version, kind, title }) => ({
-      id: group + '/' + version + '.' + kind,
+    items: istioResources.map(({ group, kind, title }) => ({
+      id: group + '.' + kind,
       title: title ? title : kind
     }))
   }
@@ -156,11 +161,22 @@ const IstioTable = ({ columns, data, unfilteredData, loaded, loadError }: IstioT
   );
 };
 
+const newIstioResourceList = {
+  authorization_policy: 'AuthorizationPolicy',
+  gateway: 'Gateway',
+  k8s_gateway: 'K8sGateway',
+  peer_authentication: 'PeerAuthentication',
+  request_authentication: 'RequestAuthentication',
+  service_entry: 'ServiceEntry',
+  sidecar: 'Sidecar'
+};
+
 const IstioConfigList = () => {
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [kialiConfig, setKialiConfig] = React.useState<KialiConfig>(undefined);
   const [listItems, setListItems] = React.useState<any[]>([]);
+  const history = useHistory();
 
   const promises = new PromisesRegistry();
 
@@ -190,10 +206,20 @@ const IstioConfigList = () => {
     });
   };
 
+  const onCreate = (reference: string) => {
+    const { group, version, kind } = istioResources.find(res => res.id === reference);
+    const path = `/k8s/ns/${ns ?? 'default'}/${referenceFor(group, version, kind)}/~new`;
+    history.push(path);
+  };
+
   React.useEffect(() => {
     getKialiConfig()
       .then(kialiConfig => {
         setKialiConfig(kialiConfig);
+
+        if (!kialiConfig.server.gatewayAPIEnabled) {
+          delete newIstioResourceList['k8s_gateway'];
+        }
       })
       .catch(error => console.error('Error getting Kiali API config', error));
   }, []);
@@ -220,7 +246,11 @@ const IstioConfigList = () => {
 
   return (
     <>
-      <ListPageHeader title="Istio Config" />
+      <ListPageHeader title="Istio Config">
+        <ListPageCreateDropdown items={newIstioResourceList} onClick={onCreate}>
+          Create
+        </ListPageCreateDropdown>
+      </ListPageHeader>
       <ListPageBody>
         <ListPageFilter data={data} loaded={loaded} rowFilters={filters} onFilterChange={onFilterChange} />
         <IstioTable columns={columns} data={filteredData} unfilteredData={data} loaded={loaded} />
