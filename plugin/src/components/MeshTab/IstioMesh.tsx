@@ -5,6 +5,7 @@ import {
   getErrorString,
   getIstioConfigDetail,
   getIstioObject,
+  getKialiStyle,
   HelpMessage,
   IstioActionButtons,
   IstioConfigDetails,
@@ -40,13 +41,12 @@ import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-eclipse';
 import 'ace-builds/src-noconflict/ext-searchbox';
 import * as jsYaml from 'js-yaml';
-import { style } from 'typestyle';
 import { getKialiConfig, KialiConfig } from '../../kialiIntegration';
 import { AxiosError } from 'axios';
 import { K8sGroupVersionKind, ResourceLink } from '@openshift-console/dynamic-plugin-sdk';
 import { istioResources } from '../../k8s/resources';
 
-const editorStyle = style({
+const editorStyle = getKialiStyle({
   marginBottom: '15px',
   border: '1px solid #8b8d8f',
   $nest: {
@@ -79,11 +79,11 @@ const editorStyle = style({
   }
 });
 
-const editorDrawer = style({
+const editorDrawer = getKialiStyle({
   margin: '15px'
 });
 
-const drawerStyle = style({
+const drawerStyle = getKialiStyle({
   zIndex: 0
 });
 
