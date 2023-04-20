@@ -113,7 +113,7 @@ const IstioConfigMeshTab = () => {
   const [istioObjectDetails, setIstioObjectDetails] = React.useState<IstioConfigDetails>(undefined);
   const [istioValidations, setIstioValidations] = React.useState<ObjectValidation>(undefined);
   const [isModified, setIsModified] = React.useState<boolean>(false);
-  const [yamlModified, setYamlModified] = React.useState<string>(undefined);
+  const [editorYaml, setEditorYaml] = React.useState<string>('');
   const [yamlValidations, setYamlValidations] = React.useState<AceValidations>(undefined);
   const [isExpanded, setIsExpanded] = React.useState<boolean>(true);
   const [selectedEditorLine, setSelectedEditorLine] = React.useState<string>(undefined);
@@ -121,7 +121,7 @@ const IstioConfigMeshTab = () => {
   const [load, setLoad] = React.useState(true);
   const promises = new PromisesRegistry();
   const istioAPIEnabled = kialiConfig?.status?.istioEnvironment?.istioAPIEnabled;
-  const editorRef = React.createRef<ReactAce>();
+  const editorRef = React.useRef<ReactAce>();
 
   const getStatusMessages = (istioConfigDetails?: IstioConfigDetails): ValidationMessage[] => {
     const istioObject = getIstioObject(istioConfigDetails);
@@ -202,7 +202,7 @@ const IstioConfigMeshTab = () => {
   };
 
   const onUpdate = () => {
-    jsYaml.safeLoadAll(yamlModified, (objectModified: object) => {
+    jsYaml.safeLoadAll(editorYaml, (objectModified: object) => {
       const jsonPatch = JSON.stringify(mergeJsonPatch(objectModified, getIstioObject(istioObjectDetails))).replace(
         new RegExp('"(,null)+]', 'g'),
         '"]'
@@ -269,23 +269,15 @@ const IstioConfigMeshTab = () => {
     resizeEditor();
   };
 
-  const fetchYaml = () => {
-    if (isModified) {
-      return yamlModified;
-    }
-    const istioObject = getIstioObject(istioObjectDetails);
-    return istioObject ? jsYaml.safeDump(istioObject, safeDumpOptions) : '';
-  };
-
   const onEditorChange = (value: string) => {
     setIsModified(true);
-    setYamlModified(value);
+    setEditorYaml(value);
     setIstioValidations(undefined);
     setYamlValidations(parseYamlValidations(value));
   };
 
   const onCursorChange = (e: any) => {
-    const line = parseLine(fetchYaml(), e.cursor.row);
+    const line = parseLine(editorYaml, e.cursor.row);
     setSelectedEditorLine(line);
   };
 
@@ -338,8 +330,9 @@ const IstioConfigMeshTab = () => {
           setIstioValidations(istioConfigDetail.validation);
           setIsModified(false);
           setIsExpanded(getIsExpanded(istioConfigDetail));
-          setYamlModified('');
-          resizeEditor();
+
+          const istioObject = getIstioObject(istioConfigDetail);
+          setEditorYaml(istioObject ? jsYaml.safeDump(istioObject, safeDumpOptions) : '');
         })
         .catch(error => {
           // const msg: ErrorMsg = {
@@ -370,14 +363,13 @@ const IstioConfigMeshTab = () => {
       editor.onChangeAnnotation();
 
       // Fold status and/or managedFields fields
-      const { startRow, endRow } = getFoldRanges(fetchYaml());
       if (!isModified) {
+        const { startRow, endRow } = getFoldRanges(editorYaml);
         editor.session.foldAll(startRow, endRow, 0);
       }
     }
-  });
+  }, [editorYaml]);
 
-  const yamlSource = fetchYaml();
   const istioStatusMsgs = getStatusMessages(istioObjectDetails);
 
   const objectReferences = getObjectReferences(istioObjectDetails);
@@ -393,7 +385,7 @@ const IstioConfigMeshTab = () => {
     annotations: []
   };
   if (!isModified) {
-    editorValidations = parseKialiValidations(yamlSource, istioValidations);
+    editorValidations = parseKialiValidations(editorYaml, istioValidations);
   } else {
     if (yamlValidations) {
       editorValidations.markers = yamlValidations.markers;
@@ -401,7 +393,7 @@ const IstioConfigMeshTab = () => {
     }
   }
 
-  const helpAnnotations = parseHelpAnnotations(yamlSource, helpMessages);
+  const helpAnnotations = parseHelpAnnotations(editorYaml, helpMessages);
   helpAnnotations.forEach(ha => editorValidations.annotations.push(ha));
 
   const panelContent = (
@@ -443,7 +435,7 @@ const IstioConfigMeshTab = () => {
         wrapEnabled={true}
         readOnly={!canUpdate()}
         setOptions={aceOptions}
-        value={istioObjectDetails ? yamlSource : undefined}
+        value={editorYaml}
         annotations={editorValidations.annotations}
         markers={editorValidations.markers}
         onCursorChange={onCursorChange}
