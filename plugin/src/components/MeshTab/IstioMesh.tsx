@@ -270,8 +270,8 @@ const IstioConfigMeshTab = () => {
   };
 
   const onEditorChange = (value: string) => {
-    setIsModified(true);
     setEditorYaml(value);
+    setIsModified(true);
     setIstioValidations(undefined);
     setYamlValidations(parseYamlValidations(value));
   };
@@ -368,7 +368,7 @@ const IstioConfigMeshTab = () => {
         editor.session.foldAll(startRow, endRow, 0);
       }
     }
-  }, [editorYaml]);
+  });
 
   const istioStatusMsgs = getStatusMessages(istioObjectDetails);
 
