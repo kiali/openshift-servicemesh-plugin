@@ -5,11 +5,8 @@ import {
   getErrorString,
   getIstioConfigDetail,
   getIstioObject,
-  getKialiStyle,
   HelpMessage,
-  IstioActionButtons,
   IstioConfigDetails,
-  IstioConfigOverview,
   mergeJsonPatch,
   ObjectReference,
   ObjectValidation,
@@ -23,7 +20,8 @@ import {
   updateIstioConfigDetail,
   ValidationMessage,
   WorkloadReference
-} from '@kiali/core-ui';
+} from '@kiali/types';
+import { getKialiStyle, IstioActionButtons, IstioConfigOverview } from '@kiali/core-ui';
 import {
   Drawer,
   DrawerActions,
