@@ -5,13 +5,9 @@
 - name: Create OSSM Console objects on OpenShift
   include_tasks: process-resource.yml
   vars:
-    process_resource_cluster: "openshift"
-    role_namespaces: "{{ [ ossmconsole_vars.deployment.namespace ] }}"
-  loop:
-  - configmap-nginx
-  - configmap-plugin
-  - deployment
-  - service
-  - consoleplugin
-  loop_control:
-    loop_var: process_resource_item
+    process_resource_templates:
+    - "templates/openshift/configmap-nginx.yaml"
+    - "templates/openshift/configmap-plugin.yaml"
+    - "templates/openshift/deployment.yaml"
+    - "templates/openshift/service.yaml"
+    - "templates/openshift/consoleplugin.yaml"

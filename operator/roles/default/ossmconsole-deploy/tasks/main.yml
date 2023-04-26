@@ -187,7 +187,8 @@
     q: status."Kiali version"
   ignore_errors: yes
 
-- set_fact:
+- name: "Determine environment to store in status"
+  set_fact:
     status_environment: "{{ status_environment | default({}) | combine({item.0: item.1}) }}"
   loop: "{{ data[0] | zip(data[1]) | list }}"
   vars:
@@ -320,17 +321,22 @@
     deployment_last_updated: "{{ current_deployment_last_updated }}"
 
 # If something changed that can only be picked up when the OSSM Console pod starts up, then restart the pod using a rolling restart
+# We do this by checking the processed_resources_dict created by process-resources.yml task. If there is a map key
+# with the kind (ConfigMap) with the name of our config map appended to it ("-plugin-conf") see if that config map changed.
+# If it did, we need to restart the pod so it can re-read the new config.
 - name: Force the OSSM Console pod to restart if necessary
   vars:
+    keyname: "{{ 'ConfigMap-plugin-conf' }}"
     updated_deployment: "{{ lookup(k8s_plugin, resource_name='ossmconsole', namespace=ossmconsole_vars.deployment.namespace, api_version='apps/v1', kind='Deployment') | combine({'spec': {'template': {'metadata': {'annotations': {'ossmconsole.kiali.io/last-updated': lookup('pipe','date') }}}}}, recursive=True) }}"
   k8s:
     state: "present"
     definition: "{{ updated_deployment }}"
   when:
   - deployment_is_new == False
-  - processed_resources.configmap is defined
-  - processed_resources.configmap.changed == True
-  - processed_resources.configmap.method == "patch"
+  - processed_resources_dict is defined
+  - processed_resources_dict[keyname] is defined
+  - processed_resources_dict[keyname].changed == True
+  - processed_resources_dict[keyname].method == "patch"
 
 - include_tasks: update-status-progress.yml
   vars:
