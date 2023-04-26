@@ -32,9 +32,9 @@ import {
   ObjectValidation,
   PromisesRegistry,
   StatusCondition,
-  toIstioItems,
-  ValidationObjectSummary
-} from '@kiali/core-ui/';
+  toIstioItems
+} from '@kiali/types';
+import { ValidationObjectSummary } from '@kiali/core-ui';
 
 interface IstioConfigObject extends IstioObject {
   validation: ObjectValidation;
