@@ -1110,6 +1110,7 @@
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 "@hypnosphi/create-react-context@^0.3.1":
   version "0.3.1"
   resolved "https://registry.yarnpkg.com/@hypnosphi/create-react-context/-/create-react-context-0.3.1.tgz#f8bfebdc7665f5d426cba3753e0e9c7d3154d7c6"
@@ -1176,6 +1177,8 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
+=======
+>>>>>>> bd61290 (Add kiali types in package.json)
 "@kiali/core-ui@0.15.0":
   version "0.15.0"
   resolved "https://registry.yarnpkg.com/@kiali/core-ui/-/core-ui-0.15.0.tgz#26e42ad372166f1cc757d1c2d4397085cf84fbb3"
@@ -1198,12 +1201,15 @@
   version "0.15.0"
   resolved "https://registry.yarnpkg.com/@kiali/types/-/types-0.15.0.tgz#e0035d72897fd6c75ecdb8ba6de393221b774112"
   integrity sha512-WsXTiAOG3nD6SbRXQ0A77YCxr4EiJ9ClElsDeS3p75Z8M6FEjnXFgKO8pTdTnBRlLjwewUD4e5d+Qj0LsCa2sA==
+<<<<<<< HEAD
 =======
 "@kiali/core-ui@0.12.0":
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/@kiali/core-ui/-/core-ui-0.12.0.tgz#c2d819b49c147ab70322d8d8955fa5898c0c4e23"
   integrity sha512-RQ7aZRtRbCUrDVw2zyq/3iFvPI8EN20EuYjmk40zAsV/xAkvBehmo72ic3V3JN3a+BFnaNjqY9G3ph9w5Qq5Mw==
 >>>>>>> 05b8767 (Upgrade core-ui to version 0.12.0)
+=======
+>>>>>>> bd61290 (Add kiali types in package.json)
   dependencies:
     "@patternfly/patternfly" "4.179.1"
     "@patternfly/react-charts" "6.51.5"
@@ -6116,7 +6122,11 @@ schema-utils@^4.0.0:
     "@types/json-schema" "^7.0.9"
     ajv "^8.9.0"
     ajv-formats "^2.1.1"
+<<<<<<< HEAD
     ajv-keywords "^5.1.0"
+=======
+    ajv-keywords "^5.0.0"
+>>>>>>> bd61290 (Add kiali types in package.json)
 
 select-hose@^2.0.0:
   version "2.0.0"
