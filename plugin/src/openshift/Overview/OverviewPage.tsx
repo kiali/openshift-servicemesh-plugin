@@ -50,43 +50,57 @@ const OverviewPage = () => {
   const [sortField, setSortField] = React.useState<SortField<NamespaceInfo>>(sortFields[0]);
   const promises = React.useMemo(() => new PromisesRegistry(), []);
 
-  const load = React.useCallback((filters: ActiveFiltersInfo = activeFilters, conf: KialiConfig = kialiConfig) => {
-    promises.cancelAll();
-    promises.register('getNamespaces', API.getNamespaces()).then(namespacesResponse => {
-      const nameFilters = filters.filters.filter(f => f.category === nameFilter.category);
-      const allNamespaces: NamespaceInfo[] = namespacesResponse.data
-        .filter(ns => {
-          return nameFilters.length === 0 || nameFilters.some(f => ns.name.includes(f.value));
-        })
-        .map(ns => {
-          const previous = namespaces.find(prev => prev.name === ns.name);
-          return {
-            name: ns.name,
-            status: previous?.status,
-            tlsStatus: previous?.tlsStatus,
-            metrics: previous?.metrics,
-            errorMetrics: previous?.errorMetrics,
-            validations: previous?.validations,
-            labels: ns.labels,
-            controlPlaneMetrics: previous?.controlPlaneMetrics
-          };
-        });
-      const sortNamespaces = sortFunc(allNamespaces, sortField, isAscending, conf.server);
-      setNamespaces(sortNamespaces);
-      fetchCanaryStatus(setCanaryStatus, setCanaryUpgrade);
-      fetchIstioStatus(setComponentStatus);
+  const load = React.useCallback(
+    (filters: ActiveFiltersInfo = activeFilters, conf: KialiConfig = kialiConfig) => {
+      promises.cancelAll();
+      promises.register('getNamespaces', API.getNamespaces()).then(namespacesResponse => {
+        const nameFilters = filters.filters.filter(f => f.category === nameFilter.category);
+        const allNamespaces: NamespaceInfo[] = namespacesResponse.data
+          .filter(ns => {
+            return nameFilters.length === 0 || nameFilters.some(f => ns.name.includes(f.value));
+          })
+          .map(ns => {
+            const previous = namespaces.find(prev => prev.name === ns.name);
+            return {
+              name: ns.name,
+              status: previous?.status,
+              tlsStatus: previous?.tlsStatus,
+              metrics: previous?.metrics,
+              errorMetrics: previous?.errorMetrics,
+              validations: previous?.validations,
+              labels: ns.labels,
+              controlPlaneMetrics: previous?.controlPlaneMetrics
+            };
+          });
+        const sortNamespaces = sortFunc(allNamespaces, sortField, isAscending, conf.server);
+        setNamespaces(sortNamespaces);
+        fetchCanaryStatus(setCanaryStatus, setCanaryUpgrade);
+        fetchIstioStatus(setComponentStatus);
 
-      fetchHealth(sortNamespaces, isAscending, sortFields[0], overviewType, setNamespaces, conf.server);
-      fetchTLS(sortNamespaces, isAscending, sortFields[0], conf.meshTLSStatus.status, setNamespaces, conf.server);
-      fetchValidations(sortNamespaces, isAscending, sortFields[0], setNamespaces, conf.server);
-      fetchOutboundTrafficPolicyMode(setoutboundTrafficPolicy);
-      fetchIstiodResourceThresholds(setIstiodResourceThresholds);
-      if (displayMode !== OverviewDisplayMode.COMPACT) {
-        fetchMetrics(allNamespaces, duration, direction, setNamespaces, conf.server);
-      }
-      setLoading(false);
-    });
-  }, [activeFilters, direction, displayMode, duration, isAscending, kialiConfig, namespaces, overviewType, promises, sortField]);
+        fetchHealth(sortNamespaces, isAscending, sortFields[0], overviewType, setNamespaces, conf.server);
+        fetchTLS(sortNamespaces, isAscending, sortFields[0], conf.meshTLSStatus.status, setNamespaces, conf.server);
+        fetchValidations(sortNamespaces, isAscending, sortFields[0], setNamespaces, conf.server);
+        fetchOutboundTrafficPolicyMode(setoutboundTrafficPolicy);
+        fetchIstiodResourceThresholds(setIstiodResourceThresholds);
+        if (displayMode !== OverviewDisplayMode.COMPACT) {
+          fetchMetrics(allNamespaces, duration, direction, setNamespaces, conf.server);
+        }
+        setLoading(false);
+      });
+    },
+    [
+      activeFilters,
+      direction,
+      displayMode,
+      duration,
+      isAscending,
+      kialiConfig,
+      namespaces,
+      overviewType,
+      promises,
+      sortField
+    ]
+  );
 
   const sort = (sortField: SortField<NamespaceInfo>, isAscending: boolean) => {
     setSortField(sortField);

@@ -155,7 +155,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "ServiceMeshTab" }
     }
   },
   {
