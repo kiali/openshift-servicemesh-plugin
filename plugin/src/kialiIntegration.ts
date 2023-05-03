@@ -14,7 +14,7 @@ import {
   getIstioCertsInfo,
   setServerConfig,
   StatusState
-} from '@kiali/core-ui';
+} from '@kiali/types';
 
 export const properties = {
   // This API is hardcoded but:

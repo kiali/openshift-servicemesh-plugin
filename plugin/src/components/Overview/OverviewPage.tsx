@@ -1,23 +1,25 @@
 import * as React from 'react';
 import { getKialiConfig, KialiConfig } from '../../kialiIntegration';
 import {
-  getNamespaces,
-  ActiveFiltersInfo,
-  PromisesRegistry,
-  CanaryUpgradeStatus,
-  NamespaceInfo,
   OverviewCard,
   OverviewToolbar,
   nameFilter,
   DirectionType,
   OverviewDisplayMode,
-  OutboundTrafficPolicy,
-  ComponentStatus,
   OverviewType,
   sortFields,
-  sortFunc,
-  SortField
+  sortFunc
 } from '@kiali/core-ui';
+import {
+  getNamespaces,
+  ActiveFiltersInfo,
+  PromisesRegistry,
+  CanaryUpgradeStatus,
+  NamespaceInfo,
+  OutboundTrafficPolicy,
+  ComponentStatus,
+  SortField
+} from '@kiali/types';
 import {
   fetchCanaryStatus,
   fetchIstioStatus,
