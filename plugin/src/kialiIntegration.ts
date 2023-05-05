@@ -45,13 +45,15 @@ export type KialiConfig = {
   status: StatusState;
   istioCerts: CertsInfo[];
   meshTLSStatus: TLSStatus;
+  jaegerInfo: JaegerInfo;
 };
 
 const kialiConfig: KialiConfig = {
   server: serverConfig,
   status: INITIAL_STATUS_STATE,
   istioCerts: [],
-  meshTLSStatus: { status: '', autoMTLSEnabled: false, minTLS: '' }
+  meshTLSStatus: { status: '', autoMTLSEnabled: false, minTLS: '' },
+  jaegerInfo: undefined
 };
 
 let loadedConfig = false;
@@ -86,9 +88,21 @@ export const getKialiConfig = async (): Promise<KialiConfig> => {
         .register('getMeshTls', API.getMeshTls())
         .then(response => (kialiConfig.meshTLSStatus = response.data))
         .catch(error => {
-          console.error('Could not connect to Kiali API Istio Certs', error);
+          console.error('Could not connect to Kiali API Mesh TLS', error);
         });
-      await Promise.all([getStatusPromise, getConfigPromise, getIstioCertsPromise, getMeshTlsPromise]);
+      const getJaegerInfoPromise = promises
+        .register('getJaegerInfo', getJaegerInfo())
+        .then(response => (kialiConfig.jaegerInfo = response.data))
+        .catch(error => {
+          console.error('Could not connect to Kiali API Jaeger Info', error);
+        });
+      await Promise.all([
+        getStatusPromise,
+        getConfigPromise,
+        getIstioCertsPromise,
+        getMeshTlsPromise,
+        getJaegerInfoPromise
+      ]);
       loadedConfig = true;
     }
     return kialiConfig;
