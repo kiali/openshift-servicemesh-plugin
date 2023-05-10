@@ -46,6 +46,8 @@ export type KialiConfig = {
   istioCerts: CertsInfo[];
   meshTLSStatus: TLSStatus;
   jaegerInfo: JaegerInfo;
+  userSettings: UserSettings;
+  graphSettings: GraphState;
 };
 
 const kialiConfig: KialiConfig = {
@@ -53,7 +55,9 @@ const kialiConfig: KialiConfig = {
   status: INITIAL_STATUS_STATE,
   istioCerts: [],
   meshTLSStatus: { status: '', autoMTLSEnabled: false, minTLS: '' },
-  jaegerInfo: undefined
+  jaegerInfo: undefined,
+  userSettings: INITIAL_USER_SETTINGS_STATE,
+  graphSettings: INITIAL_GRAPH_STATE
 };
 
 let loadedConfig = false;
