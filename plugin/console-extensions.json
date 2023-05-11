@@ -95,7 +95,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "WorkloadMeshTab" }
     }
   },
   {
@@ -110,7 +110,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "WorkloadMeshTab" }
     }
   },
   {
@@ -125,7 +125,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "WorkloadMeshTab" }
     }
   },
   {
@@ -140,7 +140,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "WorkloadMeshTab" }
     }
   },
   {
