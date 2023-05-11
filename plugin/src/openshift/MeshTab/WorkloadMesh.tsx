@@ -1,5 +1,20 @@
-import { TrafficDetails, IstioMetrics, TracesComponent, WorkloadInfo, WorkloadPodLogs } from '@kiali/core-ui';
-import { PromisesRegistry, MetricsObjectTypes, Workload, WorkloadHealth, getWorkload } from '@kiali/types';
+import {
+  TrafficDetails,
+  IstioMetrics,
+  TracesComponent,
+  WorkloadInfo,
+  WorkloadPodLogs,
+  EnvoyDetails
+} from '@kiali/core-ui';
+import {
+  PromisesRegistry,
+  MetricsObjectTypes,
+  Workload,
+  WorkloadHealth,
+  getWorkload,
+  getNamespaces,
+  Namespace
+} from '@kiali/types';
 import { K8sGroupVersionKind, ResourceLink } from '@openshift-console/dynamic-plugin-sdk';
 import { EmptyState, EmptyStateBody, EmptyStateVariant, Tab, Tabs, Title, TitleSizes } from '@patternfly/react-core';
 import * as React from 'react';
@@ -43,6 +58,7 @@ const WorkloadMesh = () => {
   };
 
   const [kialiConfig, setKialiConfig] = React.useState<KialiConfig>(undefined);
+  const [namespaces, setNamespaces] = React.useState<Namespace[]>([]);
   const [workload, setWorkload] = React.useState<Workload>(undefined);
   const [health, setHealth] = React.useState<WorkloadHealth>(undefined);
   const [currentTab, setCurrentTab] = React.useState<number>(activeTab());
@@ -51,21 +67,21 @@ const WorkloadMesh = () => {
 
   const mtlsEnabled = kialiConfig?.meshTLSStatus.autoMTLSEnabled;
 
-  //   const hasIstioSidecars = (workload: Workload): boolean => {
-  //     let hasIstioSidecars = false;
+  const hasIstioSidecars = (workload: Workload): boolean => {
+    let hasIstioSidecars = false;
 
-  //     if (workload.pods.length > 0) {
-  //       workload.pods.forEach(pod => {
-  //         if (pod.istioContainers && pod.istioContainers.length > 0) {
-  //           hasIstioSidecars = true;
-  //         } else {
-  //           hasIstioSidecars =
-  //             hasIstioSidecars || (!!pod.containers && pod.containers.some(cont => cont.name === 'istio-proxy'));
-  //         }
-  //       });
-  //     }
-  //     return hasIstioSidecars;
-  //   };
+    if (workload.pods.length > 0) {
+      workload.pods.forEach(pod => {
+        if (pod.istioContainers && pod.istioContainers.length > 0) {
+          hasIstioSidecars = true;
+        } else {
+          hasIstioSidecars =
+            hasIstioSidecars || (!!pod.containers && pod.containers.some(cont => cont.name === 'istio-proxy'));
+        }
+      });
+    }
+    return hasIstioSidecars;
+  };
 
   const linkTemplate = (name: string, namespace: string, objectType: string) => {
     let groupVersionKind: K8sGroupVersionKind;
@@ -96,7 +112,9 @@ const WorkloadMesh = () => {
       health: 'true'
     };
     promises.cancelAll();
-    return getWorkload(namespace, objectId, params);
+    const promiseNamespace = promises.register('getNamespaces', getNamespaces());
+    const promiseWorkload = promises.register('getWorkload', getWorkload(namespace, objectId, params));
+    return Promise.all([promiseNamespace, promiseWorkload]);
   };
 
   const tabSelectHandler = (tabKey: number) => {
@@ -121,11 +139,12 @@ const WorkloadMesh = () => {
     if (kialiConfig && load) {
       fetchWorkload()
         .then(response => {
-          setWorkload(response.data);
+          setNamespaces(response[0].data);
+          setWorkload(response[1].data);
           setHealth(
-            WorkloadHealth.fromJson(kialiConfig.server, namespace, objectId, response.data.health, {
+            WorkloadHealth.fromJson(kialiConfig.server, namespace, objectId, response[1].data.health, {
               rateInterval: duration,
-              hasSidecar: response.data.istioSidecar
+              hasSidecar: response[1].data.istioSidecar
             })
           );
         })
@@ -259,23 +278,29 @@ const WorkloadMesh = () => {
       );
     }
 
-    // if (workload && hasIstioSidecars(workload)) {
-    //   tabsArray.push(
-    //     <Tab title="Envoy" eventKey={6} key={'Envoy'}>
-    //       {workload && <EnvoyDetails lastRefreshAt={1000} namespace={namespace} workload={workload} />}
-    //     </Tab>
-    //   );
-    // }
+    if (workload && hasIstioSidecars(workload)) {
+      tabsArray.push(
+        <Tab title="Envoy" eventKey={6} key={'Envoy'}>
+          {workload && (
+            <EnvoyDetails
+              lastRefreshAt={1000}
+              namespace={namespace}
+              workload={workload}
+              namespaces={namespaces}
+              serverConfig={kialiConfig.server}
+              jaegerIntegration={kialiConfig.jaegerInfo.integration}
+              timeRange={{ rangeDuration: 600 }}
+              setTimeRange={() => {}}
+            />
+          )}
+        </Tab>
+      );
+    }
 
     return tabsArray;
   };
 
   return (
-    // <Drawer className={drawerStyle} isExpanded={isExpanded} isInline={true}>
-    //   <DrawerContent panelContent={showCards ? panelContent : undefined}>
-    //     <DrawerContentBody>{editor}</DrawerContentBody>
-    //   </DrawerContent>
-    // </Drawer>
     <>
       {workload ? (
         <Tabs
