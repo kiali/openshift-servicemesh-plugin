@@ -21,20 +21,18 @@ import {
   PromisesRegistry,
   SortField,
   ComponentStatus,
-  OverviewType,
   ComputedServerConfig,
   nsWideMTLSStatus,
   FAILURE,
   DEGRADED,
   HEALTHY,
   NOT_READY,
-  sortFunc,
   OutboundTrafficPolicy,
   getOutboundTrafficPolicyMode,
   IstiodResourceThresholds,
-  DirectionType,
   IstioMetricsOptions
-} from '@kiali/core-ui';
+} from '@kiali/types';
+import { OverviewType, sortFunc, DirectionType } from '@kiali/core-ui';
 import _ from 'lodash';
 
 const defaultDuration = 600;

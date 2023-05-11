@@ -17,7 +17,8 @@
     "lint": "eslint ./src --fix"
   },
   "dependencies": {
-    "@kiali/core-ui": "0.9.0",
+    "@kiali/core-ui": "0.15.0",
+    "@kiali/types": "0.15.0",
     "axios": "0.27.2"
   },
   "devDependencies": {
