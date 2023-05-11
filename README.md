@@ -35,6 +35,9 @@ In one command line window, perform the following steps:
 cd plugin
 yarn install
 
+# If necessary, make sure you adjust the kialiProxy in the env file so it points to your Kiali public endpoint URL
+# vi .env.development
+
 # Copy the plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment.
 cp plugin-config.json dist
 
