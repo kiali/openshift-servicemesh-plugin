@@ -29,6 +29,10 @@ You can undeploy/disable the plugin using `make undeploy-plugin`.
 
 ## How to Run the Plugin for Local Development
 
+> :warning: To avoid CORS errors when running in a local dev environment, you must disable CORS security in your browser. If using Chrome, start it using `--disable-web-security --user-data-dir="<some directory here>"` or install a CORS plugin such as [CORS Unblock](https://chrome.google.com/webstore/detail/cors-unblock/lfhmikememgdcahcdlaciloancbhjino) and use it to disable CORS security.
+
+> :warning: For this local dev environment to work, you *must* deploy the Kiali Server with `auth.strategy` set to `anonymous`.
+
 In one command line window, perform the following steps:
 
 ```sh
