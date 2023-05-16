@@ -33,27 +33,54 @@ You can undeploy/disable the plugin using `make undeploy-plugin`.
 
 > :warning: For this local dev environment to work, you *must* deploy the Kiali Server with `auth.strategy` set to `anonymous`.
 
-In one command line window, perform the following steps:
+### Preparing your local dev environment using `make`
+
+There is a single make target to help you set up your dev environment. When you run this make target, you must provide the `KIALI_URL` environment variable - it must be set to either (a) the Kiali Server public endpoint URL or (b) the literal value `route`. If you set it to `route`, the make target will attempt to auto-discover the Kiali Server URL by examining the Kiali Route. This auto-discovery will only work if you deployed Kiali in the cluster via the operator or helm chart. If you are running the Kiali Server outside of the cluster on your local machine, you have to specify the URL yourself directly in the value of `KIALI_URL`.
+
+To set up your dev environment using make, run this command:
+
+```sh
+make prepare-dev-env -e KIALI_URL=route
+```
+
+or, if auto-discovery will not work, specify the URL directly like this:
+
+```sh
+make prepare-dev-env -e KIALI_URL=https://<your-kiali-server-host>
+```
+
+### Preparing your local dev environment manually
+
+Alternatively, you can manually set up your dev environment outside of make by performing these steps:
 
 ```sh
 cd plugin
 yarn install
 
-# If necessary, make sure you adjust the kialiProxy in the env file so it points to your Kiali public endpoint URL
+# If necessary, make sure you change the "KIALI_PROXY" value in .env.development so it points to your Kiali Server URL
 # vi .env.development
 
-# Copy the plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment.
+# Copy the plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment
 cp plugin-config.json dist
 
-# If necessary, make sure you adjust the kialiUrl in the config file so it points to your Kiali public endpoint URL
+# If necessary, make sure you change the "kialiUrl" in the config file so it points to your Kiali Server URL
 # vi dist/plugin-config.json
+```
 
+### Run The Plugin and OpenShift Console Locally
+
+Once your dev environment is prepared, run the plugin and the OpenShift Console in separate command line windows:
+
+In one command line window, execute:
+
+```sh
+cd plugin
 yarn run start
 ```
 
 At this point, the plugin will start and be accessible at http://localhost:9001
 
-In a second command line window, perform the following steps:
+In a second command line window, execute:
 
 ```sh
 cd plugin
