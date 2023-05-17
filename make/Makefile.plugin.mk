@@ -71,7 +71,7 @@ endif
 ## prepare-dev-env: Prepares the local dev environment so you can run the plugin and OpenShift console locally.
 prepare-dev-env: .determine-kiali-url
 	@cd ${PLUGIN_DIR} && yarn install
-	@cp ${PLUGIN_DIR}/plugin-config.json ${PLUGIN_DIR}/dist && sed -i -e "2 i \ \ \"kialiUrl\": \"${KIALI_URL_TO_USE}\"" -e "/\"kialiUrl\":/d" ${PLUGIN_DIR}/dist/plugin-config.json
+	@cp ${PLUGIN_DIR}/plugin-config.json ${PLUGIN_DIR}/dist && sed -i -r 's|"kialiUrl": "(.*)"|"kialiUrl": "${KIALI_URL_TO_USE}"|' ${PLUGIN_DIR}/dist/plugin-config.json
 	@sed -i -r 's|^KIALI_PROXY=(.*)|KIALI_PROXY=${KIALI_URL_TO_USE}|' ${PLUGIN_DIR}/.env.development
 	@echo
 	@echo "Using KIALI_URL=${KIALI_URL_TO_USE}"
