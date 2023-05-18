@@ -56,6 +56,31 @@ disable-plugin: .ensure-oc-login
 restart-plugin: .ensure-oc-login
 	@${OC} rollout restart deployments/ossmconsole -n "$$(${OC} get deployments -l app.kubernetes.io/name=ossmconsole --all-namespaces -o jsonpath='{.items[0].metadata.namespace}')"
 
+ifeq ($(KIALI_URL),)
+.determine-kiali-url:
+	@echo "Set KIALI_URL to a valid URL or to 'route' if you want to auto-discover the Kiali OpenShift route" && exit 1
+else ifeq ($(KIALI_URL),route)
+.determine-kiali-url: .ensure-oc-login
+	@echo "Auto discovering the KIALI_URL"
+	@$(eval KIALI_URL_TO_USE = https://$(shell ${OC} get routes.route.openshift.io -l app.kubernetes.io/name=kiali --all-namespaces -o jsonpath='{.items[0].spec.host}'))
+else
+.determine-kiali-url:
+	@$(eval KIALI_URL_TO_USE = $${KIALI_URL})
+endif
+
+## prepare-dev-env: Prepares the local dev environment so you can run the plugin and OpenShift console locally.
+prepare-dev-env: .determine-kiali-url
+	@cd ${PLUGIN_DIR} && yarn install
+	@cp ${PLUGIN_DIR}/plugin-config.json ${PLUGIN_DIR}/dist && sed -i -r 's|"kialiUrl": "(.*)"|"kialiUrl": "${KIALI_URL_TO_USE}"|' ${PLUGIN_DIR}/dist/plugin-config.json
+	@sed -i -r 's|^KIALI_PROXY=(.*)|KIALI_PROXY=${KIALI_URL_TO_USE}|' ${PLUGIN_DIR}/.env.development
+	@echo
+	@echo "Using KIALI_URL=${KIALI_URL_TO_USE}"
+	@echo
+	@echo "To run the plugin and the OpenShift Console in your local dev environment, do the following:"
+	@echo "1. cd ${PLUGIN_DIR}"
+	@echo "2. Start the plugin: yarn run start"
+	@echo "3. In a second command line window, start the OpenShift Console: yarn run start-console"
+
 ## build-push-plugin-multi-arch: Pushes the OSSM Console plugin multi-arch image to quay.io.
 build-push-plugin-multi-arch: .ensure-buildx-builder
 	@echo Pushing OSSM Console plugin multi-arch image to ${PLUGIN_QUAY_TAG} using docker buildx
