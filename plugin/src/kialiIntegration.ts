@@ -1,20 +1,26 @@
 import { useHistory } from 'react-router';
-import { refForKialiIstio } from './k8s/resources';
+import { refForKialiIstio } from './utils/resources';
 import { consoleFetch } from '@openshift-console/dynamic-plugin-sdk';
 import {
   CertsInfo,
   ComputedServerConfig,
-  defaultServerConfig,
   PromisesRegistry,
-  getServerConfig,
-  getMeshTls,
-  INITIAL_STATUS_STATE,
   TLSStatus,
-  getStatus,
-  getIstioCertsInfo,
+  API,
   setServerConfig,
-  StatusState
+  StatusState,
+  serverConfig
 } from '@kiali/types';
+
+export const INITIAL_STATUS_STATE: StatusState = {
+  status: {},
+  externalServices: [],
+  warningMessages: [],
+  istioEnvironment: {
+    isMaistra: false,
+    istioAPIEnabled: true
+  }
+};
 
 export const properties = {
   // This API is hardcoded but:
@@ -42,7 +48,7 @@ export type KialiConfig = {
 };
 
 const kialiConfig: KialiConfig = {
-  server: defaultServerConfig,
+  server: serverConfig,
   status: INITIAL_STATUS_STATE,
   istioCerts: [],
   meshTLSStatus: { status: '', autoMTLSEnabled: false, minTLS: '' }
@@ -57,25 +63,27 @@ export const getKialiConfig = async (): Promise<KialiConfig> => {
     if (!loadedConfig) {
       const promises = new PromisesRegistry();
       const getStatusPromise = promises
-        .register('getStatus', getStatus())
+        .register('getStatus', API.getStatus())
         .then(response => (kialiConfig.status = response.data))
         .catch(error => {
           console.error('Could not connect to Kiali API Status', error);
         });
       const getConfigPromise = promises
-        .register('getServerConfig', getServerConfig())
-        .then(response => (kialiConfig.server = setServerConfig(kialiConfig.server, response.data)))
+        .register('getServerConfig', API.getServerConfig())
+        .then(response => {
+          setServerConfig(response.data);
+        })
         .catch(error => {
           console.error('Could not connect to Kiali API Config', error);
         });
       const getIstioCertsPromise = promises
-        .register('getIstioCertsInfo', getIstioCertsInfo())
+        .register('getIstioCertsInfo', API.getIstioCertsInfo())
         .then(response => (kialiConfig.istioCerts = response.data))
         .catch(error => {
           console.error('Could not connect to Kiali API Istio Certs', error);
         });
       const getMeshTlsPromise = promises
-        .register('getMeshTls', getMeshTls())
+        .register('getMeshTls', API.getMeshTls())
         .then(response => (kialiConfig.meshTLSStatus = response.data))
         .catch(error => {
           console.error('Could not connect to Kiali API Istio Certs', error);

@@ -1,0 +1,110 @@
+import * as React from 'react';
+import { connect } from 'react-redux';
+import {
+  KialiDispatch,
+  KialiAppState,
+  refreshIntervalSelector,
+  config,
+  IntervalInMilliseconds,
+  UserSettingsActions,
+  HistoryManager,
+  URLParam,
+  triggerRefresh,
+  isKioskMode
+} from '@kiali/types';
+import { ToolbarDropdown } from '../ToolbarDropdown/ToolbarDropdown';
+import RefreshButtonContainer from './RefreshButton';
+import { TooltipPosition } from '@patternfly/react-core';
+import { kioskRefreshAction } from '../Kiosk/KioskActions';
+
+type ReduxProps = {
+  refreshInterval: IntervalInMilliseconds;
+  setRefreshInterval: (refreshInterval: IntervalInMilliseconds) => void;
+};
+
+type ComponentProps = {
+  id: string;
+  disabled?: boolean;
+  hideLabel?: boolean;
+  hideRefreshButton?: boolean;
+  manageURL?: boolean;
+  menuAppendTo?: HTMLElement | (() => HTMLElement) | 'parent' | 'inline';
+};
+
+type Props = ComponentProps & ReduxProps;
+
+const REFRESH_INTERVALS = config.toolbar.refreshInterval;
+
+export class Refresh extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+
+    // Let URL override current redux state at construction time
+    if (props.manageURL) {
+      let refreshInterval = HistoryManager.getNumericParam(URLParam.REFRESH_INTERVAL);
+      if (refreshInterval === undefined) {
+        refreshInterval = props.refreshInterval;
+      }
+      if (refreshInterval !== props.refreshInterval) {
+        props.setRefreshInterval(refreshInterval);
+      }
+      HistoryManager.setParam(URLParam.REFRESH_INTERVAL, String(refreshInterval));
+    }
+  }
+
+  componentDidUpdate() {
+    // ensure redux state and URL are aligned
+    if (this.props.manageURL) {
+      HistoryManager.setParam(URLParam.REFRESH_INTERVAL, String(this.props.refreshInterval));
+    }
+  }
+
+  render() {
+    if (this.props.refreshInterval !== undefined) {
+      const { hideLabel } = this.props;
+      return (
+        <>
+          {!hideLabel && <label style={{ paddingRight: '0.5em', marginLeft: '1.5em' }}>Refreshing</label>}
+          <ToolbarDropdown
+            id={this.props.id}
+            handleSelect={value => this.updateRefreshInterval(Number(value))}
+            value={String(this.props.refreshInterval)}
+            label={REFRESH_INTERVALS[this.props.refreshInterval]}
+            menuAppendTo={this.props.menuAppendTo}
+            options={REFRESH_INTERVALS}
+            tooltip={'Refresh interval'}
+            tooltipPosition={TooltipPosition.left}
+          />
+          {this.props.hideRefreshButton || (
+            <RefreshButtonContainer handleRefresh={triggerRefresh} disabled={this.props.disabled} />
+          )}
+        </>
+      );
+    } else {
+      return this.props.hideRefreshButton ? null : <RefreshButtonContainer handleRefresh={triggerRefresh} />;
+    }
+  }
+
+  private updateRefreshInterval = (refreshInterval: IntervalInMilliseconds) => {
+    this.props.setRefreshInterval(refreshInterval); // notify redux of the change
+    if (isKioskMode()) {
+      kioskRefreshAction(refreshInterval);
+    }
+  };
+}
+
+const mapStateToProps = (state: KialiAppState) => ({
+  refreshInterval: refreshIntervalSelector(state)
+});
+
+const mapDispatchToProps = (dispatch: KialiDispatch) => {
+  return {
+    setRefreshInterval: (refresh: IntervalInMilliseconds) => {
+      dispatch(UserSettingsActions.setRefreshInterval(refresh));
+    }
+  };
+};
+
+const RefreshContainer = connect(mapStateToProps, mapDispatchToProps)(Refresh);
+
+export default RefreshContainer;
