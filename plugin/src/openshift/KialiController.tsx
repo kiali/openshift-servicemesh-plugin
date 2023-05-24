@@ -2,7 +2,6 @@ import * as React from 'react';
 import {
   HelpDropdownActions,
   GlobalActions,
-  KialiAppState,
   KialiDispatch,
   PromisesRegistry,
   StatusKey,
@@ -33,13 +32,25 @@ import {
 } from '@kiali/types';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import '../styles/index.scss';
+
+declare global {
+  interface Date {
+    toLocaleStringWithConditionalDate(): string;
+  }
+}
+
+// eslint-disable-next-line no-extend-native
+Date.prototype.toLocaleStringWithConditionalDate = function () {
+  const nowDate = new Date().toLocaleDateString();
+  const thisDate = this.toLocaleDateString();
+
+  return nowDate === thisDate ? this.toLocaleTimeString() : this.toLocaleString();
+};
 
 interface KialiControllerReduxProps {
   addMessage: (content: string, detail: string, groupId?: string, msgType?: MessageType, showNotif?: boolean) => void;
-  authenticated: boolean;
   checkCredentials: () => void;
-  isLoginError: boolean;
-  landingRoute?: string;
   setActiveNamespaces: (namespaces: Namespace[]) => void;
   setDuration: (duration: DurationInSeconds) => void;
   setJaegerInfo: (jaegerInfo: JaegerInfo | null) => void;
@@ -121,26 +132,6 @@ export class KialiController extends React.Component<KialiControllerProps, Kiali
   render() {
     return this.props.children;
   }
-
-  // private doPostLoginActions = async () => {
-  //   try {
-  //     const getStatusPromise = this.promises
-  //       .register('getStatus', getStatus())
-  //       .then(response => this.processServerStatus(response.data))
-  //       .catch(error => {
-  //         console.error(error);
-  //         //   AlertUtils.addError('Error fetching server status.', error, 'default', MessageType.WARNING);
-  //       });
-  //     await Promise.all([getStatusPromise]);
-  //   } catch (err) {
-  //     console.error('Error on post-login actions.', err);
-  //     // Transitioning to LOGGED_IN_AT_LOAD so that the user will see the "Loading..."
-  //     // screen instead of being stuck at the "login" page after a post-login error.
-  //     //   this.setState({ isPostLoginError: true, stage: LoginStage.LOGGED_IN_AT_LOAD });
-  //   } finally {
-  //     //   clearTimeout(postLoginTimer);
-  //   }
-  // };
 
   private doPostLoginActions = async () => {
     // const postLoginTimer = setTimeout(() => {
@@ -296,11 +287,6 @@ export class KialiController extends React.Component<KialiControllerProps, Kiali
   };
 }
 
-const mapStateToProps = (state: KialiAppState) => ({
-  authenticated: true,
-  isLoginError: false
-});
-
 const mapDispatchToProps = (dispatch: KialiDispatch) => ({
   addMessage: bindActionCreators(MessageCenterActions.addMessage, dispatch),
   checkCredentials: () => dispatch(LoginThunkActions.checkCredentials()),
@@ -314,5 +300,5 @@ const mapDispatchToProps = (dispatch: KialiDispatch) => ({
   statusRefresh: bindActionCreators(HelpDropdownActions.statusRefresh, dispatch)
 });
 
-const KialiControllerContainer = connect(mapStateToProps, mapDispatchToProps)(KialiController);
+const KialiControllerContainer = connect(null, mapDispatchToProps)(KialiController);
 export default KialiControllerContainer;

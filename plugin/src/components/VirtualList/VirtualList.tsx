@@ -49,16 +49,13 @@ type VirtualListState = {
   conf: Resource;
 };
 
-// get the type of list user request
-const listRegex = /\/([a-z0-9-]+)/;
-
 class VirtualListC<R extends RenderResource> extends React.Component<VirtualListProps<R>, VirtualListState> {
   private statefulFilters: React.RefObject<StatefulFilters> = React.createRef();
 
   constructor(props: VirtualListProps<R>) {
     super(props);
-    const match = history.location.pathname.match(listRegex) || [];
-    const type = match[1] || '';
+    const match = history.location.pathname.split('/') || [];
+    const type = match[2] || '';
     const conf = config[type] as Resource;
     const columns = this.getColumns(type);
     let index = -1;

@@ -25,7 +25,10 @@
     "@patternfly/react-core": "4.206.2",
     "@patternfly/react-table": "^4.90.3",
     "axios": "0.21.4",
-    "bootstrap-slider-without-jquery": "10.0.0"
+    "bootstrap-slider-without-jquery": "10.0.0",
+    "react-copy-to-clipboard": "5.x",
+    "regression": "^2.0.1",
+    "victory": "36.3.0"
   },
   "devDependencies": {
     "comment-json": "^4.1.1",
@@ -80,7 +83,7 @@
     "displayName": "OpenShift Service Mesh Console",
     "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {
-      "OverviewPage": "./openshift/Overview/OverviewPage",
+      "OverviewPage": "./openshift/OverviewPage",
       "GraphPage": "./openshift/GraphPage",
       "IstioConfigList": "./openshift/IstioConfigList",
       "MeshTab": "./openshift/MeshTab/MeshTab",

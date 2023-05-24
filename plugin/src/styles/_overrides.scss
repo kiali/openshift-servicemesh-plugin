@@ -55,9 +55,9 @@ Ensure Chips and ChipGroups show long values
 Kiosk mode
 */
 html.kiosk {
-  #page-sidebar {
-    display: none;
-  }
+  // #page-sidebar {
+  //   display: none;
+  // }
 
   header[role='kiali_header'] {
     display: none;
