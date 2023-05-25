@@ -174,7 +174,7 @@ const IstioConfigList = () => {
   initKialiListeners();
 
   const [kialiValidations, setKialiValidations] = React.useState<IstioConfigsMap>(undefined);
-  const [_, setKialiConfig] = React.useState<KialiConfig>(undefined);
+  const [, setKialiConfig] = React.useState<KialiConfig>(undefined);
   const prevResourceVersion = React.useRef<string[]>([]);
 
   const watches = istioResources.map(({ group, version, kind }) => {
@@ -202,7 +202,7 @@ const IstioConfigList = () => {
       // Initial fetch
       (resourceVersion.length === 0 && prevResourceVersion.current.length === 0) ||
       // Different sizes
-      resourceVersion.length != prevResourceVersion.current.length ||
+      resourceVersion.length !== prevResourceVersion.current.length ||
       // Same size but different elements
       resourceVersion.some(v => !prevResourceVersion.current.includes(v));
 

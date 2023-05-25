@@ -24,6 +24,7 @@ export const ServiceMesh = (props: ServiceMeshProps) => {
     + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
     return (
         <iframe
+                title='serviceMesh'
                 src={iFrameUrl}
                 style={{overflow: 'hidden', height: '100%', width: '100%' }}
                 height="100%"

@@ -27,8 +27,8 @@ import {
 import { renderAPILogo } from '../Logo/Logos';
 import NamespaceMTLSStatusContainer from '../MTls/NamespaceMTLSStatus';
 import ValidationSummary from '../Validations/ValidationSummary';
-// import OverviewCardSparklineCharts from '../../pages/Overview/OverviewCardSparklineChartsComponent';
-// import { OverviewToolbar } from '../../pages/Overview/OverviewToolbar';
+import OverviewCardSparklineCharts from '../../pages/Overview/OverviewCardSparklineChartsComponent';
+import { OverviewToolbar } from '../../pages/Overview/OverviewToolbar';
 import { StatefulFilters } from '../Filters/StatefulFilters';
 import IstioObjectLink, { GetIstioObjectUrl, infoStyle } from '../Link/IstioObjectLink';
 import { labelFilter } from '../Filters/CommonFilters';
@@ -39,7 +39,7 @@ import MissingLabel from '../MissingLabel/MissingLabel';
 import MissingAuthPolicy from '../MissingAuthPolicy/MissingAuthPolicy';
 import Label from '../Label/Label';
 import ControlPlaneBadge from '../../pages/Overview/ControlPlaneBadge';
-// import NamespaceStatuses from '../../pages/Overview/NamespaceStatuses';
+import NamespaceStatuses from '../../pages/Overview/NamespaceStatuses';
 import { KialiIcon } from '@kiali/core-ui';
 
 // Links
@@ -162,7 +162,7 @@ export const tls: Renderer<NamespaceInfo> = (ns: NamespaceInfo) => {
 
 export const istioConfig: Renderer<NamespaceInfo> = (ns: NamespaceInfo) => {
   let validations: ValidationStatus = { objectCount: 0, errors: 0, warnings: 0 };
-  if (!!ns.validations) {
+  if (ns.validations) {
     validations = ns.validations;
   }
   const status = (
@@ -194,7 +194,7 @@ export const status: Renderer<NamespaceInfo> = (ns: NamespaceInfo) => {
         className="pf-m-center"
         style={{ verticalAlign: 'middle' }}
       >
-        {/* {ns.status && (
+        {ns.status && (
           <NamespaceStatuses
             key={ns.name}
             name={ns.name}
@@ -210,7 +210,7 @@ export const status: Renderer<NamespaceInfo> = (ns: NamespaceInfo) => {
           metrics={ns.metrics}
           errorMetrics={ns.errorMetrics}
           controlPlaneMetrics={ns.controlPlaneMetrics}
-        /> */}
+        />
       </td>
     );
   }

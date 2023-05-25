@@ -1,4 +1,3 @@
-import { useHistory } from 'react-router';
 import { refForKialiIstio } from './utils/resources';
 import { consoleFetch } from '@openshift-console/dynamic-plugin-sdk';
 import {
@@ -9,7 +8,8 @@ import {
   API,
   setServerConfig,
   StatusState,
-  serverConfig
+  serverConfig,
+  history
 } from '@kiali/types';
 
 export const INITIAL_STATUS_STATE: StatusState = {
@@ -164,8 +164,6 @@ export default userProps;
 // And the "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
 export const initKialiListeners = () => {
   if (!kialiListener) {
-    const history = useHistory();
-
     kialiListener = ev => {
       const kialiAction = ev.data;
 

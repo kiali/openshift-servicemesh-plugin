@@ -36,23 +36,30 @@ import {
   NamespaceStatus,
   IstioMetricsOptions,
   computePrometheusRateParams,
-  KialiAppState,
   durationSelector,
   meshWideMTLSStatusSelector,
   minTLSVersionSelector,
   refreshIntervalSelector,
   nsWideMTLSStatus,
-  DurationInSeconds, IntervalInMilliseconds,
-  Paths, isMultiCluster, serverConfig,
+  DurationInSeconds,
+  IntervalInMilliseconds,
+  Paths,
+  isMultiCluster,
+  serverConfig,
   PFColors,
   history,
-  HistoryManager, URLParam,
+  HistoryManager,
+  URLParam,
   AlertUtils,
   MessageType,
-  CanaryUpgradeStatus, OutboundTrafficPolicy, ValidationStatus,
-  GrafanaInfo, ISTIO_DASHBOARDS,
+  CanaryUpgradeStatus,
+  OutboundTrafficPolicy,
+  ValidationStatus,
+  GrafanaInfo,
+  ISTIO_DASHBOARDS,
   ExternalLink,
-  IstiodResourceThresholds
+  IstiodResourceThresholds,
+  KialiAppState
 } from '@kiali/types';
 import OverviewToolbarContainer, {
   OverviewDisplayMode,
@@ -1168,7 +1175,7 @@ export class OverviewPage extends React.Component<OverviewProps, State> {
 
   renderIstioConfigStatus(ns: NamespaceInfo): JSX.Element {
     let validations: ValidationStatus = { objectCount: 0, errors: 0, warnings: 0 };
-    if (!!ns.validations) {
+    if (ns.validations) {
       validations = ns.validations;
     }
 

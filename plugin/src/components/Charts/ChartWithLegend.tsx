@@ -10,7 +10,7 @@ import {
   ChartLegend,
   ChartLine
 } from '@patternfly/react-charts';
-import { VictoryBoxPlot } from 'victory';
+import { VictoryBoxPlot, VictoryPortal } from 'victory';
 import { format as d3Format } from 'd3-format';
 import { getFormatter, getUnit, VCLines, LegendItem, LineInfo, RichDataPoint, 
   RawOrBucket, VCDataPoint, Overlay, toBuckets, VCEvent, addLegendEvent, XAxisType } from '@kiali/types';
@@ -251,7 +251,7 @@ class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extends React
               <ChartAxis tickCount={scaleInfo.count} style={AxisStyle} domain={this.props.timeWindow} />
             )
           }
-          {/* <ChartAxis
+          <ChartAxis
             tickLabelComponent={
               <VictoryPortal>
                 <ChartLabel />
@@ -263,7 +263,7 @@ class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extends React
             label={getUnit(d3Format, this.props.unit, mainMax)}
             axisLabelComponent={<ChartLabel y={-10} x={-15} angle={0} renderInPortal={true} />}
             style={AxisStyle}
-          /> */}
+          />
           {useSecondAxis && this.props.overlay && (
             <ChartAxis
               dependentAxis={true}

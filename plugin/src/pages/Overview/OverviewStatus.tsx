@@ -1,7 +1,17 @@
 import * as React from 'react';
 import { Tooltip, TooltipPosition } from '@patternfly/react-core';
 import { Link } from 'react-router-dom';
-import { Status, Paths, ActiveFilter, DEFAULT_LABEL_OPERATION, KialiAppState, durationSelector, refreshIntervalSelector, DurationInSeconds, IntervalInMilliseconds } from '@kiali/types';
+import {
+  Status,
+  Paths,
+  ActiveFilter,
+  DEFAULT_LABEL_OPERATION,
+  durationSelector,
+  refreshIntervalSelector,
+  DurationInSeconds,
+  IntervalInMilliseconds,
+  KialiAppState
+} from '@kiali/types';
 import { healthFilter } from '../../components/Filters/CommonFilters';
 import { FilterSelected } from '../../components/Filters/StatefulFilters';
 import { createIcon } from '../../components/Health/Helper';

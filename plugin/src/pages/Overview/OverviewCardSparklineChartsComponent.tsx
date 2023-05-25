@@ -1,6 +1,13 @@
 import * as React from 'react';
 import { DirectionType } from './OverviewToolbar';
-import { serverConfig, ControlPlaneMetricsMap, Metric, DurationInSeconds, IstiodResourceThresholds, KialiAppState } from '@kiali/types';
+import {
+  serverConfig,
+  ControlPlaneMetricsMap,
+  Metric,
+  DurationInSeconds,
+  IstiodResourceThresholds,
+  KialiAppState
+} from '@kiali/types';
 import OverviewCardDataPlaneNamespace from './OverviewCardDataPlaneNamespace';
 import OverviewCardControlPlaneNamespace from './OverviewCardControlPlaneNamespace';
 import { connect } from 'react-redux';
