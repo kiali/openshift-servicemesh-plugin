@@ -18,13 +18,12 @@ import {
 import { getKialiConfig, KialiConfig } from '../kialiIntegration';
 import { useHistory, useParams } from 'react-router';
 import { sortable } from '@patternfly/react-table';
-import { istioResources, referenceFor } from '../k8s/resources';
+import { istioResources, referenceFor } from '../utils/resources';
 import {
-  getAllIstioConfigs,
-  getIstioConfig,
+  API,
   getIstioObject,
-  getNamespaces,
   getReconciliationCondition,
+  HomeClusterName,
   IstioConfigItem,
   IstioConfigList,
   IstioObject,
@@ -185,21 +184,21 @@ const IstioConfigList = () => {
     const validate = istioAPIEnabled ? true : false;
     let getNamespacesData, getIstioConfigData;
     if (ns) {
-      getIstioConfigData = promises.register('getIstioConfig', getIstioConfig(ns, [], validate, '', ''));
+      getIstioConfigData = promises.register('getIstioConfig', API.getIstioConfig(ns, [], validate, '', ''));
     } else {
       // If no namespace is selected, get istio config for all namespaces
-      getNamespacesData = promises.register('getNamespaces', getNamespaces());
-      getIstioConfigData = promises.register('getIstioConfig', getAllIstioConfigs([], [], validate, '', ''));
+      getNamespacesData = promises.register('getNamespaces', API.getNamespaces());
+      getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], [], validate, '', ''));
     }
     return Promise.all([getNamespacesData, getIstioConfigData]).then(response => {
       if (ns) {
-        return toIstioItems(response[1].data as IstioConfigList);
+        return toIstioItems(response[1].data as IstioConfigList, HomeClusterName);
       } else {
         let istioItems: IstioConfigItem[] = [];
         // convert istio objects from all namespaces
         const namespaces: Namespace[] = response[0].data;
         namespaces.forEach(namespace => {
-          istioItems = istioItems.concat(toIstioItems(response[1].data[namespace.name]));
+          istioItems = istioItems.concat(toIstioItems(response[1].data[namespace.name], HomeClusterName));
         });
         return istioItems;
       }

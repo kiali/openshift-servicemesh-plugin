@@ -1,5 +1,12 @@
 [
   {
+    "type": "console.redux-reducer",
+    "properties": {
+      "scope": "kiali",
+      "reducer": { "$codeRef": "reduxReducer" }
+    }
+  },
+  {
     "type": "console.navigation/section",
     "properties": {
       "id": "ossmconsole",
@@ -208,7 +215,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {

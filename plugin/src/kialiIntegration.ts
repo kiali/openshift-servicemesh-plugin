@@ -7,7 +7,6 @@ import {
   TLSStatus,
   API,
   setServerConfig,
-<<<<<<< HEAD
   StatusState,
   serverConfig,
   history
@@ -22,10 +21,6 @@ export const INITIAL_STATUS_STATE: StatusState = {
     istioAPIEnabled: true
   }
 };
-=======
-  StatusState
-} from '@kiali/types';
->>>>>>> 7954e58 (Adapt plugin to new core-ui and types packages)
 
 export const properties = {
   // This API is hardcoded but:

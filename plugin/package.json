@@ -90,6 +90,7 @@
     "displayName": "OpenShift Service Mesh Console",
     "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {
+      "reduxReducer": "./utils/reducer.ts",
       "OverviewPage": "./openshift/OverviewPage",
       "GraphPage": "./openshift/GraphPage",
       "IstioConfigList": "./openshift/IstioConfigList",

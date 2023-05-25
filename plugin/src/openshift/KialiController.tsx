@@ -27,12 +27,13 @@ import {
   JaegerActions,
   LoginActions,
   GraphToolbarActions,
-  LoginThunkActions,
-  KialiAppState
+  LoginThunkActions
 } from '@kiali/types';
+import { DefaultRootState } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import '../styles/index.scss';
+import { getKialiState } from '../utils/reducer';
 
 declare global {
   interface Date {
@@ -222,8 +223,8 @@ class KialiController extends React.Component<KialiControllerProps> {
   };
 }
 
-const mapStateToProps = (state: KialiAppState) => ({
-  namespaces: state.namespaces.items
+const mapStateToProps = (state: DefaultRootState) => ({
+  namespaces: getKialiState(state).namespaces.items
 });
 
 const mapDispatchToProps = (dispatch: KialiDispatch) => ({
