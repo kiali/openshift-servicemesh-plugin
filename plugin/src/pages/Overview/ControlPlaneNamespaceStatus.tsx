@@ -1,7 +1,7 @@
 import { Tooltip, TooltipPosition, Label } from '@patternfly/react-core';
 import { KialiIcon } from '@kiali/core-ui';
 import * as React from 'react';
-import { OutboundTrafficPolicy, NamespaceInfo} from '@kiali/types';
+import { OutboundTrafficPolicy, NamespaceInfo } from '@kiali/types';
 import { infoStyle } from './OverviewCardControlPlaneNamespace';
 
 type Props = {

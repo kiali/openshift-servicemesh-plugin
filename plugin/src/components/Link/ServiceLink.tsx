@@ -20,7 +20,7 @@ export const getServiceURL = (name: string, namespace: string, cluster: string, 
     to = to + '?cluster=' + cluster;
   }
 
-  if (!!query) {
+  if (query) {
     if (to.includes('?')) {
       to = to + '&' + query;
     } else {

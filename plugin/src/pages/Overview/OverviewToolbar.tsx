@@ -3,8 +3,20 @@ import { Button, ButtonVariant, Tooltip, TooltipPosition } from '@patternfly/rea
 import { ListIcon, ThIcon, ThLargeIcon } from '@patternfly/react-icons';
 import { SortAlphaDownIcon, SortAlphaUpIcon } from '@patternfly/react-icons';
 import { connect } from 'react-redux';
-import { UserSettingsActions, HistoryManager, URLParam, KialiAppState,
-   durationSelector, refreshIntervalSelector, IntervalInMilliseconds, DurationInSeconds, SortField, NamespaceInfo, PFColors, KialiDispatch } from '@kiali/types';
+import {
+  UserSettingsActions,
+  HistoryManager,
+  URLParam,
+  durationSelector,
+  refreshIntervalSelector,
+  IntervalInMilliseconds,
+  DurationInSeconds,
+  SortField,
+  NamespaceInfo,
+  PFColors,
+  KialiDispatch,
+  KialiAppState
+} from '@kiali/types';
 import { StatefulFilters } from '../../components/Filters/StatefulFilters';
 import * as FilterHelper from '../../components/FilterList/FilterHelper';
 import { ToolbarDropdown } from '../../components/ToolbarDropdown/ToolbarDropdown';

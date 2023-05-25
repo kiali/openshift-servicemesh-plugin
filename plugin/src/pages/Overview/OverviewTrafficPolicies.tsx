@@ -1,6 +1,17 @@
 import * as React from 'react';
 import { Button, ButtonVariant, Modal, ModalVariant } from '@patternfly/react-core';
-import { NamespaceInfo, AuthorizationPolicy, Sidecar, MessageType, PromisesRegistry, DurationInSeconds, AlertUtils, API, serverConfig, GraphDataSource } from '@kiali/types';
+import {
+  NamespaceInfo,
+  AuthorizationPolicy,
+  Sidecar,
+  MessageType,
+  PromisesRegistry,
+  DurationInSeconds,
+  AlertUtils,
+  API,
+  serverConfig,
+  GraphDataSource
+} from '@kiali/types';
 import { ConfigPreviewItem, IstioConfigPreview } from '../../components/IstioConfigPreview/IstioConfigPreview';
 import {
   buildGraphAuthorizationPolicy,

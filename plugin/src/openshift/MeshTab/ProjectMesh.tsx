@@ -23,6 +23,7 @@ export const ProjectMesh = (props: ProjectMeshProps) => {
     + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
     return (
         <iframe
+                title='projectMesh'
                 src={iFrameUrl}
                 style={{overflow: 'hidden', height: '100%', width: '100%' }}
                 height="100%"

@@ -1,6 +1,16 @@
 import * as React from 'react';
 
-import { Datapoint, Metric, VCLine, RichDataPoint, PFColors, toVCLine, DurationInSeconds, getName, IstiodResourceThresholds  } from '@kiali/types';
+import {
+  Datapoint,
+  Metric,
+  VCLine,
+  RichDataPoint,
+  PFColors,
+  toVCLine,
+  DurationInSeconds,
+  getName,
+  IstiodResourceThresholds
+} from '@kiali/types';
 
 import '../../components/Charts/Charts.scss';
 import { SparklineChart } from '../../components/Charts/SparklineChart';

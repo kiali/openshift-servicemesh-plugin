@@ -2,7 +2,15 @@ import * as React from 'react';
 import { Grid, GridItem } from '@patternfly/react-core';
 import { ChartThemeColor, ChartThemeVariant, getTheme } from '@patternfly/react-charts';
 
-import { AllPromLabelsValues, ChartModel, DashboardModel, getDataSupplier, Overlay, LineInfo, RawOrBucket  } from '@kiali/types';
+import {
+  AllPromLabelsValues,
+  ChartModel,
+  DashboardModel,
+  getDataSupplier,
+  Overlay,
+  LineInfo,
+  RawOrBucket
+} from '@kiali/types';
 import KChart from './KChart';
 import { BrushHandlers } from './Container';
 import { isArray } from 'lodash';

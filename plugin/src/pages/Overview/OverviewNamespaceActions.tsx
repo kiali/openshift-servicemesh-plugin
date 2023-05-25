@@ -100,7 +100,7 @@ export class OverviewNamespaceActions extends React.Component<Props, State> {
             data-test={action['data-test']}
             onClick={() => (action.action ? action.action(this.props.namespace) : undefined)}
           >
-            {action.title} {!!action.isExternal ? <ExternalLinkAltIcon /> : undefined}
+            {action.title} {action.isExternal ? <ExternalLinkAltIcon /> : undefined}
           </DropdownItem>
         );
         return action.isDisabled

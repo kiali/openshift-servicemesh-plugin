@@ -48,18 +48,9 @@ const OverviewPage = () => {
   const [istiodResourceThresholds, setIstiodResourceThresholds] = React.useState(undefined);
   const [activeFilters, setActiveFilters] = React.useState<ActiveFiltersInfo>({ filters: [], op: 'or' });
   const [sortField, setSortField] = React.useState<SortField<NamespaceInfo>>(sortFields[0]);
-  const promises = new PromisesRegistry();
+  const promises = React.useMemo(() => new PromisesRegistry(), []);
 
-  React.useEffect(() => {
-    getKialiConfig()
-      .then(config => {
-        setKialiConfig(config);
-        load(activeFilters, config);
-      })
-      .catch(error => console.error('Error getting Kiali API config', error));
-  }, [duration, isAscending, displayMode, overviewType, direction, activeFilters]);
-
-  const load = (filters: ActiveFiltersInfo = activeFilters, conf: KialiConfig = kialiConfig) => {
+  const load = React.useCallback((filters: ActiveFiltersInfo = activeFilters, conf: KialiConfig = kialiConfig) => {
     promises.cancelAll();
     promises.register('getNamespaces', API.getNamespaces()).then(namespacesResponse => {
       const nameFilters = filters.filters.filter(f => f.category === nameFilter.category);
@@ -95,12 +86,21 @@ const OverviewPage = () => {
       }
       setLoading(false);
     });
-  };
+  }, [activeFilters, direction, displayMode, duration, isAscending, kialiConfig, namespaces, overviewType, promises, sortField]);
 
   const sort = (sortField: SortField<NamespaceInfo>, isAscending: boolean) => {
     setSortField(sortField);
     setNamespaces(sortFunc(namespaces, sortField, isAscending, kialiConfig.server));
   };
+
+  React.useEffect(() => {
+    getKialiConfig()
+      .then(config => {
+        setKialiConfig(config);
+        load(activeFilters, config);
+      })
+      .catch(error => console.error('Error getting Kiali API config', error));
+  }, [duration, isAscending, displayMode, overviewType, direction, activeFilters, load]);
 
   const sm = displayMode === OverviewDisplayMode.COMPACT ? 3 : 6;
   const md = displayMode === OverviewDisplayMode.COMPACT ? 3 : 4;

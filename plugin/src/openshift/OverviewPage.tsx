@@ -2,16 +2,15 @@ import { store, persistor, PersistGate } from '@kiali/types';
 import * as React from 'react';
 import { Provider } from 'react-redux';
 import OverviewPage from '../pages/Overview/OverviewPage';
-import KialiControllerContainer from './KialiController';
-
+import KialiController from './KialiController';
 
 const OverviewContainer = () => {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <KialiControllerContainer>
+        <KialiController>
           <OverviewPage></OverviewPage>
-        </KialiControllerContainer>
+        </KialiController>
       </PersistGate>
     </Provider>
   );

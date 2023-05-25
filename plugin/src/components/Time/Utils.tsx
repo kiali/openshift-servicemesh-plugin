@@ -29,7 +29,7 @@ export const toRangeString = (
   if (startYear !== currentYear) {
     options.year = 'numeric';
   }
-  startOptions = !!startOptions ? startOptions : {};
+  startOptions = startOptions ? startOptions : {};
   const startStr = startDate.toLocaleString('en-US', { ...options, ...startOptions });
 
   options = { ...defaultOptions };
@@ -46,7 +46,7 @@ export const toRangeString = (
     delete options.month;
     delete options.day;
   }
-  endOptions = !!endOptions ? endOptions : {};
+  endOptions = endOptions ? endOptions : {};
   const endStr = endDate.toLocaleString('en-US', { ...options, ...endOptions });
   return `${startStr} ... ${endStr}`;
 };

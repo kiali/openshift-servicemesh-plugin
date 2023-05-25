@@ -26,8 +26,8 @@ import {
   dicIstioType,
   showInMessageCenter,
   ErrorMsg,
-  KialiAppState,
-  HomeClusterName
+  HomeClusterName,
+  KialiAppState
 } from '@kiali/types';
 import * as jsYaml from 'js-yaml';
 import AceEditor from 'react-ace';
@@ -407,7 +407,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
       endRow: -1
     };
 
-    if (!!yaml) {
+    if (yaml) {
       const ylines = yaml.split('\n');
       ylines.forEach((line: string, i: number) => {
         // Counting spaces to check managedFields, yaml is always processed with that structure so this is safe

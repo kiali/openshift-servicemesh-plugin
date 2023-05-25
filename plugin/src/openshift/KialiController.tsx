@@ -16,7 +16,6 @@ import {
   serverConfig,
   humanDurations,
   config,
-  store,
   toGrpcRate,
   toHttpRate,
   toTcpRate,
@@ -28,7 +27,8 @@ import {
   JaegerActions,
   LoginActions,
   GraphToolbarActions,
-  LoginThunkActions
+  LoginThunkActions,
+  KialiAppState
 } from '@kiali/types';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
@@ -49,6 +49,7 @@ Date.prototype.toLocaleStringWithConditionalDate = function () {
 };
 
 interface KialiControllerReduxProps {
+  namespaces: Namespace[];
   addMessage: (content: string, detail: string, groupId?: string, msgType?: MessageType, showNotif?: boolean) => void;
   checkCredentials: () => void;
   setActiveNamespaces: (namespaces: Namespace[]) => void;
@@ -59,68 +60,18 @@ interface KialiControllerReduxProps {
   setRefreshInterval: (interval: IntervalInMilliseconds) => void;
   setTrafficRates: (rates: TrafficRate[]) => void;
   statusRefresh: (statusState: StatusState) => void;
+  setKiosk: (kiosk: string) => void;
 }
 
 type KialiControllerProps = KialiControllerReduxProps & {
   children: React.ReactNode;
 };
 
-interface KialiControllerState {
-  isPostLoginError: boolean;
-}
-
-export class KialiController extends React.Component<KialiControllerProps, KialiControllerState> {
-  static readonly PostLoginErrorMsg = `Kiali failed to initialize. Please ensure that services
-    Kiali depends on, such as Prometheus, are healthy and reachable by Kiali then refresh your browser.`;
-
-  // How long to wait for the post-login actions to complete
-  // before transitioning to the "Loading" page.
-  //   private readonly postLoginMSTillTransition = 3000;
+class KialiController extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
 
-  constructor(props: KialiControllerProps) {
-    super(props);
-    this.state = {
-      isPostLoginError: false
-    };
-  }
-
   componentDidMount(): void {
-    // if (this.state.stage === LoginStage.LOGGED_IN_AT_LOAD) {
-    this.doPostLoginActions();
-    // } else {
-    //   let dispatchLoginCycleOnLoad = false;
-
-    //   // If login strategy is "anonymous" or "header", dispatch login cycle
-    //   // because there is no need to ask for any credentials
-    //   if (
-    //     authenticationConfig.strategy === AuthStrategy.anonymous ||
-    //     authenticationConfig.strategy === AuthStrategy.header
-    //   ) {
-    //     dispatchLoginCycleOnLoad = true;
-    //   }
-
-    //   // If login strategy is Openshift, check if there is an
-    //   // "access_token" or "id_token" hash parameter in the URL. If there is,
-    //   // this means the IdP is calling back. Dispatch the login cycle to finish
-    //   // the authentication.
-    //   if (authenticationConfig.strategy === AuthStrategy.openshift) {
-    //     const pattern = /[#&](access_token|id_token)=/;
-    //     dispatchLoginCycleOnLoad = pattern.test(window.location.hash);
-    //   }
-
-    //   if (dispatchLoginCycleOnLoad) {
-    //     this.props.checkCredentials();
-
-    //     // This state shows the initializing screen while doing the login cycle. This
-    //     // prevents from briefly showing the login form while the trip to the back-end completes.
-    //     this.setState({
-    //       stage: LoginStage.LOGGED_IN_AT_LOAD
-    //     });
-    //   } else {
-    //     this.props.setLandingRoute(history.location.pathname + history.location.search);
-    //   }
-    // }
+    this.getKialiConfig();
 
     this.setDocLayout();
   }
@@ -133,11 +84,7 @@ export class KialiController extends React.Component<KialiControllerProps, Kiali
     return this.props.children;
   }
 
-  private doPostLoginActions = async () => {
-    // const postLoginTimer = setTimeout(() => {
-    //   this.setState({ stage: LoginStage.LOGGED_IN_AT_LOAD });
-    // }, this.postLoginMSTillTransition);
-
+  private getKialiConfig = async () => {
     try {
       const getStatusPromise = this.promises
         .register('getStatus', API.getStatus())
@@ -170,19 +117,8 @@ export class KialiController extends React.Component<KialiControllerProps, Kiali
       this.props.setNamespaces(configs[0].data, new Date());
       setServerConfig(configs[1].data);
       this.applyUIDefaults();
-
-      // if (this.props.landingRoute) {
-      //   history.replace(this.props.landingRoute);
-      //   this.props.setLandingRoute(undefined);
-      // }
-      // this.setState({ stage: LoginStage.LOGGED_IN });
     } catch (err) {
-      console.error('Error on post-login actions.', err);
-      // Transitioning to LOGGED_IN_AT_LOAD so that the user will see the "Loading..."
-      // screen instead of being stuck at the "login" page after a post-login error.
-      // this.setState({ isPostLoginError: true, stage: LoginStage.LOGGED_IN_AT_LOAD });
-    } finally {
-      // clearTimeout(postLoginTimer);
+      console.error('Error loading kiali config', err);
     }
   };
 
@@ -229,7 +165,7 @@ export class KialiController extends React.Component<KialiControllerProps, Kiali
       // Selected Namespaces
       if (uiDefaults.namespaces && uiDefaults.namespaces.length > 0) {
         // use store directly, we don't want to update on redux state change
-        const namespaces = store.getState().namespaces.items;
+        const namespaces = this.props.namespaces;
         const namespaceNames: string[] = namespaces ? namespaces.map(ns => ns.name) : [];
         const activeNamespaces: Namespace[] = [];
 
@@ -266,9 +202,8 @@ export class KialiController extends React.Component<KialiControllerProps, Kiali
 
   private setDocLayout = () => {
     if (document.documentElement) {
-      // const isKiosk = isKioskMode();
       document.documentElement.className = 'kiosk';
-      store.dispatch(GlobalActions.setKiosk('console'));
+      this.props.setKiosk('console');
     }
   };
 
@@ -287,6 +222,10 @@ export class KialiController extends React.Component<KialiControllerProps, Kiali
   };
 }
 
+const mapStateToProps = (state: KialiAppState) => ({
+  namespaces: state.namespaces.items
+});
+
 const mapDispatchToProps = (dispatch: KialiDispatch) => ({
   addMessage: bindActionCreators(MessageCenterActions.addMessage, dispatch),
   checkCredentials: () => dispatch(LoginThunkActions.checkCredentials()),
@@ -297,8 +236,9 @@ const mapDispatchToProps = (dispatch: KialiDispatch) => ({
   setNamespaces: bindActionCreators(NamespaceActions.receiveList, dispatch),
   setRefreshInterval: bindActionCreators(UserSettingsActions.setRefreshInterval, dispatch),
   setTrafficRates: bindActionCreators(GraphToolbarActions.setTrafficRates, dispatch),
-  statusRefresh: bindActionCreators(HelpDropdownActions.statusRefresh, dispatch)
+  statusRefresh: bindActionCreators(HelpDropdownActions.statusRefresh, dispatch),
+  setKiosk: bindActionCreators(GlobalActions.setKiosk, dispatch)
 });
 
-const KialiControllerContainer = connect(null, mapDispatchToProps)(KialiController);
+const KialiControllerContainer = connect(mapStateToProps, mapDispatchToProps)(KialiController);
 export default KialiControllerContainer;
