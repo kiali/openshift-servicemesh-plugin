@@ -7,8 +7,8 @@ OLM_IMAGE_ORG ?= ${OPERATOR_IMAGE_ORG}
 OLM_BUNDLE_NAME ?= ${OLM_IMAGE_ORG}/ossmconsole-operator-bundle
 OLM_INDEX_NAME ?= ${OLM_IMAGE_ORG}/ossmconsole-operator-index
 
-OLM_INDEX_BASE_IMAGE ?= quay.io/openshift/origin-operator-registry:4.11
-OPM_VERSION ?= 1.25.0
+OLM_INDEX_BASE_IMAGE ?= quay.io/openshift/origin-operator-registry:4.13
+OPM_VERSION ?= 1.28.0
 
 .download-opm-if-needed:
 	@if [ "$(shell which opm 2>/dev/null || echo -n "")" == "" ]; then \
