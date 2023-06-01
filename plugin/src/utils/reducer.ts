@@ -14,7 +14,7 @@ import {
   messageCenter,
   MetricsStatsReducer,
   namespaceState,
-  tourState,
+  TourStateReducer,
   UserSettingsState
 } from '@kiali/types';
 
@@ -34,6 +34,6 @@ export default combineReducers({
   meshTLSStatus: MeshTlsState,
   istioStatus: IstioStatusState,
   istioCertsInfo: IstioCertsInfoState,
-  tourState: tourState,
+  tourState: TourStateReducer,
   metricsStats: MetricsStatsReducer
 });

@@ -1,46 +1,31 @@
+import { store, persistor, PersistGate, ServiceId } from '@kiali/types';
 import * as React from 'react';
-import userProps, { getKialiUrl, initKialiListeners, kioskUrl } from '../../kialiIntegration';
+import { Provider } from 'react-redux';
+import { useHistory } from 'react-router';
+import ServiceDetailsPage from '../../pages/ServiceDetails/ServiceDetailsPage';
+import KialiController from '../KialiController';
 
-type ServiceMeshProps = {
-  namespace: string;
-  idObject: string;
-};
+const ServiceMeshTab = () => {
+  const history = useHistory();
+  const path = history.location.pathname.substring(8);
+  const items = path.split('/');
+  const namespace = items[0];
+  const service = items[2];
 
-export const ServiceMesh = (props: ServiceMeshProps) => {
-  const [kialiUrl, setKialiUrl] = React.useState({
-    baseUrl: '',
-    token: ''
-  });
+  const serviceId: ServiceId = {
+    namespace,
+    service
+  };
 
-  initKialiListeners();
-
-  React.useEffect(() => {
-    getKialiUrl()
-      .then(ku => setKialiUrl(ku))
-      .catch(e => console.error(e));
-  }, []);
-
-  const iFrameUrl =
-    kialiUrl.baseUrl +
-    '/console/namespaces/' +
-    props.namespace +
-    '/services/' +
-    props.idObject +
-    '?' +
-    kioskUrl() +
-    '&' +
-    kialiUrl.token +
-    '&duration=' +
-    userProps.duration +
-    '&timeRange=' +
-    userProps.timeRange;
   return (
-    <iframe
-      title="serviceMesh"
-      src={iFrameUrl}
-      style={{ overflow: 'hidden', height: '100%', width: '100%' }}
-      height="100%"
-      width="100%"
-    />
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <KialiController>
+          <ServiceDetailsPage serviceId={serviceId}></ServiceDetailsPage>
+        </KialiController>
+      </PersistGate>
+    </Provider>
   );
 };
+
+export default ServiceMeshTab;

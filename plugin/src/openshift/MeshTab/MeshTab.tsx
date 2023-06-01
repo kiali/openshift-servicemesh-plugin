@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useHistory } from 'react-router';
-import { ProjectMesh, ServiceMesh, WorkloadMesh } from './';
+import { ProjectMesh, WorkloadMesh } from './';
 
 const kialiTypes = {
   services: 'services',
@@ -48,9 +48,8 @@ const MeshTab = () => {
   let component =
     type === 'workloads' ? (
       <WorkloadMesh namespace={namespace} idObject={id} />
-    ) : (
-      <ServiceMesh namespace={namespace} idObject={id} />
-    );
+    ) : // <ServiceMesh namespace={namespace} idObject={id} />
+    undefined;
 
   //   if (!type) {
   //     const configType = configTypes[items[1].substring(items[1].lastIndexOf('~') + 1)].toLowerCase();
