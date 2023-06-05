@@ -1,14 +1,6 @@
 import * as React from 'react';
 import { useHistory } from 'react-router';
-import { ProjectMesh, WorkloadMesh } from './';
-
-const kialiTypes = {
-  services: 'services',
-  pods: 'workloads',
-  deployments: 'workloads',
-  deploymentconfigs: 'workloads',
-  statefulsets: 'workloads'
-};
+import { ProjectMesh } from './ProjectMesh';
 
 const MeshTab = () => {
   // This parsing logic maps the location of the user in the OpenShift console to populate the iFrame url to
@@ -25,8 +17,6 @@ const MeshTab = () => {
   const history = useHistory();
   const path = history.location.pathname.substr(8);
   const items = path.split('/');
-  const namespace = items[0];
-  const type = kialiTypes[items[1]];
   let id = items[2];
   if (items[1] === 'pods') {
     // This parsing is not good, it's only done in the PoC context, it can take the parent from the Pod labels
@@ -45,16 +35,7 @@ const MeshTab = () => {
       id = id.substr(0, j);
     }
   }
-  let component =
-    type === 'workloads' ? (
-      <WorkloadMesh namespace={namespace} idObject={id} />
-    ) : // <ServiceMesh namespace={namespace} idObject={id} />
-    undefined;
-
-  //   if (!type) {
-  //     const configType = configTypes[items[1].substring(items[1].lastIndexOf('~') + 1)].toLowerCase();
-  //     component = <IstioMesh configType={configType} namespace={namespace} idObject={id} />;
-  //   }
+  let component = undefined;
 
   // Projects is a special case that will forward the graph in the iframe
   if (items[1] === 'projects') {
