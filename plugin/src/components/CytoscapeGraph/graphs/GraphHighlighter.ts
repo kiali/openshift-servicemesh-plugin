@@ -1,5 +1,4 @@
-import { BoxByType, CytoscapeBaseEvent } from '@kiali/types';
-import { CyNode } from '../CytoscapeGraphUtils';
+import { BoxByType, CytoscapeBaseEvent, CyNode } from '@kiali/types';
 import { UnhighlightClass, HoveredClass, HighlightClass } from './GraphStyles';
 
 // There are three special states for a Node or Edge:

@@ -1,6 +1,15 @@
 import * as React from 'react';
-import { NodeType, GraphNodeData, DestService, BoxByType, CLUSTER_DEFAULT, Health, serverConfig } from '@kiali/types';
-import { CyNode, decoratedNodeData } from '../../components/CytoscapeGraph/CytoscapeGraphUtils';
+import {
+  NodeType,
+  GraphNodeData,
+  DestService,
+  BoxByType,
+  CLUSTER_DEFAULT,
+  Health,
+  serverConfig,
+  CyNode,
+  decoratedNodeData
+} from '@kiali/types';
 import { KialiIcon } from '@kiali/core-ui';
 import { Badge, PopoverPosition } from '@patternfly/react-core';
 import { HealthIndicator } from '../../components/Health/HealthIndicator';

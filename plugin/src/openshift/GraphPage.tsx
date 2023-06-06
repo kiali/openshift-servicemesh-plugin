@@ -1,32 +1,19 @@
+import { store, persistor, PersistGate } from '@kiali/types';
 import * as React from 'react';
-import userProps, { getKialiUrl, initKialiListeners, kioskUrl } from '../kialiIntegration';
+import { Provider } from 'react-redux';
+import GraphPage from '../pages/Graph/GraphPage';
+import KialiController from './KialiController';
 
-const GraphPage = () => {
-    const [kialiUrl, setKialiUrl] = React.useState({
-        baseUrl: '',
-        token: '',
-    });
-
-    initKialiListeners();
-
-    React.useEffect(() => {
-        getKialiUrl()
-            .then(ku => setKialiUrl(ku))
-            .catch(e => console.error(e));
-    }, []);
-
-    const iFrameUrl = kialiUrl.baseUrl + '/console/graph/namespaces/?' + kioskUrl() + '&' + kialiUrl.token + '&duration=' + userProps.duration + '&refreshtime' + userProps.refresh;
-    return (
-        <>
-            <iframe
-                title='graph'
-                src={iFrameUrl}
-                style={{overflow: 'hidden', height: '100%', width: '100%' }}
-                height="100%"
-                width="100%"
-            />
-        </>
-    );
+const GraphContainer = () => {
+  return (
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <KialiController>
+          <GraphPage></GraphPage>
+        </KialiController>
+      </PersistGate>
+    </Provider>
+  );
 };
 
-export default GraphPage;
+export default GraphContainer;

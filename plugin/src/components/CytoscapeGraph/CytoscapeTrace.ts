@@ -1,5 +1,4 @@
 import * as Cy from 'cytoscape';
-import { CyNode } from './CytoscapeGraphUtils';
 import {
   JaegerTrace,
   Span,
@@ -9,7 +8,8 @@ import {
   getAppFromSpan,
   getWorkloadFromSpan,
   searchParentApp,
-  searchParentWorkload
+  searchParentWorkload,
+  CyNode
 } from '@kiali/types';
 
 export const showTrace = (cy: Cy.Core, graphType: GraphType, trace: JaegerTrace) => {

@@ -30,7 +30,13 @@ import {
   serverConfig,
   assignEdgeHealth,
   PeerAuthentication,
-  ServiceDetailsInfo
+  ServiceDetailsInfo,
+  CyNode,
+  isCore,
+  isEdge,
+  isNode,
+  decoratedNodeData,
+  safeFit
 } from '@kiali/types';
 import { WizardAction, WizardMode } from '../IstioWizards/WizardActions';
 import {
@@ -39,14 +45,12 @@ import {
   EdgeContextMenuComponentType
 } from './CytoscapeContextMenu';
 import * as CytoscapeGraphUtils from './CytoscapeGraphUtils';
-import { CyNode, isCore, isEdge, isNode } from './CytoscapeGraphUtils';
 import { CytoscapeReactWrapper } from './CytoscapeReactWrapper';
 import { showTrace, hideTrace } from './CytoscapeTrace';
 import EmptyGraphLayout from './EmptyGraphLayout';
 import FocusAnimation from './FocusAnimation';
 import { GraphHighlighter } from './graphs/GraphHighlighter';
 import TrafficRenderer from './TrafficAnimation/TrafficRenderer';
-import { decoratedNodeData } from './CytoscapeGraphUtils';
 import { scoreNodes, ScoringCriteria } from './GraphScore';
 
 type CytoscapeGraphProps = {
@@ -531,7 +535,7 @@ export default class CytoscapeGraph extends React.Component<CytoscapeGraphProps,
               this.userBoxSelected = this.userBoxSelected?.add(elements);
             }
           });
-          CytoscapeGraphUtils.safeFit(cy, this.userBoxSelected);
+          safeFit(cy, this.userBoxSelected);
           this.customViewport = true;
         }
       }
@@ -801,7 +805,7 @@ export default class CytoscapeGraph extends React.Component<CytoscapeGraphProps,
       return;
     }
 
-    CytoscapeGraphUtils.safeFit(cy);
+    safeFit(cy);
     this.focus(cy);
   }
 

@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { style } from 'typestyle';
 import { Spinner, Tooltip, TooltipPosition } from '@patternfly/react-core';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
-
 import {
   history,
   BoxByType,

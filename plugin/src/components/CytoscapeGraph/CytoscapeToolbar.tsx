@@ -27,9 +27,9 @@ import {
   KialiGridGraph,
   KialiConcentricGraph,
   KialiBreadthFirstGraph,
-  LayoutDictionary
+  LayoutDictionary,
+  safeFit
 } from '@kiali/types';
-import * as CytoscapeGraphUtils from './CytoscapeGraphUtils';
 import { GraphTourStops } from '../../pages/Graph/GraphHelpTour';
 import TourStopContainer from '../Tour/TourStop';
 
@@ -353,7 +353,7 @@ export class CytoscapeToolbar extends React.PureComponent<CytoscapeToolbarProps,
   private fit = () => {
     const cy = this.getCy();
     if (cy) {
-      CytoscapeGraphUtils.safeFit(cy);
+      safeFit(cy);
     }
   };
 

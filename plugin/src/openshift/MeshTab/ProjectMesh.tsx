@@ -1,34 +1,28 @@
+import { store, persistor, PersistGate, ActionKeys } from '@kiali/types';
 import * as React from 'react';
-import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../../kialiIntegration';
+import { Provider } from 'react-redux';
+import { useHistory } from 'react-router';
+import GraphPage from '../../pages/Graph/GraphPage';
+import KialiController from '../KialiController';
 
-type ProjectMeshProps = {
-    idObject: string;
-}
+const ProjectMeshTab = () => {
+  const history = useHistory();
+  const path = history.location.pathname.substring(8);
+  const items = path.split('/');
+  const namespace = items[2];
 
-export const ProjectMesh = (props: ProjectMeshProps) => {
-    const [kialiUrl, setKialiUrl] = React.useState({
-        baseUrl: '',
-        token: '',
-    });
+  // Set namespace of the project as active namespace in redux store
+  store.dispatch({ type: ActionKeys.SET_ACTIVE_NAMESPACES, payload: [{ name: namespace }] });
 
-    initKialiListeners();
+  return (
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <KialiController>
+          <GraphPage></GraphPage>
+        </KialiController>
+      </PersistGate>
+    </Provider>
+  );
+};
 
-    React.useEffect(() => {
-        getKialiUrl()
-            .then(ku => setKialiUrl(ku))
-            .catch(e => console.error(e));
-    }, []);
-
-    const iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + props.idObject + '&' + kioskUrl() + '&' + kialiUrl.token
-    + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
-    return (
-        <iframe
-                title='projectMesh'
-                src={iFrameUrl}
-                style={{overflow: 'hidden', height: '100%', width: '100%' }}
-                height="100%"
-                width="100%"
-            />
-    )
-
-}
+export default ProjectMeshTab;

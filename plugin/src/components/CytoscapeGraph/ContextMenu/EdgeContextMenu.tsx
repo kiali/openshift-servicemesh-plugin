@@ -1,10 +1,9 @@
 import * as React from 'react';
 import { style } from 'typestyle';
-import { prettyProtocol } from '@kiali/types';
+import { prettyProtocol, decoratedNodeData } from '@kiali/types';
 import { EdgeContextMenuProps } from '../CytoscapeContextMenu';
 import { getTitle } from '../../../pages/Graph/SummaryPanelCommon';
 import { renderBadgedName } from '../../../pages/Graph/SummaryLink';
-import { decoratedNodeData } from '../CytoscapeGraphUtils';
 import { EdgeSingular } from 'cytoscape';
 
 const contextMenu = style({

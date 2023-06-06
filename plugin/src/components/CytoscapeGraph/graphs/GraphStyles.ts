@@ -16,11 +16,13 @@ import {
   TrafficRate,
   UNKNOWN,
   serverConfig,
-  config
+  config,
+  CyNode,
+  decoratedEdgeData,
+  decoratedNodeData
 } from '@kiali/types';
 import NodeImageTopology from '../../../assets/img/node-background-topology.png';
 import NodeImageKey from '../../../assets/img/node-background-key.png';
-import { CyNode, decoratedEdgeData, decoratedNodeData } from '../CytoscapeGraphUtils';
 import _ from 'lodash';
 import * as Cy from 'cytoscape';
 import { PFBadges } from '../../Pf/PfBadges';

@@ -15,9 +15,9 @@ import {
   Response,
   Metric,
   Labels,
-  Datapoint
+  Datapoint,
+  decoratedNodeData
 } from '@kiali/types';
-import { decoratedNodeData } from '../../components/CytoscapeGraph/CytoscapeGraphUtils';
 import { KialiIcon } from '@kiali/core-ui';
 
 export enum NodeMetricType {

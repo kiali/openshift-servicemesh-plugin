@@ -1,4 +1,13 @@
-import { Point, clamp, quadraticBezier, linearInterpolation, distance, bezierLength, Protocol } from '@kiali/types';
+import {
+  Point,
+  clamp,
+  quadraticBezier,
+  linearInterpolation,
+  distance,
+  bezierLength,
+  Protocol,
+  decoratedEdgeData
+} from '@kiali/types';
 import { UnhighlightClass, HoveredClass } from '../graphs/GraphStyles';
 import { PFColorVals } from '@kiali/core-ui';
 import {
@@ -7,7 +16,6 @@ import {
   TrafficPointRenderer,
   Diamond
 } from './TrafficPointRenderer';
-import { decoratedEdgeData } from '../CytoscapeGraphUtils';
 import { timerConfig, tcpTimerConfig } from './AnimationTimerConfig';
 
 // Clamp response time from min to max

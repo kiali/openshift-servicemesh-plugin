@@ -46,6 +46,7 @@
     "react-copy-to-clipboard": "5.x",
     "react-datepicker": "3.8.0",
     "react-dom": "^17.0.2",
+    "react-flexview": "4.0.3",
     "react-helmet": "^6.1.0",
     "react-i18next": "^11.7.3",
     "react-redux": "7.2.2",
@@ -136,10 +137,10 @@
       "OverviewPage": "./openshift/OverviewPage",
       "GraphPage": "./openshift/GraphPage",
       "IstioConfigList": "./openshift/IstioConfigList",
-      "MeshTab": "./openshift/MeshTab/MeshTab",
       "IstioMeshTab": "./openshift/MeshTab/IstioMesh",
       "ServiceMeshTab": "./openshift/MeshTab/ServiceMesh",
-      "WorkloadMeshTab": "./openshift/MeshTab/WorkloadMesh"
+      "WorkloadMeshTab": "./openshift/MeshTab/WorkloadMesh",
+      "ProjectMeshTab": "./openshift/MeshTab/ProjectMesh"
     },
     "dependencies": {
       "@console/pluginAPI": "*"

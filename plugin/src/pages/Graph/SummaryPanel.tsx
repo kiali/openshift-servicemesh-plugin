@@ -1,0 +1,252 @@
+import * as React from 'react';
+import { connect } from 'react-redux';
+import { style } from 'typestyle';
+import {
+  SummaryPanelPropType,
+  BoxByType,
+  SummaryData,
+  JaegerState,
+  KialiAppState,
+  CyNode,
+  ServiceDetailsInfo,
+  PeerAuthentication
+} from '@kiali/types';
+import SummaryPanelEdge from './SummaryPanelEdge';
+import SummaryPanelGraph from './SummaryPanelGraph';
+import SummaryPanelAppBox from './SummaryPanelAppBox';
+import { KialiIcon } from '@kiali/core-ui';
+import SummaryPanelNodeContainer from './SummaryPanelNode';
+import SummaryPanelTraceDetailsContainer from './SummaryPanelTraceDetails';
+import SummaryPanelClusterBox from './SummaryPanelClusterBox';
+import SummaryPanelNamespaceBox from './SummaryPanelNamespaceBox';
+import { GraphTourStops } from './GraphHelpTour';
+import TourStopContainer from '../../components/Tour/TourStop';
+import { summaryPanelWidth } from './SummaryPanelCommon';
+import { WizardAction, WizardMode } from '../../components/IstioWizards/WizardActions';
+
+type SummaryPanelState = {
+  isVisible: boolean;
+};
+
+type MainSummaryPanelPropType = SummaryPanelPropType & {
+  isPageVisible: boolean;
+  jaegerState: JaegerState;
+  kiosk: string;
+  onDeleteTrafficRouting?: (key: string, serviceDetails: ServiceDetailsInfo) => void;
+  onLaunchWizard?: (
+    key: WizardAction,
+    mode: WizardMode,
+    namespace: string,
+    serviceDetails: ServiceDetailsInfo,
+    gateways: string[],
+    peerAuths: PeerAuthentication[]
+  ) => void;
+};
+
+const mainStyle = style({
+  fontSize: 'var(--graph-side-panel--font-size)',
+  padding: '0',
+  position: 'relative'
+});
+
+const expandedStyle = style({ height: '100%' });
+
+const expandedHalfStyle = style({ height: '50%' });
+
+const collapsedStyle = style({
+  $nest: {
+    '& > .panel': {
+      display: 'none'
+    }
+  }
+});
+
+const summaryPanelBottomSplit = style({
+  height: '50%',
+  width: summaryPanelWidth,
+  minWidth: summaryPanelWidth,
+  overflowY: 'auto'
+});
+
+const toggleSidePanelStyle = style({
+  backgroundColor: 'white',
+  border: '1px #ddd solid',
+  borderRadius: '3px',
+  bottom: 0,
+  cursor: 'pointer',
+  left: '-1.6em',
+  minWidth: '5em',
+  position: 'absolute',
+  textAlign: 'center',
+  transform: 'rotate(-90deg)',
+  transformOrigin: 'left top 0'
+});
+
+class SummaryPanel extends React.Component<MainSummaryPanelPropType, SummaryPanelState> {
+  constructor(props: MainSummaryPanelPropType) {
+    super(props);
+    this.state = {
+      isVisible: true
+    };
+  }
+
+  componentDidUpdate(prevProps: Readonly<MainSummaryPanelPropType>): void {
+    if (prevProps.data.summaryTarget !== this.props.data.summaryTarget) {
+      this.setState({ isVisible: true });
+    }
+  }
+
+  render() {
+    if (!this.props.isPageVisible || !this.props.data.summaryTarget) {
+      return null;
+    }
+
+    const mainTopStyle = this.state.isVisible
+      ? this.props.jaegerState.selectedTrace
+        ? expandedHalfStyle
+        : expandedStyle
+      : collapsedStyle;
+
+    return (
+      <TourStopContainer info={[GraphTourStops.Graph, GraphTourStops.ContextualMenu, GraphTourStops.SidePanel]}>
+        <div id="graph-side-panel" className={mainStyle}>
+          <div className={mainTopStyle}>
+            <div className={toggleSidePanelStyle} onClick={this.togglePanel}>
+              {this.state.isVisible ? (
+                <>
+                  <KialiIcon.AngleDoubleDown /> Hide
+                </>
+              ) : (
+                <>
+                  <KialiIcon.AngleDoubleUp /> Show
+                </>
+              )}
+            </div>
+            {this.getSummaryPanel(this.props.data)}
+          </div>
+          {this.props.jaegerState.selectedTrace && this.state.isVisible && (
+            <div className={`panel panel-default ${summaryPanelBottomSplit}`}>
+              <div className="panel-body">
+                <SummaryPanelTraceDetailsContainer
+                  trace={this.props.jaegerState.selectedTrace}
+                  node={this.props.data.summaryTarget}
+                  graphType={this.props.graphType}
+                  jaegerURL={this.props.jaegerState.info?.url}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </TourStopContainer>
+    );
+  }
+
+  private getSummaryPanel = (summary: SummaryData): React.ReactFragment => {
+    const summaryType = summary.summaryType as string;
+
+    switch (summaryType) {
+      case 'box': {
+        const boxType: BoxByType | undefined =
+          summaryType === 'box' ? this.props.data.summaryTarget.data(CyNode.isBox) : undefined;
+        switch (boxType) {
+          case 'app':
+            return (
+              <SummaryPanelAppBox
+                data={this.props.data}
+                duration={this.props.duration}
+                graphType={this.props.graphType}
+                injectServiceNodes={this.props.injectServiceNodes}
+                kiosk={this.props.kiosk}
+                namespaces={this.props.data.summaryTarget.namespaces}
+                queryTime={this.props.queryTime}
+                rateInterval={this.props.rateInterval}
+                step={this.props.step}
+                trafficRates={this.props.trafficRates}
+              />
+            );
+          case 'cluster':
+            return (
+              <SummaryPanelClusterBox
+                data={this.props.data}
+                duration={this.props.duration}
+                graphType={this.props.graphType}
+                injectServiceNodes={this.props.injectServiceNodes}
+                kiosk={this.props.kiosk}
+                namespaces={this.props.data.summaryTarget.namespaces}
+                queryTime={this.props.queryTime}
+                rateInterval={this.props.rateInterval}
+                step={this.props.step}
+                trafficRates={this.props.trafficRates}
+              />
+            );
+          case 'namespace':
+            return (
+              <SummaryPanelNamespaceBox
+                data={this.props.data}
+                duration={this.props.duration}
+                graphType={this.props.graphType}
+                injectServiceNodes={this.props.injectServiceNodes}
+                kiosk={this.props.kiosk}
+                namespaces={this.props.data.summaryTarget.namespaces}
+                queryTime={this.props.queryTime}
+                rateInterval={this.props.rateInterval}
+                step={this.props.step}
+                trafficRates={this.props.trafficRates}
+              />
+            );
+          default:
+            return <></>;
+        }
+      }
+      case 'edge':
+        return <SummaryPanelEdge {...this.props} />;
+      case 'graph':
+        return (
+          <SummaryPanelGraph
+            data={summary}
+            duration={this.props.duration}
+            graphType={this.props.graphType}
+            injectServiceNodes={this.props.injectServiceNodes}
+            kiosk={this.props.kiosk}
+            namespaces={this.props.namespaces}
+            queryTime={this.props.queryTime}
+            rateInterval={this.props.rateInterval}
+            step={this.props.step}
+            trafficRates={this.props.trafficRates}
+          />
+        );
+      case 'node':
+        return (
+          <SummaryPanelNodeContainer
+            data={this.props.data}
+            duration={this.props.duration}
+            graphType={this.props.graphType}
+            injectServiceNodes={this.props.injectServiceNodes}
+            namespaces={this.props.namespaces}
+            rateInterval={this.props.rateInterval}
+            onLaunchWizard={this.props.onLaunchWizard}
+            onDeleteTrafficRouting={this.props.onDeleteTrafficRouting}
+            queryTime={this.props.queryTime}
+            step={this.props.step}
+            trafficRates={this.props.trafficRates}
+          />
+        );
+      default:
+        return <></>;
+    }
+  };
+
+  private togglePanel = () => {
+    this.setState((state: SummaryPanelState) => ({
+      isVisible: !state.isVisible
+    }));
+  };
+}
+
+const mapStateToProps = (state: KialiAppState) => ({
+  jaegerState: state.jaegerState,
+  kiosk: state.globalState.kiosk
+});
+
+const SummaryPanelContainer = connect(mapStateToProps)(SummaryPanel);
+export default SummaryPanelContainer;
