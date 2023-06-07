@@ -18,7 +18,7 @@
     "lint:precommit": "if git diff --name-only HEAD | grep -E '\\.tsx?$'; then npm run lint; else true; fi",
     "lint:fix": "eslint --ext js,ts,tsx --fix src",
     "prettier": "prettier --write \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\"",
-    "prepare": "cd .. && husky install plugin/.husky",
+    "prepare": "cd .. && husky install",
     "pre-commit": "yarn run pretty-quick --staged --pattern \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\" && npm run lint:precommit"
   },
   "dependencies": {
