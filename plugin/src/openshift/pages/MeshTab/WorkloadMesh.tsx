@@ -1,13 +1,12 @@
 import * as React from 'react';
-import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../../kialiIntegration';
+import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../../utils/KialiIntegration';
 
-type IstioMeshProps = {
-    configType: string;
+type WorkloadMeshProps = {
     namespace: string;
     idObject: string;
 }
 
-export const IstioMesh = (props: IstioMeshProps) => {
+export const WorkloadMesh = (props: WorkloadMeshProps) => {
     const [kialiUrl, setKialiUrl] = React.useState({
         baseUrl: '',
         token: '',
@@ -21,7 +20,7 @@ export const IstioMesh = (props: IstioMeshProps) => {
             .catch(e => console.error(e));
     }, []);
 
-    const iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + props.namespace + '/istio/' + props.configType + '/' + props.idObject + '?' + kioskUrl() + '&'
+    const iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + props.namespace + '/workloads/' + props.idObject + '?' + kioskUrl() + '&'
     + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
     return (
         <iframe

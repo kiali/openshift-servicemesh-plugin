@@ -1,12 +1,7 @@
 import * as React from 'react';
-import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../../kialiIntegration';
+import userProps, { getKialiUrl, initKialiListeners, kioskUrl } from '../utils/KialiIntegration';
 
-type ServiceMeshProps = {
-    namespace: string;
-    idObject: string;
-}
-
-export const ServiceMesh = (props: ServiceMeshProps) => {
+const GraphPage = () => {
     const [kialiUrl, setKialiUrl] = React.useState({
         baseUrl: '',
         token: '',
@@ -20,15 +15,17 @@ export const ServiceMesh = (props: ServiceMeshProps) => {
             .catch(e => console.error(e));
     }, []);
 
-    const iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + props.namespace + '/services/' + props.idObject + '?' + kioskUrl() + '&'
-    + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
+    const iFrameUrl = kialiUrl.baseUrl + '/console/graph/namespaces/?' + kioskUrl() + '&' + kialiUrl.token + '&duration=' + userProps.duration + '&refreshtime' + userProps.refresh;
     return (
-        <iframe
+        <>
+            <iframe
                 src={iFrameUrl}
                 style={{overflow: 'hidden', height: '100%', width: '100%' }}
                 height="100%"
                 width="100%"
             />
-    )
+        </>
+    );
+};
 
-}
+export default GraphPage;
