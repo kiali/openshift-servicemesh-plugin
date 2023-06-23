@@ -11,7 +11,7 @@
     "type": "console.page/route",
     "properties": {
       "exact": true,
-      "path": "/ossmconsoleoverview",
+      "path": "/ossmconsole/overview",
       "component": { "$codeRef": "OverviewPage" }
     }
   },
@@ -20,7 +20,7 @@
     "properties": {
       "id": "ossmconsoleoverview",
       "name": "Overview",
-      "href": "/ossmconsoleoverview",
+      "href": "/ossmconsole/overview",
       "perspective": "admin",
       "section": "ossmconsole"
     }
@@ -29,7 +29,7 @@
     "type": "console.page/route",
     "properties": {
       "exact": true,
-      "path": "/ossmconsolegraph",
+      "path": "/ossmconsole/graph",
       "component": { "$codeRef": "GraphPage" }
     }
   },
@@ -38,7 +38,7 @@
     "properties": {
       "id": "ossmconsolegraph",
       "name": "Graph",
-      "href": "/ossmconsolegraph",
+      "href": "/ossmconsole/graph",
       "perspective": "admin",
       "section": "ossmconsole"
     }
