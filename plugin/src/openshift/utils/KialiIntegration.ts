@@ -1,5 +1,5 @@
 import { useHistory } from 'react-router';
-import { refForKialiIstio } from './k8s/resources';
+import { refForKialiIstio } from './IstioResources';
 import { consoleFetch } from '@openshift-console/dynamic-plugin-sdk';
 import {
   CertsInfo,
@@ -156,6 +156,7 @@ export default userProps;
 // And the "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
 export const initKialiListeners = () => {
   if (!kialiListener) {
+    // eslint-disable-next-line
     const history = useHistory();
 
     kialiListener = ev => {

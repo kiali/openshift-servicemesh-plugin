@@ -27,7 +27,7 @@ import {
   ValidationSummary,
   DirectionType
 } from '@kiali/core-ui';
-import { KialiConfig } from 'src/kialiIntegration';
+import { KialiConfig } from '../../utils/KialiIntegration';
 
 const columns: TableColumn<NamespaceInfo>[] = [
   {

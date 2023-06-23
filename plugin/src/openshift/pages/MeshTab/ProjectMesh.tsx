@@ -1,12 +1,11 @@
 import * as React from 'react';
-import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../../kialiIntegration';
+import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../../utils/KialiIntegration';
 
-type WorkloadMeshProps = {
-    namespace: string;
+type ProjectMeshProps = {
     idObject: string;
 }
 
-export const WorkloadMesh = (props: WorkloadMeshProps) => {
+export const ProjectMesh = (props: ProjectMeshProps) => {
     const [kialiUrl, setKialiUrl] = React.useState({
         baseUrl: '',
         token: '',
@@ -20,8 +19,8 @@ export const WorkloadMesh = (props: WorkloadMeshProps) => {
             .catch(e => console.error(e));
     }, []);
 
-    const iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + props.namespace + '/workloads/' + props.idObject + '?' + kioskUrl() + '&'
-    + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
+    const iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + props.idObject + '&' + kioskUrl() + '&' + kialiUrl.token
+    + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
     return (
         <iframe
                 src={iFrameUrl}

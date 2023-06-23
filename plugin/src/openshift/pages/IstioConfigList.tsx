@@ -15,10 +15,10 @@ import {
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { getKialiConfig, initKialiListeners, KialiConfig } from '../kialiIntegration';
+import { getKialiConfig, initKialiListeners, KialiConfig } from '../utils/KialiIntegration';
 import { useParams } from 'react-router';
 import { sortable } from '@patternfly/react-table';
-import { istioResources, referenceForRsc } from '../k8s/resources';
+import { istioResources, referenceForRsc } from '../utils/IstioResources';
 import { getAllIstioConfigs, validationKey, IstioConfigsMap } from '@kiali/types';
 
 const getValidation = (istioConfigs: IstioConfigsMap, kind: string, name: string, namespace: string): string => {
@@ -178,6 +178,7 @@ const IstioConfigList = () => {
   const prevResourceVersion = React.useRef<string[]>([]);
 
   const watches = istioResources.map(({ group, version, kind }) => {
+    // eslint-disable-next-line
     const [data, loaded, error] = useK8sWatchResource<K8sResourceCommon[]>({
       groupVersionKind: { group, version, kind },
       isList: true,

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { getKialiConfig, KialiConfig } from '../../kialiIntegration';
+import { getKialiConfig, KialiConfig } from '../../utils/KialiIntegration';
 import {
   OverviewCard,
   OverviewToolbar,

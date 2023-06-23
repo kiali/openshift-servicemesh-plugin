@@ -66,10 +66,10 @@
     "displayName": "OpenShift Service Mesh Console",
     "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {
-      "OverviewPage": "./components/Overview/OverviewPage",
-      "GraphPage": "./components/GraphPage",
-      "IstioConfigList": "./components/IstioConfigList",
-      "MeshTab": "./components/MeshTab/MeshTab"
+      "OverviewPage": "./openshift/pages/Overview/OverviewPage",
+      "GraphPage": "./openshift/pages/GraphPage",
+      "IstioConfigList": "./openshift/pages/IstioConfigList",
+      "MeshTab": "./openshift/pages/MeshTab/MeshTab"
     },
     "dependencies": {
       "@console/pluginAPI": "*"
