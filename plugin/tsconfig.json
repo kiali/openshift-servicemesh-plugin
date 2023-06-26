@@ -1,13 +1,50 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": "src",
     "module": "esnext",
-    "moduleResolution": "node",
-    "target": "es2020",
-    "jsx": "react",
+    "target": "es5",
+    "lib": ["es2019", "dom"],
+    "sourceMap": true,
     "allowJs": true,
-    "strict": false,
-    "noUnusedLocals": true
+    "jsx": "preserve",
+    "moduleResolution": "node",
+    "rootDir": "src",
+    "strict": true,
+    "noImplicitReturns": true,
+    "noImplicitAny": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "typeRoots": ["node_modules/@types"],
+    "paths": {
+      "app/*": ["./kiali/app/*"],
+      "actions/*": ["./kiali/actions/*"],
+      "components/*": ["./kiali/components/*"],
+      "config": ["./kiali/config"],
+      "config/*": ["./kiali/config/*"],
+      "pages/*": ["./kiali/pages/*"],
+      "reducers/*": ["./kiali/reducers/*"],
+      "services/*": ["./kiali/services/*"],
+      "store/*": ["./kiali/store/*"],
+      "styles/*": ["./kiali/styles/*"],
+      "types/*": ["./kiali/types/*"],
+      "utils/*": ["./kiali/utils/*"]
+    }
   },
+  "exclude": [
+    "node_modules",
+    "build",
+    "scripts",
+    "acceptance-tests",
+    "coverage",
+    "webpack",
+    "jest",
+    "src/setupTests.ts"
+  ],
   "include": ["src"]
 }

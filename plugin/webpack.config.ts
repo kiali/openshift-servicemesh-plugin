@@ -4,12 +4,13 @@ import { Configuration as WebpackConfiguration, DefinePlugin as DefinePlugin } f
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
 import * as path from 'path';
 import { ConsoleRemotePlugin } from '@openshift-console/dynamic-plugin-sdk-webpack';
+import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
+
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
 }
-
-const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 const config: Configuration = {
   mode: 'development',
@@ -22,21 +23,26 @@ const config: Configuration = {
     chunkFilename: '[name]-chunk.js'
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx']
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    plugins: [new TsconfigPathsPlugin()]
   },
   module: {
     rules: [
       {
-        test: /\.(jsx?|tsx?)$/,
+        test: /\.(ts|tsx)$/,
         exclude: /node_modules/,
         use: [
           {
-            loader: 'ts-loader',
+            loader: 'babel-loader',
             options: {
-              configFile: path.resolve(__dirname, 'tsconfig.json')
+              presets: [['react-app', { typescript: true }]]
             }
           }
         ]
+      },
+      {
+        test: /\.s[ac]ss$/,
+        use: ['style-loader', 'css-loader', 'sass-loader']
       },
       {
         test: /\.css$/,
