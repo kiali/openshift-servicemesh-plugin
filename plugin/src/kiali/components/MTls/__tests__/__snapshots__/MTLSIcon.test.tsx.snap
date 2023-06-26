@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`when Icon is LOCK_FULL MTLSIcon renders properly 1`] = `
+<Tooltip
+  aria-label="mTLS status"
+  content="Overlay Test"
+  enableFlip={true}
+  position="right"
+>
+  <img
+    alt="right"
+    className="className"
+    src="mtls-status-full.svg"
+  />
+</Tooltip>
+`;
