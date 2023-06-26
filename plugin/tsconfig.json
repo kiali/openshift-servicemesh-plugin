@@ -29,6 +29,7 @@
       "config/*": ["./kiali/config/*"],
       "pages/*": ["./kiali/pages/*"],
       "reducers/*": ["./kiali/reducers/*"],
+      "routes/*": ["./kiali/routes/*"],
       "services/*": ["./kiali/services/*"],
       "store/*": ["./kiali/store/*"],
       "styles/*": ["./kiali/styles/*"],
@@ -44,7 +45,7 @@
     "coverage",
     "webpack",
     "jest",
-    "src/setupTests.ts"
+    "src/kiali/setupTests.ts"
   ],
   "include": ["src"]
 }
