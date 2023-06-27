@@ -1,34 +1,36 @@
 import * as React from 'react';
-import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../../utils/KialiIntegration';
+import { Provider } from 'react-redux';
+import { useHistory } from 'react-router';
+import { store } from 'store/ConfigStore';
+import ServiceId from 'types/ServiceId';
+import ServiceDetailsPage from 'pages/ServiceDetails/ServiceDetailsPage';
+import KialiController from '../../components/KialiController';
+import { useInitKialiListeners } from '../../utils/KialiIntegration';
+import { setHistory } from 'app/History';
 
-type ServiceMeshProps = {
-    namespace: string;
-    idObject: string;
-}
+const ServiceMeshTab = () => {
+  useInitKialiListeners();
 
-export const ServiceMesh = (props: ServiceMeshProps) => {
-    const [kialiUrl, setKialiUrl] = React.useState({
-        baseUrl: '',
-        token: '',
-    });
+  const history = useHistory();
+  setHistory(history.location.pathname);
 
-    initKialiListeners();
+  const path = history.location.pathname.substring(8);
+  const items = path.split('/');
+  const namespace = items[0];
+  const service = items[2];
 
-    React.useEffect(() => {
-        getKialiUrl()
-            .then(ku => setKialiUrl(ku))
-            .catch(e => console.error(e));
-    }, []);
+  const serviceId: ServiceId = {
+    namespace,
+    service
+  };
 
-    const iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + props.namespace + '/services/' + props.idObject + '?' + kioskUrl() + '&'
-    + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
-    return (
-        <iframe
-                src={iFrameUrl}
-                style={{overflow: 'hidden', height: '100%', width: '100%' }}
-                height="100%"
-                width="100%"
-            />
-    )
+  return (
+    <Provider store={store}>
+      <KialiController>
+        <ServiceDetailsPage serviceId={serviceId}></ServiceDetailsPage>
+      </KialiController>
+    </Provider>
+  );
+};
 
-}
+export default ServiceMeshTab;

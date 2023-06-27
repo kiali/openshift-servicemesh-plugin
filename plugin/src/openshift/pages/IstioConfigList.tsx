@@ -1,8 +1,9 @@
 import * as React from 'react';
 import {
   getGroupVersionKindForResource,
-  K8sResourceCommon,
+  K8sGroupVersionKind,
   ListPageBody,
+  ListPageCreateDropdown,
   ListPageFilter,
   ListPageHeader,
   ResourceLink,
@@ -11,75 +12,30 @@ import {
   TableColumn,
   TableData,
   useActiveColumns,
-  useK8sWatchResource,
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { getKialiConfig, initKialiListeners, KialiConfig } from '../utils/KialiIntegration';
-import { useParams } from 'react-router';
+import { useHistory, useParams } from 'react-router';
 import { sortable } from '@patternfly/react-table';
-import { istioResources, referenceForRsc } from '../utils/IstioResources';
-import { getAllIstioConfigs, validationKey, IstioConfigsMap } from '@kiali/types';
+import { istioResources, referenceFor } from '../utils/IstioResources';
+import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
+import { ValidationObjectSummary } from 'components/Validations/ValidationObjectSummary';
+import { IstioConfigItem, IstioConfigList, toIstioItems } from 'types/IstioConfigList';
+import * as API from 'services/Api';
+import Namespace from 'types/Namespace';
+import { PromisesRegistry } from 'utils/CancelablePromises';
+import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
+import KialiController from '../components/KialiController';
+import { connect } from 'react-redux';
+import { KialiAppState } from 'store/Store';
+import { getKialiState } from '../utils/Reducer';
 
-const getValidation = (istioConfigs: IstioConfigsMap, kind: string, name: string, namespace: string): string => {
-  if (
-    istioConfigs[namespace] &&
-    istioConfigs[namespace].validations[kind.toLowerCase()] &&
-    istioConfigs[namespace].validations[kind.toLowerCase()][validationKey(name, namespace)]
-  ) {
-    const validation = istioConfigs[namespace].validations[kind.toLowerCase()][validationKey(name, namespace)];
-    if (validation.checks.filter(i => i.severity === 'error').length > 0) {
-      return 'Error';
-    } else {
-      if (validation.checks.filter(i => i.severity === 'warning').length > 0) {
-        return 'Warning';
-      } else {
-        return 'Valid';
-      }
-    }
-  } else {
-    return 'N/A';
-  }
-};
+interface IstioConfigObject extends IstioObject {
+  validation?: ObjectValidation;
+  reconciledCondition?: StatusCondition;
+}
 
-const useIstioTableColumns = (namespace: string) => {
-  const columns: TableColumn<K8sResourceCommon>[] = [
-    {
-      id: 'name',
-      sort: 'metadata.name',
-      title: 'Name',
-      transforms: [sortable]
-    },
-    {
-      id: 'namespace',
-      sort: 'metadata.namespace',
-      title: 'Namespace',
-      transforms: [sortable]
-    },
-    {
-      id: 'kind',
-      sort: 'kind',
-      title: 'Kind',
-      transforms: [sortable]
-    },
-    {
-      id: 'configuration',
-      sort: 'validations',
-      title: 'Configuration',
-      transforms: [sortable]
-    }
-  ];
-
-  const [activeColumns] = useActiveColumns<K8sResourceCommon>({
-    columns: columns,
-    showNamespaceOverride: false,
-    columnManagementID: ''
-  });
-
-  return activeColumns;
-};
-
-const columns: TableColumn<K8sResourceCommon>[] = [
+const columns: TableColumn<IstioConfigObject>[] = [
   {
     id: 'name',
     sort: 'metadata.name',
@@ -100,55 +56,86 @@ const columns: TableColumn<K8sResourceCommon>[] = [
   },
   {
     id: 'configuration',
-    sort: 'validations',
+    sort: 'validation.valid',
     title: 'Configuration',
     transforms: [sortable]
   }
 ];
 
-const Row = ({ obj, activeColumnIDs }: RowProps<K8sResourceCommon>) => {
+const useIstioTableColumns = () => {
+  const [activeColumns] = useActiveColumns<IstioConfigObject>({
+    columns: columns,
+    showNamespaceOverride: true,
+    columnManagementID: ''
+  });
+
+  return activeColumns;
+};
+
+const Row = ({ obj, activeColumnIDs }: RowProps<IstioConfigObject>) => {
   const groupVersionKind = getGroupVersionKindForResource(obj);
+  const nsGroupVersionKind: K8sGroupVersionKind = {
+    group: '',
+    version: 'v1',
+    kind: 'Namespace'
+  };
   return (
     <>
       <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
         <ResourceLink groupVersionKind={groupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
       </TableData>
       <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-        {obj.metadata.namespace}
+        <ResourceLink
+          groupVersionKind={nsGroupVersionKind}
+          name={obj.metadata.namespace}
+          namespace={obj.metadata.namespace}
+        />
       </TableData>
       <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-        {obj.kind + (obj.apiVersion.includes('k8s') ? ' (K8s)' : '')}
+        {obj.kind + (obj.apiVersion?.includes('k8s') ? ' (K8s)' : '')}
       </TableData>
       <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
-        {obj['validations'] ? obj['validations'] : 'N/A'}
+        {obj.validation ? (
+          <ValidationObjectSummary
+            id={obj.metadata.name + '-config-validation'}
+            validations={[obj.validation]}
+            reconciledCondition={obj.reconciledCondition}
+          />
+        ) : (
+          <>N/A</>
+        )}
       </TableData>
     </>
   );
 };
 
-export const filters: RowFilter[] = [
+const filters: RowFilter[] = [
   {
     filterGroupName: 'Kind',
     type: 'kind',
-    reducer: (obj: K8sResourceCommon) => obj.apiVersion + '.' + obj.kind,
-    filter: (input, obj: K8sResourceCommon) => {
+    reducer: (obj: IstioConfigObject) => {
+      const groupVersionKind = getGroupVersionKindForResource(obj);
+      return groupVersionKind.group + '.' + obj.kind;
+    },
+    filter: (input, obj: IstioConfigObject) => {
       if (!input.selected?.length) {
         return true;
       }
 
-      return input.selected.includes(obj.apiVersion + '.' + obj.kind);
+      const groupVersionKind = getGroupVersionKindForResource(obj);
+      return input.selected.includes(groupVersionKind.group + '.' + obj.kind);
     },
-    items: istioResources.map(({ group, version, kind, title }) => ({
-      id: group + '/' + version + '.' + kind,
+    items: istioResources.map(({ group, kind, title }) => ({
+      id: group + '.' + kind,
       title: title ? title : kind
     }))
   }
 ];
 
 type IstioTableProps = {
-  columns: TableColumn<K8sResourceCommon>[];
-  data: K8sResourceCommon[];
-  unfilteredData: K8sResourceCommon[];
+  columns: TableColumn<IstioConfigObject>[];
+  data: IstioConfigObject[];
+  unfilteredData: IstioConfigObject[];
   loaded: boolean;
   loadError?: {
     message?: string;
@@ -157,7 +144,7 @@ type IstioTableProps = {
 
 const IstioTable = ({ columns, data, unfilteredData, loaded, loadError }: IstioTableProps) => {
   return (
-    <VirtualizedTable<K8sResourceCommon>
+    <VirtualizedTable<IstioConfigObject>
       data={data}
       unfilteredData={unfilteredData}
       loaded={loaded}
@@ -168,91 +155,96 @@ const IstioTable = ({ columns, data, unfilteredData, loaded, loadError }: IstioT
   );
 };
 
-const IstioConfigList = () => {
+const newIstioResourceList = {
+  authorization_policy: 'AuthorizationPolicy',
+  gateway: 'Gateway',
+  k8s_gateway: 'K8sGateway',
+  peer_authentication: 'PeerAuthentication',
+  request_authentication: 'RequestAuthentication',
+  service_entry: 'ServiceEntry',
+  sidecar: 'Sidecar'
+};
+
+type IstioConfigListProps = {
+  istioAPIEnabled: boolean;
+};
+
+const IstioConfigListPage = (props: IstioConfigListProps) => {
   const { ns } = useParams<{ ns: string }>();
+  const [loaded, setLoaded] = React.useState<boolean>(false);
+  const [listItems, setListItems] = React.useState<any[]>([]);
+  const history = useHistory();
 
-  initKialiListeners();
+  const promises = React.useMemo(() => new PromisesRegistry(), []);
 
-  const [kialiValidations, setKialiValidations] = React.useState<IstioConfigsMap>(undefined);
-  const [_, setKialiConfig] = React.useState<KialiConfig>(undefined);
-  const prevResourceVersion = React.useRef<string[]>([]);
-
-  const watches = istioResources.map(({ group, version, kind }) => {
-    // eslint-disable-next-line
-    const [data, loaded, error] = useK8sWatchResource<K8sResourceCommon[]>({
-      groupVersionKind: { group, version, kind },
-      isList: true,
-      namespace: ns,
-      namespaced: true
-    });
-    if (error) {
-      console.error('Could not load', kind, error);
+  // Fetch the Istio configs, convert to istio items and map them into flattened list items
+  const fetchIstioConfigs = React.useCallback(async (): Promise<IstioConfigItem[]> => {
+    const validate = props.istioAPIEnabled ? true : false;
+    let getNamespacesData, getIstioConfigData;
+    if (ns) {
+      getIstioConfigData = promises.register('getIstioConfig', API.getIstioConfig(ns, [], validate, '', ''));
+    } else {
+      // If no namespace is selected, get istio config for all namespaces
+      getNamespacesData = promises.register('getNamespaces', API.getNamespaces());
+      getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], [], validate, '', ''));
     }
-    return [data, loaded, error];
-  });
+    return Promise.all([getNamespacesData, getIstioConfigData]).then(response => {
+      if (ns) {
+        return toIstioItems(response[1].data as IstioConfigList);
+      } else {
+        let istioItems: IstioConfigItem[] = [];
+        // convert istio objects from all namespaces
+        const namespaces: Namespace[] = response[0].data;
+        namespaces.forEach(namespace => {
+          istioItems = istioItems.concat(toIstioItems(response[1].data[namespace.name]));
+        });
+        return istioItems;
+      }
+    });
+  }, [ns, props.istioAPIEnabled, promises]);
 
-  const flatData = watches.map(([list]) => list).flat();
-  const resourceVersion = flatData.map(r => referenceForRsc(r));
-  const loaded = watches.every(([, loaded, error]) => !!(loaded || error));
+  const onCreate = (reference: string) => {
+    const groupVersionKind = istioResources.find(res => res.id === reference) as K8sGroupVersionKind;
+    const path = `/k8s/ns/${ns ?? 'default'}/${referenceFor(groupVersionKind)}/~new`;
+    history.push(path);
+  };
 
   React.useEffect(() => {
-    // Kiali validations should be fetched when:
-    // - All watchers are loaded
-    // - No new updates on the list of the objects
-    const newUpdates =
-      // Initial fetch
-      (resourceVersion.length === 0 && prevResourceVersion.current.length === 0) ||
-      // Different sizes
-      resourceVersion.length != prevResourceVersion.current.length ||
-      // Same size but different elements
-      resourceVersion.some(v => !prevResourceVersion.current.includes(v));
+    fetchIstioConfigs().then(istioConfigs => {
+      const istioConfigObjects = istioConfigs.map(istioConfig => {
+        const istioConfigObject = getIstioObject(istioConfig) as IstioConfigObject;
+        istioConfigObject.validation = istioConfig.validation;
+        istioConfigObject.reconciledCondition = getReconciliationCondition(istioConfig);
 
-    if (loaded && newUpdates) {
-      getKialiConfig()
-        .then(kialiConfig => {
-          setKialiConfig(kialiConfig);
-          // The OSSM Console plugin is in the same domain of the OpenShift Console,
-          // then direct requests to the Kiali API should use the KialiProxy url.
-          // This proxy url is different from the url used for iframes that have a different domain.
-          getAllIstioConfigs([], [], true, '', '')
-            .then(response => response.data)
-            .then(kialiValidations => {
-              // Update the list of resources present when last fech of Kiali Validations
-              // Hooks need to maintain this "when to update" logic inside to avoid unnecessary fetches and renders
-              prevResourceVersion.current = Array.from(resourceVersion);
-              setKialiValidations(kialiValidations);
-            })
-            .catch(error => console.error('Could not connect to Kiali API', error));
-        })
-        .catch(error => console.error('Error getting Kiali API config', error));
-    }
-    // Deps trigger the hook, but those are not "enough", inner logic is needed to check changes
-  }, [loaded, resourceVersion, prevResourceVersion]);
+        return istioConfigObject;
+      });
+      setListItems(istioConfigObjects);
+      setLoaded(true);
+    });
+  }, [ns, fetchIstioConfigs]);
 
-  // On new resources and/or validations, a combination task is required
-  // This uses a "trick" to add a dynamic "validations" field to the K8sResourceCommon type
-  // Probably it can be added a custom type, but that will trigger more refactoring on the standard classes used for tables and filters
-  const combinedData = React.useMemo(() => {
-    if (loaded && kialiValidations) {
-      flatData.forEach(
-        d => (d['validations'] = getValidation(kialiValidations, d.kind, d.metadata.name, d.metadata.namespace))
-      );
-    }
-    return flatData;
-  }, [flatData, kialiValidations, loaded]);
+  const [data, filteredData, onFilterChange] = useListPageFilter(listItems, filters);
 
-  const [data, filteredData, onFilterChange] = useListPageFilter(combinedData, filters);
+  const columns = useIstioTableColumns();
 
-  const columns = useIstioTableColumns(ns);
   return (
-    <>
-      <ListPageHeader title="Istio Config" />
+    <KialiController>
+      <ListPageHeader title="Istio Config">
+        <ListPageCreateDropdown items={newIstioResourceList} onClick={onCreate}>
+          Create
+        </ListPageCreateDropdown>
+      </ListPageHeader>
       <ListPageBody>
         <ListPageFilter data={data} loaded={loaded} rowFilters={filters} onFilterChange={onFilterChange} />
         <IstioTable columns={columns} data={filteredData} unfilteredData={data} loaded={loaded} />
       </ListPageBody>
-    </>
+    </KialiController>
   );
 };
 
-export default IstioConfigList;
+const mapStateToProps = (state: KialiAppState) => ({
+  istioAPIEnabled: getKialiState(state).statusState.istioEnvironment.istioAPIEnabled
+});
+
+const IstioConfigListContainer = connect(mapStateToProps)(IstioConfigListPage);
+export default IstioConfigListContainer;

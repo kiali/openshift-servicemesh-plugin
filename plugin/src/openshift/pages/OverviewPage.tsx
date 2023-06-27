@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { Provider } from 'react-redux';
 import { store } from 'store/ConfigStore';
-import GraphPage from 'pages/Graph/GraphPage';
+import OverviewPage from 'pages/Overview/OverviewPage';
 import KialiController from '../components/KialiController';
 import { useInitKialiListeners } from '../utils/KialiIntegration';
-import { useHistory } from 'react-router';
 import { setHistory } from 'app/History';
+import { useHistory } from 'react-router';
 
-const GraphContainer = () => {
+const OverviewContainer = () => {
   useInitKialiListeners();
 
   const history = useHistory();
@@ -16,10 +16,10 @@ const GraphContainer = () => {
   return (
     <Provider store={store}>
       <KialiController>
-        <GraphPage></GraphPage>
+        <OverviewPage></OverviewPage>
       </KialiController>
     </Provider>
   );
 };
 
-export default GraphContainer;
+export default OverviewContainer;

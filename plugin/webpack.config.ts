@@ -5,7 +5,7 @@ import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-serv
 import * as path from 'path';
 import { ConsoleRemotePlugin } from '@openshift-console/dynamic-plugin-sdk-webpack';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
-// import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
@@ -81,20 +81,19 @@ const config: Configuration = {
   plugins: [
     new ConsoleRemotePlugin(),
     new DefinePlugin({
-      'process.env.KIALI_PROXY': JSON.stringify(process.env.KIALI_PROXY),
+      'process.env.API_PROXY': JSON.stringify(process.env.API_PROXY),
       'process.env.CSS_PREFIX': JSON.stringify(process.env.CSS_PREFIX)
     }),
-    new NodePolyfillPlugin()
-    // TODO Uncomment when iframes are removed
-    // new ForkTsCheckerWebpackPlugin({
-    //   typescript: {
-    //     configFile: '../tsconfig.json',
-    //     diagnosticOptions: {
-    //       syntactic: true
-    //     },
-    //     mode: 'write-references'
-    //   }
-    // })
+    new NodePolyfillPlugin(),
+    new ForkTsCheckerWebpackPlugin({
+      typescript: {
+        configFile: '../tsconfig.json',
+        diagnosticOptions: {
+          syntactic: true
+        },
+        mode: 'write-references'
+      }
+    })
   ],
   devtool: 'source-map',
   optimization: {

@@ -54,15 +54,15 @@ Ensure Chips and ChipGroups show long values
 /*
 Kiosk mode
 */
-html.kiosk {
-  #page-sidebar {
-    display: none;
-  }
+// html.kiosk {
+//   #page-sidebar {
+//     display: none;
+//   }
 
-  header[role='kiali_header'] {
-    display: none;
-  }
-}
+//   header[role='kiali_header'] {
+//     display: none;
+//   }
+// }
 
 /*
 Datepicker overrides for graph replay and other uses

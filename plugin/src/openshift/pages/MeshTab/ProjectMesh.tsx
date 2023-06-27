@@ -1,33 +1,33 @@
 import * as React from 'react';
-import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../../utils/KialiIntegration';
+import { Provider } from 'react-redux';
+import { useHistory } from 'react-router';
+import { ActionKeys } from 'actions/ActionKeys';
+import { store } from 'store/ConfigStore';
+import GraphPage from 'pages/Graph/GraphPage';
+import KialiController from '../../components/KialiController';
+import { useInitKialiListeners } from '../../utils/KialiIntegration';
+import { setHistory } from 'app/History';
 
-type ProjectMeshProps = {
-    idObject: string;
-}
+const ProjectMeshTab = () => {
+  useInitKialiListeners();
 
-export const ProjectMesh = (props: ProjectMeshProps) => {
-    const [kialiUrl, setKialiUrl] = React.useState({
-        baseUrl: '',
-        token: '',
-    });
+  const history = useHistory();
+  setHistory(history.location.pathname);
 
-    initKialiListeners();
+  const path = history.location.pathname.substring(8);
+  const items = path.split('/');
+  const namespace = items[2];
 
-    React.useEffect(() => {
-        getKialiUrl()
-            .then(ku => setKialiUrl(ku))
-            .catch(e => console.error(e));
-    }, []);
+  // Set namespace of the project as active namespace in redux store
+  store.dispatch({ type: ActionKeys.SET_ACTIVE_NAMESPACES, payload: [{ name: namespace }] });
 
-    const iFrameUrl = kialiUrl.baseUrl +  '/console/graph/namespaces?namespaces=' + props.idObject + '&' + kioskUrl() + '&' + kialiUrl.token
-    + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
-    return (
-        <iframe
-                src={iFrameUrl}
-                style={{overflow: 'hidden', height: '100%', width: '100%' }}
-                height="100%"
-                width="100%"
-            />
-    )
+  return (
+    <Provider store={store}>
+      <KialiController>
+        <GraphPage></GraphPage>
+      </KialiController>
+    </Provider>
+  );
+};
 
-}
+export default ProjectMeshTab;

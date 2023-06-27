@@ -22,8 +22,7 @@ These are the things you need before you can start working with the OpenShift Se
 To very quickly get the latest OSSM Console plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
 
 1. Log into your OpenShift cluster with `oc login`
-2. Adjust the `kialiUrl` setting in the "plugin-conf" ConfigMap under `plugin/manifest.yaml` so it points to your Kiali public URL. Examples: `https://kiali-istio-system.apps-crc.testing` or if deploying Kiali locally `http://localhost:3000`
-3. Run `make deploy-plugin enable-plugin` to deploy the `latest` plugin published on quay.io and then enable the plugin
+2. Run `make deploy-plugin enable-plugin` to deploy the `latest` plugin published on quay.io and then enable the plugin
 
 You can undeploy/disable the plugin using `make undeploy-plugin`.
 
@@ -31,7 +30,7 @@ You can undeploy/disable the plugin using `make undeploy-plugin`.
 
 > :warning: To avoid CORS errors when running in a local dev environment, you must disable CORS security in your browser. If using Chrome, start it using `--disable-web-security --user-data-dir="<some directory here>"` or install a CORS plugin such as [CORS Unblock](https://chrome.google.com/webstore/detail/cors-unblock/lfhmikememgdcahcdlaciloancbhjino) and use it to disable CORS security.
 
-> :warning: For this local dev environment to work, you *must* deploy the Kiali Server with `auth.strategy` set to `anonymous`.
+> :warning: For this local dev environment to work, you _must_ deploy the Kiali Server with `auth.strategy` set to `anonymous`.
 
 ### Preparing your local dev environment using `make`
 
@@ -57,14 +56,8 @@ Alternatively, you can manually set up your dev environment outside of make by p
 cd plugin
 yarn install
 
-# If necessary, make sure you change the "KIALI_PROXY" value in .env.development so it points to your Kiali Server URL
+# If necessary, make sure you change the "API_PROXY" value in .env.development so it points to your Kiali Server URL
 # vi .env.development
-
-# Copy the plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment
-cp plugin-config.json dist
-
-# If necessary, make sure you change the "kialiUrl" in the config file so it points to your Kiali Server URL
-# vi dist/plugin-config.json
 ```
 
 ### Run The Plugin and OpenShift Console Locally
@@ -108,7 +101,6 @@ Here's a tl;dr summary to get the operator and plugin installed in your cluster.
 3. Build, push, and deploy the operator and plugin by running `make cluster-push operator-create install-crd install-cr`
 
 When you are finished and you want to uninstall the operator and plugin, run `make operator-delete`.
-
 
 #### make cluster-status
 
@@ -256,7 +248,7 @@ Once complete, the image will be pushed to quay.io in this repository: https://q
 
 ### Publishing OLM Metadata
 
-First create a new bundle version using the  `create-new-version.sh` script. You need to tell the script what channels the new version of the operator will be available on. The operator must be available in at least one of these two channels - `candidate` (for alpha or tech-preview versions) and `stable`. If you want the new version to be available in both channels, use `--channels "stable,candidate"`.
+First create a new bundle version using the `create-new-version.sh` script. You need to tell the script what channels the new version of the operator will be available on. The operator must be available in at least one of these two channels - `candidate` (for alpha or tech-preview versions) and `stable`. If you want the new version to be available in both channels, use `--channels "stable,candidate"`.
 
 ```sh
 create-new-version.sh --new-version 0.0.2 --channels candidate

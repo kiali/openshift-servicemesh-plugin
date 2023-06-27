@@ -1,5 +1,12 @@
 [
   {
+    "type": "console.redux-reducer",
+    "properties": {
+      "scope": "kiali",
+      "reducer": { "$codeRef": "ReduxReducer" }
+    }
+  },
+  {
     "type": "console.navigation/section",
     "properties": {
       "id": "ossmconsole",
@@ -73,7 +80,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "ProjectMeshTab" }
     }
   },
   {
@@ -88,7 +95,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "WorkloadMeshTab" }
     }
   },
   {
@@ -103,7 +110,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "WorkloadMeshTab" }
     }
   },
   {
@@ -118,7 +125,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "WorkloadMeshTab" }
     }
   },
   {
@@ -133,7 +140,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "WorkloadMeshTab" }
     }
   },
   {
@@ -148,7 +155,22 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "ServiceMeshTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "model": {
+        "group": "networking.istio.io",
+        "kind": "VirtualService",
+        "version": "v1alpha3"
+      },
+      "page": {
+        "name": "Service Mesh",
+        "href": "ossmconsole"
+      },
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -163,7 +185,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -178,7 +200,22 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "model": {
+        "group": "networking.istio.io",
+        "kind": "Gateway",
+        "version": "v1alpha3"
+      },
+      "page": {
+        "name": "Service Mesh",
+        "href": "ossmconsole"
+      },
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -193,7 +230,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -208,7 +245,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -223,7 +260,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -238,7 +275,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -253,7 +290,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -268,7 +305,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -283,7 +320,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   },
   {
@@ -298,7 +335,7 @@
         "name": "Service Mesh",
         "href": "ossmconsole"
       },
-      "component": { "$codeRef": "MeshTab" }
+      "component": { "$codeRef": "IstioMeshTab" }
     }
   }
 ]
