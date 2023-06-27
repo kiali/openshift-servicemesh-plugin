@@ -123,7 +123,7 @@ fi
 DATETIME_NOW="$(date --utc +'%F-%H-%M-%S')"
 DEST_BRANCH="kiali-frontend-update-${DATETIME_NOW}"
 COMMIT_MESSAGE=$(cat <<EOM
-Updating Kiali frontend source from:
+Kiali frontend source originated from:
 * git ref:    ${SOURCE_REF}
 * git commit: ${COMMIT_HASH}
 * GitHub URL: ${GITHUB_COMMIT_URL}
@@ -153,6 +153,12 @@ cd ${ABS_DEST_DIR}
 git checkout -b ${DEST_BRANCH}
 rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
 cp -R ${ABS_SOURCE_DIR}/* ${ABS_DEST_DIR}
+cat > ${ABS_DEST_DIR}/README.md <<EOM
+**WARNING**: The code in this directory comes from the kiali/kiali repository and should never be modified here.
+
+${COMMIT_MESSAGE}
+EOM
+
 git add ${ABS_DEST_DIR}
 git commit --quiet --signoff -m "${COMMIT_MESSAGE}"
 
