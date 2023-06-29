@@ -7,5 +7,4 @@ metadata:
 data:
   plugin-config.json: |
     {
-      "kialiUrl": "{{ ossmconsole_vars.kiali.url }}"
     }

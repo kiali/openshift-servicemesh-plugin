@@ -12,7 +12,6 @@ all:
       serviceName: ""
       serviceNamespace: ""
       servicePort: 0
-      url: ""
 
     # The Operator SDK creates a "ansible_operator_meta" variable
     # that contains the name and namespace of the CR.

@@ -16,7 +16,6 @@
         serviceName: null
         serviceNamespace: null
         servicePort: null
-        url: null
 
 - name: Get information about the cluster
   set_fact:
@@ -101,7 +100,7 @@
   set_fact:
     kiali_route: "{{ kiali_in_namespace[0] if kiali_in_namespace | length > 0 else (kiali_anywhere[0] if kiali_anywhere | length > 0 else '') }}"
   when:
-  - ossmconsole_vars.kiali.url == "" or ossmconsole_vars.kiali.serviceName == "" or ossmconsole_vars.kiali.serviceNamespace == "" or ossmconsole_vars.kiali.servicePort == 0
+  - ossmconsole_vars.kiali.serviceName == "" or ossmconsole_vars.kiali.serviceNamespace == "" or ossmconsole_vars.kiali.servicePort == 0
   ignore_errors: yes
 
 - fail:
@@ -131,13 +130,6 @@
   - ossmconsole_vars.kiali.servicePort == 0
   ignore_errors: yes
 
-- name: Auto-discover the Kiali URL
-  set_fact:
-    kiali_route_host: "{{ kiali_route.spec.host }}"
-  when:
-  - ossmconsole_vars.kiali.url == ""
-  ignore_errors: yes
-
 - fail:
     msg: "Failed to auto-discover the Kiali Service Name. Make sure Kiali is installed. You can specify 'kiali.serviceName' in the CR if there is a Kiali Service the plugin can use but cannot be auto-discovered by this operator."
   when:
@@ -156,12 +148,6 @@
   - ossmconsole_vars.kiali.servicePort == 0
   - kiali_service_port is not defined or kiali_service_port == ""
 
-- fail:
-    msg: "Failed to auto-discover the Kiali URL. Make sure Kiali is installed. You can specify 'kiali.url' in the CR if there is a Kiali URL endpoint the plugin can use but cannot be auto-discovered by this operator."
-  when:
-  - ossmconsole_vars.kiali.url == ""
-  - kiali_route_host is not defined or kiali_route_host == ""
-
 # Set the auto-discovered values that we found
 - set_fact:
     ossmconsole_vars: "{{ ossmconsole_vars | combine({'kiali': {'serviceName': kiali_service_name}}, recursive=True) }}"
@@ -175,17 +161,14 @@
     ossmconsole_vars: "{{ ossmconsole_vars | combine({'kiali': {'servicePort': kiali_service_port}}, recursive=True) }}"
   when:
   - ossmconsole_vars.kiali.servicePort == 0
-- set_fact:
-    ossmconsole_vars: "{{ ossmconsole_vars | combine({'kiali': {'url': 'https://' + kiali_route_host}}, recursive=True) }}"
-  when:
-  - ossmconsole_vars.kiali.url == ""
 
-- name: Determine Kiali version
-  set_fact:
-    kiali_version: "{{ lookup('url', ossmconsole_vars.kiali.url + '/api', split_lines='no', validate_certs='no') | from_json | json_query(q) }}"
-  vars:
-    q: status."Kiali version"
-  ignore_errors: yes
+# TODO: change this so it uses the service directly, not the now-obsolete url
+#- name: Determine Kiali version
+#  set_fact:
+#    kiali_version: "{{ lookup('url', ossmconsole_vars.kiali.url + '/api', split_lines='no', validate_certs='no') | from_json | json_query(q) }}"
+#  vars:
+#    q: status."Kiali version"
+#  ignore_errors: yes
 
 - name: "Determine environment to store in status"
   set_fact:
@@ -211,7 +194,6 @@
         serviceName: "{{ ossmconsole_vars.kiali.serviceName }}"
         serviceNamespace: "{{ ossmconsole_vars.kiali.serviceNamespace }}"
         servicePort: "{{ ossmconsole_vars.kiali.servicePort }}"
-        url: "{{ ossmconsole_vars.kiali.url }}"
 
 - name: Only allow ad-hoc OSSM Console image when appropriate
   fail:

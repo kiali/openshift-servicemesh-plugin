@@ -16,5 +16,3 @@ spec:
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0
-    url: ""
-
