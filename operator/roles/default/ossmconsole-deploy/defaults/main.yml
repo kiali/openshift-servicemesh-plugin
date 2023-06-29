@@ -22,4 +22,3 @@ ossmconsole_defaults:
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0
-    url: ""

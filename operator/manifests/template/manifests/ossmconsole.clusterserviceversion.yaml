@@ -29,8 +29,7 @@ metadata:
             "kiali": {
               "serviceName": "",
               "serviceNamespace": "",
-              "servicePort": 0,
-              "url": ""
+              "servicePort": 0
             }
           }
         }
@@ -104,11 +103,6 @@ spec:
       - displayName: Kiali Service Port
         description: "The internal port used by the Kiali service for the API. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route."
         path: kiali.servicePort
-        x-descriptors:
-        - 'urn:alm:descriptor:com.tectonic.ui:text'
-      - displayName: Kiali URL
-        description: "The root endpoint URL to the Kiali UI Console. If empty, an attempt to auto-discover it will be made."
-        path: kiali.url
         x-descriptors:
         - 'urn:alm:descriptor:com.tectonic.ui:text'
   apiservicedefinitions: {}
