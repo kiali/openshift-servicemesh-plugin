@@ -162,13 +162,13 @@
   when:
   - ossmconsole_vars.kiali.servicePort == 0
 
-# TODO: change this so it uses the service directly, not the now-obsolete url
-#- name: Determine Kiali version
-#  set_fact:
-#    kiali_version: "{{ lookup('url', ossmconsole_vars.kiali.url + '/api', split_lines='no', validate_certs='no') | from_json | json_query(q) }}"
-#  vars:
-#    q: status."Kiali version"
-#  ignore_errors: yes
+- name: Determine Kiali version
+  set_fact:
+    kiali_version: "{{ lookup('url', version_url, split_lines='no', validate_certs='no') | from_json | json_query(q) }}"
+  vars:
+    q: status."Kiali version"
+    version_url: "{{ 'https://' + ossmconsole_vars.kiali.serviceName + '.' + ossmconsole_vars.kiali.serviceNamespace + '.svc.cluster.local:' + ossmconsole_vars.kiali.servicePort + '/api' }}"
+  ignore_errors: yes
 
 - name: "Determine environment to store in status"
   set_fact:
