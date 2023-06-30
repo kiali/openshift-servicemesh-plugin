@@ -2,12 +2,12 @@ import * as React from 'react';
 import { Provider } from 'react-redux';
 import { store } from 'store/ConfigStore';
 import GraphPage from 'pages/Graph/GraphPage';
-import KialiController from '../components/KialiController';
+import { KialiController } from '../components/KialiController';
 import { useInitKialiListeners } from '../utils/KialiIntegration';
 import { useHistory } from 'react-router';
 import { setHistory } from 'app/History';
 
-const GraphContainer = () => {
+const GraphPageOSSMC = () => {
   useInitKialiListeners();
 
   const history = useHistory();
@@ -22,4 +22,4 @@ const GraphContainer = () => {
   );
 };
 
-export default GraphContainer;
+export default GraphPageOSSMC;

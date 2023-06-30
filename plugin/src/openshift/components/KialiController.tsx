@@ -60,7 +60,7 @@ type KialiControllerProps = KialiControllerReduxProps & {
   children: React.ReactNode;
 };
 
-class KialiController extends React.Component<KialiControllerProps> {
+class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
 
   state = {
@@ -237,5 +237,4 @@ const mapDispatchToProps = (dispatch: KialiDispatch) => ({
   setKiosk: bindActionCreators(GlobalActions.setKiosk, dispatch)
 });
 
-const KialiControllerContainer = connect(mapStateToProps, mapDispatchToProps)(KialiController);
-export default KialiControllerContainer;
+export const KialiController = connect(mapStateToProps, mapDispatchToProps)(KialiControllerComponent);

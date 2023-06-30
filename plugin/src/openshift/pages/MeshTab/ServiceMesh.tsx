@@ -4,7 +4,7 @@ import { useHistory } from 'react-router';
 import { store } from 'store/ConfigStore';
 import ServiceId from 'types/ServiceId';
 import ServiceDetailsPage from 'pages/ServiceDetails/ServiceDetailsPage';
-import KialiController from '../../components/KialiController';
+import { KialiController } from '../../components/KialiController';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 

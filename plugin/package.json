@@ -164,7 +164,7 @@
       "ReduxReducer": "./openshift/utils/Reducer.ts",
       "OverviewPage": "./openshift/pages/OverviewPage",
       "GraphPage": "./openshift/pages/GraphPage",
-      "IstioConfigList": "./openshift/pages/IstioConfigList",
+      "IstioConfigListPage": "./openshift/pages/IstioConfigListPage",
       "IstioMeshTab": "./openshift/pages/MeshTab/IstioMesh",
       "ServiceMeshTab": "./openshift/pages/MeshTab/ServiceMesh",
       "WorkloadMeshTab": "./openshift/pages/MeshTab/WorkloadMesh",

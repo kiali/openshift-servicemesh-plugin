@@ -5,7 +5,7 @@ import { store } from 'store/ConfigStore';
 import { IstioConfigId } from 'types/IstioConfigDetails';
 // import IstioConfigDetailsPage from '../../pages/IstioConfigDetails/IstioConfigDetailsPage';
 import IstioConfigDetailsPage from 'pages/IstioConfigDetails/IstioConfigDetailsPage';
-import KialiController from '../../components/KialiController';
+import { KialiController } from '../../components/KialiController';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 

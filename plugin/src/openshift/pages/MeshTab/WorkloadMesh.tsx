@@ -4,7 +4,7 @@ import { useHistory } from 'react-router';
 import { store } from 'store/ConfigStore';
 import { WorkloadId } from 'types/Workload';
 import WorkloadDetailsPage from 'pages/WorkloadDetails/WorkloadDetailsPage';
-import KialiController from '../../components/KialiController';
+import { KialiController } from '../../components/KialiController';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 
@@ -26,6 +26,7 @@ const WorkloadMeshTab = () => {
     for (let i = 0; i < workload.length; i++) {
       if (workload[i] === '-') {
         count++;
+
         if (count === 2) {
           index = i;
         }

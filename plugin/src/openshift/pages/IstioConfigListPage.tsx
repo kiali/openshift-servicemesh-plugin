@@ -25,7 +25,7 @@ import * as API from 'services/Api';
 import Namespace from 'types/Namespace';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
-import KialiController from '../components/KialiController';
+import { KialiController } from '../components/KialiController';
 import { connect } from 'react-redux';
 import { KialiAppState } from 'store/Store';
 import { getKialiState } from '../utils/Reducer';
@@ -181,6 +181,7 @@ const IstioConfigListPage = (props: IstioConfigListProps) => {
   const fetchIstioConfigs = React.useCallback(async (): Promise<IstioConfigItem[]> => {
     const validate = props.istioAPIEnabled ? true : false;
     let getNamespacesData, getIstioConfigData;
+
     if (ns) {
       getIstioConfigData = promises.register('getIstioConfig', API.getIstioConfig(ns, [], validate, '', ''));
     } else {
@@ -188,6 +189,7 @@ const IstioConfigListPage = (props: IstioConfigListProps) => {
       getNamespacesData = promises.register('getNamespaces', API.getNamespaces());
       getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], [], validate, '', ''));
     }
+
     return Promise.all([getNamespacesData, getIstioConfigData]).then(response => {
       if (ns) {
         return toIstioItems(response[1].data as IstioConfigList);
@@ -218,6 +220,7 @@ const IstioConfigListPage = (props: IstioConfigListProps) => {
 
         return istioConfigObject;
       });
+
       setListItems(istioConfigObjects);
       setLoaded(true);
     });
@@ -246,5 +249,4 @@ const mapStateToProps = (state: KialiAppState) => ({
   istioAPIEnabled: getKialiState(state).statusState.istioEnvironment.istioAPIEnabled
 });
 
-const IstioConfigListContainer = connect(mapStateToProps)(IstioConfigListPage);
-export default IstioConfigListContainer;
+export default connect(mapStateToProps)(IstioConfigListPage);

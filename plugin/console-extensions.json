@@ -55,7 +55,7 @@
     "properties": {
       "exact": true,
       "path": ["/k8s/ns/:ns/istio", "/k8s/all-namespaces/istio"],
-      "component": { "$codeRef": "IstioConfigList" }
+      "component": { "$codeRef": "IstioConfigListPage" }
     }
   },
   {

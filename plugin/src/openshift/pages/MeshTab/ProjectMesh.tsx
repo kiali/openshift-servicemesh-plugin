@@ -4,7 +4,7 @@ import { useHistory } from 'react-router';
 import { ActionKeys } from 'actions/ActionKeys';
 import { store } from 'store/ConfigStore';
 import GraphPage from 'pages/Graph/GraphPage';
-import KialiController from '../../components/KialiController';
+import { KialiController } from '../../components/KialiController';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 
