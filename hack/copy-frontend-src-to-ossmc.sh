@@ -123,6 +123,7 @@ fi
 DATETIME_NOW="$(date --utc +'%F-%H-%M-%S')"
 DEST_BRANCH="kiali-frontend-update-${DATETIME_NOW}"
 COMMIT_MESSAGE=$(cat <<EOM
+Copy of Kiali frontend source code
 Kiali frontend source originated from:
 * git ref:    ${SOURCE_REF}
 * git commit: ${COMMIT_HASH}
@@ -169,6 +170,8 @@ git commit --quiet --signoff -m "${COMMIT_MESSAGE}"
 # of corrupting the remote repo.
 
 GIT_REMOTE="$(cd ${ABS_DEST_DIR} && for r in $(git remote 2>/dev/null); do if [ "$r" != "origin" ]; then echo ${r}; break; fi; done)"
+echo
+echo "=========="
 echo "Kiali frontend code has been copied to a new branch in the OSSMC git repo."
 echo "Create a PR based on that branch:"
 echo "cd ${ABS_DEST_DIR} && git push ${GIT_REMOTE:-<the git remote name>} ${DEST_BRANCH}"
