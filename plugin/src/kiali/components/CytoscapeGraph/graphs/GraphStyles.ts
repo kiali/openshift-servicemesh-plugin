@@ -22,7 +22,6 @@ import * as Cy from 'cytoscape';
 import { PFBadges } from 'components/Pf/PfBadges';
 import { config } from 'config/Config';
 import { kialiBadge, PFBadgeType } from '../../Pf/PfBadges';
-import { NestedCSSProperties } from 'typestyle/lib/types';
 
 export const HighlightClass = 'mousehighlight';
 export const HoveredClass = 'mousehover';
@@ -418,7 +417,7 @@ export class GraphStyles {
       newContent.forEach(c => {
         let contentPfBadge = '';
         if (!!c.pfBadge) {
-          const pfBadgeStyle = style(c.pfBadge.style as NestedCSSProperties);
+          const pfBadgeStyle = style(c.pfBadge.style);
           contentPfBadge = `<span class="pf-c-badge pf-m-unread ${kialiBadge} ${pfBadgeStyle}" style="${appBoxStyle}">${c.pfBadge.badge}</span>`;
         }
         const contentDiv = `<div class="${contentClasses} ${contentBox}" style="${appBoxStyle} ${contentStyle}">${contentPfBadge}${c.text}</div>`;
@@ -455,7 +454,7 @@ export class GraphStyles {
     newContent.forEach(c => {
       let contentPfBadge = '';
       if (!!c.pfBadge) {
-        const pfBadgeStyle = style(c.pfBadge.style as NestedCSSProperties);
+        const pfBadgeStyle = style(c.pfBadge.style);
         contentPfBadge = `<span class="pf-c-badge pf-m-unread ${kialiBadge} ${pfBadgeStyle}" style="${''}">${
           c.pfBadge.badge
         }</span>`;

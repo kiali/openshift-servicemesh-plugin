@@ -3,7 +3,7 @@ import { AppWorkload } from '../../types/App';
 import { PopoverPosition, Tooltip, TooltipPosition } from '@patternfly/react-core';
 import { style } from 'typestyle';
 import { Link } from 'react-router-dom';
-import MissingSidecar from '../MissingSidecar/MissingSidecar';
+import { MissingSidecar } from '../MissingSidecar/MissingSidecar';
 import * as H from '../../types/Health';
 import { HealthSubItem } from '../../types/Health';
 import { renderTrafficStatus } from '../Health/HealthDetails';
@@ -57,11 +57,11 @@ const infoStyle = style({
   verticalAlign: '-4px !important'
 });
 
-class DetailDescription extends React.Component<Props> {
+class DetailDescriptionComponent extends React.Component<Props> {
   private renderAppItem(namespace: string, appName: string) {
     let href = '/namespaces/' + namespace + '/applications/' + appName;
     if (this.props.cluster) {
-      href = href + '?cluster=' + this.props.cluster;
+      href = href + '?clusterName=' + this.props.cluster;
     }
     const link = isParentKiosk(this.props.kiosk) ? (
       <Link
@@ -88,7 +88,7 @@ class DetailDescription extends React.Component<Props> {
   private renderServiceItem(namespace: string, serviceName: string) {
     let href = '/namespaces/' + namespace + '/services/' + serviceName;
     if (this.props.cluster) {
-      href = href + '?cluster=' + this.props.cluster;
+      href = href + '?clusterName=' + this.props.cluster;
     }
     const link = isParentKiosk(this.props.kiosk) ? (
       <Link
@@ -143,7 +143,7 @@ class DetailDescription extends React.Component<Props> {
   private renderWorkloadItem(workload: AppWorkload) {
     let href = '/namespaces/' + this.props.namespace + '/workloads/' + workload.workloadName;
     if (this.props.cluster) {
-      href = href + '?cluster=' + this.props.cluster;
+      href = href + '?clusterName=' + this.props.cluster;
     }
     const link = isParentKiosk(this.props.kiosk) ? (
       <Link
@@ -197,7 +197,7 @@ class DetailDescription extends React.Component<Props> {
     if (workload) {
       let href = '/namespaces/' + this.props.namespace + '/workloads/' + workload.workloadName;
       if (this.props.cluster) {
-        href = href + '?cluster=' + this.props.cluster;
+        href = href + '?clusterName=' + this.props.cluster;
       }
       const link = isParentKiosk(this.props.kiosk) ? (
         <Link
@@ -360,5 +360,4 @@ const mapStateToProps = (state: KialiAppState): ReduxProps => ({
   kiosk: state.globalState.kiosk
 });
 
-const DetailDescriptionContainer = connect(mapStateToProps)(DetailDescription);
-export default DetailDescriptionContainer;
+export const DetailDescription = connect(mapStateToProps)(DetailDescriptionComponent);
