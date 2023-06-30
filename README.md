@@ -58,6 +58,10 @@ yarn install
 
 # If necessary, make sure you change the "API_PROXY" value in .env.development so it points to your Kiali Server URL
 # vi .env.development
+
+# Copy the plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment
+# This config file is empty today so is not really needed. This is here for future enhancement.
+# cp plugin-config.json dist
 ```
 
 ### Run The Plugin and OpenShift Console Locally

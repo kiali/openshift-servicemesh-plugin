@@ -104,6 +104,21 @@ data:
     }
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plugin-conf
+  namespace: ossmconsole
+  labels:
+    app: ossmconsole
+    app.kubernetes.io/component: ossmconsole
+    app.kubernetes.io/instance: ossmconsole
+    app.kubernetes.io/name: ossmconsole
+    app.kubernetes.io/part-of: ossmconsole
+data:
+  plugin-config.json: |
+    {}
+---
+apiVersion: v1
 kind: Service
 metadata:
   annotations:
