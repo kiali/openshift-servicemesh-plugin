@@ -95,7 +95,7 @@ function LockIcon(props) {
 const containerPadding = style({ padding: '20px' });
 const lockIconStyle = style({ marginLeft: '5px' });
 
-class TrafficListComponent extends FilterComponent.Component<
+class TrafficList extends FilterComponent.Component<
   TrafficListComponentProps,
   TrafficListComponentState,
   TrafficListItem
@@ -355,7 +355,7 @@ class TrafficListComponent extends FilterComponent.Component<
 
     const detail = `/namespaces/${item.node.namespace}/${this.nodeTypeToType(item.node.type, true)}/${
       item.node.name
-    }?cluster=${item.node.cluster}`;
+    }?clusterName=${item.node.cluster}`;
 
     const metricsDirection = item.direction === 'inbound' ? 'in_metrics' : 'out_metrics';
     let metrics = `${history.location.pathname}?tab=${metricsDirection}`;
@@ -420,5 +420,4 @@ const mapStateToProps = (state: KialiAppState) => {
   };
 };
 
-const TrafficListComponentContainer = connect(mapStateToProps)(TrafficListComponent);
-export default TrafficListComponentContainer;
+export const TrafficListComponent = connect(mapStateToProps)(TrafficList);
