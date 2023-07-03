@@ -105,7 +105,7 @@ Here's a tl;dr summary to get the operator and plugin installed in your cluster.
 
 1. First run `make cluster-status` to expose the internal image registry and get the podman command needed to log into the internal image registry.
 2. Run the podman login command that will log into the internal image registry.
-3. Build, push, and deploy the operator and plugin by running `make cluster-push operator-create install-crd install-cr`
+3. Build, push, and deploy the operator and plugin by running `make cluster-push operator-create install-cr`
 
 When you are finished and you want to uninstall the operator and plugin, run `make operator-delete`.
 
