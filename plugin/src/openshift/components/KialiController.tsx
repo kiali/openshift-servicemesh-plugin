@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import Namespace from 'types/Namespace';
+import { Namespace } from 'types/Namespace';
 import { MessageType } from 'types/MessageCenter';
 import { DurationInSeconds, IntervalInMilliseconds } from 'types/Common';
 import { JaegerInfo } from 'types/JaegerInfo';
@@ -15,7 +15,7 @@ import { config } from 'config';
 import { KialiAppState } from 'store/Store';
 import { KialiDispatch } from 'types/Redux';
 import { MessageCenterActions } from 'actions/MessageCenterActions';
-import LoginThunkActions from 'actions/LoginThunkActions';
+import { LoginThunkActions } from 'actions/LoginThunkActions';
 import { NamespaceActions } from 'actions/NamespaceAction';
 import { UserSettingsActions } from 'actions/UserSettingsActions';
 import { JaegerActions } from 'actions/JaegerActions';

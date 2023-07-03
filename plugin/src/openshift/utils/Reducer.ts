@@ -1,19 +1,20 @@
 import { combineReducers } from 'redux';
 import { RootStateOrAny } from 'react-redux';
 import { KialiAppState } from 'store/Store';
-import loginState from 'reducers/LoginState';
-import globalState from 'reducers/GlobalState';
-import graphDataState from 'reducers/GraphDataState';
-import HelpDropdownState from 'reducers/HelpDropdownState';
-import UserSettingsState from 'reducers/UserSettingsState';
-import JaegerStateReducer from 'reducers/JaegerState';
-import MeshTlsState from 'reducers/MeshTlsState';
-import IstioStatusState from 'reducers/IstioStatusState';
-import IstioCertsInfoState from 'reducers/IstioCertsInfoState';
-import MetricsStatsReducer from 'reducers/MetricsStatsState';
-import tour from 'reducers/TourState';
-import namespaces from 'reducers/NamespaceState';
-import Messages from 'reducers/MessageCenter';
+import { LoginStateReducer } from 'reducers/LoginState';
+import { GlobalStateReducer } from 'reducers/GlobalState';
+import { GraphDataStateReducer } from 'reducers/GraphDataState';
+import { HelpDropdownStateReducer } from 'reducers/HelpDropdownState';
+import { UserSettingsStateReducer } from 'reducers/UserSettingsState';
+import { JaegerStateReducer } from 'reducers/JaegerState';
+import { MeshTlsStateReducer } from 'reducers/MeshTlsState';
+import { IstioStatusStateReducer } from 'reducers/IstioStatusState';
+import { IstioCertsInfoStateReducer } from 'reducers/IstioCertsInfoState';
+import { MetricsStatsStateReducer } from 'reducers/MetricsStatsState';
+import { TourStateReducer } from 'reducers/TourState';
+import { NamespaceStateReducer } from 'reducers/NamespaceState';
+import { MessageCenterReducer } from 'reducers/MessageCenter';
+import { KialiAppAction } from 'actions/KialiAppAction';
 
 /**
  * If no redux provider is set in the OSSMC page (like IstioConfigListPage),
@@ -24,18 +25,18 @@ export const getKialiState = (state: RootStateOrAny): KialiAppState => {
   return state.plugins?.kiali ?? state;
 };
 
-export default combineReducers({
-  authentication: loginState,
-  globalState: globalState,
-  graph: graphDataState,
-  messageCenter: Messages,
-  namespaces: namespaces,
-  statusState: HelpDropdownState,
-  userSettings: UserSettingsState,
+export default combineReducers<KialiAppState, KialiAppAction>({
+  authentication: LoginStateReducer,
+  globalState: GlobalStateReducer,
+  graph: GraphDataStateReducer,
+  messageCenter: MessageCenterReducer,
+  namespaces: NamespaceStateReducer,
+  statusState: HelpDropdownStateReducer,
+  userSettings: UserSettingsStateReducer,
   jaegerState: JaegerStateReducer,
-  meshTLSStatus: MeshTlsState,
-  istioStatus: IstioStatusState,
-  istioCertsInfo: IstioCertsInfoState,
-  tourState: tour,
-  metricsStats: MetricsStatsReducer
+  meshTLSStatus: MeshTlsStateReducer,
+  istioStatus: IstioStatusStateReducer,
+  istioCertsInfo: IstioCertsInfoStateReducer,
+  tourState: TourStateReducer,
+  metricsStats: MetricsStatsStateReducer
 });

@@ -3,7 +3,7 @@ import { Provider } from 'react-redux';
 import { useHistory } from 'react-router';
 import { store } from 'store/ConfigStore';
 import { WorkloadId } from 'types/Workload';
-import WorkloadDetailsPage from 'pages/WorkloadDetails/WorkloadDetailsPage';
+import { WorkloadDetailsPage } from 'pages/WorkloadDetails/WorkloadDetailsPage';
 import { KialiController } from '../../components/KialiController';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';

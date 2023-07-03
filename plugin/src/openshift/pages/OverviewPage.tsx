@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Provider } from 'react-redux';
 import { store } from 'store/ConfigStore';
-import OverviewPage from 'pages/Overview/OverviewPage';
+import { OverviewPage } from 'pages/Overview/OverviewPage';
 import { KialiController } from '../components/KialiController';
 import { useInitKialiListeners } from '../utils/KialiIntegration';
 import { setHistory } from 'app/History';

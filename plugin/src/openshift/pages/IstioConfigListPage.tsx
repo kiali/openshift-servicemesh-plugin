@@ -22,7 +22,7 @@ import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjec
 import { ValidationObjectSummary } from 'components/Validations/ValidationObjectSummary';
 import { IstioConfigItem, IstioConfigList, toIstioItems } from 'types/IstioConfigList';
 import * as API from 'services/Api';
-import Namespace from 'types/Namespace';
+import { Namespace } from 'types/Namespace';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
 import { KialiController } from '../components/KialiController';
