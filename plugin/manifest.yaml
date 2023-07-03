@@ -116,9 +116,7 @@ metadata:
     app.kubernetes.io/part-of: ossmconsole
 data:
   plugin-config.json: |
-    {
-      "kialiUrl": "https://kiali-istio-system.apps-crc.testing"
-    }
+    {}
 ---
 apiVersion: v1
 kind: Service

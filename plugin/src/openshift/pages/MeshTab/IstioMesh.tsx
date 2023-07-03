@@ -1,35 +1,52 @@
 import * as React from 'react';
-import userProps, {getKialiUrl, initKialiListeners, kioskUrl} from '../../utils/KialiIntegration';
+import { Provider } from 'react-redux';
+import { useHistory } from 'react-router';
+import { store } from 'store/ConfigStore';
+import { IstioConfigId } from 'types/IstioConfigDetails';
+import { IstioConfigDetailsPage } from 'pages/IstioConfigDetails/IstioConfigDetailsPage';
+import { KialiController } from '../../components/KialiController';
+import { useInitKialiListeners } from '../../utils/KialiIntegration';
+import { setHistory } from 'app/History';
 
-type IstioMeshProps = {
-    configType: string;
-    namespace: string;
-    idObject: string;
-}
+const configTypes = {
+  DestinationRule: 'DestinationRules',
+  EnvoyFilter: 'EnvoyFilters',
+  Gateway: 'Gateways',
+  VirtualService: 'VirtualServices',
+  ServiceEntry: 'ServiceEntries',
+  Sidecar: 'Sidecars',
+  WorkloadEntry: 'WorkloadEntries',
+  WorkloadGroup: 'WorkloadGroups',
+  AuthorizationPolicy: 'AuthorizationPolicies',
+  PeerAuthentication: 'PeerAuthentications',
+  RequestAuthentication: 'RequestAuthentications'
+};
 
-export const IstioMesh = (props: IstioMeshProps) => {
-    const [kialiUrl, setKialiUrl] = React.useState({
-        baseUrl: '',
-        token: '',
-    });
+const IstioConfigMeshTab = () => {
+  useInitKialiListeners();
 
-    initKialiListeners();
+  const history = useHistory();
+  setHistory(history.location.pathname);
 
-    React.useEffect(() => {
-        getKialiUrl()
-            .then(ku => setKialiUrl(ku))
-            .catch(e => console.error(e));
-    }, []);
+  const path = history.location.pathname.substring(8);
+  const items = path.split('/');
+  const namespace = items[0];
+  const objectType = configTypes[items[1].substring(items[1].lastIndexOf('~') + 1)].toLowerCase();
+  const object = items[2];
 
-    const iFrameUrl = kialiUrl.baseUrl + '/console/namespaces/' + props.namespace + '/istio/' + props.configType + '/' + props.idObject + '?' + kioskUrl() + '&'
-    + kialiUrl.token + '&duration=' + userProps.duration + '&timeRange=' + userProps.timeRange;
-    return (
-        <iframe
-                src={iFrameUrl}
-                style={{overflow: 'hidden', height: '100%', width: '100%' }}
-                height="100%"
-                width="100%"
-            />
-    )
+  const istioConfigId: IstioConfigId = {
+    namespace,
+    objectType,
+    object
+  };
 
-}
+  return (
+    <Provider store={store}>
+      <KialiController>
+        <IstioConfigDetailsPage istioConfigId={istioConfigId}></IstioConfigDetailsPage>
+      </KialiController>
+    </Provider>
+  );
+};
+
+export default IstioConfigMeshTab;

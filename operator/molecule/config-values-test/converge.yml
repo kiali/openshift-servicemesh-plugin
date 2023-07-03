@@ -27,7 +27,3 @@
   - name: Confirm the Kiali Service Port is as expected
     assert:
       that: "{{ ossmconsole_consoleplugin.spec.proxy[0].service.port == (current_ossmconsole_cr.status.kiali.servicePort | int) }}"
-
-  - name: Confirm the Kiali URL is as expected
-    assert:
-      that: "{{ ossmconsole_configmap.kialiUrl == current_ossmconsole_cr.status.kiali.url }}"

@@ -9,11 +9,12 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "yarn clean && sh -ac '. ./.env.production; yarn ts-node node_modules/.bin/webpack'",
+    "build-css": "sass src/ --style compressed --load-path $npm_package_sassIncludes_src",
     "build:dev": "yarn clean && sh -ac '. ./.env.development; yarn ts-node node_modules/.bin/webpack'",
     "start": "sh -ac '. ./.env.development; yarn ts-node node_modules/.bin/webpack serve'",
     "start-console": "./start-console.sh",
     "i18n": "i18next \"src/**/*.{js,jsx,ts,tsx}\" [-oc] -c i18next-parser.config.js",
-    "ts-node": "ts-node -O '{\"module\":\"commonjs\"}'",
+    "ts-node": "yarn build-css && ts-node -O '{\"module\":\"commonjs\"}'",
     "lint": "eslint --ext js,ts,tsx src",
     "lint:precommit": "if git diff --name-only HEAD | grep -E '\\.tsx?$'; then npm run lint; else true; fi",
     "lint:fix": "eslint --ext js,ts,tsx --fix src",
@@ -22,9 +23,7 @@
     "pre-commit": "yarn run pretty-quick --staged --pattern \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\" && npm run lint:precommit"
   },
   "dependencies": {
-    "@kiali/core-ui": "0.15.0",
-    "@kiali/types": "0.15.0",
-    "@openshift-console/dynamic-plugin-sdk": "0.0.13",
+    "@openshift-console/dynamic-plugin-sdk": "^0.0.19",
     "@patternfly/patternfly": "4.179.1",
     "@patternfly/react-charts": "6.51.5",
     "@patternfly/react-core": "4.198.5",
@@ -75,9 +74,7 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@badeball/cypress-cucumber-preprocessor": "^12.2.0",
     "@cypress/browserify-preprocessor": "3.0.2",
-    "@openshift-console/dynamic-plugin-sdk-internal": "0.0.11",
-    "@openshift-console/dynamic-plugin-sdk-webpack": "0.0.8",
-    "@openshift-console/plugin-shared": "^0.0.1",
+    "@openshift-console/dynamic-plugin-sdk-webpack": "^0.0.10",
     "@types/cytoscape": "3.14.0",
     "@types/enzyme": "3.10.5",
     "@types/jest": "23.3.10",
@@ -102,11 +99,7 @@
     "enzyme": "3.11.0",
     "enzyme-to-json": "3.4.4",
     "eslint": "^8.1.0",
-    "eslint-config-prettier": "^8.3.0",
     "eslint-config-react-app": "^7.0.1",
-    "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "^7.26.1",
-    "eslint-plugin-react-hooks": "^4.6.0",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
     "husky": "^8.0.3",
     "jest-canvas-mock": "2.2.0",
@@ -159,16 +152,23 @@
     "victory-voronoi-container": "36.3.0",
     "victory-zoom-container": "36.3.0"
   },
+  "sassIncludes": {
+    "src": "src"
+  },
   "consolePlugin": {
     "name": "ossmconsole",
     "version": "0.1.0",
     "displayName": "OpenShift Service Mesh Console",
     "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {
-      "OverviewPage": "./openshift/pages/Overview/OverviewPage",
+      "ReduxReducer": "./openshift/utils/Reducer.ts",
+      "OverviewPage": "./openshift/pages/OverviewPage",
       "GraphPage": "./openshift/pages/GraphPage",
-      "IstioConfigList": "./openshift/pages/IstioConfigList",
-      "MeshTab": "./openshift/pages/MeshTab/MeshTab"
+      "IstioConfigListPage": "./openshift/pages/IstioConfigListPage",
+      "IstioMeshTab": "./openshift/pages/MeshTab/IstioMesh",
+      "ServiceMeshTab": "./openshift/pages/MeshTab/ServiceMesh",
+      "WorkloadMeshTab": "./openshift/pages/MeshTab/WorkloadMesh",
+      "ProjectMeshTab": "./openshift/pages/MeshTab/ProjectMesh"
     },
     "dependencies": {
       "@console/pluginAPI": "*"

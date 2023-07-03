@@ -94,6 +94,3 @@ spec:
                   servicePort:
                     description: "The internal port used by the Kiali service for the API. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route."
                     type: integer
-                  url:
-                    description: "The main Kiali endpoint URL that the OSSM Console will use to communicate with Kiali. If empty, an attempt will be made to auto-discover it. If Kiali is installed in the same namespace as the CR, it will take precedence over any other Kiali installation. Otherwise, the first Kiali route found in the cluster will be used."
-                    type: string
