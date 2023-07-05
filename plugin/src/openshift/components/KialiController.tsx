@@ -179,6 +179,11 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         }
       }
 
+      // Set Patternfly graph as default option
+      if (uiDefaults.graph) {
+        uiDefaults.graph.impl = 'pf';
+      }
+
       // Graph Traffic
       const grpcRate = toGrpcRate(uiDefaults.graph.traffic.grpc);
       const httpRate = toHttpRate(uiDefaults.graph.traffic.http);

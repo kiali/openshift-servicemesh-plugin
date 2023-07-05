@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Provider } from 'react-redux';
 import { store } from 'store/ConfigStore';
-import { GraphPage } from 'pages/Graph/GraphPage';
+import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
 import { KialiController } from '../components/KialiController';
 import { useInitKialiListeners } from '../utils/KialiIntegration';
 import { useHistory } from 'react-router';
@@ -16,7 +16,7 @@ const GraphPageOSSMC = () => {
   return (
     <Provider store={store}>
       <KialiController>
-        <GraphPage></GraphPage>
+        <GraphPagePF></GraphPagePF>
       </KialiController>
     </Provider>
   );
