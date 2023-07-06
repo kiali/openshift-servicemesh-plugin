@@ -76,6 +76,15 @@ jobs:
       with:
         ref: ${{ inputs.build_branch }}
     
+    - name: Validate OLM metadata
+      run: make validate
+
+    - name: Validate CR
+      run: |
+        kind create cluster
+        make -e CLIENT_EXE=kubectl validate-cr
+        kind delete cluster
+
     - name: Build image
       run: |
         make -e CONTAINER_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile) build-operator

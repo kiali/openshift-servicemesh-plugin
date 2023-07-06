@@ -12,7 +12,7 @@ metadata:
     olm.skipRange: '>=0.1.0 <${OSSMCONSOLE_OPERATOR_VERSION}'
     categories: Monitoring,Logging & Tracing
     certified: "false"
-    containerImage: registry-proxy.engineering.redhat.com/rh-osbs/openshift-service-mesh-ossmconsole-rhel8-operator:${OSSMCONSOLE_OPERATOR_VERSION}
+    containerImage: ${OSSMCONSOLE_OPERATOR_REGISTRY}
     capabilities: Basic Install
     support: Red Hat
     description: "Adds Kiali observability, configuration and validation into the OpenShift Console"
@@ -136,7 +136,7 @@ spec:
               serviceAccountName: ossmconsole-operator
               containers:
               - name: operator
-                image: registry-proxy.engineering.redhat.com/rh-osbs/openshift-service-mesh-ossmconsole-rhel8-operator${OSSMCONSOLE_OPERATOR_TAG}
+                image: ${OSSMCONSOLE_OPERATOR_REGISTRY}
                 imagePullPolicy: IfNotPresent
                 args:
                 - "--zap-log-level=info"
@@ -175,7 +175,7 @@ spec:
                 - name: ANSIBLE_CONFIG
                   value: "/etc/ansible/ansible.cfg"
                 - name: RELATED_IMAGE_ossmconsole_default
-                  value: "registry-proxy.engineering.redhat.com/rh-osbs/openshift-service-mesh-ossmconsole-rhel8${OSSMCONSOLE_0_1_TAG}"
+                  value: "${OSSMCONSOLE_0_1}"
                 ports:
                 - name: http-metrics
                   containerPort: 8080
