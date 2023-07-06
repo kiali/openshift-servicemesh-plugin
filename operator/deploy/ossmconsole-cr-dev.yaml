@@ -16,3 +16,4 @@ spec:
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0
+    graph: pf

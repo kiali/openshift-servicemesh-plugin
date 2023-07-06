@@ -7,4 +7,5 @@ metadata:
 data:
   plugin-config.json: |
     {
+      "graph": "pf"
     }

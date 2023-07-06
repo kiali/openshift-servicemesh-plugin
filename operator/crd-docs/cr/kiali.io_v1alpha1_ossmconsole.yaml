@@ -5,12 +5,12 @@ metadata:
   annotations:
     ansible.sdk.operatorframework.io/verbosity: "1"
 spec:
-  version: "default"
+  version: default
 
   deployment:
     imageDigest: ""
     imageName: ""
-    imagePullPolicy: "IfNotPresent"
+    imagePullPolicy: IfNotPresent
     # default: image_pull_secrets is an empty list
     imagePullSecrets: ["image.pull.secret"]
     imageVersion: ""
@@ -20,3 +20,4 @@ spec:
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0
+    graph: pf

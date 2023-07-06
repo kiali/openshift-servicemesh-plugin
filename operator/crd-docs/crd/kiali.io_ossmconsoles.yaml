@@ -94,3 +94,6 @@ spec:
                   servicePort:
                     description: "The internal port used by the Kiali service for the API. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route."
                     type: integer
+                  graph:
+                    description: "The graph implementation used by OSSMC. Possible values are 'cy' (Cytoscape) or 'pf' (Patternfly). By default the patternfly graph is used."
+                    type: string

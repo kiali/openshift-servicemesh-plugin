@@ -60,8 +60,10 @@ yarn install
 # vi .env.development
 
 # Copy the plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment
-# This config file is empty today so is not really needed. This is here for future enhancement.
-# cp plugin-config.json dist
+cp plugin-config.json dist
+
+# If necessary, change the settings in the config file
+# vi dist/plugin-config.json
 ```
 
 ### Run The Plugin and OpenShift Console Locally
