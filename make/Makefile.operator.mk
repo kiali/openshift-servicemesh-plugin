@@ -173,6 +173,13 @@ operator-delete: uninstall-cr undeploy-subscription undeploy-catalog-source .del
 		${OC} delete --ignore-not-found=true csv -n $$(echo -n $${csv} | cut -d: -f1) $$(echo -n $${csv} | cut -d: -f2) ;\
 	done
 
+## validate: Checks the latest version of the OLM bundle metadata for correctness.
+validate: .ensure-operator-sdk-exists
+	@printf "==========\nValidating ossmconsole-ossm metadata\n==========\n"
+	@mkdir -p ${OPERATOR_OUTDIR}/ossmconsole-ossm && rm -rf ${OPERATOR_OUTDIR}/ossmconsole-ossm/* && cp -R ./operator/manifests/ossmconsole-ossm ${OPERATOR_OUTDIR} && cat ./operator/manifests/ossmconsole-ossm/manifests/ossmconsole.clusterserviceversion.yaml | OSSMCONSOLE_OPERATOR_VERSION="2.0.0" OSSMCONSOLE_OLD_OPERATOR_VERSION="1.0.0" OSSMCONSOLE_OPERATOR_REGISTRY="registry-proxy.engineering.redhat.com/rh-osbs/openshift-service-mesh-ossmconsole-rhel8-operator:2.0.0" OSSMCONSOLE_0_1="registry-proxy.engineering.redhat.com/rh-osbs/openshift-service-mesh-ossmconsole-rhel8-operator:0.1.0" CREATED_AT="2021-01-01T00:00:00Z" envsubst > ${OPERATOR_OUTDIR}/ossmconsole-ossm/manifests/ossmconsole.clusterserviceversion.yaml && ${OP_SDK} bundle validate --verbose ${OPERATOR_OUTDIR}/ossmconsole-ossm
+	@printf "==========\nValidating the latest version of ossmconsole-community metadata\n==========\n"
+	@for d in $$(ls -1d operator/manifests/ossmconsole-community/* | sort -V | grep -v ci.yaml | tail -n 1); do ${OP_SDK} bundle --verbose validate $$d; done
+
 ## validate-cr: Ensures the example CR is valid according to the CRD schema
 validate-cr:
 	${OPERATOR_DIR}/crd-docs/bin/validate-ossmconsole-cr.sh --cr-file ${OPERATOR_DIR}/crd-docs/cr/kiali.io_v1alpha1_ossmconsole.yaml
