@@ -18,6 +18,7 @@ interface IstioAnnotations {
 }
 
 interface GraphFindOption {
+  autoSelect: boolean;
   description: string;
   expression: string;
 }
@@ -37,6 +38,7 @@ interface GraphSettings {
 interface GraphUIDefaults {
   findOptions: GraphFindOption[];
   hideOptions: GraphFindOption[];
+  impl: 'both' | 'cy' | 'pf';
   settings: GraphSettings;
   traffic: GraphTraffic;
 }
