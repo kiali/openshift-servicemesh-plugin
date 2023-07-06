@@ -19,7 +19,7 @@ ossmconsole_defaults:
     namespace: ""
 
   kiali:
+    graph: pf
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0
-    graph: pf

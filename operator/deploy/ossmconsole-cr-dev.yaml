@@ -13,7 +13,7 @@ spec:
     imagePullSecrets:
     - ${PULL_SECRET_NAME}
   kiali:
+    graph: pf
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0
-    graph: pf

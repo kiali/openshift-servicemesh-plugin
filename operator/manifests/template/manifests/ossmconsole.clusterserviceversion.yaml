@@ -27,10 +27,10 @@ metadata:
           },
           "spec": {
             "kiali": {
+              "graph": "pf",
               "serviceName": "",
               "serviceNamespace": "",
-              "servicePort": 0,
-              "graph": "pf"
+              "servicePort": 0
             }
           }
         }
@@ -91,6 +91,11 @@ spec:
       - kind: ConfigMap
         version: v1
       specDescriptors:
+      - displayName: Kiali Graph Implementation
+        description: "The graph implementation used by OSSMC. Possible values are 'cy' (Cytoscape) or 'pf' (Patternfly). By default the patternfly graph is used."
+        path: kiali.graph
+        x-descriptors:
+        - 'urn:alm:descriptor:com.tectonic.ui:text'
       - displayName: Kiali Service Name
         description: "The internal Kiali service that the OS Console will use to proxy API calls. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route."
         path: kiali.serviceName
@@ -104,11 +109,6 @@ spec:
       - displayName: Kiali Service Port
         description: "The internal port used by the Kiali service for the API. If empty, an attempt will be made to auto-discover it from the Kiali OpenShift Route."
         path: kiali.servicePort
-        x-descriptors:
-        - 'urn:alm:descriptor:com.tectonic.ui:text'
-      - displayName: Kiali Graph Implementation
-        description: "The graph implementation used by OSSMC. Possible values are 'cy' (Cytoscape) or 'pf' (Patternfly). By default the patternfly graph is used."
-        path: kiali.graph
         x-descriptors:
         - 'urn:alm:descriptor:com.tectonic.ui:text'
   apiservicedefinitions: {}

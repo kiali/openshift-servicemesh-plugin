@@ -9,10 +9,10 @@ all:
       imageVersion: dev
 
     kiali:
+      graph: pf
       serviceName: ""
       serviceNamespace: ""
       servicePort: 0
-      graph: pf
 
     # The Operator SDK creates a "ansible_operator_meta" variable
     # that contains the name and namespace of the CR.

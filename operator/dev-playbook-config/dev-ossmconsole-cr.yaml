@@ -22,7 +22,7 @@ spec:
     imageVersion: dev
 
   kiali:
+    graph: pf
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0
-    graph: pf
