@@ -11,18 +11,18 @@ metadata:
   annotations:
     ansible.sdk.operatorframework.io/verbosity: "1"
   labels:
-    kiali.dev: run-operator-playbook
+    kiali.dev: "run-operator-playbook"
 spec:
 
   # Make sure the values below also match those in dev-hosts.yaml
 
-  version: default
+  version: "default"
 
   deployment:
-    imageVersion: dev
+    imageVersion: "dev"
 
   kiali:
-    graph: pf
+    graph: "pf"
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0

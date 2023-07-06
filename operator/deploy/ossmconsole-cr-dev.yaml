@@ -5,15 +5,15 @@ metadata:
   annotations:
     ansible.sdk.operatorframework.io/verbosity: "1"
 spec:
-  version: default
+  version: "default"
   deployment:
     imageName: ${DEPLOYMENT_IMAGE_NAME}
     imageVersion: ${DEPLOYMENT_IMAGE_VERSION}
-    imagePullPolicy: Always
+    imagePullPolicy: "Always"
     imagePullSecrets:
     - ${PULL_SECRET_NAME}
   kiali:
-    graph: pf
+    graph: "pf"
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0
