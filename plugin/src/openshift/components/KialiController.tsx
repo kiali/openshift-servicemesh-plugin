@@ -183,7 +183,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
       // Set graph implementation from plugin config
       if (uiDefaults.graph) {
         getPluginConfig()
-          .then(config => (uiDefaults.graph.impl = config.graph))
+          .then(config => (uiDefaults.graph.impl = config.graph.impl))
           .catch(e => console.error(e));
       }
 

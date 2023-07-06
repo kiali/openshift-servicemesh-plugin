@@ -12,7 +12,9 @@ const GraphPageOSSMC = () => {
   useInitKialiListeners();
 
   const [pluginConfig, setPluginConfig] = React.useState({
-    graph: 'pf'
+    graph: {
+      impl: 'pf'
+    }
   });
 
   React.useEffect(() => {
@@ -27,8 +29,8 @@ const GraphPageOSSMC = () => {
   return (
     <Provider store={store}>
       <KialiController>
-        {pluginConfig.graph === 'cy' && <GraphPage></GraphPage>}
-        {pluginConfig.graph === 'pf' && <GraphPagePF></GraphPagePF>}
+        {pluginConfig.graph.impl === 'cy' && <GraphPage></GraphPage>}
+        {pluginConfig.graph.impl === 'pf' && <GraphPagePF></GraphPagePF>}
       </KialiController>
     </Provider>
   );

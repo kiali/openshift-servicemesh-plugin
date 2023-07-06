@@ -30,7 +30,7 @@
 
   - name: Confirm the Kiali Graph Impl is the expected default in the ConfigMap
     assert:
-      that: "{{ ossmconsole_configmap.graph == 'pf' }}"
+      that: "{{ ossmconsole_configmap.graph.impl == 'pf' }}"
 
   # This test will change some config settings to make sure things work like we expect.
   # We alter the current CR with new config and deploy that new CR.
@@ -41,7 +41,7 @@
     vars:
       new_graph_impl: "cy"
     set_fact:
-      current_ossmconsole_cr: "{{ current_ossmconsole_cr | combine({'spec': {'kiali': {'graph': new_graph_impl }}}, recursive=True) }}"
+      current_ossmconsole_cr: "{{ current_ossmconsole_cr | combine({'spec': {'kiali': {'graph': {'impl': new_graph_impl }}}}, recursive=True) }}"
 
   # Deploy the new CR and wait for the CR change to take effect
 
@@ -57,4 +57,4 @@
 
   - name: Confirm the Kiali Graph Impl is now changed to use the "cy" impl
     assert:
-      that: "{{ ossmconsole_configmap.graph == 'cy' }}"
+      that: "{{ ossmconsole_configmap.graph.impl == 'cy' }}"

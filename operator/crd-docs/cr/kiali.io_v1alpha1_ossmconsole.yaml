@@ -17,7 +17,8 @@ spec:
     namespace: ""
 
   kiali:
-    graph: "pf"
+    graph:
+      impl: "pf"
     serviceName: ""
     serviceNamespace: ""
     servicePort: 0

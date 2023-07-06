@@ -11,7 +11,9 @@ export const properties = {
 
 // This PluginConfig type should be mapped with the 'plugin-config.json' file
 export type PluginConfig = {
-  graph: 'cy' | 'pf';
+  graph: {
+    impl: 'cy' | 'pf';
+  };
 };
 
 // Get OSSMC plugin config from 'plugin-config.json' resource
