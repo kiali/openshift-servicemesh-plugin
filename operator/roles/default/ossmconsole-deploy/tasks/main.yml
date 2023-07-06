@@ -64,9 +64,9 @@
 - name: Print some debug information
   vars:
     msg: |
-        OSSM Console Variables:
-        --------------------------------
-        {{ ossmconsole_vars | to_nice_yaml }}
+      OSSM Console Variables:
+      --------------------------------
+      {{ ossmconsole_vars | to_nice_yaml }}
   debug:
     msg: "{{ msg.split('\n') }}"
 
@@ -133,8 +133,8 @@
 - fail:
     msg: "Failed to auto-discover the Kiali Service Name. Make sure Kiali is installed. You can specify 'kiali.serviceName' in the CR if there is a Kiali Service the plugin can use but cannot be auto-discovered by this operator."
   when:
-    - ossmconsole_vars.kiali.serviceName == ""
-    - kiali_service_name is not defined or kiali_service_name == ""
+  - ossmconsole_vars.kiali.serviceName == ""
+  - kiali_service_name is not defined or kiali_service_name == ""
 
 - fail:
     msg: "Failed to auto-discover the Kiali Service Namespace. Make sure Kiali is installed. You can specify 'kiali.serviceNamespace' in the CR if there is a Kiali Service the plugin can use but cannot be auto-discovered by this operator."

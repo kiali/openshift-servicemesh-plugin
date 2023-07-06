@@ -1,5 +1,29 @@
+import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
 import { useHistory } from 'react-router';
 import { refForKialiIstio } from './IstioResources';
+
+export const properties = {
+  // This API is hardcoded but:
+  // 'ossmconsole' is the name of the plugin, it can be considered "fixed" in the project
+  // 'plugin-config.json' is a resource mounted from a ConfigMap, so, the UI app can read config from that file
+  pluginConfig: '/api/plugins/ossmconsole/plugin-config.json'
+};
+
+// This PluginConfig type should be mapped with the 'plugin-config.json' file
+export type PluginConfig = {
+  graph: {
+    impl: 'cy' | 'pf';
+  };
+};
+
+// Get OSSMC plugin config from 'plugin-config.json' resource
+export const getPluginConfig = async function (): Promise<PluginConfig> {
+  return await new Promise((resolve, reject) => {
+    consoleFetchJSON(properties.pluginConfig)
+      .then(config => resolve(config))
+      .catch(error => reject(error));
+  });
+};
 
 // Global scope variable to hold the kiali listener
 let kialiListener: (Event: MessageEvent) => void;

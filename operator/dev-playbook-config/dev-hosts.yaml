@@ -3,12 +3,14 @@ all:
 
     # Mimic OSSMConsole CR settings found in dev-ossmconsole-cr.yaml
 
-    version: default
+    version: "default"
 
     deployment:
-      imageVersion: dev
+      imageVersion: "dev"
 
     kiali:
+      graph:
+        impl: "pf"
       serviceName: ""
       serviceNamespace: ""
       servicePort: 0

@@ -26,6 +26,7 @@ import { GlobalActions } from 'actions/GlobalActions';
 import { getKialiState } from '../utils/Reducer';
 
 import 'styles/index.scss';
+import { getPluginConfig } from 'openshift/utils/KialiIntegration';
 
 declare global {
   interface Date {
@@ -177,6 +178,13 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           this.props.setActiveNamespaces(activeNamespaces);
           console.debug(`Setting UI Default: namespaces ${JSON.stringify(activeNamespaces.map(ns => ns.name))}`);
         }
+      }
+
+      // Set graph implementation from plugin config
+      if (uiDefaults.graph) {
+        getPluginConfig()
+          .then(config => (uiDefaults.graph.impl = config.graph.impl))
+          .catch(e => console.error(e));
       }
 
       // Graph Traffic

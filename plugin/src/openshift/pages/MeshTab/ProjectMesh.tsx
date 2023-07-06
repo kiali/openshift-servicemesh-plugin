@@ -4,12 +4,25 @@ import { useHistory } from 'react-router';
 import { ActionKeys } from 'actions/ActionKeys';
 import { store } from 'store/ConfigStore';
 import { GraphPage } from 'pages/Graph/GraphPage';
+import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
 import { KialiController } from '../../components/KialiController';
-import { useInitKialiListeners } from '../../utils/KialiIntegration';
+import { getPluginConfig, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 
 const ProjectMeshTab = () => {
   useInitKialiListeners();
+
+  const [pluginConfig, setPluginConfig] = React.useState({
+    graph: {
+      impl: 'pf'
+    }
+  });
+
+  React.useEffect(() => {
+    getPluginConfig()
+      .then(config => setPluginConfig(config))
+      .catch(e => console.error(e));
+  }, []);
 
   const history = useHistory();
   setHistory(history.location.pathname);
@@ -24,7 +37,8 @@ const ProjectMeshTab = () => {
   return (
     <Provider store={store}>
       <KialiController>
-        <GraphPage></GraphPage>
+        {pluginConfig.graph.impl === 'cy' && <GraphPage></GraphPage>}
+        {pluginConfig.graph.impl === 'pf' && <GraphPagePF></GraphPagePF>}
       </KialiController>
     </Provider>
   );

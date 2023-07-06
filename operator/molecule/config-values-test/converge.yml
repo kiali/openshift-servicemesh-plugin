@@ -27,3 +27,34 @@
   - name: Confirm the Kiali Service Port is as expected
     assert:
       that: "{{ ossmconsole_consoleplugin.spec.proxy[0].service.port == (current_ossmconsole_cr.status.kiali.servicePort | int) }}"
+
+  - name: Confirm the Kiali Graph Impl is the expected default in the ConfigMap
+    assert:
+      that: "{{ ossmconsole_configmap.graph.impl == 'pf' }}"
+
+  # This test will change some config settings to make sure things work like we expect.
+  # We alter the current CR with new config and deploy that new CR.
+
+  # Change the existing CR to get a new config
+
+  - name: Set to use cy graph impl
+    vars:
+      new_graph_impl: "cy"
+    set_fact:
+      current_ossmconsole_cr: "{{ current_ossmconsole_cr | combine({'spec': {'kiali': {'graph': {'impl': new_graph_impl }}}}, recursive=True) }}"
+
+  # Deploy the new CR and wait for the CR change to take effect
+
+  - name: The new CR to be applied and tested
+    debug:
+      msg: "{{ current_ossmconsole_cr }}"
+
+  - import_tasks: ../common/set_ossmconsole_cr.yml
+    vars:
+      new_ossmconsole_cr: "{{ current_ossmconsole_cr }}"
+  - import_tasks: ../common/wait_for_ossmconsole_cr_changes.yml
+  - import_tasks: ../common/tasks.yml
+
+  - name: Confirm the Kiali Graph Impl is now changed to use the "cy" impl
+    assert:
+      that: "{{ ossmconsole_configmap.graph.impl == 'cy' }}"

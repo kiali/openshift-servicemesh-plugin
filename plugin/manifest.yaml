@@ -30,37 +30,37 @@ spec:
         app.kubernetes.io/part-of: ossmconsole
     spec:
       containers:
-        - name: ossmconsole
-          image: quay.io/kiali/ossmconsole:latest
-          ports:
-            - containerPort: 9443
-              protocol: TCP
-          imagePullPolicy: Always
-          volumeMounts:
-            - name: plugin-serving-cert
-              readOnly: true
-              mountPath: /var/serving-cert
-            - name: nginx-conf
-              readOnly: true
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
-            - name: plugin-conf
-              readOnly: true
-              mountPath: /usr/share/nginx/html/plugin-config.json
-              subPath: plugin-config.json
-      volumes:
+      - name: ossmconsole
+        image: quay.io/kiali/ossmconsole:latest
+        ports:
+        - containerPort: 9443
+          protocol: TCP
+        imagePullPolicy: Always
+        volumeMounts:
         - name: plugin-serving-cert
-          secret:
-            secretName: plugin-serving-cert
-            defaultMode: 420
+          readOnly: true
+          mountPath: /var/serving-cert
         - name: nginx-conf
-          configMap:
-            name: nginx-conf
-            defaultMode: 420
+          readOnly: true
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
         - name: plugin-conf
-          configMap:
-            name: plugin-conf
-            defaultMode: 420
+          readOnly: true
+          mountPath: /usr/share/nginx/html/plugin-config.json
+          subPath: plugin-config.json
+      volumes:
+      - name: plugin-serving-cert
+        secret:
+          secretName: plugin-serving-cert
+          defaultMode: 420
+      - name: nginx-conf
+        configMap:
+          name: nginx-conf
+          defaultMode: 420
+      - name: plugin-conf
+        configMap:
+          name: plugin-conf
+          defaultMode: 420
       restartPolicy: Always
       dnsPolicy: ClusterFirst
   strategy:
@@ -116,7 +116,9 @@ metadata:
     app.kubernetes.io/part-of: ossmconsole
 data:
   plugin-config.json: |
-    {}
+    {
+      "graph": "pf"
+    }
 ---
 apiVersion: v1
 kind: Service
@@ -133,10 +135,10 @@ metadata:
     app.kubernetes.io/part-of: ossmconsole
 spec:
   ports:
-    - name: 9443-tcp
-      protocol: TCP
-      port: 9443
-      targetPort: 9443
+  - name: 9443-tcp
+    protocol: TCP
+    port: 9443
+    targetPort: 9443
   selector:
     app: ossmconsole
   type: ClusterIP
