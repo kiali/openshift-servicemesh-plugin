@@ -133,9 +133,6 @@
     "npm": ">=6.0.0 ",
     "yarn": ">=1.0.0 "
   },
-  "sassIncludes": {
-    "src": "src"
-  },
   "consolePlugin": {
     "name": "ossmconsole",
     "version": "0.1.0",
