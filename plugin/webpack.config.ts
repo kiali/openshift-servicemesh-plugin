@@ -43,7 +43,18 @@ const config: Configuration = {
       },
       {
         test: /\.s[ac]ss$/,
-        use: ['style-loader', 'css-loader', 'sass-loader']
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              modules: {
+                localIdentName: process.env.CSS_PREFIX + '_[hash:base64:5]'
+              }
+            }
+          },
+          'sass-loader'
+        ]
       },
       {
         test: /\.css$/,
