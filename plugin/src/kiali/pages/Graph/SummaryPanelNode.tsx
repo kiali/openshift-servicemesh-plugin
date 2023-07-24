@@ -26,7 +26,8 @@ import { SummaryPanelNodeTraffic } from './SummaryPanelNodeTraffic';
 import { SummaryPanelNodeTraces } from './SummaryPanelNodeTraces';
 import { SimpleTabs } from 'components/Tab/SimpleTabs';
 import { JaegerState } from 'reducers/JaegerState';
-import { classes, style } from 'typestyle';
+import { classes } from 'typestyle';
+import { kialiStyle } from 'styles/StyleUtils';
 import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
 import { ServiceDetailsInfo } from 'types/ServiceInfo';
 import { LoadingWizardActionsDropdownGroup } from 'components/IstioWizards/LoadingWizardActionsDropdownGroup';
@@ -35,6 +36,18 @@ import { ServiceWizardActionsDropdownGroup } from 'components/IstioWizards/Servi
 import { PeerAuthentication } from '../../types/IstioObjects';
 import { useServiceDetailForGraphNode } from '../../hooks/services';
 import { useKialiSelector } from '../../hooks/redux';
+import { groupMenuStyle } from 'styles/DropdownStyles';
+
+const summaryNodeActionsStyle = kialiStyle({
+  $nest: {
+    '.pf-c-dropdown__toggle': {
+      fontSize: 'var(--graph-side-panel--font-size)'
+    },
+    '.pf-c-dropdown__menu-item': {
+      fontSize: 'var(--graph-side-panel--font-size)'
+    }
+  }
+});
 
 type SummaryPanelNodeState = {
   isActionOpen: boolean;
@@ -71,7 +84,7 @@ export type SummaryPanelNodeComponentProps = ReduxProps &
     serviceDetails: ServiceDetailsInfo | null | undefined;
   };
 
-const expandableSectionStyle = style({
+const expandableSectionStyle = kialiStyle({
   fontSize: 'var(--graph-side-panel--font-size)',
   paddingLeft: '1em',
   $nest: {
@@ -89,7 +102,7 @@ const expandableSectionStyle = style({
   }
 });
 
-const workloadExpandableSectionStyle = classes(expandableSectionStyle, style({ display: 'inline' }));
+const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyle({ display: 'inline' }));
 
 export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeComponentProps, SummaryPanelNodeState> {
   private readonly mainDivRef: React.RefObject<HTMLDivElement>;
@@ -130,7 +143,7 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
 
     const options = getOptions(nodeData);
     const items = [
-      <DropdownGroup key="show" label="Show" className="kiali-group-menu">
+      <DropdownGroup key="show" label="Show" className={groupMenuStyle}>
         {options.map((o, i) => {
           return (
             <DropdownItem key={`option-${i}`} onClick={() => clickHandler(o, this.props.kiosk)}>
@@ -170,6 +183,7 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
                 <Dropdown
                   dropdownItems={items}
                   id="summary-node-actions"
+                  className={summaryNodeActionsStyle}
                   isGrouped={true}
                   isOpen={this.state.isActionOpen}
                   isPlain={true}

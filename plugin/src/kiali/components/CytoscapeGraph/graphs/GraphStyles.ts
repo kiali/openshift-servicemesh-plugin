@@ -1,4 +1,4 @@
-import { style } from 'typestyle';
+import { kialiStyle } from 'styles/StyleUtils';
 import { PFColors, PFColorVal, PFColorVals } from '../../../components/Pf/PfColors';
 import { DEGRADED, FAILURE } from '../../../types/Health';
 import {
@@ -91,9 +91,9 @@ type contentType = {
 
 // Puts a little more space between icons when a badge has multiple icons
 const badgeMargin = (existingIcons: string) =>
-  existingIcons === '' ? style({ marginLeft: '1px' }) : style({ marginRight: '2px' });
+  existingIcons === '' ? kialiStyle({ marginLeft: '1px' }) : kialiStyle({ marginRight: '2px' });
 
-const badgesDefault = style({
+const badgesDefault = kialiStyle({
   alignItems: 'center',
   backgroundColor: NodeBadgeBackgroundColor,
   borderTopLeftRadius: '3px',
@@ -103,7 +103,7 @@ const badgesDefault = style({
   padding: '3px 3px'
 });
 
-const contentDefault = style({
+const contentDefault = kialiStyle({
   alignItems: 'center',
   backgroundColor: NodeTextBackgroundColor,
   borderRadius: '3px',
@@ -112,12 +112,12 @@ const contentDefault = style({
   padding: '1px 5px'
 });
 
-const contentBox = style({
+const contentBox = kialiStyle({
   backgroundColor: NodeTextBackgroundColorBox,
   color: NodeTextColorBox
 });
 
-const hostsClass = style({
+const hostsClass = kialiStyle({
   $nest: {
     '& div:last-child': {
       display: 'none'
@@ -128,14 +128,14 @@ const hostsClass = style({
   }
 });
 
-const hostsList = style({
+const hostsList = kialiStyle({
   textAlign: 'initial',
   marginTop: 2,
   paddingTop: 2,
   borderTop: `1px solid ${PFColors.Black600}`
 });
 
-const labelDefault = style({
+const labelDefault = kialiStyle({
   borderRadius: '3px',
   boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 2px 8px 0 rgba(0, 0, 0, 0.19)',
   display: 'inline-flex',
@@ -145,7 +145,7 @@ const labelDefault = style({
   textAlign: 'center'
 });
 
-const labelBox = style({
+const labelBox = kialiStyle({
   display: 'block',
   marginTop: '13px',
   textAlign: 'left'
@@ -248,7 +248,7 @@ export class GraphStyles {
             badges = `<span class="${NodeIconFaultInjection} ${badgeMargin(badges)}"></span> ${badges}`;
           }
           if (node.hasMirroring) {
-            badges = `<span class="${NodeIconMirroring}  ${badgeMargin(badges)} ${style({
+            badges = `<span class="${NodeIconMirroring}  ${badgeMargin(badges)} ${kialiStyle({
               marginTop: '1px'
             })}"></span> ${badges}`;
           }
@@ -419,7 +419,7 @@ export class GraphStyles {
       newContent.forEach(c => {
         let contentPfBadge = '';
         if (!!c.pfBadge) {
-          const pfBadgeStyle = style(c.pfBadge.style as NestedCSSProperties);
+          const pfBadgeStyle = kialiStyle(c.pfBadge.style as NestedCSSProperties);
           contentPfBadge = `<span class="pf-c-badge pf-m-unread ${kialiBadge} ${pfBadgeStyle}" style="${appBoxStyle}">${c.pfBadge.badge}</span>`;
         }
         const contentDiv = `<div class="${contentClasses} ${contentBox}" style="${appBoxStyle} ${contentStyle}">${contentPfBadge}${c.text}</div>`;
@@ -456,7 +456,7 @@ export class GraphStyles {
     newContent.forEach(c => {
       let contentPfBadge = '';
       if (!!c.pfBadge) {
-        const pfBadgeStyle = style(c.pfBadge.style as NestedCSSProperties);
+        const pfBadgeStyle = kialiStyle(c.pfBadge.style as NestedCSSProperties);
         contentPfBadge = `<span class="pf-c-badge pf-m-unread ${kialiBadge} ${pfBadgeStyle}" style="${''}">${
           c.pfBadge.badge
         }</span>`;
