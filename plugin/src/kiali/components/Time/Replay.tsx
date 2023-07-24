@@ -10,7 +10,7 @@ import { ToolbarDropdown } from 'components/ToolbarDropdown/ToolbarDropdown';
 import { UserSettingsActions } from 'actions/UserSettingsActions';
 import { Slider } from 'components/IstioWizards/Slider/Slider';
 import { KialiIcon, defaultIconStyle } from 'config/KialiIcon';
-import { style } from 'typestyle';
+import { kialiStyle } from 'styles/StyleUtils';
 import { toString } from './Utils';
 import { serverConfig } from 'config';
 import { PFColors } from 'components/Pf/PfColors';
@@ -51,8 +51,31 @@ type ReplaySpeed = {
   text: string;
 };
 
-export const replayBorder = style({
+export const replayBorder = kialiStyle({
   borderLeft: `solid 5px ${PFColors.Replay}`
+});
+
+/**
+ * Overrides for Replay use of the Slider component.
+ * - to avoid the tt occluding other components (like close replay), limit to when mouse is over the slider only,
+ * not the tooltip area itself.
+ * - to avoid the tooltip getting clipped on the right, add padding to move the shift the "attach" point
+ */
+const replaySliderStyle = kialiStyle({
+  $nest: {
+    '.slider': {
+      $nest: {
+        '.tooltip': {
+          pointerEvents: 'none',
+          paddingRight: '175px'
+        }
+      }
+    },
+
+    '.slider-selection': {
+      background: 'var(--pf-global--active-color--300)' // should match PFColors.Replay
+    }
+  }
 });
 
 // key represents replay interval in milliseconds
@@ -76,56 +99,56 @@ const defaultReplayInterval: IntervalInMilliseconds = 300000; // 5 minutes
 const defaultReplaySpeed: IntervalInMilliseconds = 3000; // medium
 const frameInterval: IntervalInMilliseconds = 10000; // clock advances 10s per frame
 
-const controlStyle = style({
+const controlStyle = kialiStyle({
   display: 'flex',
   margin: '5px 0 0 15px'
 });
 
-const controlButtonStyle = style({
+const controlButtonStyle = kialiStyle({
   margin: '-5px -5px 0 33%',
   height: '37px'
 });
 
-const controlIconStyle = style({
+const controlIconStyle = kialiStyle({
   fontSize: '1.5em'
 });
 
-const frameStyle = style({
+const frameStyle = kialiStyle({
   margin: '2px 20px 0 0'
 });
 
-const isCustomStyle = style({
+const isCustomStyle = kialiStyle({
   height: '36px'
 });
 
-const isCustomActiveStyle = style({
+const isCustomActiveStyle = kialiStyle({
   color: PFColors.Active
 });
 
-const replayStyle = style({
+const replayStyle = kialiStyle({
   display: 'flex',
   width: '100%',
   padding: '5px 5px 0 10px',
   marginTop: '-5px'
 });
 
-const sliderStyle = style({
+const sliderStyle = kialiStyle({
   width: '100%',
   margin: '0 -10px 0 20px'
 });
 
-const speedStyle = style({
+const speedStyle = kialiStyle({
   height: '1.5em',
   margin: '1px 5px 0 5px',
   padding: '0 2px 2px 2px'
 });
 
-const speedActiveStyle = style({
+const speedActiveStyle = kialiStyle({
   color: PFColors.ActiveText,
   fontWeight: 'bolder'
 });
 
-const vrStyle = style({
+const vrStyle = kialiStyle({
   border: '1px inset',
   height: '20px',
   marginTop: '4px',
@@ -259,9 +282,7 @@ class ReplayComponent extends React.PureComponent<ReplayProps, ReplayState> {
           </Button>
         </Tooltip>
         <span className={sliderStyle}>
-          <div
-            id="replay-slider-div" // see _Time.scss
-          >
+          <div className={replaySliderStyle}>
             <Slider
               key={endString} // on new endTime force new slider because of bug updating tick labels
               id="replay-slider"

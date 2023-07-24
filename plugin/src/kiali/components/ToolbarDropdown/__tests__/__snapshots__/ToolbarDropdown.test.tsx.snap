@@ -3,7 +3,7 @@
 exports[`ToolbarDropdown Render correctly all dropdowns 1`] = `
 <Fragment>
   <span
-    className="fzb2262"
+    className="kiali_fzb2262"
   >
     graph_filter_interval_duration
   </span>
@@ -13,7 +13,7 @@ exports[`ToolbarDropdown Render correctly all dropdowns 1`] = `
     aria-label="graph_filter_interval_duration"
     aria-labelledby="graph_filter_interval_duration"
     chipGroupComponent={null}
-    className="fhxf3qu"
+    className="kiali_fhxf3qu"
     clearSelectionsAriaLabel="Clear all"
     createText="Create"
     customBadgeText={null}
@@ -29,9 +29,10 @@ exports[`ToolbarDropdown Render correctly all dropdowns 1`] = `
     inputAutoComplete="off"
     inputIdPrefix=""
     isCreatable={false}
+    isCreateOptionOnTop={false}
     isCreateSelectOptionObject={false}
     isDisabled={false}
-    isFlipEnabled={false}
+    isFlipEnabled={true}
     isGrouped={false}
     isInputFilterPersisted={false}
     isInputValuePersisted={false}
@@ -48,17 +49,20 @@ exports[`ToolbarDropdown Render correctly all dropdowns 1`] = `
     ouiaSafe={true}
     placeholderText="1m"
     position="left"
+    removeFindDomNode={false}
     removeSelectionAriaLabel="Remove"
     selections={60}
     shouldResetOnSelect={true}
     toggleAriaLabel="Options menu"
     toggleIcon={null}
     toggleId="graph_filter_interval_duration-toggle"
+    toggleIndicator={null}
     typeAheadAriaDescribedby=""
     typeAheadAriaLabel=""
     validated="default"
     variant="single"
     width=""
+    zIndex={9999}
   >
     <SelectOption
       className=""
@@ -259,7 +263,7 @@ exports[`ToolbarDropdown Render correctly all dropdowns 1`] = `
 exports[`ToolbarDropdown Render correctly all dropdowns 2`] = `
 <Fragment>
   <span
-    className="fzb2262"
+    className="kiali_fzb2262"
   >
     metrics_filter_poll_interval
   </span>
@@ -269,7 +273,7 @@ exports[`ToolbarDropdown Render correctly all dropdowns 2`] = `
     aria-label="metrics_filter_poll_interval"
     aria-labelledby="metrics_filter_poll_interval"
     chipGroupComponent={null}
-    className="fhxf3qu"
+    className="kiali_fhxf3qu"
     clearSelectionsAriaLabel="Clear all"
     createText="Create"
     customBadgeText={null}
@@ -285,9 +289,10 @@ exports[`ToolbarDropdown Render correctly all dropdowns 2`] = `
     inputAutoComplete="off"
     inputIdPrefix=""
     isCreatable={false}
+    isCreateOptionOnTop={false}
     isCreateSelectOptionObject={false}
     isDisabled={false}
-    isFlipEnabled={false}
+    isFlipEnabled={true}
     isGrouped={false}
     isInputFilterPersisted={false}
     isInputValuePersisted={false}
@@ -304,17 +309,20 @@ exports[`ToolbarDropdown Render correctly all dropdowns 2`] = `
     ouiaSafe={true}
     placeholderText="Every 1m"
     position="left"
+    removeFindDomNode={false}
     removeSelectionAriaLabel="Remove"
     selections={60000}
     shouldResetOnSelect={true}
     toggleAriaLabel="Options menu"
     toggleIcon={null}
     toggleId="metrics_filter_poll_interval-toggle"
+    toggleIndicator={null}
     typeAheadAriaDescribedby=""
     typeAheadAriaLabel=""
     validated="default"
     variant="single"
     width=""
+    zIndex={9999}
   >
     <SelectOption
       className=""
@@ -491,7 +499,7 @@ exports[`ToolbarDropdown Render correctly all dropdowns 2`] = `
 exports[`ToolbarDropdown Render correctly all dropdowns 3`] = `
 <Fragment>
   <span
-    className="fzb2262"
+    className="kiali_fzb2262"
   >
     graph_filter_layouts
   </span>
@@ -501,7 +509,7 @@ exports[`ToolbarDropdown Render correctly all dropdowns 3`] = `
     aria-label="graph_filter_layouts"
     aria-labelledby="graph_filter_layouts"
     chipGroupComponent={null}
-    className="fhxf3qu"
+    className="kiali_fhxf3qu"
     clearSelectionsAriaLabel="Clear all"
     createText="Create"
     customBadgeText={null}
@@ -517,9 +525,10 @@ exports[`ToolbarDropdown Render correctly all dropdowns 3`] = `
     inputAutoComplete="off"
     inputIdPrefix=""
     isCreatable={false}
+    isCreateOptionOnTop={false}
     isCreateSelectOptionObject={false}
     isDisabled={false}
-    isFlipEnabled={false}
+    isFlipEnabled={true}
     isGrouped={false}
     isInputFilterPersisted={false}
     isInputValuePersisted={false}
@@ -536,17 +545,20 @@ exports[`ToolbarDropdown Render correctly all dropdowns 3`] = `
     ouiaSafe={true}
     placeholderText=""
     position="left"
+    removeFindDomNode={false}
     removeSelectionAriaLabel="Remove"
     selections="cola"
     shouldResetOnSelect={true}
     toggleAriaLabel="Options menu"
     toggleIcon={null}
     toggleId="graph_filter_layouts-toggle"
+    toggleIndicator={null}
     typeAheadAriaDescribedby=""
     typeAheadAriaLabel=""
     validated="default"
     variant="single"
     width=""
+    zIndex={9999}
   >
     <SelectOption
       className=""
@@ -627,7 +639,7 @@ exports[`ToolbarDropdown Render correctly all dropdowns 3`] = `
 exports[`ToolbarDropdown Render dropdowns correctly with controlled values and labels 1`] = `
 <Fragment>
   <span
-    className="fzb2262"
+    className="kiali_fzb2262"
   >
     graph_filter_interval_duration
   </span>
@@ -637,7 +649,7 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
     aria-label="graph_filter_interval_duration"
     aria-labelledby="graph_filter_interval_duration"
     chipGroupComponent={null}
-    className="fhxf3qu"
+    className="kiali_fhxf3qu"
     clearSelectionsAriaLabel="Clear all"
     createText="Create"
     customBadgeText={null}
@@ -653,9 +665,10 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
     inputAutoComplete="off"
     inputIdPrefix=""
     isCreatable={false}
+    isCreateOptionOnTop={false}
     isCreateSelectOptionObject={false}
     isDisabled={false}
-    isFlipEnabled={false}
+    isFlipEnabled={true}
     isGrouped={false}
     isInputFilterPersisted={false}
     isInputValuePersisted={false}
@@ -672,17 +685,20 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
     ouiaSafe={true}
     placeholderText="1m"
     position="left"
+    removeFindDomNode={false}
     removeSelectionAriaLabel="Remove"
     selections={60}
     shouldResetOnSelect={true}
     toggleAriaLabel="Options menu"
     toggleIcon={null}
     toggleId="graph_filter_interval_duration-toggle"
+    toggleIndicator={null}
     typeAheadAriaDescribedby=""
     typeAheadAriaLabel=""
     validated="default"
     variant="single"
     width=""
+    zIndex={9999}
   >
     <SelectOption
       className=""
@@ -883,7 +899,7 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
 exports[`ToolbarDropdown Render dropdowns correctly with controlled values and labels 2`] = `
 <Fragment>
   <span
-    className="fzb2262"
+    className="kiali_fzb2262"
   >
     metrics_filter_poll_interval
   </span>
@@ -893,7 +909,7 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
     aria-label="metrics_filter_poll_interval"
     aria-labelledby="metrics_filter_poll_interval"
     chipGroupComponent={null}
-    className="fhxf3qu"
+    className="kiali_fhxf3qu"
     clearSelectionsAriaLabel="Clear all"
     createText="Create"
     customBadgeText={null}
@@ -909,9 +925,10 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
     inputAutoComplete="off"
     inputIdPrefix=""
     isCreatable={false}
+    isCreateOptionOnTop={false}
     isCreateSelectOptionObject={false}
     isDisabled={false}
-    isFlipEnabled={false}
+    isFlipEnabled={true}
     isGrouped={false}
     isInputFilterPersisted={false}
     isInputValuePersisted={false}
@@ -928,17 +945,20 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
     ouiaSafe={true}
     placeholderText="Every 1m"
     position="left"
+    removeFindDomNode={false}
     removeSelectionAriaLabel="Remove"
     selections={60000}
     shouldResetOnSelect={true}
     toggleAriaLabel="Options menu"
     toggleIcon={null}
     toggleId="metrics_filter_poll_interval-toggle"
+    toggleIndicator={null}
     typeAheadAriaDescribedby=""
     typeAheadAriaLabel=""
     validated="default"
     variant="single"
     width=""
+    zIndex={9999}
   >
     <SelectOption
       className=""
@@ -1115,7 +1135,7 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
 exports[`ToolbarDropdown Render dropdowns correctly with controlled values and labels 3`] = `
 <Fragment>
   <span
-    className="fzb2262"
+    className="kiali_fzb2262"
   >
     graph_filter_layouts
   </span>
@@ -1125,7 +1145,7 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
     aria-label="graph_filter_layouts"
     aria-labelledby="graph_filter_layouts"
     chipGroupComponent={null}
-    className="fhxf3qu"
+    className="kiali_fhxf3qu"
     clearSelectionsAriaLabel="Clear all"
     createText="Create"
     customBadgeText={null}
@@ -1141,9 +1161,10 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
     inputAutoComplete="off"
     inputIdPrefix=""
     isCreatable={false}
+    isCreateOptionOnTop={false}
     isCreateSelectOptionObject={false}
     isDisabled={false}
-    isFlipEnabled={false}
+    isFlipEnabled={true}
     isGrouped={false}
     isInputFilterPersisted={false}
     isInputValuePersisted={false}
@@ -1160,17 +1181,20 @@ exports[`ToolbarDropdown Render dropdowns correctly with controlled values and l
     ouiaSafe={true}
     placeholderText=""
     position="left"
+    removeFindDomNode={false}
     removeSelectionAriaLabel="Remove"
     selections="cola"
     shouldResetOnSelect={true}
     toggleAriaLabel="Options menu"
     toggleIcon={null}
     toggleId="graph_filter_layouts-toggle"
+    toggleIndicator={null}
     typeAheadAriaDescribedby=""
     typeAheadAriaLabel=""
     validated="default"
     variant="single"
     width=""
+    zIndex={9999}
   >
     <SelectOption
       className=""

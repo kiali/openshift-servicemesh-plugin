@@ -24,13 +24,12 @@ import {
 } from '../../types/AceValidations';
 import { IstioActionDropdown } from '../../components/IstioActions/IstioActionsDropdown';
 import { RenderComponentScroll } from '../../components/Nav/Page';
-import './IstioConfigDetailsPage.css';
 import { IstioActionButtons } from '../../components/IstioActions/IstioActionsButtons';
 import { history } from '../../app/History';
 import { Paths } from '../../config';
 import { MessageType } from '../../types/MessageCenter';
 import { getIstioObject, mergeJsonPatch } from '../../utils/IstioConfigUtils';
-import { style } from 'typestyle';
+import { kialiStyle } from 'styles/StyleUtils';
 import { ParameterizedTabs, activeTab } from '../../components/Tab/Tabs';
 import {
   Drawer,
@@ -55,15 +54,17 @@ import { RefreshNotifier } from '../../components/Refresh/RefreshNotifier';
 import { isParentKiosk } from '../../components/Kiosk/KioskActions';
 import { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
+import { basicTabStyle } from 'styles/TabStyles';
+import { istioAceEditorStyle } from 'styles/AceEditorStyle';
 
 // Enables the search box for the ACEeditor
 require('ace-builds/src-noconflict/ext-searchbox');
 
-const rightToolbarStyle = style({
+const rightToolbarStyle = kialiStyle({
   zIndex: 500
 });
 
-const editorDrawer = style({
+const editorDrawer = kialiStyle({
   margin: '0'
 });
 
@@ -516,7 +517,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
           onChange={this.onEditorChange}
           height={`calc(var(--kiali-yaml-editor-height) + ${isParentKiosk(this.props.kiosk) ? '100px' : '0px'})`}
           width={'100%'}
-          className={'istio-ace-editor'}
+          className={istioAceEditorStyle}
           wrapEnabled={true}
           readOnly={!this.canUpdate() || isParentKiosk(this.props.kiosk)}
           setOptions={aceOptions}
@@ -596,6 +597,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
         {!this.state.error && !isParentKiosk(this.props.kiosk) && (
           <ParameterizedTabs
             id="basic-tabs"
+            className={basicTabStyle}
             onSelect={tabValue => {
               this.setState({ currentTab: tabValue });
             }}

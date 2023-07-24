@@ -21,7 +21,7 @@ import {
 } from '@patternfly/react-core';
 import { SummaryTableBuilder } from './tables/BaseTable';
 import { Namespace } from 'types/Namespace';
-import { style } from 'typestyle';
+import { kialiStyle } from 'styles/StyleUtils';
 import AceEditor from 'react-ace';
 import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
 import { ToolbarDropdown } from 'components/ToolbarDropdown/ToolbarDropdown';
@@ -40,13 +40,14 @@ import {
   defaultTab as workloadDefaultTab
 } from '../../pages/WorkloadDetails/WorkloadDetailsPage';
 import { TimeInMilliseconds } from '../../types/Common';
+import { istioAceEditorStyle } from 'styles/AceEditorStyle';
 
 // Enables the search box for the ACEeditor
 require('ace-builds/src-noconflict/ext-searchbox');
 
 const resources: string[] = ['clusters', 'listeners', 'routes', 'bootstrap', 'config', 'metrics'];
 
-const iconStyle = style({
+const iconStyle = kialiStyle({
   display: 'inline-block',
   paddingTop: '5px'
 });
@@ -78,7 +79,7 @@ type EnvoyDetailsState = {
   resource: string;
 };
 
-const fullHeightStyle = style({
+const fullHeightStyle = kialiStyle({
   height: '100%'
 });
 
@@ -318,7 +319,7 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
                     theme="eclipse"
                     width={'100%'}
                     height={height.toString() + 'px'}
-                    className={'istio-ace-editor'}
+                    className={istioAceEditorStyle}
                     wrapEnabled={true}
                     readOnly={true}
                     setOptions={aceOptions || { foldStyle: 'markbegin' }}
