@@ -3,7 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Namespace } from 'types/Namespace';
 import { MessageType } from 'types/MessageCenter';
-import { DurationInSeconds, IntervalInMilliseconds } from 'types/Common';
+import { DurationInSeconds, IntervalInMilliseconds, themes } from 'types/Common';
 import { JaegerInfo } from 'types/JaegerInfo';
 import { toGrpcRate, toHttpRate, toTcpRate, TrafficRate } from 'types/Graph';
 import { StatusKey, StatusState } from 'types/StatusState';
@@ -67,6 +67,7 @@ interface KialiControllerReduxProps {
   setTrafficRates: (rates: TrafficRate[]) => void;
   statusRefresh: (statusState: StatusState) => void;
   setKiosk: (kiosk: string) => void;
+  setTheme: (theme: string) => void;
 }
 
 type KialiControllerProps = KialiControllerReduxProps & {
@@ -251,7 +252,8 @@ const mapDispatchToProps = (dispatch: KialiDispatch) => ({
   setRefreshInterval: bindActionCreators(UserSettingsActions.setRefreshInterval, dispatch),
   setTrafficRates: bindActionCreators(GraphToolbarActions.setTrafficRates, dispatch),
   statusRefresh: bindActionCreators(HelpDropdownActions.statusRefresh, dispatch),
-  setKiosk: bindActionCreators(GlobalActions.setKiosk, dispatch)
+  setKiosk: bindActionCreators(GlobalActions.setKiosk, dispatch),
+  setTheme: bindActionCreators(GlobalActions.setTheme, dispatch)
 });
 
 export const KialiController = connect(mapStateToProps, mapDispatchToProps)(KialiControllerComponent);
