@@ -128,11 +128,6 @@
     "nth-check": "^2.0.1",
     "postcss": "^8.4.12"
   },
-  "engines": {
-    "node": "^14.17.0",
-    "npm": ">=6.0.0 ",
-    "yarn": ">=1.0.0 "
-  },
   "consolePlugin": {
     "name": "ossmconsole",
     "version": "0.1.0",
