@@ -7,6 +7,9 @@ import { KialiController } from '../components/KialiController';
 import { getPluginConfig, useInitKialiListeners } from '../utils/KialiIntegration';
 import { useHistory } from 'react-router';
 import { setHistory } from 'app/History';
+import { kialiStyle } from 'styles/StyleUtils';
+
+const containerPadding = kialiStyle({ padding: '0 20px 0 20px' });
 
 const GraphPageOSSMC = () => {
   useInitKialiListeners();
@@ -28,10 +31,12 @@ const GraphPageOSSMC = () => {
 
   return (
     <Provider store={store}>
-      <KialiController>
-        {pluginConfig.graph.impl === 'cy' && <GraphPage></GraphPage>}
-        {pluginConfig.graph.impl === 'pf' && <GraphPagePF></GraphPagePF>}
-      </KialiController>
+      <div className={containerPadding}>
+        <KialiController>
+          {pluginConfig.graph.impl === 'cy' && <GraphPage></GraphPage>}
+          {pluginConfig.graph.impl === 'pf' && <GraphPagePF></GraphPagePF>}
+        </KialiController>
+      </div>
     </Provider>
   );
 };

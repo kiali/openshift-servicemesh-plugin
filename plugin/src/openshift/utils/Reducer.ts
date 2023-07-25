@@ -15,6 +15,7 @@ import { TourStateReducer } from 'reducers/TourState';
 import { NamespaceStateReducer } from 'reducers/NamespaceState';
 import { MessageCenterReducer } from 'reducers/MessageCenter';
 import { KialiAppAction } from 'actions/KialiAppAction';
+import { ClusterStateReducer } from 'reducers/ClusterState';
 
 /**
  * If no redux provider is set in the OSSMC page (like IstioConfigListPage),
@@ -27,6 +28,7 @@ export const getKialiState = (state: RootStateOrAny): KialiAppState => {
 
 export default combineReducers<KialiAppState, KialiAppAction>({
   authentication: LoginStateReducer,
+  clusters: ClusterStateReducer,
   globalState: GlobalStateReducer,
   graph: GraphDataStateReducer,
   messageCenter: MessageCenterReducer,

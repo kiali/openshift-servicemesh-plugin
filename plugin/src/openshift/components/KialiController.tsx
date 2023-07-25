@@ -24,9 +24,15 @@ import { GraphToolbarActions } from 'actions/GraphToolbarActions';
 import { HelpDropdownActions } from 'actions/HelpDropdownActions';
 import { GlobalActions } from 'actions/GlobalActions';
 import { getKialiState } from '../utils/Reducer';
-
-import 'styles/index.scss';
 import { getPluginConfig } from 'openshift/utils/KialiIntegration';
+import { globalStyle } from 'styles/GlobalStyle';
+import { kialiStyle } from 'styles/StyleUtils';
+import varStyle from 'styles/variables.module.scss';
+
+import '@patternfly/patternfly/patternfly.css';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/dist/themes/light-border.css';
+import 'react-datepicker/dist/react-datepicker.css';
 
 declare global {
   interface Date {
@@ -41,6 +47,12 @@ Date.prototype.toLocaleStringWithConditionalDate = function () {
 
   return nowDate === thisDate ? this.toLocaleTimeString() : this.toLocaleString();
 };
+
+const ossmcStyle = kialiStyle({
+  display: 'flex',
+  flexDirection: 'column',
+  overflowY: 'auto'
+});
 
 interface KialiControllerReduxProps {
   namespaces: Namespace[];
@@ -77,7 +89,11 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   }
 
   render() {
-    return this.state.configLoaded ? this.props.children : false;
+    return this.state.configLoaded ? (
+      <div className={`${globalStyle} ${ossmcStyle} ${varStyle.kiali}`}>{this.props.children}</div>
+    ) : (
+      false
+    );
   }
 
   private getKialiConfig = async () => {
@@ -112,7 +128,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
       this.props.setNamespaces(configs[0].data, new Date());
       setServerConfig(configs[1].data);
-      this.setDocLayout();
+      this.props.setKiosk('/');
       this.applyUIDefaults();
       this.setState({ configLoaded: true });
     } catch (err) {
@@ -204,13 +220,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
       this.props.setTrafficRates(rates);
     }
   }
-
-  private setDocLayout = () => {
-    if (document.documentElement) {
-      document.documentElement.className = 'kiosk';
-      this.props.setKiosk('/');
-    }
-  };
 
   private processServerStatus = (status: StatusState) => {
     this.props.statusRefresh(status);
