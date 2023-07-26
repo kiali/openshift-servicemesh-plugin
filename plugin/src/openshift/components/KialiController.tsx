@@ -3,7 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Namespace } from 'types/Namespace';
 import { MessageType } from 'types/MessageCenter';
-import { DurationInSeconds, IntervalInMilliseconds, themes } from 'types/Common';
+import { DurationInSeconds, IntervalInMilliseconds, PF_THEME_DARK, Theme } from 'types/Common';
 import { JaegerInfo } from 'types/JaegerInfo';
 import { toGrpcRate, toHttpRate, toTcpRate, TrafficRate } from 'types/Graph';
 import { StatusKey, StatusState } from 'types/StatusState';
@@ -130,6 +130,11 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
       this.props.setNamespaces(configs[0].data, new Date());
       setServerConfig(configs[1].data);
       this.props.setKiosk('/');
+      if (document.documentElement.classList.contains(PF_THEME_DARK)) {
+        this.props.setTheme(Theme.Dark)
+      } else {
+        this.props.setTheme(Theme.Light)
+      }
       this.applyUIDefaults();
       this.setState({ configLoaded: true });
     } catch (err) {
