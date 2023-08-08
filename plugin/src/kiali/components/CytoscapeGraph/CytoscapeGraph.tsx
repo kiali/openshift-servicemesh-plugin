@@ -40,7 +40,7 @@ import { EmptyGraphLayout } from './EmptyGraphLayout';
 import { FocusAnimation } from './FocusAnimation';
 import { GraphHighlighter } from './graphs/GraphHighlighter';
 import { TrafficRenderer } from './TrafficAnimation/TrafficRenderer';
-import { serverConfig } from 'config';
+import { homeCluster, serverConfig } from 'config';
 import { decoratedNodeData } from './CytoscapeGraphUtils';
 import { scoreNodes, ScoringCriteria } from './GraphScore';
 import { assignEdgeHealth } from 'types/ErrorRate/GraphEdgeStatus';
@@ -82,7 +82,7 @@ type CytoscapeGraphProps = {
   setUpdateTime?: (val: TimeInMilliseconds) => void;
   showIdleEdges: boolean;
   showIdleNodes: boolean;
-  showMissingSidecars: boolean;
+  showOutOfMesh: boolean;
   showOperationNodes: boolean;
   showRank: boolean;
   showSecurity: boolean;
@@ -114,9 +114,9 @@ export interface GraphNodeTapEvent {
   aggregateValue?: string;
   app: string;
   cluster?: string;
-  hasMissingSC: boolean;
   isBox?: string;
   isInaccessible: boolean;
+  isOutOfMesh: boolean;
   isOutside: boolean;
   isServiceEntry: boolean;
   isIdle: boolean;
@@ -205,7 +205,7 @@ export class CytoscapeGraph extends React.Component<CytoscapeGraphProps, Cytosca
       this.props.namespaceLayout !== nextProps.namespaceLayout ||
       this.props.compressOnHide !== nextProps.compressOnHide ||
       this.props.rankBy !== nextProps.rankBy ||
-      this.props.showMissingSidecars !== nextProps.showMissingSidecars ||
+      this.props.showOutOfMesh !== nextProps.showOutOfMesh ||
       this.props.showRank !== nextProps.showRank ||
       this.props.showTrafficAnimation !== nextProps.showTrafficAnimation ||
       this.props.showVirtualServices !== nextProps.showVirtualServices ||
@@ -348,10 +348,10 @@ export class CytoscapeGraph extends React.Component<CytoscapeGraphProps, Cytosca
       aggregateValue: target.data(NodeAttr.aggregateValue),
       app: target.data(NodeAttr.app),
       cluster: target.data(NodeAttr.cluster),
-      hasMissingSC: targetOrBoxChildren.every(t => t.data(NodeAttr.hasMissingSC)),
       isBox: target.data(NodeAttr.isBox),
       isIdle: targetOrBoxChildren.every(t => t.data(NodeAttr.isIdle)),
       isInaccessible: target.data(NodeAttr.isInaccessible),
+      isOutOfMesh: target.data(NodeAttr.isOutOfMesh),
       isOutside: target.data(NodeAttr.isOutside),
       isServiceEntry: target.data(NodeAttr.isServiceEntry),
       namespace: target.data(NodeAttr.namespace),
@@ -813,8 +813,8 @@ export class CytoscapeGraph extends React.Component<CytoscapeGraphProps, Cytosca
       edgeLabels: this.props.edgeLabels,
       forceLabels: false,
       graphType: this.props.graphData.fetchParams.graphType,
-      homeCluster: serverConfig?.clusterInfo?.name || CLUSTER_DEFAULT,
-      showMissingSidecars: this.props.showMissingSidecars,
+      homeCluster: homeCluster?.name || CLUSTER_DEFAULT,
+      showOutOfMesh: this.props.showOutOfMesh,
       showSecurity: this.props.showSecurity,
       showVirtualServices: this.props.showVirtualServices,
       trafficRates: this.props.graphData.fetchParams.trafficRates
