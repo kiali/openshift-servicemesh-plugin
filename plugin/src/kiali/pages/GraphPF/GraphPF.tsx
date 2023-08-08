@@ -51,6 +51,7 @@ import {
   selectAnd,
   SelectAnd,
   setEdgeOptions,
+  setNodeAttachments,
   setNodeLabel
 } from './GraphPFElems';
 import { layoutFactory } from './layouts/layoutFactory';
@@ -67,7 +68,7 @@ import { tcpTimerConfig, timerConfig } from 'components/CytoscapeGraph/TrafficAn
 let initialLayout = false;
 let requestFit = false;
 
-const DEFAULT_NODE_SIZE = 75;
+const DEFAULT_NODE_SIZE = 50;
 const ZOOM_IN = 4 / 3;
 const ZOOM_OUT = 3 / 4;
 
@@ -102,7 +103,7 @@ export const TopologyContent: React.FC<{
   onReady: (controller: any) => void;
   setLayout: (val: LayoutName) => void;
   setUpdateTime: (val: TimeInMilliseconds) => void;
-  showMissingSidecars: boolean;
+  showOutOfMesh: boolean;
   showSecurity: boolean;
   showTrafficAnimation: boolean;
   showVirtualServices: boolean;
@@ -122,7 +123,7 @@ export const TopologyContent: React.FC<{
   setEdgeMode,
   setLayout: setLayoutName,
   setUpdateTime,
-  showMissingSidecars,
+  showOutOfMesh,
   showSecurity,
   showTrafficAnimation,
   showVirtualServices,
@@ -136,12 +137,12 @@ export const TopologyContent: React.FC<{
       activeNamespaces: graphData.fetchParams.namespaces,
       edgeLabels: edgeLabels,
       graphType: graphData.fetchParams.graphType,
-      showMissingSidecars: showMissingSidecars,
+      showOutOfMesh: showOutOfMesh,
       showSecurity: showSecurity,
       showVirtualServices: showVirtualServices,
       trafficRates: graphData.fetchParams.trafficRates
     } as GraphPFSettings;
-  }, [graphData.fetchParams, edgeLabels, showMissingSidecars, showSecurity, showVirtualServices]);
+  }, [graphData.fetchParams, edgeLabels, showOutOfMesh, showSecurity, showVirtualServices]);
 
   //
   // SelectedIds State
@@ -423,6 +424,11 @@ export const TopologyContent: React.FC<{
       controller.fromModel(model);
       controller.getGraph().setData({ graphData: graphData });
 
+      const { nodes } = elems(controller);
+
+      // set decorators
+      nodes.forEach(n => setNodeAttachments(n, graphSettings));
+
       // pre-select node if provided
       const graphNode = graphData.fetchParams.node;
       if (graphNode) {
@@ -449,7 +455,6 @@ export const TopologyContent: React.FC<{
             selector.push({ prop: NodeAttr.workload, val: graphNode.workload });
         }
 
-        const { nodes } = elems(controller);
         const selectedNodes = selectAnd(nodes, selector);
         if (selectedNodes.length > 0) {
           let target = selectedNodes[0];
@@ -724,7 +729,6 @@ export const TopologyContent: React.FC<{
         />
       }
     >
-      )
       <VisualizationSurface data-test="visualization-surface" state={{}} />
     </TopologyView>
   );
@@ -743,7 +747,7 @@ export const GraphPF: React.FC<{
   setEdgeMode: (edgeMode: EdgeMode) => void;
   setLayout: (layout: Layout) => void;
   setUpdateTime: (val: TimeInMilliseconds) => void;
-  showMissingSidecars: boolean;
+  showOutOfMesh: boolean;
   showSecurity: boolean;
   showTrafficAnimation: boolean;
   showVirtualServices: boolean;
@@ -762,7 +766,7 @@ export const GraphPF: React.FC<{
   setEdgeMode,
   setLayout,
   setUpdateTime,
-  showMissingSidecars,
+  showOutOfMesh,
   showSecurity,
   showTrafficAnimation,
   showVirtualServices,
@@ -845,7 +849,7 @@ export const GraphPF: React.FC<{
         setEdgeMode={setEdgeMode}
         setLayout={setLayoutByName}
         setUpdateTime={setUpdateTime}
-        showMissingSidecars={showMissingSidecars}
+        showOutOfMesh={showOutOfMesh}
         showSecurity={showSecurity}
         showTrafficAnimation={showTrafficAnimation}
         showVirtualServices={showVirtualServices}

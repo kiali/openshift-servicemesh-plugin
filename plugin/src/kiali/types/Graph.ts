@@ -217,7 +217,7 @@ export type CytoscapeGlobalScratchData = {
   forceLabels: boolean;
   graphType: GraphType;
   homeCluster: string;
-  showMissingSidecars: boolean;
+  showOutOfMesh: boolean;
   showSecurity: boolean;
   showVirtualServices: boolean;
   trafficRates: TrafficRate[];
@@ -373,7 +373,6 @@ export interface GraphNodeData {
   hasFaultInjection?: boolean;
   hasHealthConfig?: HealthAnnotationType;
   hasMirroring?: boolean;
-  hasMissingSC?: boolean;
   hasRequestRouting?: boolean;
   hasRequestTimeout?: boolean;
   hasTCPTrafficShifting?: boolean;
@@ -398,7 +397,9 @@ export interface GraphNodeData {
       hostnames?: string[];
     };
   };
+  isK8sGatewayAPI?: boolean;
   isMisconfigured?: string;
+  isOutOfMesh?: boolean;
   isOutside?: boolean;
   isRoot?: boolean;
   isServiceEntry?: SEInfo;
@@ -555,7 +556,6 @@ export const NodeAttr = {
   hasCB: 'hasCB',
   hasFaultInjection: 'hasFaultInjection',
   hasMirroring: 'hasMirroring',
-  hasMissingSC: 'hasMissingSC',
   hasRequestRouting: 'hasRequestRouting',
   hasRequestTimeout: 'hasRequestTimeout',
   hasTCPTrafficShifting: 'hasTCPTrafficShifting',
@@ -577,6 +577,7 @@ export const NodeAttr = {
   isInaccessible: 'isInaccessible',
   isIstio: 'isIstio',
   isMisconfigured: 'isMisconfigured',
+  isOutOfMesh: 'isOutOfMesh',
   isOutside: 'isOutside',
   isRoot: 'isRoot',
   isServiceEntry: 'isServiceEntry',
