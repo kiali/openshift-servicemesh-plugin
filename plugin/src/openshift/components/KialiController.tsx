@@ -27,7 +27,7 @@ import { getKialiState } from '../utils/Reducer';
 import { getPluginConfig } from 'openshift/utils/KialiIntegration';
 import { globalStyle } from 'styles/GlobalStyle';
 import { kialiStyle } from 'styles/StyleUtils';
-import varStyle from 'styles/variables.module.scss';
+import cssVariables from 'styles/variables.module.scss';
 
 import '@patternfly/patternfly/patternfly.css';
 import 'tippy.js/dist/tippy.css';
@@ -90,7 +90,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
   render() {
     return this.state.configLoaded ? (
-      <div className={`${globalStyle} ${ossmcStyle} ${varStyle.kiali}`}>{this.props.children}</div>
+      <div className={`${globalStyle} ${ossmcStyle} ${cssVariables.style}`}>{this.props.children}</div>
     ) : (
       false
     );
