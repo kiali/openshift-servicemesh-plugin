@@ -23,7 +23,7 @@ build-plugin:
 	cd ${PLUGIN_DIR} && yarn install --network-timeout 7200000 && yarn build
 
 ## build-plugin-image: Builds the plugin and its container image.
-build-plugin-image: build-plugin
+build-plugin-image:
 	${DORP} build --build-arg VERSION_PLUGIN="${VERSION}" --build-arg COMMIT_HASH="${COMMIT_HASH}" -t ${PLUGIN_QUAY_TAG} ${PLUGIN_DIR}
 
 ## push-plugin-image: Pushes the plugin container image to quay.io.
