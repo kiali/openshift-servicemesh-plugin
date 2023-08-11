@@ -78,10 +78,10 @@ jobs:
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
         
-        make build-push-plugin-multi-arch
+        make -e TARGET_ARCHS="amd64 s390x ppc64le" build-push-plugin-multi-arch
 
     - name: Build and push operator image
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
         
-        make build-push-operator-multi-arch
+        make -e TARGET_ARCHS="amd64 s390x ppc64le" build-push-operator-multi-arch
