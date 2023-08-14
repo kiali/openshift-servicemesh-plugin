@@ -104,6 +104,10 @@ After the plugin is installed, you can see the "OSSMConsole" resource that was c
 
 ![Installed Plugin](08-ui-installed-cr.png)
 
+Once the operator has finished processing the OSSMConsole CR, you must then wait for the OpenShift Console to load and initialize the plugin. This may take a minute or two. You will know when the plugin is ready when the OpenShift Console pops up this message - when you see this message, refresh the browser window to reload the OpenShift Console:
+
+![Plugin Ready](08.1-ui-installed-cr-plugin-ready.png)
+
 ## Uninstalling
 
 This section will describe how to uninstall the OpenShift Service Mesh Console plugin and its operator.
