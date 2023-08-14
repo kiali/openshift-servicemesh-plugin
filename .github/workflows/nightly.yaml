@@ -27,8 +27,8 @@ jobs:
     name: Initialize
     runs-on: ubuntu-20.04
     outputs:
-      plugin_quay_tag: ${{ steps.quay_tag.outputs.plugin_quay_tag }}
-      operator_quay_tag: ${{ steps.quay_tag.outputs.operator_quay_tag }}
+      plugin_quay_tag: ${{ env.plugin_quay_tag }}
+      operator_quay_tag: ${{ env.operator_quay_tag }}
     steps:
     - name: Determine Quay tag
       id: quay_tag
@@ -46,42 +46,42 @@ jobs:
         else
           OPERATOR_QUAY_REPO="${{ github.event.inputs.operator_quay_repository }}"
         fi
-        
+
         PLUGIN_QUAY_TAG="$PLUGIN_QUAY_REPO:latest"
         OPERATOR_QUAY_TAG="$OPERATOR_QUAY_REPO:latest"
 
-        echo "::set-output name=plugin_quay_tag::$PLUGIN_QUAY_TAG"
-        echo "::set-output name=operator_quay_tag::$OPERATOR_QUAY_TAG"
+        echo "plugin_quay_tag=$PLUGIN_QUAY_TAG" >> $GITHUB_ENV
+        echo "operator_quay_tag=$OPERATOR_QUAY_TAG" >> $GITHUB_ENV
 
     - name: Log information
       run: |
         echo "Release type: latest"
 
-        echo "Plugin Quay tag": ${{ steps.quay_tag.outputs.plugin_quay_tag }}
-        echo "Operator Quay tag": ${{ steps.quay_tag.outputs.operator_quay_tag }}
-  
+        echo "Plugin Quay tag": ${{ env.plugin_quay_tag }}
+        echo "Operator Quay tag": ${{ env.operator_quay_tag }}
+
   push:
     name: Push latest
     runs-on: ubuntu-20.04
     if: ${{ (github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule' }}
     needs: [initialize]
     env:
-      PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
-      OPERATOR_QUAY_TAG: ${{ needs.initialize.outputs.operator_quay_tag }}
+      PLUGIN_QUAY_TAG: ${{ env.plugin_quay_tag }}
+      OPERATOR_QUAY_TAG: ${{ env.operator_quay_tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
         ref: ${{ github.event.inputs.release_branch || github.ref_name }}
-      
+
     - name: Build and push plugin image
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
-        
+
         make -e TARGET_ARCHS="amd64 s390x ppc64le" build-push-plugin-multi-arch
 
     - name: Build and push operator image
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
-        
+
         make -e TARGET_ARCHS="amd64 s390x ppc64le" build-push-operator-multi-arch

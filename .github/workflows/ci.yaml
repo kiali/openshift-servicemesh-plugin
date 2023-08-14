@@ -20,13 +20,13 @@ jobs:
     name: Initialize
     runs-on: ubuntu-20.04
     outputs:
-      target_branch: ${{ steps.target_branch.outputs.target_branch }}
-      build-branch: ${{ steps.build_branch.outputs.build_branch || steps.branch-pr.outputs.branch-pr }}
+      target_branch: ${{ env.target_branch }}
+      build_branch: ${{ env.build_branch || env.branch-pr }}
     steps:
     - name: Determine target branch
       id: target_branch
       run: |
-        echo "::set-output name=target_branch::${{ github.base_ref || github.ref_name }}"
+        echo "target_branch=${{ github.base_ref || github.ref_name }}" >> $GITHUB_ENV
 
     # For the building branch, if we are running agains a PR, we need to indicate in the branch that is coming from a PR
     - name: Determine build branch
@@ -39,16 +39,16 @@ jobs:
           BUILD_BRANCH="${{ github.base_ref }}"
         fi
 
-        echo "::set-output name=build_branch::$BUILD_BRANCH"
+        echo "build_branch=$BUILD_BRANCH" >> $GITHUB_ENV
 
     - name: Log information
       run: |
-        echo "Target branch: ${{ steps.target_branch.outputs.target_branch }}"
+        echo "Target branch: ${{ env.target_branch }}"
 
-        echo "Build branch: ${{ steps.build_branch.outputs.build_branch }}"
-  
+        echo "Build branch: ${{ env.build_branch }}"
+
   build_plugin:
-    name: Build plugin    
+    name: Build plugin
     runs-on: ubuntu-20.04
     needs: [initialize]
     steps:
@@ -65,9 +65,9 @@ jobs:
     - name: Build image
       run: |
         make -e CONTAINER_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile) build-plugin-image
-  
+
   build_operator:
-    name: Build operator    
+    name: Build operator
     runs-on: ubuntu-20.04
     needs: [initialize]
     steps:
@@ -75,7 +75,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         ref: ${{ inputs.build_branch }}
-    
+
     - name: Validate OLM metadata
       run: make validate
 
