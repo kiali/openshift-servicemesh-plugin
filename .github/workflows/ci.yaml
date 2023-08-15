@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       target_branch: ${{ env.target_branch }}
-      build_branch: ${{ env.build_branch || env.branch-pr }}
+      build_branch: ${{ env.build_branch }}
     steps:
     - name: Determine target branch
       id: target_branch
