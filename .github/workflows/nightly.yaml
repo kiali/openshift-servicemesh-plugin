@@ -66,8 +66,8 @@ jobs:
     if: ${{ (github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule' }}
     needs: [initialize]
     env:
-      PLUGIN_QUAY_TAG: ${{ env.plugin_quay_tag }}
-      OPERATOR_QUAY_TAG: ${{ env.operator_quay_tag }}
+      PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
+      OPERATOR_QUAY_TAG: ${{ needs.initialize.outputs.operator_quay_tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3

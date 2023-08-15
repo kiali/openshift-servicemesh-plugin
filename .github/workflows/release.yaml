@@ -193,16 +193,16 @@ jobs:
 
   release:
     name: Release
-    if: ${{ env.release_type != 'skip' && ((github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule') }}
+    if: ${{ needs.initialize.outputs.release_type != 'skip' && ((github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule') }}
     runs-on: ubuntu-20.04
     needs: [initialize]
     env:
-      RELEASE_VERSION: ${{ env.release_version }}
-      BRANCH_VERSION: ${{ env.branch_version }}
-      NEXT_VERSION: ${{ env.next_version }}
+      RELEASE_VERSION: ${{ needs.initialize.outputs.release_version }}
+      BRANCH_VERSION: ${{ needs.initialize.outputs.branch_version }}
+      NEXT_VERSION: ${{ needs.initialize.outputs.next_version }}
       RELEASE_BRANCH: ${{ github.event.inputs.release_branch || github.ref_name }}
-      PLUGIN_QUAY_TAG: ${{ env.plugin_quay_tag }}
-      OPERATOR_QUAY_TAG: ${{ env.operator_quay_tag }}
+      PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
+      OPERATOR_QUAY_TAG: ${{ needs.initialize.outputs.operator_quay_tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -261,7 +261,7 @@ jobs:
       env:
         BUILD_TAG: kiali-release-${{ github.run_number }}-main
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      if: ${{ env.release_type == 'minor' }}
+      if: ${{ needs.initialize.outputs.release_type == 'minor' }}
       run: |
         sed -i -r "s/^VERSION \?= (.*)/VERSION \?= $NEXT_VERSION-SNAPSHOT/" Makefile
 
