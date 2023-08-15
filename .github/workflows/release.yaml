@@ -87,7 +87,7 @@ jobs:
     - name: Determine release type
       id: release_type
       run: |
-        if [ -z ${{ github.event.inputs.release_type }} ];
+        if [ -z "${{ github.event.inputs.release_type }}" ];
         then
           DO_RELEASE=$(python minor.py)
           if [[ $DO_RELEASE == "1" ]]
@@ -152,14 +152,14 @@ jobs:
         BRANCH_VERSION: ${{ env.branch_version }}
       id: quay_tag
       run: |
-        if [ -z ${{ github.event.inputs.plugin_quay_repository }} ];
+        if [ -z "${{ github.event.inputs.plugin_quay_repository }}" ];
         then
           PLUGIN_QUAY_REPO="quay.io/kiali/ossmconsole"
         else
           PLUGIN_QUAY_REPO="${{ github.event.inputs.plugin_quay_repository }}"
         fi
 
-        if [ -z ${{ github.event.inputs.operator_quay_repository }} ];
+        if [ -z "${{ github.event.inputs.operator_quay_repository }}" ];
         then
           OPERATOR_QUAY_REPO="quay.io/kiali/ossmconsole-operator"
         else

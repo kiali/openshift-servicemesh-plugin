@@ -32,7 +32,7 @@ jobs:
     - name: Determine build branch
       id: build_branch
       run: |
-        if [ -z ${{ github.base_ref }} ];
+        if [ -z "${{ github.base_ref }}" ];
         then
           BUILD_BRANCH="${{ github.ref_name }}"
         else

@@ -33,14 +33,14 @@ jobs:
     - name: Determine Quay tag
       id: quay_tag
       run: |
-        if [ -z ${{ github.event.inputs.plugin_quay_repository }} ];
+        if [ -z "${{ github.event.inputs.plugin_quay_repository }}" ];
         then
           PLUGIN_QUAY_REPO="quay.io/kiali/ossmconsole"
         else
           PLUGIN_QUAY_REPO="${{ github.event.inputs.plugin_quay_repository }}"
         fi
 
-        if [ -z ${{ github.event.inputs.operator_quay_repository }} ];
+        if [ -z "${{ github.event.inputs.operator_quay_repository }}" ];
         then
           OPERATOR_QUAY_REPO="quay.io/kiali/ossmconsole-operator"
         else
