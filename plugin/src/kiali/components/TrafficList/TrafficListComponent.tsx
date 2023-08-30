@@ -18,7 +18,7 @@ import { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
 import { isParentKiosk, kioskContextMenuAction } from '../Kiosk/KioskActions';
 import { isMultiCluster } from 'config';
-import { virtualItemLinkStyle } from 'components/VirtualList/VirtualListStyle';
+import { getParamsSeparator } from '../../utils/SearchParamUtils';
 
 export interface TrafficListItem {
   direction: TrafficDirection;
@@ -283,12 +283,11 @@ class TrafficList extends FilterComponent.Component<
                     onClick={() => {
                       kioskContextMenuAction(links.detail);
                     }}
-                    className={virtualItemLinkStyle}
                   >
                     {name}
                   </Link>
                 ) : (
-                  <Link key={`link_d_${item.badge}_${name}`} to={links.detail} className={virtualItemLinkStyle}>
+                  <Link key={`link_d_${item.badge}_${name}`} to={links.detail}>
                     {name}
                   </Link>
                 )
@@ -311,12 +310,11 @@ class TrafficList extends FilterComponent.Component<
                     onClick={() => {
                       kioskContextMenuAction(links.metrics);
                     }}
-                    className={virtualItemLinkStyle}
                   >
                     View metrics
                   </Link>
                 ) : (
-                  <Link key={`link_m_${item.badge}_${name}`} to={links.metrics} className={virtualItemLinkStyle}>
+                  <Link key={`link_m_${item.badge}_${name}`} to={links.metrics}>
                     View metrics
                   </Link>
                 ))}
@@ -346,12 +344,13 @@ class TrafficList extends FilterComponent.Component<
       return { detail: '', metrics: '' };
     }
 
-    const detail = `/namespaces/${item.node.namespace}/${this.nodeTypeToType(item.node.type, true)}/${
-      item.node.name
-    }?clusterName=${item.node.cluster}`;
+    let detail = `/namespaces/${item.node.namespace}/${this.nodeTypeToType(item.node.type, true)}/${item.node.name}`;
+    if (item.node.cluster && isMultiCluster()) {
+      detail += `?clusterName=${item.node.cluster}`;
+    }
 
     const metricsDirection = item.direction === 'inbound' ? 'in_metrics' : 'out_metrics';
-    let metrics = `${history.location.pathname}?tab=${metricsDirection}`;
+    let metrics = `${history.location.pathname}${getParamsSeparator(history.location.pathname)}tab=${metricsDirection}`;
 
     switch (item.node.type) {
       case NodeType.APP:
@@ -375,7 +374,7 @@ class TrafficList extends FilterComponent.Component<
             metrics += `&${URLParam.BY_LABELS}=${encodeURIComponent('destination_service_name=' + item.node.name)}`;
           } else {
             // Services have only one metrics tab.
-            metrics = `${detail}?tab=metrics`;
+            metrics = `${detail}${getParamsSeparator(detail)}tab=metrics`;
           }
         }
         break;
@@ -386,7 +385,7 @@ class TrafficList extends FilterComponent.Component<
         // user is redirected to the "opposite" metrics. When looking at certain item, if traffic is *inbound*
         // from a certain workload, that traffic is reflected in the *outbound* metrics of the workload (and vice-versa).
         const inverseMetricsDirection = item.direction === 'inbound' ? 'out_metrics' : 'in_metrics';
-        metrics = `${detail}?tab=${inverseMetricsDirection}`;
+        metrics = `${detail}${getParamsSeparator(detail)}tab=${inverseMetricsDirection}`;
         break;
       default:
         metrics = '';

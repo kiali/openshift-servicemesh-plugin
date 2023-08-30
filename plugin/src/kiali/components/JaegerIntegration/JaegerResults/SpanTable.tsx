@@ -34,7 +34,7 @@ import { MetricsStatsThunkActions } from 'actions/MetricsStatsThunkActions';
 import { EnvoySpanInfo, OpenTracingHTTPInfo, OpenTracingTCPInfo, RichSpanData } from 'types/JaegerInfo';
 import { sameSpans } from 'utils/tracing/TracingHelper';
 import { buildQueriesFromSpans } from 'utils/tracing/TraceStats';
-import { getSpanId } from '../../../utils/SearchParamUtils';
+import { getParamsSeparator, getSpanId } from '../../../utils/SearchParamUtils';
 import { kialiStyle } from 'styles/StyleUtils';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { formatDuration, isErrorTag } from 'utils/tracing/TracingHelper';
@@ -45,6 +45,7 @@ import { renderMetricsComparison } from './StatsComparison';
 import { history } from 'app/History';
 import { AngleDownIcon, AngleRightIcon, ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { isParentKiosk, kioskContextMenuAction } from '../../Kiosk/KioskActions';
+import { tableStyle } from 'styles/TableStyle';
 
 type ReduxProps = {
   kiosk: string;
@@ -152,7 +153,7 @@ class SpanTableComponent extends React.Component<Props, State> {
         actionResolver={this.actionResolver}
         sortBy={{ index: this.state.sortIndex, direction: this.state.sortDirection }}
         onSort={(_event, index, sortDirection) => this.setState({ sortIndex: index, sortDirection: sortDirection })}
-        className="table"
+        className={tableStyle}
         rowWrapper={p => <RowWrapper {...p} className={(p.row as any).className} />}
       >
         <TableHeader />
@@ -235,7 +236,7 @@ class SpanTableComponent extends React.Component<Props, State> {
       {
         title: 'Inbound Metrics',
         onClick: (_event, _rowId, rowData, _extra) => {
-          const href = rowData.item.linkToApp + '?tab=in_metrics';
+          const href = rowData.item.linkToApp + getParamsSeparator(rowData.item.linkToApp) + 'tab=in_metrics';
           if (parentKiosk) {
             kioskContextMenuAction(href);
           } else {
@@ -246,7 +247,7 @@ class SpanTableComponent extends React.Component<Props, State> {
       {
         title: 'Outbound Metrics',
         onClick: (_event, _rowId, rowData, _extra) => {
-          const href = rowData.item.linkToApp + '?tab=out_metrics';
+          const href = rowData.item.linkToApp + getParamsSeparator(rowData.item.linkToApp) + 'tab=out_metrics';
           if (parentKiosk) {
             kioskContextMenuAction(href);
           } else {
@@ -282,7 +283,8 @@ class SpanTableComponent extends React.Component<Props, State> {
         {
           title: 'Inbound Metrics',
           onClick: (_event, _rowId, rowData, _extra) => {
-            const href = rowData.item.linkToWorkload + '?tab=in_metrics';
+            const href =
+              rowData.item.linkToWorkload + getParamsSeparator(rowData.item.linkToWorkload) + 'tab=in_metrics';
             if (parentKiosk) {
               kioskContextMenuAction(href);
             } else {
@@ -293,7 +295,8 @@ class SpanTableComponent extends React.Component<Props, State> {
         {
           title: 'Outbound Metrics',
           onClick: (_event, _rowId, rowData, _extra) => {
-            const href = rowData.item.linkToWorkload + '?tab=out_metrics';
+            const href =
+              rowData.item.linkToWorkload + getParamsSeparator(rowData.item.linkToWorkload) + 'tab=out_metrics';
             if (parentKiosk) {
               kioskContextMenuAction(href);
             } else {
