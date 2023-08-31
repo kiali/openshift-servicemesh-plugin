@@ -3,7 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Namespace } from 'types/Namespace';
 import { MessageType } from 'types/MessageCenter';
-import { DurationInSeconds, IntervalInMilliseconds } from 'types/Common';
+import { DurationInSeconds, IntervalInMilliseconds, PF_THEME_DARK, Theme } from 'types/Common';
 import { JaegerInfo } from 'types/JaegerInfo';
 import { toGrpcRate, toHttpRate, toTcpRate, TrafficRate } from 'types/Graph';
 import { StatusKey, StatusState } from 'types/StatusState';
@@ -12,7 +12,6 @@ import * as API from 'services/Api';
 import * as AlertUtils from 'utils/AlertUtils';
 import { humanDurations, serverConfig, setServerConfig } from 'config/ServerConfig';
 import { config } from 'config';
-import { KialiAppState } from 'store/Store';
 import { KialiDispatch } from 'types/Redux';
 import { MessageCenterActions } from 'actions/MessageCenterActions';
 import { LoginThunkActions } from 'actions/LoginThunkActions';
@@ -23,16 +22,24 @@ import { LoginActions } from 'actions/LoginActions';
 import { GraphToolbarActions } from 'actions/GraphToolbarActions';
 import { HelpDropdownActions } from 'actions/HelpDropdownActions';
 import { GlobalActions } from 'actions/GlobalActions';
-import { getKialiState } from '../utils/Reducer';
 import { getPluginConfig } from 'openshift/utils/KialiIntegration';
 import { globalStyle } from 'styles/GlobalStyle';
 import { kialiStyle } from 'styles/StyleUtils';
+import { store } from 'store/ConfigStore';
 import cssVariables from 'styles/variables.module.scss';
 
 import '@patternfly/patternfly/patternfly.css';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/dist/themes/light-border.css';
-import 'react-datepicker/dist/react-datepicker.css';
+
+// Enables ACE editor YAML themes
+import 'ace-builds/src-noconflict/ace';
+import 'ace-builds/src-noconflict/mode-yaml';
+import 'ace-builds/src-noconflict/theme-eclipse';
+import 'ace-builds/src-noconflict/theme-twilight';
+
+// Enables the search box for the ACE editor
+import 'ace-builds/src-noconflict/ext-searchbox';
 
 declare global {
   interface Date {
@@ -55,7 +62,6 @@ const ossmcStyle = kialiStyle({
 });
 
 interface KialiControllerReduxProps {
-  namespaces: Namespace[];
   addMessage: (content: string, detail: string, groupId?: string, msgType?: MessageType, showNotif?: boolean) => void;
   checkCredentials: () => void;
   setActiveNamespaces: (namespaces: Namespace[]) => void;
@@ -66,7 +72,6 @@ interface KialiControllerReduxProps {
   setRefreshInterval: (interval: IntervalInMilliseconds) => void;
   setTrafficRates: (rates: TrafficRate[]) => void;
   statusRefresh: (statusState: StatusState) => void;
-  setKiosk: (kiosk: string) => void;
 }
 
 type KialiControllerProps = KialiControllerReduxProps & {
@@ -82,6 +87,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
   componentDidMount(): void {
     this.getKialiConfig();
+    this.setDocLayout();
   }
 
   componentWillUnmount() {
@@ -128,7 +134,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
       this.props.setNamespaces(configs[0].data, new Date());
       setServerConfig(configs[1].data);
-      this.props.setKiosk('/');
       this.applyUIDefaults();
       this.setState({ configLoaded: true });
     } catch (err) {
@@ -179,7 +184,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
       // Selected Namespaces
       if (uiDefaults.namespaces && uiDefaults.namespaces.length > 0) {
         // use store directly, we don't want to update on redux state change
-        const namespaces = this.props.namespaces;
+        const namespaces = store.getState().namespaces.items;
         const namespaceNames: string[] = namespaces ? namespaces.map(ns => ns.name) : [];
         const activeNamespaces: Namespace[] = [];
 
@@ -221,6 +226,15 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
     }
   }
 
+  private setDocLayout = () => {
+    // Set theme checking if Openshift Console has added Dark Theme CSS class
+    const theme = document.documentElement.classList.contains(PF_THEME_DARK) ? Theme.DARK : Theme.LIGHT;
+    store.dispatch(GlobalActions.setTheme(theme));
+
+    // Set kiosk mode for OSSMC
+    store.dispatch(GlobalActions.setKiosk('/'));
+  };
+
   private processServerStatus = (status: StatusState) => {
     this.props.statusRefresh(status);
 
@@ -236,10 +250,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   };
 }
 
-const mapStateToProps = (state: KialiAppState) => ({
-  namespaces: getKialiState(state).namespaces.items ?? []
-});
-
 const mapDispatchToProps = (dispatch: KialiDispatch) => ({
   addMessage: bindActionCreators(MessageCenterActions.addMessage, dispatch),
   checkCredentials: () => dispatch(LoginThunkActions.checkCredentials()),
@@ -250,8 +260,7 @@ const mapDispatchToProps = (dispatch: KialiDispatch) => ({
   setNamespaces: bindActionCreators(NamespaceActions.receiveList, dispatch),
   setRefreshInterval: bindActionCreators(UserSettingsActions.setRefreshInterval, dispatch),
   setTrafficRates: bindActionCreators(GraphToolbarActions.setTrafficRates, dispatch),
-  statusRefresh: bindActionCreators(HelpDropdownActions.statusRefresh, dispatch),
-  setKiosk: bindActionCreators(GlobalActions.setKiosk, dispatch)
+  statusRefresh: bindActionCreators(HelpDropdownActions.statusRefresh, dispatch)
 });
 
-export const KialiController = connect(mapStateToProps, mapDispatchToProps)(KialiControllerComponent);
+export const KialiController = connect(null, mapDispatchToProps)(KialiControllerComponent);
