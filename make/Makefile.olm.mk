@@ -66,7 +66,9 @@ build-olm-index: .ensure-opm-exists cluster-push-olm-bundle
 	@rm -rf ${OPERATOR_OUTDIR}/index
 	@mkdir -p ${OPERATOR_OUTDIR}/index/ossmconsole-index
 	${OPM} init ossmconsole --default-channel=candidate --output yaml > ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
-	${OPM} render --skip-tls-verify ${CLUSTER_REPO}/${OLM_BUNDLE_NAME}:${BUNDLE_VERSION} --output yaml >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	@if [ "${DORP}" == "podman" -a -n "$${XDG_RUNTIME_DIR}" ]; then cp "$${XDG_RUNTIME_DIR}/containers/auth.json" "${OPERATOR_OUTDIR}/index/ossmconsole-index/config.json"; fi
+	@if [ -f "${OPERATOR_OUTDIR}/index/ossmconsole-index/config.json" ]; then export DOCKER_CONFIG="${OPERATOR_OUTDIR}/index/ossmconsole-index"; fi ; ${OPM} render --skip-tls-verify ${CLUSTER_REPO}/${OLM_BUNDLE_NAME}:${BUNDLE_VERSION} --output yaml >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
+	@rm -f ${OPERATOR_OUTDIR}/index/ossmconsole-index/config.json
 	@# We need OLM to pull the index from the internal registry - change the index to only use the internal registry name
 	sed -i 's|${CLUSTER_REPO}|${CLUSTER_REPO_INTERNAL}|g' ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
 	@echo "---"                                               >> ${OPERATOR_OUTDIR}/index/ossmconsole-index/index.yaml
