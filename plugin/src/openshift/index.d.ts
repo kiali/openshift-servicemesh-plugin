@@ -1,14 +1,18 @@
 declare module '*.png' {
-  const value: any;
-  export default value;
+  const src: string;
+  export default src;
 }
 
 declare module '*.svg' {
-  const value: any;
-  export default value;
+  import * as React from 'react';
+
+  export const ReactComponent: React.FunctionComponent<React.SVGProps<SVGSVGElement> & { title?: string }>;
+
+  const src: string;
+  export default src;
 }
 
 declare module '*.module.scss' {
-  const value: any;
-  export default value;
+  const classes: { readonly [key: string]: string };
+  export default classes;
 }

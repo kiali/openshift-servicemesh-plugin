@@ -4,8 +4,6 @@ import { aceOptions, IstioConfigDetails, IstioConfigId, safeDumpOptions } from '
 import * as AlertUtils from '../../utils/AlertUtils';
 import * as API from '../../services/Api';
 import AceEditor from 'react-ace';
-import 'ace-builds/src-noconflict/mode-yaml';
-import 'ace-builds/src-noconflict/theme-eclipse';
 import {
   HelpMessage,
   ObjectReference,
@@ -25,7 +23,7 @@ import {
 import { IstioActionDropdown } from '../../components/IstioActions/IstioActionsDropdown';
 import { RenderComponentScroll } from '../../components/Nav/Page';
 import { IstioActionButtons } from '../../components/IstioActions/IstioActionsButtons';
-import { history } from '../../app/History';
+import { history, HistoryManager } from '../../app/History';
 import { Paths } from '../../config';
 import { MessageType } from '../../types/MessageCenter';
 import { getIstioObject, mergeJsonPatch } from '../../utils/IstioConfigUtils';
@@ -56,9 +54,7 @@ import { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
 import { basicTabStyle } from 'styles/TabStyles';
 import { istioAceEditorStyle } from 'styles/AceEditorStyle';
-
-// Enables the search box for the ACEeditor
-require('ace-builds/src-noconflict/ext-searchbox');
+import { Theme } from 'types/Common';
 
 const rightToolbarStyle = kialiStyle({
   zIndex: 500
@@ -93,6 +89,7 @@ interface IstioConfigDetailsProps {
   istioConfigId: IstioConfigId;
   kiosk: string;
   istioAPIEnabled: boolean;
+  theme: string;
 }
 
 class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetailsProps, IstioConfigDetailsState> {
@@ -103,8 +100,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
 
   constructor(props: IstioConfigDetailsProps) {
     super(props);
-    const urlParams = new URLSearchParams(history.location.search);
-    const cluster = urlParams.get('clusterName') || undefined;
+    const cluster = HistoryManager.getClusterName();
     this.state = {
       cluster: cluster,
       isModified: false,
@@ -271,7 +267,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
     jsYaml.safeLoadAll(this.state.yamlModified, (objectModified: object) => {
       const jsonPatch = JSON.stringify(
         mergeJsonPatch(objectModified, getIstioObject(this.state.istioObjectDetails))
-      ).replace(new RegExp('"(,null)+]', 'g'), '"]');
+      ).replace(new RegExp('(,null)+]', 'g'), ']');
       API.updateIstioConfigDetail(
         this.props.istioConfigId.namespace,
         this.props.istioConfigId.objectType,
@@ -513,7 +509,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
         <AceEditor
           ref={this.aceEditorRef}
           mode="yaml"
-          theme="eclipse"
+          theme={this.props.theme === Theme.DARK ? 'twilight' : 'eclipse'}
           onChange={this.onEditorChange}
           height={`calc(var(--kiali-yaml-editor-height) + ${isParentKiosk(this.props.kiosk) ? '100px' : '0px'})`}
           width={'100%'}
@@ -636,7 +632,8 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
 
 const mapStateToProps = (state: KialiAppState) => ({
   kiosk: state.globalState.kiosk,
-  istioAPIEnabled: state.statusState.istioEnvironment.istioAPIEnabled
+  istioAPIEnabled: state.statusState.istioEnvironment.istioAPIEnabled,
+  theme: state.globalState.theme
 });
 
 export const IstioConfigDetailsPage = connect(mapStateToProps)(IstioConfigDetailsPageComponent);

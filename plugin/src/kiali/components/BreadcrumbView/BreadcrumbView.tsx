@@ -1,9 +1,10 @@
 import * as React from 'react';
-import { Paths } from '../../config';
+import { isMultiCluster, Paths } from '../../config';
 import { Link } from 'react-router-dom';
 import { Breadcrumb, BreadcrumbItem } from '@patternfly/react-core';
 import { FilterSelected } from '../Filters/StatefulFilters';
 import { dicIstioType } from '../../types/IstioConfigList';
+import { HistoryManager } from '../../app/History';
 
 interface BreadCumbViewProps {
   location: {
@@ -57,7 +58,7 @@ export class BreadcrumbView extends React.Component<BreadCumbViewProps, BreadCum
     let itemName = page !== 'istio' ? match[3] : match[5];
     return {
       namespace: ns,
-      cluster: urlParams.get('clusterName') || undefined,
+      cluster: HistoryManager.getClusterName(urlParams),
       pathItem: page,
       item: itemName,
       itemName: ItemNames[page],
@@ -86,7 +87,7 @@ export class BreadcrumbView extends React.Component<BreadCumbViewProps, BreadCum
 
   getItemPage = () => {
     let path = `/namespaces/${this.state.namespace}/${this.state.pathItem}/${this.state.item}`;
-    if (this.state.cluster) {
+    if (this.state.cluster && isMultiCluster()) {
       path += `?clusterName=${this.state.cluster}`;
     }
     return path;

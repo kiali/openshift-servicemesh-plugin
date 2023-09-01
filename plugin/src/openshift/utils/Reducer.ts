@@ -1,5 +1,4 @@
 import { combineReducers } from 'redux';
-import { RootStateOrAny } from 'react-redux';
 import { KialiAppState } from 'store/Store';
 import { LoginStateReducer } from 'reducers/LoginState';
 import { GlobalStateReducer } from 'reducers/GlobalState';
@@ -16,15 +15,6 @@ import { NamespaceStateReducer } from 'reducers/NamespaceState';
 import { MessageCenterReducer } from 'reducers/MessageCenter';
 import { KialiAppAction } from 'actions/KialiAppAction';
 import { ClusterStateReducer } from 'reducers/ClusterState';
-
-/**
- * If no redux provider is set in the OSSMC page (like IstioConfigListPage),
- * KialiAppState is stored as an extension of Openshift Console state (under state.plugins.kiali)
- * This method gets the correct Kiali state whether if the redux provider is set or not
- */
-export const getKialiState = (state: RootStateOrAny): KialiAppState => {
-  return state.plugins?.kiali ?? state;
-};
 
 export default combineReducers<KialiAppState, KialiAppAction>({
   authentication: LoginStateReducer,

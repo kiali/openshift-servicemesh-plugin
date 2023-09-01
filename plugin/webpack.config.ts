@@ -21,7 +21,8 @@ const config: Configuration = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name]-bundle.js',
-    chunkFilename: '[name]-chunk.js'
+    chunkFilename: '[name]-chunk.js',
+    assetModuleFilename: 'static/media/[name].[hash][ext]'
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
@@ -62,10 +63,7 @@ const config: Configuration = {
       },
       {
         test: /\.(png|jpg|jpeg|gif|svg|woff2?|ttf|eot|otf)(\?.*$|$)/,
-        type: 'asset/resource',
-        generator: {
-          filename: 'assets/[name].[ext]'
-        }
+        type: 'asset/resource'
       },
       {
         test: /\.m?js/,

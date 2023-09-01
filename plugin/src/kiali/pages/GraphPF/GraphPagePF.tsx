@@ -25,7 +25,6 @@ import { computePrometheusRateParams } from '../../services/Prometheus';
 import * as AlertUtils from '../../utils/AlertUtils';
 import { ErrorBoundary } from '../../components/ErrorBoundary/ErrorBoundary';
 import { GraphToolbar } from '../Graph/GraphToolbar/GraphToolbar';
-import { GraphLegend } from '../Graph/GraphLegend';
 import { EmptyGraphLayout } from '../../components/CytoscapeGraph/EmptyGraphLayout';
 import { SummaryPanel } from '../Graph/SummaryPanel';
 import {
@@ -73,6 +72,7 @@ import { GraphData } from 'pages/Graph/GraphPage';
 import { GraphPF, FocusNode } from './GraphPF';
 import * as CytoscapeGraphUtils from '../../components/CytoscapeGraph/CytoscapeGraphUtils';
 import { Controller } from '@patternfly/react-topology';
+import { GraphLegendPF } from './GraphLegendPF';
 
 // GraphURLPathProps holds path variable values.  Currently all path variables are relevant only to a node graph
 export type GraphURLPathProps = {
@@ -177,23 +177,22 @@ const kioskContainerStyle = kialiStyle({
 });
 
 const graphContainerStyle = kialiStyle({ flex: '1', minWidth: '350px', zIndex: 0, paddingRight: '5px' });
-const graphWrapperDivStyle = kialiStyle({ position: 'relative', backgroundColor: PFColors.Black200 });
+const graphWrapperDivStyle = kialiStyle({ position: 'relative', backgroundColor: PFColors.BackgroundColor200 });
 
 const graphTimeRange = kialiStyle({
   position: 'absolute',
   top: '10px',
   left: '10px',
   width: 'auto',
-  zIndex: 2,
-  backgroundColor: PFColors.White
-});
-
-const whiteBackground = kialiStyle({
-  backgroundColor: PFColors.White
+  zIndex: 2
 });
 
 const replayBackground = kialiStyle({
   backgroundColor: PFColors.Replay
+});
+
+const graphBackground = kialiStyle({
+  backgroundColor: PFColors.BackgroundColor100
 });
 
 const graphLegendStyle = kialiStyle({
@@ -450,12 +449,12 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
               onError={this.notifyError}
               fallBackComponent={<GraphErrorBoundaryFallback />}
             >
-              {this.props.showLegend && false && (
-                <GraphLegend className={graphLegendStyle} closeLegend={this.props.toggleLegend} />
+              {this.props.showLegend && (
+                <GraphLegendPF className={graphLegendStyle} closeLegend={this.props.toggleLegend} />
               )}
               {isReady && (
                 <Chip
-                  className={`${graphTimeRange} ${this.props.replayActive ? replayBackground : whiteBackground}`}
+                  className={`${graphTimeRange} ${this.props.replayActive ? replayBackground : graphBackground}`}
                   isReadOnly={true}
                 >
                   {this.props.replayActive && <Badge style={{ marginRight: '4px' }} isRead={true}>{`Replay`}</Badge>}

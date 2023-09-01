@@ -26,9 +26,7 @@ import { Namespace } from 'types/Namespace';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
 import { KialiController } from '../components/KialiController';
-import { connect } from 'react-redux';
-import { KialiAppState } from 'store/Store';
-import { getKialiState } from '../utils/Reducer';
+import { store } from 'store/ConfigStore';
 
 interface IstioConfigObject extends IstioObject {
   validation?: ObjectValidation;
@@ -165,11 +163,7 @@ const newIstioResourceList = {
   sidecar: 'Sidecar'
 };
 
-type IstioConfigListProps = {
-  istioAPIEnabled: boolean;
-};
-
-const IstioConfigListPage = (props: IstioConfigListProps) => {
+const IstioConfigListPage = () => {
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<any[]>([]);
@@ -179,7 +173,7 @@ const IstioConfigListPage = (props: IstioConfigListProps) => {
 
   // Fetch the Istio configs, convert to istio items and map them into flattened list items
   const fetchIstioConfigs = React.useCallback(async (): Promise<IstioConfigItem[]> => {
-    const validate = props.istioAPIEnabled ? true : false;
+    const validate = store.getState().statusState.istioEnvironment.istioAPIEnabled;
     let getNamespacesData, getIstioConfigData;
 
     if (ns) {
@@ -203,7 +197,7 @@ const IstioConfigListPage = (props: IstioConfigListProps) => {
         return istioItems;
       }
     });
-  }, [ns, props.istioAPIEnabled, promises]);
+  }, [ns, promises]);
 
   const onCreate = (reference: string) => {
     const groupVersionKind = istioResources.find(res => res.id === reference) as K8sGroupVersionKind;
@@ -245,8 +239,4 @@ const IstioConfigListPage = (props: IstioConfigListProps) => {
   );
 };
 
-const mapStateToProps = (state: KialiAppState) => ({
-  istioAPIEnabled: getKialiState(state).statusState.istioEnvironment.istioAPIEnabled
-});
-
-export default connect(mapStateToProps)(IstioConfigListPage);
+export default IstioConfigListPage;
