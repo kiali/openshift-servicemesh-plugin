@@ -5,15 +5,15 @@ on:
   push:
     branches: [main, "^v\\d+\\.\\d+$"]
     paths-ignore:
-    - 'docs/**'
-    - '**/*.md'
-    - '**/*.adoc'
+      - 'docs/**'
+      - '**/*.md'
+      - '**/*.adoc'
   pull_request:
     branches: [main, "^v\\d+\\.\\d+$"]
     paths-ignore:
-    - 'docs/**'
-    - '**/*.md'
-    - '**/*.adoc'
+      - 'docs/**'
+      - '**/*.md'
+      - '**/*.adoc'
 
 jobs:
   initialize:
