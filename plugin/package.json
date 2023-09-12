@@ -134,7 +134,7 @@
   },
   "consolePlugin": {
     "name": "ossmconsole",
-    "version": "0.1.0",
+    "version": "0.5.0",
     "displayName": "OpenShift Service Mesh Console",
     "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {

@@ -215,8 +215,9 @@ jobs:
         sed -i -r "s/^VERSION \?= (.*)/VERSION \?= $RELEASE_VERSION/" Makefile
 
         # UI version
-        jq -r '.version |= "${RELEASE_VERSION:1}"' plugin/package.json > plugin/package.json.tmp
+        jq -r ".version |= \"${RELEASE_VERSION:1}\" | .consolePlugin.version |= \"${RELEASE_VERSION:1}\"" plugin/package.json > plugin/package.json.tmp
         mv plugin/package.json.tmp plugin/package.json
+        cat plugin/package.json
 
     - name: Build and push images
       run: |
@@ -265,8 +266,9 @@ jobs:
       run: |
         sed -i -r "s/^VERSION \?= (.*)/VERSION \?= $NEXT_VERSION-SNAPSHOT/" Makefile
 
-        jq -r ".version |= \"${NEXT_VERSION:1}\"" plugin/package.json > plugin/package.json.tmp
+        jq -r ".version |= \"${NEXT_VERSION:1}\" | .consolePlugin.version |= \"${NEXT_VERSION:1}\"" plugin/package.json > plugin/package.json.tmp
         mv plugin/package.json.tmp plugin/package.json
+        cat plugin/package.json
 
         git add Makefile plugin/package.json
 
