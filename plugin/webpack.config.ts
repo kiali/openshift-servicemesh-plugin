@@ -91,7 +91,8 @@ const config: Configuration = {
     new ConsoleRemotePlugin(),
     new DefinePlugin({
       'process.env.API_PROXY': JSON.stringify(process.env.API_PROXY),
-      'process.env.CSS_PREFIX': JSON.stringify(process.env.CSS_PREFIX)
+      'process.env.CSS_PREFIX': JSON.stringify(process.env.CSS_PREFIX),
+      'process.env.GLOBAL_SCROLLBAR': JSON.stringify(process.env.GLOBAL_SCROLLBAR)
     }),
     new NodePolyfillPlugin(),
     new ForkTsCheckerWebpackPlugin({
