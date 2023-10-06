@@ -60,27 +60,3 @@ jobs:
     - name: Build image
       run: |
         make -e CONTAINER_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile) build-plugin-image
-
-  build_operator:
-    name: Build operator
-    runs-on: ubuntu-20.04
-    needs: [initialize]
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ inputs.build_branch }}
-
-    - name: Validate OLM metadata
-      run: make validate
-
-    - name: Validate CR
-      run: |
-        kind create cluster
-        make -e CLIENT_EXE=kubectl validate-cr
-        kind delete cluster
-
-    - name: Build image
-      run: |
-        make -e CONTAINER_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile) build-operator
-

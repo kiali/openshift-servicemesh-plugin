@@ -13,38 +13,14 @@
 	@$(eval CLUSTER_PLUGIN_NAME ?= ${CLUSTER_REPO}/${PLUGIN_CONTAINER_NAME})
 	@$(eval CLUSTER_PLUGIN_INTERNAL_TAG ?= ${CLUSTER_PLUGIN_INTERNAL_NAME}:${PLUGIN_CONTAINER_VERSION})
 	@$(eval CLUSTER_PLUGIN_TAG ?= ${CLUSTER_PLUGIN_NAME}:${PLUGIN_CONTAINER_VERSION})
-	@$(eval CLUSTER_OPERATOR_INTERNAL_NAME ?= ${CLUSTER_REPO_INTERNAL}/${OPERATOR_CONTAINER_NAME})
-	@$(eval CLUSTER_OPERATOR_NAME ?= ${CLUSTER_REPO}/${OPERATOR_CONTAINER_NAME})
-	@$(eval CLUSTER_OPERATOR_INTERNAL_TAG ?= ${CLUSTER_OPERATOR_INTERNAL_NAME}:${OPERATOR_CONTAINER_VERSION})
-	@$(eval CLUSTER_OPERATOR_TAG ?= ${CLUSTER_OPERATOR_NAME}:${OPERATOR_CONTAINER_VERSION})
-	@$(eval ALL_IMAGES_NAMESPACE ?= $(shell echo ${CLUSTER_OPERATOR_NAME} | sed -e 's/.*\/\(.*\)\/.*/\1/'))
+	@$(eval ALL_IMAGES_NAMESPACE ?= $(shell echo ${CLUSTER_PLUGIN_NAME} | sed -e 's/.*\/\(.*\)\/.*/\1/'))
 	@if [ "${CLUSTER_REPO_INTERNAL}" == "" -o "${CLUSTER_REPO_INTERNAL}" == "<none>" ]; then echo "Cannot determine OCP internal registry hostname. Make sure you 'oc login' to your cluster."; exit 1; fi
 	@if [ "${CLUSTER_REPO}" == "" -o "${CLUSTER_REPO}" == "<none>" ]; then echo "Cannot determine OCP external registry hostname. The OpenShift image registry has not been made available for external client access"; exit 1; fi
 	@echo "OCP repos: external=[${CLUSTER_REPO}] internal=[${CLUSTER_REPO_INTERNAL}]"
 	@${OC} get namespace ${ALL_IMAGES_NAMESPACE} &> /dev/null || \
 	  ${OC} create namespace ${ALL_IMAGES_NAMESPACE} &> /dev/null
-	@# Add image-puller role so the operator pod can pull the operator image from the internal image registry
-	@${OC} policy add-role-to-group system:image-puller system:serviceaccounts:${OPERATOR_NAMESPACE} --namespace=${ALL_IMAGES_NAMESPACE} &> /dev/null
 	@# We need to make sure the 'default' service account is created - we'll need it later for the pull secret
 	@for i in {1..5}; do ${OC} get sa default -n ${ALL_IMAGES_NAMESPACE} &> /dev/null && break || echo -n "." && sleep 1; done; echo
-
-.prepare-operator-pull-secret: .prepare-cluster
-	@# base64 encode a pull secret (using the logged in user token) that can be used to pull the bundle index image from the internal image registry
-	@$(eval OPERATOR_IMAGE_PULL_SECRET_JSON = $(shell ${OC} registry login --registry="$(shell ${OC} registry info --internal)" --namespace=${ALL_IMAGES_NAMESPACE} --to=/tmp/json1 &>/dev/null && cat /tmp/json1 | base64 -w0))
-	@$(eval OPERATOR_IMAGE_PULL_SECRET_NAME ?= ossmconsole-operator-pull-secret)
-	@rm /tmp/json1
-
-.create-operator-pull-secret: .prepare-operator-pull-secret
-	@if [ -n "${OPERATOR_IMAGE_PULL_SECRET_JSON}" ] && ! (${OC} get secret ${OPERATOR_IMAGE_PULL_SECRET_NAME} --namespace ${OPERATOR_NAMESPACE} &> /dev/null); then \
-		echo "${OPERATOR_IMAGE_PULL_SECRET_JSON}" | base64 -d > /tmp/ossmconsole-operator-pull-secret.json ;\
-		${OC} get namespace ${OPERATOR_NAMESPACE} &> /dev/null || ${OC} create namespace ${OPERATOR_NAMESPACE} ;\
-		${OC} create secret generic ${OPERATOR_IMAGE_PULL_SECRET_NAME} --from-file=.dockerconfigjson=/tmp/ossmconsole-operator-pull-secret.json --type=kubernetes.io/dockerconfigjson --namespace=${OPERATOR_NAMESPACE} ;\
-		${OC} label secret ${OPERATOR_IMAGE_PULL_SECRET_NAME} --namespace ${OPERATOR_NAMESPACE} app.kubernetes.io/name=ossmconsole-operator ;\
-		rm /tmp/ossmconsole-operator-pull-secret.json ;\
-	fi
-
-.remove-operator-pull-secret: .prepare-operator-pull-secret
-	${OC} delete --ignore-not-found=true secret ${OPERATOR_IMAGE_PULL_SECRET_NAME} --namespace=${OPERATOR_NAMESPACE}
 
 .prepare-plugin-pull-secret: .prepare-cluster
 	@# base64 encode a pull secret (using the logged in user token) that can be used to pull the plugin image from the internal image registry
@@ -81,8 +57,8 @@ cluster-status: .prepare-cluster
 	@echo "Console URL: $(shell ${OC} get console cluster -o jsonpath='{.status.consoleURL}' 2>/dev/null)"
 	@echo "API Server:  $(shell ${OC} whoami --show-server 2>/dev/null)"
 	@echo "================================================================="
-	@echo "Operator image as seen from inside the cluster:    ${CLUSTER_OPERATOR_INTERNAL_NAME}"
-	@echo "Operator image that will be pushed to the cluster: ${CLUSTER_OPERATOR_TAG}"
+	@echo "Plugin image as seen from inside the cluster:    ${CLUSTER_PLUGIN_INTERNAL_NAME}"
+	@echo "Plugin image that will be pushed to the cluster: ${CLUSTER_PLUGIN_TAG}"
 	@echo "================================================================="
 	@echo "oc whoami -c: $(shell ${OC} whoami -c 2>/dev/null)"
 	@echo "================================================================="
@@ -109,20 +85,5 @@ else
 	podman push --tls-verify=false ${CLUSTER_PLUGIN_TAG}
 endif
 
-## cluster-build-operator: Builds the operator image for development with a remote cluster
-cluster-build-operator: .prepare-cluster build-operator
-	@echo Re-tag the already built operator container image
-	${DORP} tag ${OPERATOR_QUAY_TAG} ${CLUSTER_OPERATOR_TAG}
-
-## cluster-push-operator: Builds then pushes the operator container image to a remote cluster
-cluster-push-operator: cluster-build-operator
-ifeq ($(DORP),docker)
-	@echo Pushing operator image to remote cluster using docker: ${CLUSTER_OPERATOR_TAG}
-	docker push ${CLUSTER_OPERATOR_TAG}
-else
-	@echo Pushing operator image to remote cluster using podman: ${CLUSTER_OPERATOR_TAG}
-	podman push --tls-verify=false ${CLUSTER_OPERATOR_TAG}
-endif
-
-## cluster-push: Builds and pushes both the plugin and the operator
-cluster-push: cluster-push-plugin-image cluster-push-operator
+## cluster-push: Builds and pushes the plugin
+cluster-push: cluster-push-plugin-image

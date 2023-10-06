@@ -16,11 +16,6 @@ on:
         type: string
         default: quay.io/kiali/ossmconsole
         required: true
-      operator_quay_repository:
-        description: Operator Quay repository
-        type: string
-        default: quay.io/kiali/ossmconsole-operator
-        required: true
 
 jobs:
   initialize:
@@ -40,25 +35,13 @@ jobs:
           PLUGIN_QUAY_REPO="${{ github.event.inputs.plugin_quay_repository }}"
         fi
 
-        if [ -z "${{ github.event.inputs.operator_quay_repository }}" ];
-        then
-          OPERATOR_QUAY_REPO="quay.io/kiali/ossmconsole-operator"
-        else
-          OPERATOR_QUAY_REPO="${{ github.event.inputs.operator_quay_repository }}"
-        fi
-
         PLUGIN_QUAY_TAG="$PLUGIN_QUAY_REPO:latest"
-        OPERATOR_QUAY_TAG="$OPERATOR_QUAY_REPO:latest"
-
         echo "plugin_quay_tag=$PLUGIN_QUAY_TAG" >> $GITHUB_ENV
-        echo "operator_quay_tag=$OPERATOR_QUAY_TAG" >> $GITHUB_ENV
 
     - name: Log information
       run: |
         echo "Release type: latest"
-
         echo "Plugin Quay tag": ${{ env.plugin_quay_tag }}
-        echo "Operator Quay tag": ${{ env.operator_quay_tag }}
 
   push:
     name: Push latest
@@ -67,7 +50,6 @@ jobs:
     needs: [initialize]
     env:
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
-      OPERATOR_QUAY_TAG: ${{ needs.initialize.outputs.operator_quay_tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -79,9 +61,3 @@ jobs:
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
         make -e TARGET_ARCHS="amd64 s390x ppc64le" build-push-plugin-multi-arch
-
-    - name: Build and push operator image
-      run: |
-        docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
-
-        make -e TARGET_ARCHS="amd64 s390x ppc64le" build-push-operator-multi-arch
