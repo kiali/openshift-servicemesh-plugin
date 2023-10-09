@@ -64,6 +64,9 @@ import { KialiGridGraph } from 'components/CytoscapeGraph/graphs/KialiGridGraph'
 import { KialiBreadthFirstGraph } from 'components/CytoscapeGraph/graphs/KialiBreadthFirstGraph';
 import { HistoryManager, URLParam } from 'app/History';
 import { tcpTimerConfig, timerConfig } from 'components/CytoscapeGraph/TrafficAnimation/AnimationTimerConfig';
+import { TourStop } from 'components/Tour/TourStop';
+import { GraphTourStops } from 'pages/Graph/GraphHelpTour';
+import { getFocusSelector, unsetFocusSelector } from 'utils/SearchParamUtils';
 
 let initialLayout = false;
 let requestFit = false;
@@ -92,7 +95,6 @@ export const TopologyContent: React.FC<{
   controller: Controller;
   edgeLabels: EdgeLabelMode[];
   edgeMode: EdgeMode;
-  focusNode?: FocusNode;
   graphData: GraphData;
   setEdgeMode: (edgeMode: EdgeMode) => void;
   highlighter: GraphHighlighterPF;
@@ -240,16 +242,16 @@ export const TopologyContent: React.FC<{
   // layoutPosition Change  handling
   //
   /*
-    const onLayoutPositionChange = React.useCallback(() => {
-      if (controller && controller.hasGraph()) {
-        //hide popovers on pan / zoom
-        const popover = document.querySelector('[aria-labelledby="popover-decorator-header"]');
-        if (popover) {
-          (popover as HTMLElement).style.display = 'none';
-        }
-      }
-    }, [controller]);
-    */
+        const onLayoutPositionChange = React.useCallback(() => {
+          if (controller && controller.hasGraph()) {
+            //hide popovers on pan / zoom
+            const popover = document.querySelector('[aria-labelledby="popover-decorator-header"]');
+            if (popover) {
+              (popover as HTMLElement).style.display = 'none';
+            }
+          }
+        }, [controller]);
+        */
 
   //
   // Set detail levels for graph (control zoom-sensitive labels)
@@ -430,6 +432,15 @@ export const TopologyContent: React.FC<{
 
       // set decorators
       nodes.forEach(n => setNodeAttachments(n, graphSettings));
+
+      let focusNodeId = getFocusSelector();
+      if (focusNodeId) {
+        const focusNode = nodes.find(n => n.getId() === focusNodeId);
+        if (focusNode) {
+          focusNode.setData({ ...(focusNode.getData() as NodeData), isFocused: true });
+        }
+        unsetFocusSelector();
+      }
 
       // pre-select node if provided
       const graphNode = graphData.fetchParams.node;
@@ -627,114 +638,117 @@ export const TopologyContent: React.FC<{
     <TopologyView
       data-test="topology-view-pf"
       controlBar={
-        <TopologyControlBar
-          data-test="topology-control-bar"
-          controlButtons={createTopologyControlButtons({
-            ...defaultControlButtonsOptions,
-            fitToScreen: false,
-            zoomIn: false,
-            zoomOut: false,
-            customButtons: [
-              // TODO, get rid of the show all edges option, and the disabling, when we can set an option active
-              {
-                ariaLabel: 'Show All Edges',
-                callback: () => {
-                  setEdgeMode(EdgeMode.ALL);
+        <TourStop info={GraphTourStops.Layout}>
+          <TourStop info={GraphTourStops.Legend}>
+            <TopologyControlBar
+              data-test="topology-control-bar"
+              controlButtons={createTopologyControlButtons({
+                ...defaultControlButtonsOptions,
+                fitToScreen: false,
+                zoomIn: false,
+                zoomOut: false,
+                customButtons: [
+                  // TODO, get rid of the show all edges option, and the disabling, when we can set an option active
+                  {
+                    ariaLabel: 'Show All Edges',
+                    callback: () => {
+                      setEdgeMode(EdgeMode.ALL);
+                    },
+                    disabled: EdgeMode.ALL === edgeMode,
+                    icon: <LongArrowAltRightIcon />,
+                    id: 'toolbar_edge_mode_all',
+                    tooltip: 'Show all edges'
+                  },
+                  {
+                    ariaLabel: 'Hide Healthy Edges',
+                    callback: () => {
+                      //change this back when we have the active styling
+                      //setEdgeMode(EdgeMode.UNHEALTHY === edgeMode ? EdgeMode.ALL : EdgeMode.UNHEALTHY);
+                      setEdgeMode(EdgeMode.UNHEALTHY);
+                    },
+                    disabled: EdgeMode.UNHEALTHY === edgeMode,
+                    icon: <LongArrowAltRightIcon />,
+                    id: 'toolbar_edge_mode_unhealthy',
+                    tooltip: 'Hide healthy edges'
+                  },
+                  {
+                    ariaLabel: 'Hide All Edges',
+                    id: 'toolbar_edge_mode_none',
+                    disabled: EdgeMode.NONE === edgeMode,
+                    icon: <LongArrowAltRightIcon />,
+                    tooltip: 'Hide all edges',
+                    callback: () => {
+                      //change this back when we have the active styling
+                      //setEdgeMode(EdgeMode.NONE === edgeMode ? EdgeMode.ALL : EdgeMode.NONE);
+                      setEdgeMode(EdgeMode.NONE);
+                    }
+                  },
+                  {
+                    ariaLabel: 'Layout - Dagre',
+                    id: 'toolbar_layout_dagre',
+                    disabled: LayoutName.Dagre === layoutName,
+                    icon: <TopologyIcon />,
+                    tooltip: 'Layout - dagre',
+                    callback: () => {
+                      setLayoutName(LayoutName.Dagre);
+                    }
+                  },
+                  {
+                    ariaLabel: 'Layout - Grid',
+                    id: 'toolbar_layout_grid',
+                    disabled: LayoutName.Grid === layoutName,
+                    icon: <TopologyIcon />,
+                    tooltip: 'Layout - grid',
+                    callback: () => {
+                      setLayoutName(LayoutName.Grid);
+                    }
+                  },
+                  {
+                    ariaLabel: 'Layout - Concentric',
+                    id: 'toolbar_layout_concentric',
+                    disabled: LayoutName.Concentric === layoutName,
+                    icon: <TopologyIcon />,
+                    tooltip: 'Layout - concentric',
+                    callback: () => {
+                      setLayoutName(LayoutName.Concentric);
+                    }
+                  },
+                  {
+                    ariaLabel: 'Layout - Breadth First',
+                    id: 'toolbar_layout_breadth_first',
+                    disabled: LayoutName.BreadthFirst === layoutName,
+                    icon: <TopologyIcon />,
+                    tooltip: 'Layout - breadth first',
+                    callback: () => {
+                      setLayoutName(LayoutName.BreadthFirst);
+                    }
+                  }
+                ],
+                // currently unused
+                zoomInCallback: () => {
+                  controller && controller.getGraph().scaleBy(ZOOM_IN);
                 },
-                disabled: EdgeMode.ALL === edgeMode,
-                icon: <LongArrowAltRightIcon />,
-                id: 'toolbar_edge_mode_all',
-                tooltip: 'Show all edges'
-              },
-              {
-                ariaLabel: 'Hide Healthy Edges',
-                callback: () => {
-                  //change this back when we have the active styling
-                  //setEdgeMode(EdgeMode.UNHEALTHY === edgeMode ? EdgeMode.ALL : EdgeMode.UNHEALTHY);
-                  setEdgeMode(EdgeMode.UNHEALTHY);
+                // currently unused
+                zoomOutCallback: () => {
+                  controller && controller.getGraph().scaleBy(ZOOM_OUT);
                 },
-                disabled: EdgeMode.UNHEALTHY === edgeMode,
-                icon: <LongArrowAltRightIcon />,
-                id: 'toolbar_edge_mode_unhealthy',
-                tooltip: 'Hide healthy edges'
-              },
-              {
-                ariaLabel: 'Hide All Edges',
-                id: 'toolbar_edge_mode_none',
-                disabled: EdgeMode.NONE === edgeMode,
-                icon: <LongArrowAltRightIcon />,
-                tooltip: 'Hide all edges',
-                callback: () => {
-                  //change this back when we have the active styling
-                  //setEdgeMode(EdgeMode.NONE === edgeMode ? EdgeMode.ALL : EdgeMode.NONE);
-                  setEdgeMode(EdgeMode.NONE);
+                resetViewCallback: () => {
+                  if (controller) {
+                    requestFit = true;
+                    controller.getGraph().reset();
+                    controller.getGraph().layout();
+                  }
+                },
+                legend: true,
+                legendIcon: <MapIcon />,
+                legendTip: 'Legend',
+                legendCallback: () => {
+                  if (toggleLegend) toggleLegend();
                 }
-              },
-              {
-                ariaLabel: 'Layout - Dagre',
-                id: 'toolbar_layout_dagre',
-                disabled: LayoutName.Dagre === layoutName,
-                icon: <TopologyIcon />,
-                tooltip: 'Layout - dagre',
-                callback: () => {
-                  setLayoutName(LayoutName.Dagre);
-                }
-              },
-              {
-                ariaLabel: 'Layout - Grid',
-                id: 'toolbar_layout_grid',
-                disabled: LayoutName.Grid === layoutName,
-                icon: <TopologyIcon />,
-                tooltip: 'Layout - grid',
-                callback: () => {
-                  setLayoutName(LayoutName.Grid);
-                }
-              },
-              {
-                ariaLabel: 'Layout - Concentric',
-                id: 'toolbar_layout_concentric',
-                disabled: LayoutName.Concentric === layoutName,
-                icon: <TopologyIcon />,
-                tooltip: 'Layout - concentric',
-                callback: () => {
-                  setLayoutName(LayoutName.Concentric);
-                }
-              },
-              {
-                ariaLabel: 'Layout - Breadth First',
-                id: 'toolbar_layout_breadth_first',
-                disabled: LayoutName.BreadthFirst === layoutName,
-                icon: <TopologyIcon />,
-                tooltip: 'Layout - breadth first',
-                callback: () => {
-                  setLayoutName(LayoutName.BreadthFirst);
-                }
-              }
-            ],
-            // currently unused
-            zoomInCallback: () => {
-              controller && controller.getGraph().scaleBy(ZOOM_IN);
-            },
-            // currently unused
-            zoomOutCallback: () => {
-              controller && controller.getGraph().scaleBy(ZOOM_OUT);
-            },
-            resetViewCallback: () => {
-              if (controller) {
-                requestFit = true;
-                controller.getGraph().reset();
-                controller.getGraph().layout();
-              }
-            },
-            //TODO: enable legend with display icons and colors
-            legend: true,
-            legendIcon: <MapIcon />,
-            legendTip: 'Legend',
-            legendCallback: () => {
-              if (toggleLegend) toggleLegend();
-            }
-          })}
-        />
+              })}
+            />
+          </TourStop>
+        </TourStop>
       }
     >
       <VisualizationSurface data-test="visualization-surface" state={{}} />
@@ -765,7 +779,6 @@ export const GraphPF: React.FC<{
 }> = ({
   edgeLabels,
   edgeMode,
-  focusNode,
   graphData,
   isMiniGraph,
   layout,
@@ -848,7 +861,6 @@ export const GraphPF: React.FC<{
         controller={controller}
         edgeLabels={edgeLabels}
         edgeMode={edgeMode}
-        focusNode={focusNode}
         graphData={graphData}
         highlighter={highlighter!}
         isMiniGraph={isMiniGraph}
