@@ -47,7 +47,7 @@ import { GraphToolbarActions } from '../../actions/GraphToolbarActions';
 import { PFColors } from 'components/Pf/PfColors';
 import { TourActions } from 'actions/TourActions';
 import { arrayEquals } from 'utils/Common';
-import { isKioskMode, getFocusSelector, unsetFocusSelector, getTraceId } from 'utils/SearchParamUtils';
+import { isKioskMode, getFocusSelector, getTraceId, getClusterName } from 'utils/SearchParamUtils';
 import { Badge, Chip } from '@patternfly/react-core';
 import { toRangeString } from 'components/Time/Utils';
 import { replayBorder } from 'components/Time/Replay';
@@ -57,7 +57,7 @@ import { GraphThunkActions } from '../../actions/GraphThunkActions';
 import { JaegerTrace } from 'types/JaegerInfo';
 import { KialiDispatch } from 'types/Redux';
 import { JaegerThunkActions } from 'actions/JaegerThunkActions';
-import { GraphTour } from 'pages/Graph/GraphHelpTour';
+import { GraphTourPF } from 'pages/Graph/GraphHelpTour';
 import { getNextTourStop, TourInfo } from 'components/Tour/TourStop';
 import { ServiceWizard } from 'components/IstioWizards/ServiceWizard';
 import { ServiceDetailsInfo } from 'types/ServiceInfo';
@@ -256,6 +256,7 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
       aggregate: aggregate!,
       aggregateValue: aggregateValue!,
       app: app!,
+      cluster: getClusterName(),
       namespace: { name: namespace! },
       nodeType: nodeType,
       service: service!,
@@ -392,11 +393,6 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
       GraphPagePFComponent.isNodeChanged(prev.node, curr.node)
     ) {
       this.loadGraphDataFromBackend();
-    }
-
-    if (!!this.focusNode) {
-      this.focusNode = undefined;
-      unsetFocusSelector();
     }
 
     if (
@@ -680,8 +676,8 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
     if (this.props.activeTour) {
       this.props.endTour();
     } else {
-      const firstStop = getNextTourStop(GraphTour, -1, 'forward');
-      this.props.startTour({ info: GraphTour, stop: firstStop });
+      const firstStop = getNextTourStop(GraphTourPF, -1, 'forward');
+      this.props.startTour({ info: GraphTourPF, stop: firstStop });
     }
   };
 
