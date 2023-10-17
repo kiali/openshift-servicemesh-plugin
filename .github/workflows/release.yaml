@@ -1,6 +1,10 @@
 name: Release Pipeline
 
 on:
+  schedule:
+  # Every Monday at 07:00 (UTC)
+  - cron: '00 7 * * MON'
+
   workflow_dispatch:
     inputs:
       release_type:
@@ -203,6 +207,7 @@ jobs:
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
+        # TODO: find out why ARM builds failed and fix it; we want to target ARM also.
         make -e TARGET_ARCHS="amd64 s390x ppc64le" build-push-plugin-multi-arch
 
     - name: Configure git
