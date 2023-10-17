@@ -1,3 +1,0 @@
----
-- import_playbook: ../playbooks/ossmconsole-deploy.yml
-- import_playbook: ../playbooks/ossmconsole-remove.yml

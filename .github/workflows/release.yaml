@@ -21,11 +21,6 @@ on:
         type: string
         default: quay.io/kiali/ossmconsole
         required: true
-      operator_quay_repository:
-        description: Operator Quay repository
-        type: string
-        default: quay.io/kiali/ossmconsole-operator
-        required: true
 
 jobs:
   initialize:
@@ -39,8 +34,6 @@ jobs:
       next_version: ${{ env.next_version }}
       plugin_quay_tag: ${{ env.plugin_quay_tag }}
       plugin_quay_repo: ${{ env.plugin_quay_repo }}
-      operator_quay_tag: ${{ env.operator_quay_tag }}
-      operator_quay_repo: ${{ env.operator_quay_repo }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -159,20 +152,10 @@ jobs:
           PLUGIN_QUAY_REPO="${{ github.event.inputs.plugin_quay_repository }}"
         fi
 
-        if [ -z "${{ github.event.inputs.operator_quay_repository }}" ];
-        then
-          OPERATOR_QUAY_REPO="quay.io/kiali/ossmconsole-operator"
-        else
-          OPERATOR_QUAY_REPO="${{ github.event.inputs.operator_quay_repository }}"
-        fi
-
         PLUGIN_QUAY_TAG="$PLUGIN_QUAY_REPO:$RELEASE_VERSION"
-        OPERATOR_QUAY_TAG="$OPERATOR_QUAY_REPO:$RELEASE_VERSION"
 
         echo "plugin_quay_tag=$PLUGIN_QUAY_TAG" >> $GITHUB_ENV
         echo "plugin_quay_repo=$PLUGIN_QUAY_REPO" >> $GITHUB_ENV
-        echo "operator_quay_tag=$OPERATOR_QUAY_TAG" >> $GITHUB_ENV
-        echo "operator_quay_repo=$OPERATOR_QUAY_REPO" >> $GITHUB_ENV
 
     - name: Cleanup
       run: rm bump.py minor.py
@@ -189,8 +172,6 @@ jobs:
 
         echo "Plugin Quay tag: ${{ env.plugin_quay_tag }}"
 
-        echo "Operator Quay tag: ${{ env.operator_quay_tag }}"
-
   release:
     name: Release
     if: ${{ needs.initialize.outputs.release_type != 'skip' && ((github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule') }}
@@ -202,7 +183,6 @@ jobs:
       NEXT_VERSION: ${{ needs.initialize.outputs.next_version }}
       RELEASE_BRANCH: ${{ github.event.inputs.release_branch || github.ref_name }}
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
-      OPERATOR_QUAY_TAG: ${{ needs.initialize.outputs.operator_quay_tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -225,21 +205,11 @@ jobs:
 
         make -e TARGET_ARCHS="amd64 s390x ppc64le" build-push-plugin-multi-arch
 
-        make -e TARGET_ARCHS="amd64 s390x ppc64le" build-push-operator-multi-arch
-
     - name: Configure git
       run: |
         git config user.email 'kiali-dev@googlegroups.com'
 
         git config user.name 'kiali-bot'
-
-    - name: Create new version bundle (OLM)
-      run: |
-        make get-operator-sdk
-
-        ./operator/manifests/create-new-version.sh --new-version ${RELEASE_VERSION:1} --channels candidate
-
-        git add operator/manifests/
 
     - name: Create tag
       run: |

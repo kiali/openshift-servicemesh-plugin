@@ -1,13 +1,12 @@
 SHELL=/bin/bash
 
-# Identifies the current build.
-VERSION ?= v0.5.0-SNAPSHOT
+# Identifies the current build. Match the same version of Kiali Server and Operator.
+VERSION ?= v1.76.0-SNAPSHOT
 COMMIT_HASH ?= $(shell git rev-parse HEAD)
 
 # Directories based on the root project directory
 ROOTDIR=$(CURDIR)
 PLUGIN_DIR=${ROOTDIR}/plugin
-OPERATOR_DIR=${ROOTDIR}/operator
 
 # Determine if we should use Docker OR Podman - value must be one of "docker" or "podman"
 DORP ?= podman
@@ -27,27 +26,15 @@ ARCH := $(shell uname -m | sed 's/x86_64/amd64/')
 CONTAINER_VERSION ?= dev
 
 include make/Makefile.plugin.mk
-include make/Makefile.operator.mk
 include make/Makefile.cluster.mk
-include make/Makefile.olm.mk
-include make/Makefile.molecule.mk
 
 help:
 	@echo
 	@echo "Plugin targets - used to develop and build the plugin"
 	@sed -n 's/^##//p' make/Makefile.plugin.mk | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
-	@echo "Operator targets - used to develop and build the operator"
-	@sed -n 's/^##//p' make/Makefile.operator.mk | column -t -s ':' |  sed -e 's/^/ /'
-	@echo
 	@echo "Cluster targets - used to manage images on the remote cluster"
 	@sed -n 's/^##//p' make/Makefile.cluster.mk | column -t -s ':' |  sed -e 's/^/ /'
-	@echo
-	@echo "OLM targets - used to deploy the operator via OLM"
-	@sed -n 's/^##//p' make/Makefile.olm.mk | column -t -s ':' |  sed -e 's/^/ /'
-	@echo
-	@echo "Molecule targets - used to run the operator molecule tests"
-	@sed -n 's/^##//p' make/Makefile.molecule.mk | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
 
 .ensure-oc-exists:
