@@ -1,4 +1,4 @@
-name: Release Pipeline
+name: Release
 
 on:
   schedule:
@@ -7,19 +7,6 @@ on:
 
   workflow_dispatch:
     inputs:
-      release_type:
-        description: Release type
-        required: true
-        default: "auto"
-        type: choice
-        options:
-        - minor
-        - patch
-      release_branch:
-        description: Branch to release
-        required: true
-        default: main
-        type: string
       plugin_quay_repository:
         description: Plugin Quay repository
         type: string
@@ -42,7 +29,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        ref: ${{ github.event.inputs.release_branch || github.ref_name }}
+        ref: ${{ github.ref_name }}
 
     - name: Prepare scripts
       run: |
@@ -185,7 +172,7 @@ jobs:
       RELEASE_VERSION: ${{ needs.initialize.outputs.release_version }}
       BRANCH_VERSION: ${{ needs.initialize.outputs.branch_version }}
       NEXT_VERSION: ${{ needs.initialize.outputs.next_version }}
-      RELEASE_BRANCH: ${{ github.event.inputs.release_branch || github.ref_name }}
+      RELEASE_BRANCH: ${{ github.ref_name }}
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
     steps:
     - name: Checkout code
