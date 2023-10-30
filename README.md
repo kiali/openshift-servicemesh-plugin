@@ -1,6 +1,6 @@
 # OpenShift Service Mesh Console (OSSM Console)
 
-:information_source: There is a [Users Guide](https://github.com/kiali/openshift-servicemesh-plugin/blob/main/docs/users-guide.md).
+:information_source: There is a [Users Guide](https://kiali.io/docs/ossmc/users-guide/)
 
 The OpenShift Service Mesh Console is a Webpack Plugin that integrates Kiali into the OpenShift Console. The official title of the project is "OpenShift Service Mesh Console" but you may see this abbreviated in documentation and code as "OSSMC", "ossmconsole", or "OSSM Console".
 
