@@ -205,7 +205,7 @@ jobs:
 
     - name: Create tag
       run: |
-        git add Makefile
+        git add Makefile plugin/package.json
 
         git commit -m "Release $RELEASE_VERSION"
 
