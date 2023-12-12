@@ -72,6 +72,7 @@
     "@babel/core": "^7.16.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@badeball/cypress-cucumber-preprocessor": "^19.2.0",
+    "@bahmutov/cypress-esbuild-preprocessor": "^2.2.0",
     "@cypress/browserify-preprocessor": "3.0.2",
     "@openshift-console/dynamic-plugin-sdk-webpack": "^0.0.10",
     "@types/cytoscape": "3.14.0",
