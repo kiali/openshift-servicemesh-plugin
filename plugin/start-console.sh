@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-CONSOLE_IMAGE=${CONSOLE_IMAGE:="quay.io/openshift/origin-console:latest"}
+OPENSHIFT_VERSON=$(oc version | grep "Server Version: " | awk '{print $3}' | cut -d. -f-2)
+CONSOLE_IMAGE=${CONSOLE_IMAGE:="quay.io/openshift/origin-console:$OPENSHIFT_VERSON"}
 CONSOLE_PORT=${CONSOLE_PORT:=9000}
 
 echo "Starting local OpenShift console..."
