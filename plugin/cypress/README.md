@@ -1,10 +1,10 @@
 # Cypress Visual Testing with BDD framework
 
-These are visual tests for kiali that are meant to be run against a live environment.
+These are visual tests for OSSMC plugin that are meant to be run against a live OCP instance or OpenShift Local (CRC).
 
 ## Prerequisites
 
-Installed all dev dependencies from frontend folder. Ensure the `baseUrl` field in the `cypress.config.ts` file is pointing to the server you are trying to test, alternatively you can set `CYPRESS_BASE_URL` environment variable or pass via cmd line `yarn cypress --config baseUrl=http://kiali-server:20001` to overwrite default `baseUrl`. 
+Installed all dev dependencies from plugin folder. Ensure the `baseUrl` field in the `cypress.config.ts` file is pointing to the console you are trying to test, alternatively you can set `CYPRESS_BASE_URL` environment variable or pass via cmd line `yarn cypress --config baseUrl=http://localhost:9000` to overwrite default `baseUrl`. 
 
 
 Before you start using Cypress suite, you might need export some environment variables:
