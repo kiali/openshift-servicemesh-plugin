@@ -10,7 +10,7 @@ Installed all dev dependencies from plugin folder. Ensure the `baseUrl` field in
 Before you start using Cypress suite, you might need export some environment variables:
 
 ```bash
-export CYPRESS_BASE_URL=<value>               # defaults to http://localhost:3000
+export CYPRESS_BASE_URL=<value>               # defaults to http://localhost:9000
 export CYPRESS_OC_CLUSTER_USER=<value>        # defaults to jenkins, opt. kubeadmin
 export CYPRESS_OC_CLUSTER_PASS=<value>        # no defaults
 export CYPRESS_OC_IDP=<value>                 # defaults to my_htpasswd_provider
