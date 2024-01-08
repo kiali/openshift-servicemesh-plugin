@@ -20,7 +20,7 @@ export default defineConfig({
   // videoUploadOnPasses: false, // this is not supported in cypress 13+, TODO add this back to config
 
   env: {
-    USERNAME: "jenkins", // default value for jenkins
+    OC_CLUSTER_USER: "jenkins", // default value for jenkins
     OC_IDP: "my_htpasswd_provider", // default value for jenkins, can vary based on cluster setup
     'cypress-react-selector': {
       root: '#root'
