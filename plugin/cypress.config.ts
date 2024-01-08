@@ -14,7 +14,7 @@ export default defineConfig({
   requestTimeout: 15000,
   responseTimeout: 15000,
   fixturesFolder: 'cypress/fixtures',
-  chromeWebSecurity: false,
+  chromeWebSecurity: true, // needs to disabled for cross origin requests
   screenshotsFolder: "results/screenshots",
   videosFolder: "results/videos",
   // videoUploadOnPasses: false, // this is not supported in cypress 13+, TODO add this back to config
