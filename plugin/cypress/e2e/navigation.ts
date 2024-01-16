@@ -32,6 +32,8 @@ Then('user is redirected to the OSSMC {string} page', (hrefName:string) => {
                 cy.url().should('include', "/ossmconsole/graph")
             })
         case 'Istio Config':
-            cy.get('a[href*="/k8s/all-namespaces/istio"]').click().then(() => {})
+            cy.get('a[href*="/k8s/all-namespaces/istio"]').click().then(() => {
+                cy.url().should('include', "/k8s/all-namespaces/istio")
+            })
     }
 })
