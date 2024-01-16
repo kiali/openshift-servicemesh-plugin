@@ -32,7 +32,7 @@ validate-ossmc() {
 
 wait-ossmc() {
     while ! oc get deployment -n openshift-operators -l app.kubernetes.io/name=ossmconsole 2>/dev/null | grep -q ossmconsole ; do echo -n '.'; sleep 1; done \
-    && oc rollout status deployment -l app.kubernetes.io/name=ossmconsole -n ossmconsole
+    && oc rollout status deployment -l app.kubernetes.io/name=ossmconsole -n openshift-operators
 }
 
 helpmsg() {
