@@ -64,7 +64,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)                  helpmsg;                        exit $?; ;;
     -i|--install)               install;                        exit $?; ;;
     -u|--uninstall)             uninstall;                      exit $?; ;;
-    -v|--validate-ossmc)         validate-ossmc;                     exit $?; ;;
+    -v|--validate-ossmc)        validate-ossmc;                exit $?; ;;
     -w|--wait-ossmc)            wait-ossmc;                     exit $?; ;;
     *) echo "Unknown argument: [$key]. Aborting."; helpmsg;     exit 255 ;;
   esac
