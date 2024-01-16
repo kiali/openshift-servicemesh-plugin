@@ -48,7 +48,7 @@ Options:
 -v|--validate-ossmc 
     Check the OSSM Console plugin via Kiali script.
 -w|--wait-ossmc
-    Wait for the OSSMC given pod to be ready. 
+    Wait for the OSSMC plugin pod to be ready. 
 HELP
 
 }
