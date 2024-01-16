@@ -5,14 +5,8 @@
 # plugin on OCP platforms.
 ################################################
 
-# verify minimal supported vesrion of OCP? 
-
 # exit immediately on error
 set -eu
-
-uninstall() {
-for r in $(oc get ossmconsoles --ignore-not-found=true --all-namespaces -o custom-columns=NS:.metadata.namespace,N:.metadata.name --no-headers | sed 's/  */:/g'); do oc delete ossmconsoles -n "$(echo "$r"|cut -d: -f1)" "$(echo "$r"|cut -d: -f2)"; done
-}
 
 install() {
     cat <<EOM | oc apply -f -
@@ -24,8 +18,16 @@ metadata:
 EOM
 }
 
-enable-ossm() {
-    echo "Not implemented yet."
+uninstall() {
+for r in $(oc get ossmconsoles --ignore-not-found=true --all-namespaces -o custom-columns=NS:.metadata.namespace,N:.metadata.name --no-headers | sed 's/  */:/g');  
+do oc delete ossmconsoles -n "$(echo "$r"|cut -d: -f1)" "$(echo "$r"|cut -d: -f2)"; done
+}
+
+validate-ossm() {
+    bash <(curl -sL https://raw.githubusercontent.com/kiali/kiali-operator/master/crd-docs/bin/validate-ossmconsole-cr.sh) \
+      -crd https://raw.githubusercontent.com/kiali/kiali-operator/master/crd-docs/crd/kiali.io_ossmconsoles.yaml \
+      --cr-name ossmconsole \
+      -n openshift-operators 
 }
 
 wait-ossmc() {
@@ -33,17 +35,18 @@ wait-ossmc() {
     && oc rollout status deployment -l app.kubernetes.io/name=ossmconsole -n ossmconsole
 }
 
-
 helpmsg() {
   cat <<HELP
 This script manages the OSSM Console plugin on OCP platforms.
 Options:
--u|--uninstall 
-    Uninstall the Kiali operator and server.
+-h|--help
+    Print this help message.
 -i|--install
-    Install the Kiali operator and server.
--e|--enable-ossm 
-    Enable the OSSM Console plugin.
+    Instruct the Kiali Operator to create a small OSSMConsole CR.
+-u|--uninstall 
+    Remove the OSSMConsole CR from all namespaces.
+-v|--validate-ossm 
+    Check the OSSM Console plugin via Kiali script.
 -w|--wait-ossmc
     Wait for the OSSMC given pod to be ready. 
 HELP
@@ -58,10 +61,10 @@ fi
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
-    -u|--uninstall)             uninstall;                      exit $?; ;;
-    -i|--install)               install;                        exit $?; ;;
     -h|--help)                  helpmsg;                        exit $?; ;;
-    -e|--enable-ossm)           enable-ossm;                    exit $?; ;;
+    -i|--install)               install;                        exit $?; ;;
+    -u|--uninstall)             uninstall;                      exit $?; ;;
+    -v|--validate-ossm)         validate-ossm;                     exit $?; ;;
     -w|--wait-ossmc)            wait-ossmc;                     exit $?; ;;
     *) echo "Unknown argument: [$key]. Aborting."; helpmsg;     exit 255 ;;
   esac
