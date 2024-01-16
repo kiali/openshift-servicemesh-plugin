@@ -23,7 +23,7 @@ for r in $(oc get ossmconsoles --ignore-not-found=true --all-namespaces -o custo
 do oc delete ossmconsoles -n "$(echo "$r"|cut -d: -f1)" "$(echo "$r"|cut -d: -f2)"; done
 }
 
-validate-ossm() {
+validate-ossmc() {
     bash <(curl -sL https://raw.githubusercontent.com/kiali/kiali-operator/master/crd-docs/bin/validate-ossmconsole-cr.sh) \
       -crd https://raw.githubusercontent.com/kiali/kiali-operator/master/crd-docs/crd/kiali.io_ossmconsoles.yaml \
       --cr-name ossmconsole \
@@ -45,7 +45,7 @@ Options:
     Instruct the Kiali Operator to create a small OSSMConsole CR.
 -u|--uninstall 
     Remove the OSSMConsole CR from all namespaces.
--v|--validate-ossm 
+-v|--validate-ossmc 
     Check the OSSM Console plugin via Kiali script.
 -w|--wait-ossmc
     Wait for the OSSMC given pod to be ready. 
@@ -64,7 +64,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)                  helpmsg;                        exit $?; ;;
     -i|--install)               install;                        exit $?; ;;
     -u|--uninstall)             uninstall;                      exit $?; ;;
-    -v|--validate-ossm)         validate-ossm;                     exit $?; ;;
+    -v|--validate-ossmc)         validate-ossmc;                     exit $?; ;;
     -w|--wait-ossmc)            wait-ossmc;                     exit $?; ;;
     *) echo "Unknown argument: [$key]. Aborting."; helpmsg;     exit 255 ;;
   esac

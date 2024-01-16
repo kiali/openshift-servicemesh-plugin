@@ -10,7 +10,10 @@ Feature: Install and enable OSSMC plugin in OpenShift
         Then uninstall OSSMC if it is installed
 
     Scenario: Execute OSSMC is installation
-        Then Instruct the Kiali Operator to create a small OSSMConsole CR
+        Then instruct the Kiali Operator to create a small OSSMConsole CR
     
-    Scenario: Verify OSSMC is enabled
+    Scenario: Verify that OSSMC is ready to use
         Then wait for OSSMC to be ready
+
+    Scenario: Validate OSSMC custom resourceces 
+        Then validate OSSMC custom resource by a script

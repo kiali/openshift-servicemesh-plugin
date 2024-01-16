@@ -8,7 +8,7 @@ Then('uninstall OSSMC if it is installed', () => {
     cy.exec('bash ./../hack/manage-ossmc.sh --uninstall').its('code').should('eq', 0);
 });
 
-Then('Instruct the Kiali Operator to create a small OSSMConsole CR', () => {
+Then('instruct the Kiali Operator to create a small OSSMConsole CR', () => {
     cy.exec('bash ./../hack/manage-ossmc.sh --install').its('stdout').should('eq', 'ossmconsole.kiali.io/ossmconsole created');
 });
 
