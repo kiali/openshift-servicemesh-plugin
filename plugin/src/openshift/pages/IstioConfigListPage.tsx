@@ -20,13 +20,14 @@ import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
 import { ValidationObjectSummary } from 'components/Validations/ValidationObjectSummary';
-import { IstioConfigItem, IstioConfigList, toIstioItems } from 'types/IstioConfigList';
+import { IstioConfigItem, toIstioItems } from 'types/IstioConfigList';
 import * as API from 'services/Api';
 import { Namespace } from 'types/Namespace';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
 import { KialiController } from '../components/KialiController';
 import { store } from 'store/ConfigStore';
+import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
 
 interface IstioConfigObject extends IstioObject {
   validation?: ObjectValidation;
@@ -167,6 +168,7 @@ const IstioConfigListPage = () => {
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<any[]>([]);
+  const [loadError, setLoadError] = React.useState<OSSMCError>();
   const history = useHistory();
 
   const promises = React.useMemo(() => new PromisesRegistry(), []);
@@ -174,29 +176,38 @@ const IstioConfigListPage = () => {
   // Fetch the Istio configs, convert to istio items and map them into flattened list items
   const fetchIstioConfigs = React.useCallback(async (): Promise<IstioConfigItem[]> => {
     const validate = store.getState().statusState.istioEnvironment.istioAPIEnabled;
-    let getNamespacesData, getIstioConfigData;
 
     if (ns) {
-      getIstioConfigData = promises.register('getIstioConfig', API.getIstioConfig(ns, [], validate, '', ''));
+      const getIstioConfigData = promises.register('getIstioConfig', API.getIstioConfig(ns, [], validate, '', ''));
+
+      return getIstioConfigData
+        .then(response => {
+          return toIstioItems(response.data);
+        })
+        .catch(error => {
+          setLoadError({ title: error.response.statusText, message: error.response.data.error });
+          return [];
+        });
     } else {
       // If no namespace is selected, get istio config for all namespaces
-      getNamespacesData = promises.register('getNamespaces', API.getNamespaces());
-      getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], [], validate, '', ''));
-    }
+      const getNamespacesData = promises.register('getNamespaces', API.getNamespaces());
+      const getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], [], validate, '', ''));
 
-    return Promise.all([getNamespacesData, getIstioConfigData]).then(response => {
-      if (ns) {
-        return toIstioItems(response[1].data as IstioConfigList);
-      } else {
-        let istioItems: IstioConfigItem[] = [];
-        // convert istio objects from all namespaces
-        const namespaces: Namespace[] = response[0].data;
-        namespaces.forEach(namespace => {
-          istioItems = istioItems.concat(toIstioItems(response[1].data[namespace.name]));
+      return Promise.all([getNamespacesData, getIstioConfigData])
+        .then(response => {
+          let istioItems: IstioConfigItem[] = [];
+          // convert istio objects from all namespaces
+          const namespaces: Namespace[] = response[0].data;
+          namespaces.forEach(namespace => {
+            istioItems = istioItems.concat(toIstioItems(response[1].data[namespace.name]));
+          });
+          return istioItems;
+        })
+        .catch(error => {
+          setLoadError({ title: error.response.statusText, message: error.response.data.error });
+          return [];
         });
-        return istioItems;
-      }
-    });
+    }
   }, [ns, promises]);
 
   const onCreate = (reference: string) => {
@@ -206,18 +217,23 @@ const IstioConfigListPage = () => {
   };
 
   React.useEffect(() => {
-    fetchIstioConfigs().then(istioConfigs => {
-      const istioConfigObjects = istioConfigs.map(istioConfig => {
-        const istioConfigObject = getIstioObject(istioConfig) as IstioConfigObject;
-        istioConfigObject.validation = istioConfig.validation;
-        istioConfigObject.reconciledCondition = getReconciliationCondition(istioConfig);
+    fetchIstioConfigs()
+      .then(istioConfigs => {
+        const istioConfigObjects = istioConfigs.map(istioConfig => {
+          const istioConfigObject = getIstioObject(istioConfig) as IstioConfigObject;
+          istioConfigObject.validation = istioConfig.validation;
+          istioConfigObject.reconciledCondition = getReconciliationCondition(istioConfig);
 
-        return istioConfigObject;
+          return istioConfigObject;
+        });
+
+        setListItems(istioConfigObjects);
+        setLoaded(true);
+      })
+      .catch(error => {
+        setLoadError({ title: error.response.statusText, message: error.response.data.error });
+        return [];
       });
-
-      setListItems(istioConfigObjects);
-      setLoaded(true);
-    });
   }, [ns, fetchIstioConfigs]);
 
   const [data, filteredData, onFilterChange] = useListPageFilter(listItems, filters);
@@ -226,15 +242,21 @@ const IstioConfigListPage = () => {
 
   return (
     <KialiController>
-      <ListPageHeader title="Istio Config">
-        <ListPageCreateDropdown items={newIstioResourceList} onClick={onCreate}>
-          Create
-        </ListPageCreateDropdown>
-      </ListPageHeader>
-      <ListPageBody>
-        <ListPageFilter data={data} loaded={loaded} rowFilters={filters} onFilterChange={onFilterChange} />
-        <IstioTable columns={columns} data={filteredData} unfilteredData={data} loaded={loaded} />
-      </ListPageBody>
+      {loadError ? (
+        <ErrorPage title={loadError.title} message={loadError.message}></ErrorPage>
+      ) : (
+        <>
+          <ListPageHeader title="Istio Config">
+            <ListPageCreateDropdown items={newIstioResourceList} onClick={onCreate}>
+              Create
+            </ListPageCreateDropdown>
+          </ListPageHeader>
+          <ListPageBody>
+            <ListPageFilter data={data} loaded={loaded} rowFilters={filters} onFilterChange={onFilterChange} />
+            <IstioTable columns={columns} data={filteredData} unfilteredData={data} loaded={loaded} />
+          </ListPageBody>
+        </>
+      )}
     </KialiController>
   );
 };
