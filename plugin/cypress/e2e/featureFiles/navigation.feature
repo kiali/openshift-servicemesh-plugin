@@ -8,13 +8,15 @@ Feature: Kiali integration with OCP Console
   Background:
     Given user is logged as administrator in OCP Console
     And user clicks on the Service Mesh icon in the left navigation bar
+    And cypress intercept hooks are registred
 
   Scenario: Service mesh buttons are displayed
     Then buttons for Overview, Graph and Istio Config are displayed
 
   Scenario: Overview page is displayed correctly
     When user is redirected to the OSSMC "Overview" page
-    Then user sees Overview page elements from Kiali
+    And kiali plugin is loaded
+    Then user sees memory and cpu charts from Kiali
 
   Scenario: Graph page is displayed correctly
     When user is redirected to the OSSMC "Graph" page
