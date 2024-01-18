@@ -20,6 +20,8 @@ When('cypress intercept hooks are registred', () => {
 });
 
 Then('buttons for Overview, Graph and Istio Config are displayed', () => {
+    cy.waitForReact(5000, '#app', 'node_modules/resq/dist/index.js'); // Manually passing in the resq module path
+    cy.reload(true) // force reload to make sure OSSMC is loaded 
     cy.get('a[data-test="nav"].pf-c-nav__link').contains('Overview')
     cy.get('a[data-test="nav"].pf-c-nav__link').contains('Graph')
     cy.get('a[data-test="nav"].pf-c-nav__link').contains('Istio Config')
