@@ -15,8 +15,8 @@ Feature: Kiali integration with OCP Console
 
   Scenario: Overview page is displayed correctly
     When user is redirected to the OSSMC "Overview" page
-    And user sees istio-system overview card
-    Then user sees memory and cpu charts from Kiali
+    Then user sees istio-system overview card
+    And user sees memory and cpu charts from Kiali
 
   Scenario: Graph page is displayed correctly
     When user is redirected to the OSSMC "Graph" page
