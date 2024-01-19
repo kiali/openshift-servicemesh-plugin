@@ -13,7 +13,7 @@ When('user clicks on the Service Mesh icon in the left navigation bar', () => {
     })
 });
 
-When('cypress intercept hooks are registred', () => {
+When('cypress intercept hooks are registered', () => {
     cy.intercept('/api/proxy/plugin/ossmconsole/kiali/api/namespaces/istio-system/metrics?*').as('metricsRequest')
     cy.intercept('/api/proxy/plugin/ossmconsole/kiali/api/istio/status?*').as('overviewRequest')
     cy.intercept('/api/proxy/plugin/ossmconsole/kiali/api/namespaces').as('istioConfigRequest')
@@ -54,9 +54,9 @@ Then('user sees memory and cpu charts from Kiali', () => {
     })
 });
 
-Then('kiali plugin is loaded', () => {
+Then('user sees istio-system overview card', () => {
     cy.wait('@overviewRequest').then(() => {
-        cy.get('h5').contains('istio-system')
+        cy.get('h5').contains('istio-system').should('be.visible')
     })
 });
 
