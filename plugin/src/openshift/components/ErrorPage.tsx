@@ -4,13 +4,13 @@ import { kialiStyle } from 'styles/StyleUtils';
 import { NestedCSSProperties } from 'typestyle/lib/types';
 
 export interface OSSMCError {
-  title: string;
-  message: string;
+  title?: string;
+  message?: string;
 }
 
 interface ErrorPageProps {
-  title: string;
-  message: string;
+  title?: string;
+  message?: string;
 }
 
 const h1Style: NestedCSSProperties = {
@@ -41,7 +41,7 @@ const messageStyle = kialiStyle({
   fontFamily: 'var(--pf-global--FontFamily--sans-serif)'
 });
 
-export const ErrorPage: React.FC<ErrorPageProps> = ({ title, message }) => {
+export const ErrorPage: React.FC<ErrorPageProps> = ({ title = 'Error', message = 'Unexpected error occurrs' }) => {
   return (
     <>
       <h1 className={headerStyle}>Error</h1>

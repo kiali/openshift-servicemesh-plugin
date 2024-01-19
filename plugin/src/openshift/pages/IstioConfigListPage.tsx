@@ -184,8 +184,8 @@ const IstioConfigListPage = () => {
         .then(response => {
           return toIstioItems(response.data);
         })
-        .catch(error => {
-          setLoadError({ title: error.response.statusText, message: error.response.data.error });
+        .catch((error: API.ApiError) => {
+          setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
           return [];
         });
     } else {
@@ -203,8 +203,8 @@ const IstioConfigListPage = () => {
           });
           return istioItems;
         })
-        .catch(error => {
-          setLoadError({ title: error.response.statusText, message: error.response.data.error });
+        .catch((error: API.ApiError) => {
+          setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
           return [];
         });
     }
