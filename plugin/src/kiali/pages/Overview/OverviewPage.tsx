@@ -17,7 +17,6 @@ import {
   TooltipPosition
 } from '@patternfly/react-core';
 import { kialiStyle } from 'styles/StyleUtils';
-import { AxiosError } from 'axios';
 import { FilterSelected, StatefulFilters } from '../../components/Filters/StatefulFilters';
 import * as FilterHelper from '../../components/FilterList/FilterHelper';
 import * as API from '../../services/Api';
@@ -82,7 +81,8 @@ import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
 const gridStyleCompact = kialiStyle({
   backgroundColor: PFColors.BackgroundColor200,
   paddingBottom: '20px',
-  marginTop: '0px'
+  marginTop: '0px',
+  flex: '1'
 });
 
 const gridStyleList = kialiStyle({
@@ -90,7 +90,8 @@ const gridStyleList = kialiStyle({
   // The VirtualTable component has a different style than cards
   // We need to adjust the grid style if we are on compact vs list view
   padding: '0 !important',
-  marginTop: '0px'
+  marginTop: '0px',
+  flex: '1'
 });
 
 const cardGridStyle = kialiStyle({
@@ -555,7 +556,7 @@ export class OverviewPageComponent extends React.Component<OverviewProps, State>
       });
   }
 
-  handleAxiosError(message: string, error: AxiosError) {
+  handleAxiosError(message: string, error: API.ApiError) {
     FilterHelper.handleError(`${message}: ${API.getErrorString(error)}`);
   }
 
