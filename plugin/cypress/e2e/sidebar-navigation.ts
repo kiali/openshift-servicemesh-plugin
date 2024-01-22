@@ -1,12 +1,5 @@
 import { Given, Then, When } from "@badeball/cypress-cucumber-preprocessor";
 
-Given('user is logged as administrator in OCP Console', () => {
-    const user = Cypress.env('OC_CLUSTER_USER')
-    // the two lines below can be done better, we don't need to check UI, in future we can hit API to check if user is logged in
-    cy.visit('/')
-    cy.get('.co-username').should('contain', user)
-});
-
 When('user clicks on the Service Mesh icon in the left navigation bar', () => {
     cy.get('button.pf-c-nav__link').contains('Service Mesh').click().then(() => {
         cy.get('ul.pf-c-nav__list').should('be.visible')
