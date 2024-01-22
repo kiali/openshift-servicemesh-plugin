@@ -1,6 +1,6 @@
 {
   "name": "ossmconsole",
-  "version": "1.79.0",
+  "version": "1.80.0",
   "private": true,
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
     "start": "sh -ac '. ./.env.development; yarn ts-node node_modules/.bin/webpack serve'",
     "start-console": "./start-console.sh",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run -e TAGS=\"@install\" && cypress run -e TAGS=\"not @install and not @uninstall\" && cypress run -e TAGS=\"@uninstall\"",    
+    "cypress:run": "cypress run -e TAGS=\"@install\" && cypress run -e TAGS=\"not @install and not @uninstall\" && cypress run -e TAGS=\"@uninstall\"",
     "i18n": "i18next \"src/**/*.{js,jsx,ts,tsx}\" [-oc] -c i18next-parser.config.js",
     "ts-node": "ts-node -O '{\"module\":\"commonjs\"}'",
     "lint": "eslint --ext js,ts,tsx src",
@@ -136,7 +136,7 @@
   },
   "consolePlugin": {
     "name": "ossmconsole",
-    "version": "1.79.0",
+    "version": "1.80.0",
     "displayName": "OpenShift Service Mesh Console",
     "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {
