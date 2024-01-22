@@ -13,7 +13,7 @@ When('user clicks on the Service Mesh icon in the left navigation bar', () => {
     })
 });
 
-When('cypress intercept hooks are registered', () => {
+When('cypress intercept hooks for sidebar are registered', () => {
     cy.intercept('/api/proxy/plugin/ossmconsole/kiali/api/namespaces/istio-system/metrics?*').as('metricsRequest')
     cy.intercept('/api/proxy/plugin/ossmconsole/kiali/api/istio/status?*').as('overviewRequest')
     cy.intercept('/api/proxy/plugin/ossmconsole/kiali/api/namespaces').as('istioConfigRequest')
