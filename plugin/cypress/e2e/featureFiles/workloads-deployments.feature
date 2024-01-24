@@ -16,7 +16,7 @@ Feature: Kiali workloads integration with OCP Console
         Then user is able to see WorkloadDescriptionCard with Kiali Workload
 
     Scenario: Verify that content of the Traffic tab is correct
-        Then user clicks tab with "Traffic" button
+        When user clicks tab with "Traffic" button
 
     Scenario: Verify that content of the Logs tab is correct
         When user clicks tab with "Logs" button
