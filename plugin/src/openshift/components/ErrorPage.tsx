@@ -41,7 +41,7 @@ const messageStyle = kialiStyle({
   fontFamily: 'var(--pf-global--FontFamily--sans-serif)'
 });
 
-export const ErrorPage: React.FC<ErrorPageProps> = ({ title = 'Error', message = 'Unexpected error occurrs' }) => {
+export const ErrorPage: React.FC<ErrorPageProps> = ({ title = 'Error', message = 'Unexpected error occurred' }) => {
   return (
     <>
       <h1 className={headerStyle}>Error</h1>
