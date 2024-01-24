@@ -24,6 +24,6 @@ When('Kiali container is selected', () => {
     cy.get('[data-test="workload-logs-pod-containers"]').contains('kiali').click()
 });
 
-When('user sees {string} dropdown', (dropdownText:string) => {
+Then('user sees {string} dropdown', (dropdownText:string) => {
     cy.get('span.pf-c-dropdown__toggle-text').contains(dropdownText).should('be.visible')
 });
