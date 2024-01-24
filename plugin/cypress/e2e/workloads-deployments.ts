@@ -16,7 +16,7 @@ When('user clicks on Service Mesh tab in horizontal nav', () => {
     cy.get('[data-test-id="horizontal-link-Service Mesh"]').contains('Service Mesh').click()
 });
 
-When('user is able to see WorkloadDescriptionCard with Kiali Workload', () => {
+Then('user is able to see WorkloadDescriptionCard with Kiali Workload', () => {
     cy.get('[data-test="workload-description-card"]').contains('kiali').should('be.visible')
 });
 
