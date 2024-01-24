@@ -12,8 +12,8 @@ Feature: Kiali workloads integration with OCP Console
         And user clicks on Service Mesh tab in horizontal nav
 
     Scenario: Verify that content of the Overview tab is correct
-        Then user clicks tab with "Overview" button
-        And user is able to see WorkloadDescriptionCard with Kiali Workload
+        When user clicks tab with "Overview" button
+        Then user is able to see WorkloadDescriptionCard with Kiali Workload
 
     Scenario: Verify that content of the Traffic tab is correct
         Then user clicks tab with "Traffic" button
