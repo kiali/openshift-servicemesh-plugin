@@ -19,10 +19,12 @@ const install_demoapp = (demoapp: string): void => {
     istio = '';
   }
 
+  const kialiHacksPath = '../_output/kiali/hack/istio';
+
   cy.exec(`../hack/download-hack-scripts.sh`, { failOnNonZeroExit: false, timeout: 120000 }).then(() => {
     cy.log(`Get status of ${demoapp} demo app:`);
 
-    cy.exec(`../kiali/hack/istio/cypress/${demoapp}-status.sh`, { failOnNonZeroExit: false, timeout: 120000 }).then(
+    cy.exec(`${kialiHacksPath}/cypress/${demoapp}-status.sh`, { failOnNonZeroExit: false, timeout: 120000 }).then(
       result => {
         if (result.code === 0) {
           cy.log(`${demoapp} demo app is up and running`);
@@ -30,7 +32,7 @@ const install_demoapp = (demoapp: string): void => {
           cy.log(`${demoapp} demo app is either broken or not present. Installing now.`);
           cy.log(`Detecting pod architecture.`);
 
-          cy.exec('../kiali/hack/istio/cypress/get-node-architecture.sh', { failOnNonZeroExit: false }).then(result => {
+          cy.exec(`${kialiHacksPath}/cypress/get-node-architecture.sh`, { failOnNonZeroExit: false }).then(result => {
             if (result.code === 0) {
               const arch: string = result.stdout;
               cy.log(`Installing apps on ${arch} architecture.`);
@@ -41,23 +43,23 @@ const install_demoapp = (demoapp: string): void => {
                   if (result.code === 0) {
                     cy.log('Openshift detected.').log(`Removing old ${demoapp} installations.`);
 
-                    cy.exec(`../kiali/hack/istio/install-${demoapp}-demo.sh ${deletion} true`).then(() => {
+                    cy.exec(`${kialiHacksPath}/install-${demoapp}-demo.sh ${deletion} true`).then(() => {
                       cy.log('Installing new demo app.');
-                      cy.exec(`../kiali/hack/istio/install-${demoapp}-demo.sh ${tg} ${istio} -a ${arch}`, {
+                      cy.exec(`${kialiHacksPath}/install-${demoapp}-demo.sh ${tg} ${istio} -a ${arch}`, {
                         timeout: 300000
                       }).then(() => {
                         cy.log('Waiting for demoapp to be ready.');
 
-                        cy.exec(`../kiali/hack/istio/wait-for-namespace.sh -n ${namespaces}`, { timeout: 400000 });
+                        cy.exec(`${kialiHacksPath}/wait-for-namespace.sh -n ${namespaces}`, { timeout: 400000 });
                       });
                     });
                   } else {
                     cy.log(`Removing old ${demoapp} installations.`)
-                      .exec(`../kiali/hack/istio/install-${demoapp}-demo.sh ${deletion} true -c kubectl`)
+                      .exec(`${kialiHacksPath}/install-${demoapp}-demo.sh ${deletion} true -c kubectl`)
                       .then(() => {
                         cy.log('Installing new demo app.');
 
-                        cy.exec(`../kiali/hack/istio/install-${demoapp}-demo.sh -c kubectl ${tg} ${istio} -a ${arch}`, {
+                        cy.exec(`${kialiHacksPath}/install-${demoapp}-demo.sh -c kubectl ${tg} ${istio} -a ${arch}`, {
                           timeout: 300000
                         });
                       });

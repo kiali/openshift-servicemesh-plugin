@@ -12,7 +12,7 @@ set -eu
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 # Relative directory inside the local OSSM repo where the istio hack files will be copied.
-DEST_DIR="kiali"
+DEST_DIR="_output/kiali"
 
 # This is to be the top-level directory of the local OSSM git repo.
 # This is where DEST_DIR should be located.
