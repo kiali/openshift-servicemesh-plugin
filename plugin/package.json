@@ -22,9 +22,9 @@
     "lint": "eslint --ext js,ts,tsx src",
     "lint:precommit": "if git diff --name-only HEAD | grep -E '\\.tsx?$'; then npm run lint; else true; fi",
     "lint:fix": "eslint --ext js,ts,tsx --fix src",
-    "prettier": "prettier --write \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\"",
+    "prettier": "prettier --write \"**/*.{ts,tsx,scss,json}\"",
     "prepare": "cd .. && husky install plugin/.husky",
-    "pre-commit": "yarn run pretty-quick --staged --pattern \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\" && npm run lint:precommit"
+    "pre-commit": "yarn run pretty-quick --staged --no-restage --bail --pattern \"**/*.{ts,tsx,scss,json}\" && npm run lint:precommit"
   },
   "dependencies": {
     "@openshift-console/dynamic-plugin-sdk": "^0.0.19",
