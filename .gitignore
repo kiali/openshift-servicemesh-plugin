@@ -27,3 +27,5 @@ plugin/src/kiali/**/*.css
 plugin/src/kiali/**/*.css.map
 !plugin/src/kiali/components/IstioWizards/Slider/styles/default.css
 
+# Cypress
+plugin/cypress/results
