@@ -14,7 +14,7 @@
     "start-console": "./start-console.sh",
     "cypress": "cypress open",
     "cypress:run": "cypress run $REPORTER -e TAGS=\"@install\" && cypress run $REPORTER -e TAGS=\"not @install and not @uninstall\" && cypress run $REPORTER -e TAGS=\"@uninstall\"",
-    "cypress:run:reports": "REPORTER='--reporter cypress-multi-reporters --reporter-options configFile=cypress/reporter-config.json' npm run cypress:run ",
+    "cypress:run:junit": "REPORTER='--reporter cypress-multi-reporters --reporter-options configFile=cypress/reporter-config.json' npm run cypress:run ",
     "cypress:delete:reports": "rm cypress/results/* || true",
     "cypress:combine:reports": "jrm cypress/results/combined-report.xml \"cypress/results/*.xml\"",
     "i18n": "i18next \"src/**/*.{js,jsx,ts,tsx}\" [-oc] -c i18next-parser.config.js",
