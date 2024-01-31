@@ -12,16 +12,19 @@
     "build:dev": "yarn clean && sh -ac '. ./.env.development; yarn ts-node node_modules/.bin/webpack'",
     "start": "sh -ac '. ./.env.development; yarn ts-node node_modules/.bin/webpack serve'",
     "start-console": "./start-console.sh",
-    "cypress:open": "cypress open",
-    "cypress:run": "cypress run -e TAGS=\"@install\" && cypress run -e TAGS=\"not @install and not @uninstall\" && cypress run -e TAGS=\"@uninstall\"",
+    "cypress": "cypress open",
+    "cypress:run": "cypress run $REPORTER -e TAGS=\"@install\" && cypress run $REPORTER -e TAGS=\"not @install and not @uninstall\" && cypress run $REPORTER -e TAGS=\"@uninstall\"",
+    "cypress:run:junit": "REPORTER='--reporter cypress-multi-reporters --reporter-options configFile=cypress/reporter-config.json' npm run cypress:run ",
+    "cypress:delete:reports": "rm cypress/results/* || true",
+    "cypress:combine:reports": "jrm cypress/results/combined-report.xml \"cypress/results/*.xml\"",
     "i18n": "i18next \"src/**/*.{js,jsx,ts,tsx}\" [-oc] -c i18next-parser.config.js",
     "ts-node": "ts-node -O '{\"module\":\"commonjs\"}'",
     "lint": "eslint --ext js,ts,tsx src",
     "lint:precommit": "if git diff --name-only HEAD | grep -E '\\.tsx?$'; then npm run lint; else true; fi",
     "lint:fix": "eslint --ext js,ts,tsx --fix src",
-    "prettier": "prettier --write \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\"",
+    "prettier": "prettier --write \"**/*.{ts,tsx,scss,json}\"",
     "prepare": "cd .. && husky install plugin/.husky",
-    "pre-commit": "yarn run pretty-quick --staged --pattern \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\" && npm run lint:precommit"
+    "pre-commit": "yarn run pretty-quick --staged --no-restage --bail --pattern \"**/*.{ts,tsx,scss,json}\" && npm run lint:precommit"
   },
   "dependencies": {
     "@openshift-console/dynamic-plugin-sdk": "^0.0.19",
@@ -133,6 +136,14 @@
   "engines": {
     "node": ">=18.0.0",
     "yarn": ">=1.0.0"
+  },
+  "cypress-cucumber-preprocessor": {
+    "stepDefinitions": [
+      "cypress/e2e/[filepath]/**/*.{js,ts}",
+      "cypress/e2e/[filepath].{js,ts}",
+      "cypress/support/step_definitions/**/*.{js,ts}"
+    ],
+    "filterSpecs": true
   },
   "consolePlugin": {
     "name": "ossmconsole",

@@ -1,8 +1,7 @@
 import { defineConfig } from 'cypress';
-import { getAuthStrategy } from './cypress/plugins/setup';
 import { addCucumberPreprocessorPlugin } from '@badeball/cypress-cucumber-preprocessor';
-import createBundler from "@bahmutov/cypress-esbuild-preprocessor";
-import { createEsbuildPlugin } from "@badeball/cypress-cucumber-preprocessor/esbuild";
+import createBundler from '@bahmutov/cypress-esbuild-preprocessor';
+import { createEsbuildPlugin } from '@badeball/cypress-cucumber-preprocessor/esbuild';
 
 export default defineConfig({
   viewportWidth: 1920,
@@ -15,13 +14,13 @@ export default defineConfig({
   responseTimeout: 15000,
   fixturesFolder: 'cypress/fixtures',
   chromeWebSecurity: true, // needs to disabled for cross origin requests
-  screenshotsFolder: "results/screenshots",
-  videosFolder: "results/videos",
+  screenshotsFolder: 'cypress/results/screenshots',
+  videosFolder: 'cypress/results/videos',
   // videoUploadOnPasses: false, // this is not supported in cypress 13+, TODO add this back to config
 
   env: {
-    OC_CLUSTER_USER: "jenkins", // default value for jenkins
-    OC_IDP: "my_htpasswd_provider", // default value for jenkins, can vary based on cluster setup
+    OC_CLUSTER_USER: 'jenkins', // default value for jenkins
+    OC_IDP: 'my_htpasswd_provider', // default value for jenkins, can vary based on cluster setup
     'cypress-react-selector': {
       root: '#root'
     },
@@ -39,9 +38,9 @@ export default defineConfig({
       await addCucumberPreprocessorPlugin(on, config);
 
       on(
-        "file:preprocessor",
+        'file:preprocessor',
         createBundler({
-          plugins: [createEsbuildPlugin(config)],
+          plugins: [createEsbuildPlugin(config)]
         })
       );
 
@@ -52,5 +51,5 @@ export default defineConfig({
     },
     specPattern: '**/*.feature',
     supportFile: 'cypress/support/index.ts'
-}
+  }
 });
