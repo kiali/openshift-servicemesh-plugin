@@ -3,8 +3,7 @@ name: Release
 on:
   schedule:
   # Every Monday at 07:00 (UTC)
-  - cron: '00 7 * * MON'
-
+  - cron: "00 7 * * MON"
   workflow_dispatch:
     inputs:
       plugin_quay_repository:
@@ -24,10 +23,9 @@ jobs:
       branch_version: ${{ env.branch_version }}
       next_version: ${{ env.next_version }}
       plugin_quay_tag: ${{ env.plugin_quay_tag }}
-      plugin_quay_repo: ${{ env.plugin_quay_repo }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.ref_name }}
 
@@ -71,7 +69,8 @@ jobs:
     - name: Determine release type
       id: release_type
       run: |
-        if [ -z "${{ github.event.inputs.release_type }}" ];
+        echo ${{ github.ref_name }}
+        if [[ "${{ github.ref_name }}" == "main" ]];
         then
           DO_RELEASE=$(python minor.py)
           if [[ $DO_RELEASE == "1" ]]
@@ -81,7 +80,7 @@ jobs:
             echo "release_type=skip" >> $GITHUB_ENV
           fi
         else
-          echo "release_type=${{ github.event.inputs.release_type }}" >> $GITHUB_ENV
+          echo "release_type=patch" >> $GITHUB_ENV
         fi
 
     - name: Determine release version
@@ -143,10 +142,9 @@ jobs:
           PLUGIN_QUAY_REPO="${{ github.event.inputs.plugin_quay_repository }}"
         fi
 
-        PLUGIN_QUAY_TAG="$PLUGIN_QUAY_REPO:$RELEASE_VERSION"
+        PLUGIN_QUAY_TAG="$PLUGIN_QUAY_REPO:$RELEASE_VERSION $PLUGIN_QUAY_REPO:$BRANCH_VERSION"
 
         echo "plugin_quay_tag=$PLUGIN_QUAY_TAG" >> $GITHUB_ENV
-        echo "plugin_quay_repo=$PLUGIN_QUAY_REPO" >> $GITHUB_ENV
 
     - name: Cleanup
       run: rm bump.py minor.py
@@ -176,9 +174,9 @@ jobs:
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.inputs.release_branch || github.ref_name }}
+        ref: ${{ github.ref_name }}
 
     - name: Set version to release
       run: |
@@ -188,7 +186,6 @@ jobs:
         # UI version
         jq -r ".version |= \"${RELEASE_VERSION:1}\" | .consolePlugin.version |= \"${RELEASE_VERSION:1}\"" plugin/package.json > plugin/package.json.tmp
         mv plugin/package.json.tmp plugin/package.json
-        cat plugin/package.json
 
     - name: Build and push images
       run: |
@@ -223,7 +220,6 @@ jobs:
 
         jq -r ".version |= \"${NEXT_VERSION:1}\" | .consolePlugin.version |= \"${NEXT_VERSION:1}\"" plugin/package.json > plugin/package.json.tmp
         mv plugin/package.json.tmp plugin/package.json
-        cat plugin/package.json
 
         git add Makefile plugin/package.json
 
