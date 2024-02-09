@@ -55,10 +55,14 @@ export const useInitKialiListeners = () => {
 
         if (webParamsIndex > -1) {
           const nsParamIndex = kialiAction.indexOf('namespaces=', webParamsIndex);
-          // It assumes that the 'namespaces=' will not be added alone as a param
+
           // Under the plugin it will be used for a single namespace
-          // TODO additional validations should be added to this parsing logic
-          const endNsParamIndex = kialiAction.indexOf('&', nsParamIndex);
+          let endNsParamIndex = kialiAction.indexOf('&', nsParamIndex);
+          // In case that the 'namespaces=' is added alone as a param
+          if (endNsParamIndex === -1) {
+            endNsParamIndex = kialiAction.length;
+          }
+
           const namespace = kialiAction.substring(nsParamIndex + 'namespaces='.length, endNsParamIndex);
           istioConfigUrl += '/ns/' + namespace + '/istio';
         } else {
