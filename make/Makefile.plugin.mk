@@ -45,7 +45,12 @@ undeploy-plugin: .ensure-oc-login disable-plugin
 
 ## enable-plugin: Enables the plugin within the OpenShift Console.
 enable-plugin: .ensure-oc-login
-	${OC} patch consoles.operator.openshift.io cluster --type=json -p '[{"op":"add","path":"/spec/plugins/-","value":"ossmconsole"}]'
+	@if [ "$$(${OC} get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins')" == "null" ]; then ${OC} patch consoles.operator.openshift.io cluster --type=json -p '[{"op":"add","path":"/spec/plugins","value":[]}]'; fi
+	@if [ "$$(${OC} get consoles.operator.openshift.io cluster -o json | jq '.spec.plugins | index("ossmconsole")')" == "null" ]; then \
+	  ${OC} patch consoles.operator.openshift.io cluster --type=json -p '[{"op":"add","path":"/spec/plugins/-","value":"ossmconsole"}]'; \
+	else \
+	  echo OSSMC plugin is already enabled; \
+	fi
 
 ## disable-plugin: Disables the plugin within the OpenShift Console.
 disable-plugin: .ensure-oc-login

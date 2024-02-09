@@ -28,7 +28,6 @@ import { kialiStyle } from 'styles/StyleUtils';
 import { store } from 'store/ConfigStore';
 import cssVariables from 'styles/variables.module.scss';
 
-import '@patternfly/patternfly/patternfly.css';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/dist/themes/light-border.css';
 

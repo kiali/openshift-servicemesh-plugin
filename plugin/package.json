@@ -12,14 +12,19 @@
     "build:dev": "yarn clean && sh -ac '. ./.env.development; yarn ts-node node_modules/.bin/webpack'",
     "start": "sh -ac '. ./.env.development; yarn ts-node node_modules/.bin/webpack serve'",
     "start-console": "./start-console.sh",
+    "cypress": "cypress open",
+    "cypress:run": "cypress run $REPORTER -e TAGS=\"@install\" && cypress run $REPORTER -e TAGS=\"not @install and not @uninstall\" && cypress run $REPORTER -e TAGS=\"@uninstall\"",
+    "cypress:run:junit": "REPORTER='--reporter cypress-multi-reporters --reporter-options configFile=cypress/reporter-config.json' npm run cypress:run ",
+    "cypress:delete:reports": "rm cypress/results/* || true",
+    "cypress:combine:reports": "jrm cypress/results/combined-report.xml \"cypress/results/*.xml\"",
     "i18n": "i18next \"src/**/*.{js,jsx,ts,tsx}\" [-oc] -c i18next-parser.config.js",
     "ts-node": "ts-node -O '{\"module\":\"commonjs\"}'",
     "lint": "eslint --ext js,ts,tsx src",
     "lint:precommit": "if git diff --name-only HEAD | grep -E '\\.tsx?$'; then npm run lint; else true; fi",
     "lint:fix": "eslint --ext js,ts,tsx --fix src",
-    "prettier": "prettier --write \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\"",
+    "prettier": "prettier --write \"**/*.{ts,tsx,scss,json}\"",
     "prepare": "cd .. && husky install plugin/.husky",
-    "pre-commit": "yarn run pretty-quick --staged --pattern \"{src/**/*.{js,jsx,ts,tsx,json,yml,css,scss},travis.yml,*.json}\" && npm run lint:precommit"
+    "pre-commit": "yarn run pretty-quick --staged --no-restage --bail --pattern \"**/*.{ts,tsx,scss,json}\" && npm run lint:precommit"
   },
   "dependencies": {
     "@openshift-console/dynamic-plugin-sdk": "^0.0.19",
@@ -70,8 +75,8 @@
   "devDependencies": {
     "@babel/core": "^7.16.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "@badeball/cypress-cucumber-preprocessor": "^12.2.0",
-    "@cypress/browserify-preprocessor": "3.0.2",
+    "@badeball/cypress-cucumber-preprocessor": "^19.2.0",
+    "@bahmutov/cypress-esbuild-preprocessor": "^2.2.0",
     "@openshift-console/dynamic-plugin-sdk-webpack": "^0.0.10",
     "@types/cytoscape": "3.14.0",
     "@types/enzyme": "3.10.5",
@@ -92,9 +97,9 @@
     "babel-loader": "^9.1.2",
     "babel-preset-react-app": "^10.0.1",
     "css-loader": "^6.5.1",
-    "cypress": "^10.7.0",
+    "cypress": "^13.6.1",
     "cypress-multi-reporters": "^1.6.0",
-    "cypress-react-selector": "^2.3.17",
+    "cypress-react-selector": "^2.3.20",
     "enzyme": "3.11.0",
     "enzyme-to-json": "3.4.4",
     "eslint": "^8.1.0",
@@ -104,7 +109,7 @@
     "jest-canvas-mock": "2.2.0",
     "jest-localstorage-mock": "2.4.2",
     "junit-report-merger": "^3.0.5",
-    "mocha-junit-reporter": "^2.0.2",
+    "mocha-junit-reporter": "^2.2.1",
     "node-polyfill-webpack-plugin": "^2.0.1",
     "prettier": "^2.4.1",
     "pretty-quick": "^3.1.3",
@@ -131,6 +136,14 @@
   "engines": {
     "node": ">=18.0.0",
     "yarn": ">=1.0.0"
+  },
+  "cypress-cucumber-preprocessor": {
+    "stepDefinitions": [
+      "cypress/e2e/[filepath]/**/*.{js,ts}",
+      "cypress/e2e/[filepath].{js,ts}",
+      "cypress/support/step_definitions/**/*.{js,ts}"
+    ],
+    "filterSpecs": true
   },
   "consolePlugin": {
     "name": "ossmconsole",
