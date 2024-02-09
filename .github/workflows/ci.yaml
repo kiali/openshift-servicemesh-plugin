@@ -3,13 +3,17 @@ name: CI Pipeline
 on:
   # Run on main and release branches
   push:
-    branches: [main, "^v\\d+\\.\\d+$"]
+    branches:
+      - main
+      - v*.*
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
       - '**/*.adoc'
   pull_request:
-    branches: [main, "^v\\d+\\.\\d+$"]
+    branches:
+      - main
+      - v*.*
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
@@ -53,7 +57,7 @@ jobs:
     needs: [initialize]
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ inputs.build_branch }}
 
