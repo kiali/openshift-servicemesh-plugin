@@ -56,6 +56,14 @@ jobs:
       with:
         ref: ${{ github.event.inputs.release_branch || github.ref_name }}
 
+    # /opt/hostedtoolcache directory is large and has tools we do not need so delete it to free up space
+    - name: Print disk space before
+      run: df -h
+    - name: Free up space
+      run: rm -rf /opt/hostedtoolcache
+    - name: Print disk space after
+      run: df -h
+
     - name: Build and push plugin image
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io

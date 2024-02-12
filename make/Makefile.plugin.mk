@@ -130,7 +130,7 @@ prepare-dev-env: .determine-kiali-url
 .ensure-buildx-builder: .ensure-docker-buildx
 	@if ! docker buildx inspect ossmconsole-builder > /dev/null 2>&1; then \
 	  echo "The buildx builder instance named 'ossmconsole-builder' does not exist. Creating one now."; \
-	  if ! docker buildx create --name=ossmconsole-builder --driver-opt=image=moby/buildkit:v0.8.0; then \
+	  if ! docker buildx create --name=ossmconsole-builder --driver-opt=image=moby/buildkit:v0.12.5 --config ./make/buildkitd.toml --use; then \
 	    echo "Failed to create the buildx builder 'ossmconsole-builder'"; \
 	    exit 1; \
 	  fi \
