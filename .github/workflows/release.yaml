@@ -187,6 +187,14 @@ jobs:
         jq -r ".version |= \"${RELEASE_VERSION:1}\" | .consolePlugin.version |= \"${RELEASE_VERSION:1}\"" plugin/package.json > plugin/package.json.tmp
         mv plugin/package.json.tmp plugin/package.json
 
+    # /opt/hostedtoolcache directory is large and has tools we do not need so delete it to free up space
+    - name: Print disk space before
+      run: df -h
+    - name: Free up space
+      run: rm -rf /opt/hostedtoolcache
+    - name: Print disk space after
+      run: df -h
+
     - name: Build and push images
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
