@@ -201,6 +201,12 @@ jobs:
 
         make build-push-plugin-multi-arch
 
+    - name: Configure git
+      run: |
+        git config user.email 'kiali-dev@googlegroups.com'
+
+        git config user.name 'kiali-bot'
+
     - name: Create tag
       run: |
         git add Makefile plugin/package.json
