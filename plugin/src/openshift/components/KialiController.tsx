@@ -87,7 +87,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
 
   state = {
-    namespaces: [],
     configLoaded: false
   };
 
@@ -111,9 +110,19 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
   private getKialiConfig = async (): Promise<void> => {
     try {
-      const getNamespacesPromise = this.promises.register('getNamespaces', API.getNamespaces());
+      const getNamespacesPromise = this.promises
+        .register('getNamespaces', API.getNamespaces())
+        .then(response => this.props.setNamespaces(response.data, new Date()))
+        .catch(error => {
+          AlertUtils.addError('Error fetching namespaces.', error, 'default', MessageType.WARNING);
+        });
 
-      const getServerConfigPromise = this.promises.register('getServerConfig', API.getServerConfig());
+      const getServerConfigPromise = this.promises
+        .register('getServerConfig', API.getServerConfig())
+        .then(response => setServerConfig(response.data))
+        .catch(error => {
+          AlertUtils.addError('Error fetching server config.', error, 'default', MessageType.WARNING);
+        });
 
       const getStatusPromise = this.promises
         .register('getStatus', API.getStatus())
@@ -135,18 +144,10 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           );
         });
 
-      const configs = await Promise.all([
-        getNamespacesPromise,
-        getServerConfigPromise,
-        getStatusPromise,
-        getJaegerInfoPromise
-      ]);
+      await Promise.all([getNamespacesPromise, getServerConfigPromise, getStatusPromise, getJaegerInfoPromise]);
 
-      const namespaces = configs[0].data;
-      this.props.setNamespaces(namespaces, new Date());
-      setServerConfig(configs[1].data);
       this.applyUIDefaults();
-      this.setState({ configLoaded: true, namespaces });
+      this.setState({ configLoaded: true });
     } catch (err) {
       console.error('Error loading kiali config', err);
     }
@@ -159,7 +160,8 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         .then(response => this.props.setMeshTlsStatus(response.data))
         .catch(error => {
           // User without namespaces can't have access to mTLS information. Reduce severity to info.
-          const informative = this.state.namespaces && this.state.namespaces.length < 1;
+          const namespaces = store.getState().namespaces.items;
+          const informative = namespaces && namespaces.length < 1;
           if (informative) {
             AlertUtils.addError('Mesh-wide mTLS status feature disabled.', error, 'default', MessageType.INFO);
           } else {
@@ -169,7 +171,10 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
       const getIstioCertsInfoPromise = this.promises
         .register('getIstioCertsInfo', API.getIstioCertsInfo())
-        .then(response => this.props.setIstioCertsInfo(response.data));
+        .then(response => this.props.setIstioCertsInfo(response.data))
+        .catch(error => {
+          AlertUtils.addError('Error fetching Istio certificates info.', error, 'default', MessageType.WARNING);
+        });
 
       await Promise.all([getMeshMTLSPromise, getIstioCertsInfoPromise]);
     } catch (err) {
