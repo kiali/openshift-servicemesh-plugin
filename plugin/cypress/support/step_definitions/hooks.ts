@@ -41,7 +41,7 @@ const install_demoapp = (demoapp: string): void => {
                 }).then(() => {
                   cy.log(`Waiting for ${demoapp} app to be ready.`);
 
-                  cy.exec(`${kialiHacksPath}/wait-for-namespace.sh -n ${namespaces}`, { timeout: 400000 });
+                  cy.exec(`../hack/wait-for-namespace.sh -n ${namespaces}`, { timeout: 400000 });
                 });
               });
             } else {
