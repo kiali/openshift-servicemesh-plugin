@@ -67,7 +67,6 @@ if [ "${IS_MAISTRA}" == "false" ]; then
 fi
 
 for NAMESPACE in ${NAMESPACES[@]}; do
-  oc wait --for=condition=Ready pods --all -n "$NAMESPACE" --timeout 60s || true
   oc wait --for=condition=Ready pods --all -n "$NAMESPACE" --timeout 60s
 done
 
