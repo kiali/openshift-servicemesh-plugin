@@ -43,9 +43,9 @@ if [ "${IS_MAISTRA}" == "false" ]; then
   KIALI_CR_NAME="$(echo ${KIALI_CR_NAMESPACE_NAME} | cut -d: -f2)"
   ACCESSIBLE_NAMESPACES="$(oc get kiali $KIALI_CR_NAME -n $KIALI_CR_NAMESPACE -o jsonpath='{.spec.deployment.accessible_namespaces}')"
 
-  # All namespaces are accessible, no need to add namespaces access to CRD
+  # All namespaces are accessible, no need to add namespaces access to Kiali CR
   if [ "${ACCESSIBLE_NAMESPACES}" != "**" ]; then
-    # accessible_namespaces field is not defined in the CRD, initializing value to empty array
+    # accessible_namespaces field is not defined in the Kiali CR, initializing value to empty array
     if [ "${ACCESSIBLE_NAMESPACES}" == "" ]; then
       oc patch kiali $KIALI_CR_NAME -n $KIALI_CR_NAMESPACE --type=merge -p '{"spec": {"deployment": {"accessible_namespaces": []}}}'
     fi
