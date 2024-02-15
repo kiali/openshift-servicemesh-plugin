@@ -1,14 +1,12 @@
 import * as React from 'react';
-import { Provider } from 'react-redux';
 import { useHistory } from 'react-router';
-import { store } from 'store/ConfigStore';
 import { WorkloadId } from 'types/Workload';
 import { WorkloadDetailsPage } from 'pages/WorkloadDetails/WorkloadDetailsPage';
-import { KialiController } from '../../components/KialiController';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
+import { KialiContainer } from 'openshift/components/KialiContainer';
 
-const WorkloadMeshTab = () => {
+const WorkloadMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
   const history = useHistory();
@@ -43,11 +41,9 @@ const WorkloadMeshTab = () => {
   };
 
   return (
-    <Provider store={store}>
-      <KialiController>
-        <WorkloadDetailsPage workloadId={workloadId}></WorkloadDetailsPage>
-      </KialiController>
-    </Provider>
+    <KialiContainer>
+      <WorkloadDetailsPage workloadId={workloadId}></WorkloadDetailsPage>
+    </KialiContainer>
   );
 };
 

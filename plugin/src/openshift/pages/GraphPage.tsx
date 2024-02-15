@@ -1,17 +1,15 @@
 import * as React from 'react';
-import { Provider } from 'react-redux';
-import { store } from 'store/ConfigStore';
 import { GraphPage } from 'pages/Graph/GraphPage';
 import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
-import { KialiController } from '../components/KialiController';
 import { getPluginConfig, useInitKialiListeners } from '../utils/KialiIntegration';
 import { useHistory } from 'react-router';
 import { setHistory } from 'app/History';
 import { kialiStyle } from 'styles/StyleUtils';
+import { KialiContainer } from 'openshift/components/KialiContainer';
 
 const containerPadding = kialiStyle({ padding: '0 20px 0 20px' });
 
-const GraphPageOSSMC = () => {
+const GraphPageOSSMC: React.FC<void> = () => {
   useInitKialiListeners();
 
   const [pluginConfig, setPluginConfig] = React.useState({
@@ -30,14 +28,12 @@ const GraphPageOSSMC = () => {
   setHistory(history.location.pathname);
 
   return (
-    <Provider store={store}>
+    <KialiContainer>
       <div className={containerPadding}>
-        <KialiController>
-          {pluginConfig.graph.impl === 'cy' && <GraphPage></GraphPage>}
-          {pluginConfig.graph.impl === 'pf' && <GraphPagePF></GraphPagePF>}
-        </KialiController>
+        {pluginConfig.graph.impl === 'cy' && <GraphPage></GraphPage>}
+        {pluginConfig.graph.impl === 'pf' && <GraphPagePF></GraphPagePF>}
       </div>
-    </Provider>
+    </KialiContainer>
   );
 };
 

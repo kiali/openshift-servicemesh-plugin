@@ -27,22 +27,8 @@ import { MeshTlsActions } from 'actions/MeshTlsActions';
 import { TLSStatus } from 'types/TLSStatus';
 import { IstioCertsInfoActions } from 'actions/IstioCertsInfoActions';
 import { CertsInfo } from 'types/CertsInfo';
-import { globalStyle } from 'styles/GlobalStyle';
-import { kialiStyle } from 'styles/StyleUtils';
 import { store } from 'store/ConfigStore';
-import cssVariables from 'styles/variables.module.scss';
-
-import 'tippy.js/dist/tippy.css';
-import 'tippy.js/dist/themes/light-border.css';
-
-// Enables ACE editor YAML themes
-import 'ace-builds/src-noconflict/ace';
-import 'ace-builds/src-noconflict/mode-yaml';
-import 'ace-builds/src-noconflict/theme-eclipse';
-import 'ace-builds/src-noconflict/theme-twilight';
-
-// Enables the search box for the ACE editor
-import 'ace-builds/src-noconflict/ext-searchbox';
+import { kialiStyle } from 'styles/StyleUtils';
 
 declare global {
   interface Date {
@@ -58,10 +44,11 @@ Date.prototype.toLocaleStringWithConditionalDate = function () {
   return nowDate === thisDate ? this.toLocaleTimeString() : this.toLocaleString();
 };
 
-const ossmcStyle = kialiStyle({
+const centerVerticalHorizontalStyle = kialiStyle({
+  height: '100%',
   display: 'flex',
-  flexDirection: 'column',
-  overflowY: 'auto'
+  alignItems: 'center',
+  justifyContent: 'center'
 });
 
 interface KialiControllerReduxProps {
@@ -102,9 +89,9 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
   render(): React.ReactNode {
     return this.state.configLoaded ? (
-      <div className={`${globalStyle} ${ossmcStyle} ${cssVariables.style}`}>{this.props.children}</div>
+      <>{this.props.children}</>
     ) : (
-      false
+      <h1 className={centerVerticalHorizontalStyle}>Loading...</h1>
     );
   }
 

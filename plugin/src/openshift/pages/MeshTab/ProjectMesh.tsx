@@ -1,15 +1,17 @@
 import * as React from 'react';
-import { Provider } from 'react-redux';
 import { useHistory } from 'react-router';
 import { ActionKeys } from 'actions/ActionKeys';
 import { store } from 'store/ConfigStore';
 import { GraphPage } from 'pages/Graph/GraphPage';
 import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
-import { KialiController } from '../../components/KialiController';
 import { getPluginConfig, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
+import { KialiContainer } from 'openshift/components/KialiContainer';
+import { kialiStyle } from 'styles/StyleUtils';
 
-const ProjectMeshTab = () => {
+const containerPadding = kialiStyle({ padding: '0 20px 0 20px' });
+
+const ProjectMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
   const [pluginConfig, setPluginConfig] = React.useState({
@@ -35,12 +37,12 @@ const ProjectMeshTab = () => {
   store.dispatch({ type: ActionKeys.SET_ACTIVE_NAMESPACES, payload: [{ name: namespace }] });
 
   return (
-    <Provider store={store}>
-      <KialiController>
+    <KialiContainer>
+      <div className={containerPadding}>
         {pluginConfig.graph.impl === 'cy' && <GraphPage></GraphPage>}
         {pluginConfig.graph.impl === 'pf' && <GraphPagePF></GraphPagePF>}
-      </KialiController>
-    </Provider>
+      </div>
+    </KialiContainer>
   );
 };
 

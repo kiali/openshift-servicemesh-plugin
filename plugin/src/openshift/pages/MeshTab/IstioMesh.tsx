@@ -1,12 +1,10 @@
 import * as React from 'react';
-import { Provider } from 'react-redux';
 import { useHistory } from 'react-router';
-import { store } from 'store/ConfigStore';
 import { IstioConfigId } from 'types/IstioConfigDetails';
 import { IstioConfigDetailsPage } from 'pages/IstioConfigDetails/IstioConfigDetailsPage';
-import { KialiController } from '../../components/KialiController';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
+import { KialiContainer } from 'openshift/components/KialiContainer';
 
 const configTypes = {
   DestinationRule: 'DestinationRules',
@@ -22,7 +20,7 @@ const configTypes = {
   RequestAuthentication: 'RequestAuthentications'
 };
 
-const IstioConfigMeshTab = () => {
+const IstioConfigMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
   const history = useHistory();
@@ -41,11 +39,9 @@ const IstioConfigMeshTab = () => {
   };
 
   return (
-    <Provider store={store}>
-      <KialiController>
-        <IstioConfigDetailsPage istioConfigId={istioConfigId}></IstioConfigDetailsPage>
-      </KialiController>
-    </Provider>
+    <KialiContainer>
+      <IstioConfigDetailsPage istioConfigId={istioConfigId}></IstioConfigDetailsPage>
+    </KialiContainer>
   );
 };
 
