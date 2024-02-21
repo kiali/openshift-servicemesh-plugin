@@ -1,14 +1,12 @@
 import * as React from 'react';
-import { Provider } from 'react-redux';
 import { useHistory } from 'react-router';
-import { store } from 'store/ConfigStore';
 import { ServiceId } from 'types/ServiceId';
 import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
-import { KialiController } from '../../components/KialiController';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
+import { KialiContainer } from 'openshift/components/KialiContainer';
 
-const ServiceMeshTab = () => {
+const ServiceMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
   const history = useHistory();
@@ -25,11 +23,9 @@ const ServiceMeshTab = () => {
   };
 
   return (
-    <Provider store={store}>
-      <KialiController>
-        <ServiceDetailsPage serviceId={serviceId}></ServiceDetailsPage>
-      </KialiController>
-    </Provider>
+    <KialiContainer>
+      <ServiceDetailsPage serviceId={serviceId}></ServiceDetailsPage>
+    </KialiContainer>
   );
 };
 

@@ -25,8 +25,6 @@ import * as API from 'services/Api';
 import { Namespace } from 'types/Namespace';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
-import { KialiController } from '../components/KialiController';
-import { store } from 'store/ConfigStore';
 import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
 
 interface IstioConfigObject extends IstioObject {
@@ -175,7 +173,13 @@ const IstioConfigListPage = () => {
 
   // Fetch the Istio configs, convert to istio items and map them into flattened list items
   const fetchIstioConfigs = React.useCallback(async (): Promise<IstioConfigItem[]> => {
-    const validate = store.getState().statusState.istioEnvironment.istioAPIEnabled;
+    const validate = await promises
+      .register('getStatus', API.getStatus())
+      .then(response => response.data.istioEnvironment.istioAPIEnabled)
+      .catch(error => {
+        setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
+        return false;
+      });
 
     if (ns) {
       const getIstioConfigData = promises.register('getIstioConfig', API.getIstioConfig(ns, [], validate, '', ''));
@@ -241,7 +245,7 @@ const IstioConfigListPage = () => {
   const columns = useIstioTableColumns();
 
   return (
-    <KialiController>
+    <>
       {loadError ? (
         <ErrorPage title={loadError.title} message={loadError.message}></ErrorPage>
       ) : (
@@ -257,7 +261,7 @@ const IstioConfigListPage = () => {
           </ListPageBody>
         </>
       )}
-    </KialiController>
+    </>
   );
 };
 
