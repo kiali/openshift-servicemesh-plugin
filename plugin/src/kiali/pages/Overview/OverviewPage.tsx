@@ -54,7 +54,7 @@ import { switchType } from './OverviewHelper';
 import * as Sorts from './Sorts';
 import * as Filters from './Filters';
 import { ValidationSummary } from '../../components/Validations/ValidationSummary';
-import { DurationInSeconds, IntervalInMilliseconds } from 'types/Common';
+import { DurationInSeconds, I18N_NAMESPACE, IntervalInMilliseconds } from 'types/Common';
 import { Paths, isMultiCluster, serverConfig } from '../../config';
 import { PFColors } from '../../components/Pf/PfColors';
 import { VirtualList } from '../../components/VirtualList/VirtualList';
@@ -77,6 +77,7 @@ import { CanaryUpgradeProgress } from './CanaryUpgradeProgress';
 import { ControlPlaneVersionBadge } from './ControlPlaneVersionBadge';
 import { AmbientBadge } from '../../components/Ambient/AmbientBadge';
 import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
+import { WithTranslation, withTranslation } from 'react-i18next';
 
 const gridStyleCompact = kialiStyle({
   backgroundColor: PFColors.BackgroundColor200,
@@ -167,7 +168,7 @@ type ReduxProps = {
   refreshInterval: IntervalInMilliseconds;
 };
 
-type OverviewProps = ReduxProps & {};
+type OverviewProps = WithTranslation & ReduxProps & {};
 
 export class OverviewPageComponent extends React.Component<OverviewProps, State> {
   private sFOverviewToolbar: React.RefObject<StatefulFilters> = React.createRef();
@@ -1119,20 +1120,32 @@ export class OverviewPageComponent extends React.Component<OverviewProps, State>
   }
 
   renderLabels(ns: NamespaceInfo): JSX.Element {
-    const labelsLength = ns.labels ? `${Object.entries(ns.labels).length}` : 'No';
+    let labelsInfo: string;
+
+    if (ns.labels) {
+      const labelsLength = Object.entries(ns.labels).length;
+      labelsInfo = this.props.t('{{count}} labels', {
+        count: labelsLength,
+        defaultValue_one: '1 label',
+        defaultValue_other: '{{count}} labels'
+      });
+    } else {
+      labelsInfo = this.props.t('No labels');
+    }
+
     const labelContent = ns.labels ? (
       <div
         style={{ color: PFColors.Link, textAlign: 'left', cursor: 'pointer' }}
         onClick={() => this.setDisplayMode(OverviewDisplayMode.LIST)}
       >
         <Tooltip
-          aria-label={'Labels list'}
+          aria-label="Labels list"
           position={TooltipPosition.right}
           enableFlip={true}
           distance={5}
           content={
             <ul>
-              {Object.entries(ns.labels || []).map(([key, value]) => (
+              {Object.entries(ns.labels ?? []).map(([key, value]) => (
                 <li key={key}>
                   {key}={value}
                 </li>
@@ -1141,13 +1154,14 @@ export class OverviewPageComponent extends React.Component<OverviewProps, State>
           }
         >
           <div id="labels_info" style={{ display: 'inline' }}>
-            {labelsLength} label{labelsLength !== '1' ? 's' : ''}
+            {labelsInfo}
           </div>
         </Tooltip>
       </div>
     ) : (
-      <div style={{ textAlign: 'left' }}>No labels</div>
+      <div style={{ textAlign: 'left' }}>{labelsInfo}</div>
     );
+
     return labelContent;
   }
 
@@ -1294,4 +1308,4 @@ const mapStateToProps = (state: KialiAppState): ReduxProps => ({
   refreshInterval: refreshIntervalSelector(state)
 });
 
-export const OverviewPage = connect(mapStateToProps)(OverviewPageComponent);
+export const OverviewPage = connect(mapStateToProps)(withTranslation(I18N_NAMESPACE)(OverviewPageComponent));

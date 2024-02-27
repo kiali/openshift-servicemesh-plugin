@@ -18,6 +18,7 @@ export enum HTTP_VERBS {
 
 export const PF_THEME_DARK = 'pf-theme-dark';
 export const KIALI_THEME = 'kiali-theme';
+export const I18N_NAMESPACE = process.env.I18N_NAMESPACE ?? '';
 
 export const enum Theme {
   LIGHT = 'Light',
