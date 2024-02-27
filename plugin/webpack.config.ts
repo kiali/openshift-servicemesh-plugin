@@ -8,6 +8,7 @@ import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
@@ -89,10 +90,19 @@ const config: Configuration = {
   },
   plugins: [
     new ConsoleRemotePlugin(),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: path.resolve(__dirname, 'src/kiali/locales/*.json'),
+          to: 'locales/[name]/plugin__ossmconsole.json'
+        }
+      ]
+    }),
     new DefinePlugin({
       'process.env.API_PROXY': JSON.stringify(process.env.API_PROXY),
       'process.env.CSS_PREFIX': JSON.stringify(process.env.CSS_PREFIX),
-      'process.env.GLOBAL_SCROLLBAR': JSON.stringify(process.env.GLOBAL_SCROLLBAR)
+      'process.env.GLOBAL_SCROLLBAR': JSON.stringify(process.env.GLOBAL_SCROLLBAR),
+      'process.env.I18N_NAMESPACE': JSON.stringify(process.env.I18N_NAMESPACE)
     }),
     new NodePolyfillPlugin(),
     new ForkTsCheckerWebpackPlugin({
