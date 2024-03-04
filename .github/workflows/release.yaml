@@ -2,8 +2,8 @@ name: Release
 
 on:
   schedule:
-  # Every Monday at 07:00 (UTC)
-  - cron: "00 7 * * MON"
+  # Every Monday at 01:00 (UTC) - this action takes several hours to complete
+  - cron: "00 1 * * MON"
   workflow_dispatch:
     inputs:
       plugin_quay_repository:
