@@ -1,0 +1,11 @@
+{
+  "Configuration": "Configuration",
+  "Create": "Create",
+  "Graph": "Graph",
+  "Istio Config": "Istio Config",
+  "Kind": "Kind",
+  "Name": "Name",
+  "Namespace": "Namespace",
+  "Overview": "Overview",
+  "Service Mesh": "Service Mesh"
+}
