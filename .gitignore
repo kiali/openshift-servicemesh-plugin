@@ -29,3 +29,7 @@ plugin/src/kiali/**/*.css.map
 
 # Cypress
 plugin/cypress/results
+
+# i18n
+plugin/src/kiali/locales/en
+plugin/src/openshift/locales/en
