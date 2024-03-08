@@ -6,6 +6,10 @@ import { useHistory } from 'react-router';
 import { setHistory } from 'app/History';
 import { kialiStyle } from 'styles/StyleUtils';
 import { KialiContainer } from 'openshift/components/KialiContainer';
+import { configure } from 'mobx';
+
+// Configure MobX to isolate different versions (from OCP 4.15 and OSSMC 1.73)
+configure({ isolateGlobalState: true });
 
 const containerPadding = kialiStyle({ padding: '0 20px 0 20px' });
 
