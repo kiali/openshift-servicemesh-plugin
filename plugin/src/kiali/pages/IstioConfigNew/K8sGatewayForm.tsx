@@ -1,11 +1,11 @@
 import * as React from 'react';
-// Use TextInputBase like workaround while PF4 team work in https://github.com/patternfly/patternfly-react/issues/4072
-import { FormGroup } from '@patternfly/react-core';
+import { FormGroup, FormSelect, FormSelectOption } from '@patternfly/react-core';
 import { AddressList } from './GatewayForm/AddressList';
 import { Address, Listener, MAX_PORT, MIN_PORT } from '../../types/IstioObjects';
 import { ListenerList } from './GatewayForm/ListenerList';
 import { isValidHostname, isValidName } from './GatewayForm/ListenerBuilder';
 import { isValidAddress } from './GatewayForm/AddressBuilder';
+import { serverConfig } from '../../config';
 
 export const K8SGATEWAY = 'K8sGateway';
 export const K8SGATEWAYS = 'k8sgateways';
@@ -17,17 +17,19 @@ type Props = {
 
 // Gateway and Sidecar states are consolidated in the parent page
 export type K8sGatewayState = {
-  listeners: Listener[];
   addresses: Address[];
-  validHosts: boolean;
+  gatewayClass: string;
+  listeners: Listener[];
   listenersForm: ListenerForm[];
+  validHosts: boolean;
 };
 
 export const initK8sGateway = (): K8sGatewayState => ({
-  listeners: [],
   addresses: [],
-  validHosts: false,
-  listenersForm: []
+  gatewayClass: serverConfig.gatewayAPIClasses[0].className,
+  listeners: [],
+  listenersForm: [],
+  validHosts: false
 });
 
 export const isK8sGatewayStateValid = (g: K8sGatewayState): boolean => {
@@ -37,18 +39,18 @@ export const isK8sGatewayStateValid = (g: K8sGatewayState): boolean => {
 };
 
 export type ListenerForm = {
-  isHostValid: boolean;
-  hostname: string;
-  port: string;
-  name: string;
-  protocol: string;
   from: string;
+  hostname: string;
+  isHostValid: boolean;
   isLabelSelectorValid: boolean;
+  name: string;
+  port: string;
+  protocol: string;
   sSelectorLabels: string;
 };
 
-const validListeners = (listeners: Listener[]) => {
-  return listeners.every((e, _) => {
+const validListeners = (listeners: Listener[]): boolean => {
+  return listeners.every((e: Listener) => {
     return (
       isValidName(e.name) &&
       typeof e.port !== 'undefined' &&
@@ -59,8 +61,8 @@ const validListeners = (listeners: Listener[]) => {
   });
 };
 
-const validAddresses = (address: Address[]) => {
-  return address.every((a, _) => {
+const validAddresses = (address: Address[]): boolean => {
+  return address.every((a: Address) => {
     return isValidAddress(a);
   });
 };
@@ -75,17 +77,41 @@ export class K8sGatewayForm extends React.Component<Props, K8sGatewayState> {
     this.setState(this.props.k8sGateway);
   }
 
-  onChangeListener = (listeners: Listener[], listenersForm: ListenerForm[]) => {
+  onChangeListener = (listeners: Listener[], listenersForm: ListenerForm[]): void => {
     this.setState({ listeners: listeners, listenersForm: listenersForm }, () => this.props.onChange(this.state));
   };
 
-  onChangeAddress = (addresses: Address[]) => {
+  onChangeAddress = (addresses: Address[]): void => {
     this.setState({ addresses: addresses }, () => this.props.onChange(this.state));
+  };
+
+  onChangeGatewayClass = (_event: React.FormEvent, value: string) => {
+    this.setState(
+      {
+        gatewayClass: value
+      },
+      () => this.props.onChange(this.state)
+    );
   };
 
   render() {
     return (
       <>
+        {serverConfig.gatewayAPIClasses.length > 1 && (
+          <FormGroup label="Gateway Class" fieldId="gatewayClass">
+            <FormSelect
+              value={this.state.gatewayClass}
+              onChange={this.onChangeGatewayClass}
+              id="gatewayClass"
+              name="gatewayClass"
+            >
+              {serverConfig.gatewayAPIClasses.map((option, index) => (
+                <FormSelectOption key={index} value={option.className} label={option.name} />
+              ))}
+            </FormSelect>
+          </FormGroup>
+        )}
+
         <FormGroup label="Listeners" fieldId="listener" isRequired={true}>
           <ListenerList
             onChange={this.onChangeListener}
@@ -93,6 +119,7 @@ export class K8sGatewayForm extends React.Component<Props, K8sGatewayState> {
             listeners={this.state.listeners}
           />
         </FormGroup>
+
         <FormGroup label="Addresses" fieldId="gwAddressList">
           <AddressList onChange={this.onChangeAddress} addressList={this.state.addresses} />
         </FormGroup>

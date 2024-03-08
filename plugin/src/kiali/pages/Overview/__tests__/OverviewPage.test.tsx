@@ -109,7 +109,6 @@ describe('Overview page', () => {
         kiosk={''}
         minTLS={''}
         istioAPIEnabled={false}
-        isMaistra={false}
         t={i18n.t}
         i18n={i18n}
         tReady={true}

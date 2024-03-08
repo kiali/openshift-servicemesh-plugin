@@ -4,6 +4,7 @@ import { kialiStyle } from 'styles/StyleUtils';
 import { AccessLog } from 'types/IstioObjects';
 import { PFColors } from 'components/Pf/PfColors';
 import { classes } from 'typestyle';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 export interface AccessLogModalProps {
   accessLog: AccessLog;
@@ -13,13 +14,17 @@ export interface AccessLogModalProps {
 }
 
 const fieldStyle = kialiStyle({
-  color: PFColors.Gold400,
-  display: 'inline-block'
+  color: PFColors.Orange400,
+  fontWeight: 'bold',
+  paddingLeft: 0,
+  paddingRight: 0
 });
 
 const modalStyle = kialiStyle({
   height: '70%',
-  width: '50%'
+  width: '50%',
+  overflow: 'auto',
+  overflowY: 'hidden'
 });
 
 const prefaceStyle = kialiStyle({
@@ -27,12 +32,11 @@ const prefaceStyle = kialiStyle({
   fontSize: 'var(--kiali-global--font-size)',
   backgroundColor: PFColors.Black1000,
   color: PFColors.Gold400,
-  margin: '10px 10px 15px 10px',
+  marginBottom: '1rem',
   overflow: 'auto',
   resize: 'none',
-  padding: '10px',
-  whiteSpace: 'pre',
-  width: 'calc(100% - 15px)'
+  padding: '0.75rem',
+  whiteSpace: 'pre'
 });
 
 const splitStyle = kialiStyle({
@@ -41,12 +45,13 @@ const splitStyle = kialiStyle({
 });
 
 const contentStyle = kialiStyle({
-  marginRight: '10px'
+  marginLeft: '0.5rem',
+  marginRight: '0.5rem'
 });
 
 const descriptionStyle = kialiStyle({
   backgroundColor: PFColors.BackgroundColor200,
-  padding: '15px 20px',
+  padding: '1rem 1.25rem',
   $nest: {
     '& dt': {
       fontWeight: 'bold'
@@ -54,81 +59,61 @@ const descriptionStyle = kialiStyle({
   }
 });
 
-type AccessLogModalState = {
-  description: React.ReactFragment;
-};
-
-export class AccessLogModal extends React.Component<AccessLogModalProps, AccessLogModalState> {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      description: (
-        <div style={{ width: '100%', textAlign: 'center' }}>
-          <dt>Click Field Name for Description</dt>
-        </div>
-      )
-    };
+const tableStyle = kialiStyle({
+  background: 'transparent',
+  marginBottom: '0.25rem',
+  $nest: {
+    '& tbody tr:last-child': {
+      borderBottom: 0
+    },
+    '& tr > *': {
+      padding: '0.25rem'
+    }
   }
+});
 
-  render() {
-    return (
-      <Modal
-        className={modalStyle}
-        style={{ overflow: 'auto', overflowY: 'hidden' }}
-        disableFocusTrap={true}
-        title="Envoy Access Log Entry"
-        isOpen={true}
-        onClose={this.props.onClose}
-      >
-        <div style={{ height: '85%' }}>
-          <div className={prefaceStyle}>{this.props.accessLogMessage} </div>
-          <Split style={{ height: '100%' }}>
-            <SplitItem className={classes(splitStyle, contentStyle)}>
-              {this.accessLogContent(this.props.accessLog)}
-            </SplitItem>
-            <SplitItem className={classes(splitStyle, descriptionStyle)}>{this.state.description}</SplitItem>
-          </Split>
-        </div>
-      </Modal>
-    );
-  }
+export const AccessLogModal: React.FC<AccessLogModalProps> = (props: AccessLogModalProps) => {
+  const [description, setDescription] = React.useState<React.ReactNode>(
+    <div style={{ width: '100%', textAlign: 'center' }}>
+      <dt>Click Field Name for Description</dt>
+    </div>
+  );
 
-  private accessLogContent = (al: AccessLog): any => {
+  const accessLogContent = (al: AccessLog): React.ReactNode => {
     return (
       <div style={{ textAlign: 'left' }}>
-        {this.accessLogField('authority', al.authority)}
-        {this.accessLogField('bytes received', al.bytes_received)}
-        {this.accessLogField('bytes sent', al.bytes_sent)}
-        {this.accessLogField('downstream local', al.downstream_local)}
-        {this.accessLogField('downstream remote', al.downstream_remote)}
-        {this.accessLogField('duration', al.duration)}
-        {this.accessLogField('forwarded for', al.forwarded_for)}
-        {this.accessLogField('method', al.method)}
-        {this.accessLogField('protocol', al.protocol)}
-        {this.accessLogField('request id', al.request_id)}
-        {this.accessLogField('requested server', al.requested_server)}
-        {this.accessLogField('response flags', al.response_flags)}
-        {this.accessLogField('route name', al.route_name)}
-        {this.accessLogField('status code', al.status_code)}
-        {this.accessLogField('tcp service time', al.tcp_service_time)}
-        {this.accessLogField('timestamp', al.timestamp)}
-        {this.accessLogField('upstream cluster', al.upstream_cluster)}
-        {this.accessLogField('upstream failure reason', al.upstream_failure_reason)}
-        {this.accessLogField('upstream local', al.upstream_local)}
-        {this.accessLogField('upstream service', al.upstream_service)}
-        {this.accessLogField('upstream service time', al.upstream_service_time)}
-        {this.accessLogField('uri param', al.uri_param)}
-        {this.accessLogField('uri path', al.uri_path)}
-        {this.accessLogField('user agent', al.user_agent)}
+        {accessLogField('authority', al.authority)}
+        {accessLogField('bytes received', al.bytes_received)}
+        {accessLogField('bytes sent', al.bytes_sent)}
+        {accessLogField('downstream local', al.downstream_local)}
+        {accessLogField('downstream remote', al.downstream_remote)}
+        {accessLogField('duration', al.duration)}
+        {accessLogField('forwarded for', al.forwarded_for)}
+        {accessLogField('method', al.method)}
+        {accessLogField('protocol', al.protocol)}
+        {accessLogField('request id', al.request_id)}
+        {accessLogField('requested server', al.requested_server)}
+        {accessLogField('response flags', al.response_flags)}
+        {accessLogField('route name', al.route_name)}
+        {accessLogField('status code', al.status_code)}
+        {accessLogField('tcp service time', al.tcp_service_time)}
+        {accessLogField('timestamp', al.timestamp)}
+        {accessLogField('upstream cluster', al.upstream_cluster)}
+        {accessLogField('upstream failure reason', al.upstream_failure_reason)}
+        {accessLogField('upstream local', al.upstream_local)}
+        {accessLogField('upstream service', al.upstream_service)}
+        {accessLogField('upstream service time', al.upstream_service_time)}
+        {accessLogField('uri param', al.uri_param)}
+        {accessLogField('uri path', al.uri_path)}
+        {accessLogField('user agent', al.user_agent)}
       </div>
     );
   };
 
-  private accessLogField = (key: string, val: string): any => {
+  const accessLogField = (key: string, val: string): React.ReactNode => {
     return (
       <>
-        <Button key={key} className={fieldStyle} variant={ButtonVariant.link} onClick={() => this.handleClick(key)}>
+        <Button key={key} className={fieldStyle} variant={ButtonVariant.link} onClick={() => handleClick(key)}>
           {key}:&nbsp;
         </Button>
         <span>{val ? val : '-'}</span>
@@ -137,12 +122,11 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
     );
   };
 
-  private handleClick = (alFieldName: string) => {
-    this.setState({ description: this.getDescription(alFieldName) });
+  const handleClick = (alFieldName: string): void => {
+    setDescription(getDescription(alFieldName));
   };
 
-  private getDescription = (alFieldName: string): React.ReactFragment => {
-    console.log(`fetch docs(${alFieldName})`);
+  const getDescription = (alFieldName: string): React.ReactNode => {
     switch (alFieldName) {
       case 'authority':
         return (
@@ -210,8 +194,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                 port. If the original connection was redirected by iptables REDIRECT, this represents the original
                 destination address restored by the{' '}
                 <a
-                  className="reference internal"
-                  href="/docs/envoy/latest/configuration/listeners/listener_filters/original_dst_filter#config-listener-filters-original-dst"
+                  className="reference external"
+                  href="https://www.envoyproxy.io/docs/envoy/latest/configuration/listeners/listener_filters/original_dst_filter"
                 >
                   <span className="std std-ref">Original Destination Filter</span>
                 </a>{' '}
@@ -236,15 +220,15 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                 <p>
                   This may not be the physical remote address of the peer if the address has been inferred from{' '}
                   <a
-                    className="reference internal"
-                    href="/docs/envoy/latest/configuration/listeners/listener_filters/proxy_protocol#config-listener-filters-proxy-protocol"
+                    className="reference external"
+                    href="https://www.envoyproxy.io/docs/envoy/latest/configuration/listeners/listener_filters/proxy_protocol"
                   >
                     <span className="std std-ref">Proxy Protocol filter</span>
                   </a>{' '}
                   or{' '}
                   <a
-                    className="reference internal"
-                    href="/docs/envoy/latest/configuration/http/http_conn_man/headers#config-http-conn-man-headers-x-forwarded-for"
+                    className="reference external"
+                    href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers#config-http-conn-man-headers-x-forwarded-for"
                   >
                     <span className="std std-ref">x-forwarded-for</span>
                   </a>
@@ -400,8 +384,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                       <p>
                         <strong>UO</strong>: Upstream overflow (
                         <a
-                          className="reference internal"
-                          href="/docs/envoy/latest/intro/arch_overview/upstream/circuit_breaking#arch-overview-circuit-break"
+                          className="reference external"
+                          href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/circuit_breaking"
                         >
                           <span className="std std-ref">circuit breaking</span>
                         </a>
@@ -412,8 +396,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                       <p>
                         <strong>NR</strong>: No{' '}
                         <a
-                          className="reference internal"
-                          href="/docs/envoy/latest/intro/arch_overview/http/http_routing#arch-overview-http-routing"
+                          className="reference external"
+                          href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/http/http_routing"
                         >
                           <span className="std std-ref">route configured</span>
                         </a>{' '}
@@ -425,15 +409,15 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                       <p>
                         <strong>URX</strong>: The request was rejected because the{' '}
                         <a
-                          className="reference internal"
-                          href="/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-retrypolicy-num-retries"
+                          className="reference external"
+                          href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-retrypolicy-num-retries"
                         >
                           <span className="std std-ref">upstream retry limit (HTTP)</span>
                         </a>{' '}
                         or{' '}
                         <a
-                          className="reference internal"
-                          href="/docs/envoy/latest/api-v3/extensions/filters/network/tcp_proxy/v3/tcp_proxy.proto#envoy-v3-api-field-extensions-filters-network-tcp-proxy-v3-tcpproxy-max-connect-attempts"
+                          className="reference external"
+                          href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/tcp_proxy/v3/tcp_proxy.proto#envoy-v3-api-field-extensions-filters-network-tcp-proxy-v3-tcpproxy-max-connect-attempts"
                         >
                           <span className="std std-ref">maximum connect attempts (TCP)</span>
                         </a>{' '}
@@ -459,8 +443,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                       <p>
                         <strong>LH</strong>: Local service failed{' '}
                         <a
-                          className="reference internal"
-                          href="/docs/envoy/latest/intro/arch_overview/upstream/health_checking#arch-overview-health-checking"
+                          className="reference external"
+                          href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/health_checking"
                         >
                           <span className="std std-ref">health check request</span>
                         </a>{' '}
@@ -491,8 +475,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                       <p>
                         <strong>DI</strong>: The request processing was delayed for a period specified via{' '}
                         <a
-                          className="reference internal"
-                          href="/docs/envoy/latest/configuration/http/http_filters/fault_filter#config-http-filters-fault-injection"
+                          className="reference external"
+                          href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/fault_filter"
                         >
                           <span className="std std-ref">fault injection</span>
                         </a>
@@ -503,8 +487,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                       <p>
                         <strong>FI</strong>: The request was aborted with a response code specified via{' '}
                         <a
-                          className="reference internal"
-                          href="/docs/envoy/latest/configuration/http/http_filters/fault_filter#config-http-filters-fault-injection"
+                          className="reference external"
+                          href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/fault_filter"
                         >
                           <span className="std std-ref">fault injection</span>
                         </a>
@@ -515,8 +499,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                       <p>
                         <strong>RL</strong>: The request was ratelimited locally by the{' '}
                         <a
-                          className="reference internal"
-                          href="/docs/envoy/latest/configuration/http/http_filters/rate_limit_filter#config-http-filters-rate-limit"
+                          className="reference external"
+                          href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/rate_limit_filter"
                         >
                           <span className="std std-ref">HTTP rate limit filter</span>
                         </a>{' '}
@@ -538,8 +522,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                       <p>
                         <strong>IH</strong>: The request was rejected because it set an invalid value for a{' '}
                         <a
-                          className="reference internal"
-                          href="/docs/envoy/latest/api-v3/extensions/filters/http/router/v3/router.proto#envoy-v3-api-field-extensions-filters-http-router-v3-router-strict-check-headers"
+                          className="reference external"
+                          href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/router/v3/router.proto#envoy-v3-api-field-extensions-filters-http-router-v3-router-strict-check-headers"
                         >
                           <span className="std std-ref">strictly-checked header</span>
                         </a>{' '}
@@ -650,36 +634,32 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                 </a>
                 . In addition to that, START_TIME also accepts following specifiers:
               </p>
-              <table className="docutils align-default">
-                <colgroup>
-                  <col style={{ width: '28%' }} />
-                  <col style={{ width: '72%' }} />
-                </colgroup>
-                <thead>
-                  <tr className="row-odd">
-                    <th className="head">
+              <Table className={tableStyle}>
+                <Thead>
+                  <Tr className="row-odd">
+                    <Th dataLabel="Specifier" width={30} className="head">
                       <p>Specifier</p>
-                    </th>
-                    <th className="head">
+                    </Th>
+                    <Th dataLabel="Explanation" width={70} className="head">
                       <p>Explanation</p>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="row-even">
-                    <td>
+                    </Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  <Tr className="row-even">
+                    <Td>
                       <p>
                         <code className="docutils literal notranslate">
                           <span className="pre">%s</span>
                         </code>
                       </p>
-                    </td>
-                    <td>
+                    </Td>
+                    <Td>
                       <p>The number of seconds since the Epoch</p>
-                    </td>
-                  </tr>
-                  <tr className="row-odd">
-                    <td rowSpan={2}>
+                    </Td>
+                  </Tr>
+                  <Tr className="row-odd">
+                    <Td rowSpan={2}>
                       <p>
                         <code className="docutils literal notranslate">
                           <span className="pre">%f</span>
@@ -689,13 +669,13 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                           <span className="pre">%[1-9]f</span>
                         </code>
                       </p>
-                    </td>
-                    <td>
+                    </Td>
+                    <Td>
                       <p>Fractional seconds digits, default is 9 digits (nanosecond)</p>
-                    </td>
-                  </tr>
-                  <tr className="row-even">
-                    <td>
+                    </Td>
+                  </Tr>
+                  <Tr className="row-even">
+                    <Td>
                       <ul className="simple">
                         <li>
                           <p>
@@ -722,10 +702,10 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                           </p>
                         </li>
                       </ul>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                    </Td>
+                  </Tr>
+                </Tbody>
+              </Table>
               <p>Examples of formatting START_TIME is as follows:</p>
               <div className="highlight-none notranslate">
                 <div className="highlight">
@@ -748,8 +728,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                 Upstream cluster to which the upstream host belongs to. If runtime feature
                 <cite>envoy.reloadable_features.use_observable_cluster_name</cite> is enabled, then{' '}
                 <a
-                  className="reference internal"
-                  href="/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-alt-stat-name"
+                  className="reference external"
+                  href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-alt-stat-name"
                 >
                   <span className="std std-ref">alt_stat_name</span>
                 </a>{' '}
@@ -771,8 +751,8 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
                     reason from the transport socket. The format of this field depends on the configured upstream
                     transport socket. Common TLS failures are in{' '}
                     <a
-                      className="reference internal"
-                      href="/docs/envoy/latest/intro/arch_overview/security/ssl#arch-overview-ssl-trouble-shooting"
+                      className="reference external"
+                      href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl#trouble-shooting"
                     >
                       <span className="std std-ref">TLS trouble shooting</span>
                     </a>
@@ -854,4 +834,22 @@ export class AccessLogModal extends React.Component<AccessLogModalProps, AccessL
         return <>No documentation available</>;
     }
   };
-}
+
+  return (
+    <Modal
+      className={modalStyle}
+      disableFocusTrap={true}
+      title="Envoy Access Log Entry"
+      isOpen={true}
+      onClose={props.onClose}
+    >
+      <div style={{ height: '85%' }}>
+        <div className={prefaceStyle}>{props.accessLogMessage} </div>
+        <Split style={{ height: '100%' }}>
+          <SplitItem className={classes(splitStyle, contentStyle)}>{accessLogContent(props.accessLog)}</SplitItem>
+          <SplitItem className={classes(splitStyle, descriptionStyle)}>{description}</SplitItem>
+        </Split>
+      </div>
+    </Modal>
+  );
+};

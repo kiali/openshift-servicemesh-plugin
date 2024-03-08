@@ -14,8 +14,7 @@ interface Props {
 }
 
 const infoStyle = kialiStyle({
-  margin: '0px 5px 2px 5px',
-  verticalAlign: '-5px !important'
+  margin: '0px 5px 2px 5px'
 });
 
 export class MetricsReporter extends React.Component<Props> {
@@ -75,7 +74,7 @@ export class MetricsReporter extends React.Component<Props> {
           handleSelect={this.onReporterChanged}
           nameDropdown={'Reported from'}
           value={this.props.reporter}
-          initialLabel={MetricsReporter.ReporterOptions[this.props.reporter]}
+          label={MetricsReporter.ReporterOptions[this.props.reporter]}
           options={MetricsReporter.ReporterOptions}
         />
         <Tooltip content={<div style={{ textAlign: 'left' }}>{this.reportTooltip}</div>} position={TooltipPosition.top}>

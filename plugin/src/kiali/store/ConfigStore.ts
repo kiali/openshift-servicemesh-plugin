@@ -1,6 +1,6 @@
 import { createStore, applyMiddleware, compose, Store } from 'redux';
 import { KialiAppState } from './Store';
-import { persistStore, persistReducer } from 'redux-persist';
+import { persistStore, persistReducer, Transform } from 'redux-persist';
 import { persistFilter } from 'redux-persist-transform-filter';
 import { createTransform } from 'redux-persist';
 
@@ -17,21 +17,26 @@ import { INITIAL_MESSAGE_CENTER_STATE } from '../reducers/MessageCenter';
 import { INITIAL_STATUS_STATE } from '../reducers/HelpDropdownState';
 import { INITIAL_NAMESPACE_STATE } from '../reducers/NamespaceState';
 import { INITIAL_CLUSTER_STATE } from '../reducers/ClusterState';
-import { INITIAL_JAEGER_STATE } from '../reducers/JaegerState';
+import { INITIAL_TRACING_STATE } from '../reducers/TracingState';
 import { INITIAL_MESH_TLS_STATE } from '../reducers/MeshTlsState';
 import { INITIAL_TOUR_STATE } from '../reducers/TourState';
 import { INITIAL_ISTIO_STATUS_STATE } from '../reducers/IstioStatusState';
 import { INITIAL_METRICS_STATS_STATE } from '../reducers/MetricsStatsState';
 import { INITIAL_ISTIO_CERTS_INFO_STATE } from 'reducers/IstioCertsInfoState';
 import { KialiAppAction } from 'actions/KialiAppAction';
+import { INITIAL_MESH_STATE } from 'reducers/MeshDataState';
 
 declare const window;
 
 const webRoot = (window as any).WEB_ROOT ? (window as any).WEB_ROOT : undefined;
-const persistKey = 'kiali-' + (webRoot && webRoot !== '/' ? webRoot.substring(1) : 'root');
+const persistKey = `kiali-${webRoot && webRoot !== '/' ? webRoot.substring(1) : 'root'}`;
 
 // Needed to be able to whitelist fields but allowing to keep an initialState
-const whitelistInputWithInitialState = (reducerName: string, inboundPaths: string[], initialState: any) =>
+const whitelistInputWithInitialState = (
+  reducerName: string,
+  inboundPaths: string[],
+  initialState: any
+): Transform<unknown, Transform<unknown, unknown>> =>
   createTransform(
     inboundState => persistFilter(inboundState, inboundPaths, 'whitelist'),
     outboundState => ({ ...initialState, ...outboundState }),
@@ -50,6 +55,8 @@ const namespacePersistFilter = whitelistInputWithInitialState(
   INITIAL_NAMESPACE_STATE
 );
 
+const globalStateFilter = whitelistInputWithInitialState('globalState', ['language', 'theme'], INITIAL_GLOBAL_STATE);
+
 const graphPersistFilter = whitelistInputWithInitialState('graph', ['filterState', 'layout'], INITIAL_GRAPH_STATE);
 
 const userSettingsPersitFilter = whitelistInputWithInitialState(
@@ -61,8 +68,14 @@ const userSettingsPersitFilter = whitelistInputWithInitialState(
 const persistConfig = {
   key: persistKey,
   storage: storage,
-  whitelist: ['authentication', 'graph', 'jaegerState', 'namespaces', 'statusState', 'userSettings'],
-  transforms: [authenticationPersistFilter, graphPersistFilter, namespacePersistFilter, userSettingsPersitFilter]
+  whitelist: ['authentication', 'globalState', 'graph', 'namespaces', 'statusState', 'tracingState', 'userSettings'],
+  transforms: [
+    authenticationPersistFilter,
+    graphPersistFilter,
+    globalStateFilter,
+    namespacePersistFilter,
+    userSettingsPersitFilter
+  ]
 };
 
 const composeEnhancers =
@@ -83,20 +96,21 @@ const configureStore = (initialState: KialiAppState): Store<KialiAppState, Kiali
 // (instead of having things be undefined until they are populated by query)
 // Redux 4.0 actually required this
 const initialStore: KialiAppState = {
-  globalState: INITIAL_GLOBAL_STATE,
-  statusState: INITIAL_STATUS_STATE,
-  namespaces: INITIAL_NAMESPACE_STATE,
-  clusters: INITIAL_CLUSTER_STATE,
   authentication: INITIAL_LOGIN_STATE,
-  messageCenter: INITIAL_MESSAGE_CENTER_STATE,
+  clusters: INITIAL_CLUSTER_STATE,
+  globalState: INITIAL_GLOBAL_STATE,
   graph: INITIAL_GRAPH_STATE,
-  userSettings: INITIAL_USER_SETTINGS_STATE,
-  jaegerState: INITIAL_JAEGER_STATE,
-  meshTLSStatus: INITIAL_MESH_TLS_STATE,
-  metricsStats: INITIAL_METRICS_STATS_STATE,
   istioStatus: INITIAL_ISTIO_STATUS_STATE,
   istioCertsInfo: INITIAL_ISTIO_CERTS_INFO_STATE,
-  tourState: INITIAL_TOUR_STATE
+  mesh: INITIAL_MESH_STATE,
+  meshTLSStatus: INITIAL_MESH_TLS_STATE,
+  metricsStats: INITIAL_METRICS_STATS_STATE,
+  messageCenter: INITIAL_MESSAGE_CENTER_STATE,
+  namespaces: INITIAL_NAMESPACE_STATE,
+  statusState: INITIAL_STATUS_STATE,
+  tourState: INITIAL_TOUR_STATE,
+  tracingState: INITIAL_TRACING_STATE,
+  userSettings: INITIAL_USER_SETTINGS_STATE
 };
 
 // pass an optional param to rehydrate state on app start

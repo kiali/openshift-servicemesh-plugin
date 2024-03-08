@@ -13,9 +13,10 @@ import { TourStateReducer } from './TourState';
 import { KialiAppAction } from '../actions/KialiAppAction';
 import { MeshTlsStateReducer } from './MeshTlsState';
 import { IstioStatusStateReducer } from './IstioStatusState';
-import { JaegerStateReducer } from './JaegerState';
+import { TracingStateReducer } from './TracingState';
 import { MetricsStatsStateReducer } from './MetricsStatsState';
 import { IstioCertsInfoStateReducer } from './IstioCertsInfoState';
+import { MeshDataStateReducer } from './MeshDataState';
 
 export const rootReducer = combineReducers<KialiAppState, KialiAppAction>({
   authentication: LoginStateReducer,
@@ -24,12 +25,13 @@ export const rootReducer = combineReducers<KialiAppState, KialiAppAction>({
   graph: GraphDataStateReducer,
   istioStatus: IstioStatusStateReducer,
   istioCertsInfo: IstioCertsInfoStateReducer,
-  jaegerState: JaegerStateReducer,
+  mesh: MeshDataStateReducer,
   meshTLSStatus: MeshTlsStateReducer,
   messageCenter: MessageCenterReducer,
   metricsStats: MetricsStatsStateReducer,
   namespaces: NamespaceStateReducer,
   statusState: HelpDropdownStateReducer,
   tourState: TourStateReducer,
+  tracingState: TracingStateReducer,
   userSettings: UserSettingsStateReducer
 });

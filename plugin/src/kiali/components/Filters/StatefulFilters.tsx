@@ -3,17 +3,20 @@ import {
   Checkbox,
   FormSelect,
   FormSelectOption,
-  Select,
-  SelectOption,
-  SelectVariant,
   TextInput,
   TextInputTypes,
   Toolbar,
   ToolbarGroup,
   ToolbarItem,
-  SelectOptionObject,
   ToolbarContent,
-  ToolbarFilter
+  ToolbarFilter,
+  Select,
+  SelectList,
+  SelectOption,
+  MenuToggleElement,
+  MenuToggle,
+  TextInputGroup,
+  TextInputGroupMain
 } from '@patternfly/react-core';
 import {
   ActiveFilter,
@@ -35,26 +38,31 @@ import { labelFilter } from './CommonFilters';
 import { history, HistoryManager } from 'app/History';
 import { serverConfig } from 'config';
 import { PFColors } from '../Pf/PfColors';
-import { classes } from 'typestyle';
 
 const toolbarStyle = kialiStyle({
   padding: 0,
-  rowGap: 'var(--pf-global--spacer--md)',
+  rowGap: 'var(--pf-v5-global--spacer--md)',
   $nest: {
-    '& > .pf-c-toolbar__content': {
+    '& > .pf-v5-c-toolbar__content': {
       paddingLeft: 0
     }
   }
 });
 
 const bottomPadding = kialiStyle({
-  paddingBottom: 'var(--pf-global--spacer--md)'
+  paddingBottom: 'var(--pf-v5-global--spacer--md)'
 });
 
 const formSelectStyle = kialiStyle({
-  width: 'auto',
   borderColor: PFColors.BorderColorLight100,
-  backgroundColor: PFColors.BackgroundColor200
+  backgroundColor: PFColors.BackgroundColor200,
+  minWidth: '150px',
+  maxWidth: '150px'
+});
+
+const filterSelectStyle = kialiStyle({
+  maxHeight: '350px',
+  overflow: 'auto'
 });
 
 export interface StatefulFiltersProps {
@@ -69,9 +77,10 @@ export interface StatefulFiltersProps {
 interface StatefulFiltersState {
   activeFilters: ActiveFiltersInfo;
   activeToggles: number;
-  filterTypes: FilterType[];
   currentFilterType: FilterType;
   currentValue: string;
+  filterTypes: FilterType[];
+  focusedItemIndex: number | null;
   isOpen: boolean;
 }
 
@@ -79,7 +88,7 @@ export class FilterSelected {
   static selectedFilters: ActiveFilter[] | undefined = undefined;
   static opSelected: LabelOperation;
 
-  static init = (filterTypes: FilterType[]) => {
+  static init = (filterTypes: FilterType[]): ActiveFiltersInfo => {
     let active = FilterSelected.getSelected();
     if (!FilterSelected.isInitialized()) {
       active = FilterHelper.getFiltersFromURL(filterTypes);
@@ -91,11 +100,11 @@ export class FilterSelected {
     return active;
   };
 
-  static resetFilters = () => {
+  static resetFilters = (): void => {
     FilterSelected.selectedFilters = undefined;
   };
 
-  static setSelected = (activeFilters: ActiveFiltersInfo) => {
+  static setSelected = (activeFilters: ActiveFiltersInfo): void => {
     FilterSelected.selectedFilters = activeFilters.filters;
     FilterSelected.opSelected = activeFilters.op;
   };
@@ -104,7 +113,7 @@ export class FilterSelected {
     return { filters: FilterSelected.selectedFilters || [], op: FilterSelected.opSelected || 'or' };
   };
 
-  static isInitialized = () => {
+  static isInitialized = (): boolean => {
     return FilterSelected.selectedFilters !== undefined;
   };
 }
@@ -148,7 +157,8 @@ const dividerStyle = kialiStyle({
   padding: '10px',
   display: 'inherit'
 });
-const paddingStyle = kialiStyle({ padding: '10px' });
+
+const paddingStyle = kialiStyle({ padding: '0 10px 10px 10px' });
 
 export class StatefulFilters extends React.Component<StatefulFiltersProps, StatefulFiltersState> {
   private promises = new PromisesRegistry();
@@ -161,15 +171,16 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
       currentFilterType: this.props.initialFilters[0],
       filterTypes: this.props.initialFilters,
       isOpen: false,
-      currentValue: ''
+      currentValue: '',
+      focusedItemIndex: null
     };
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     this.loadDynamicFilters();
   }
 
-  private loadDynamicFilters() {
+  private loadDynamicFilters(): void {
     // Call all loaders from FilterTypes and set results in state
     const filterTypePromises = this.props.initialFilters.map(ft => {
       if (ft.loader) {
@@ -198,11 +209,18 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
       });
   }
 
-  componentDidUpdate(prev: StatefulFiltersProps) {
+  private getCurrentFilterTypes(): FilterType {
+    return (
+      this.props.initialFilters.find(f => f.category === this.state.currentFilterType.category) ??
+      this.props.initialFilters[0]
+    );
+  }
+
+  componentDidUpdate(prevProps: StatefulFiltersProps, prevState: StatefulFiltersState): void {
     // If the props filters changed (e.g. different values), some state update is necessary
     if (
-      this.props.initialFilters !== prev.initialFilters &&
-      !arrayEquals(this.props.initialFilters, prev.initialFilters, (t1, t2) => {
+      this.props.initialFilters !== prevProps.initialFilters &&
+      !arrayEquals(this.props.initialFilters, prevProps.initialFilters, (t1, t2) => {
         return (
           t1.category === t2.category &&
           arrayEquals(t1.filterValues, t2.filterValues, (v1, v2) => {
@@ -211,9 +229,7 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
         );
       })
     ) {
-      const current =
-        this.props.initialFilters.find(f => f.category === this.state.currentFilterType.category) ||
-        this.props.initialFilters[0];
+      const current = this.getCurrentFilterTypes();
       const active = FilterHelper.setFiltersToURL(this.props.initialFilters, this.state.activeFilters);
       this.setState({
         currentFilterType: current,
@@ -224,20 +240,35 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     } else if (!FilterHelper.filtersMatchURL(this.state.filterTypes, this.state.activeFilters)) {
       FilterHelper.setFiltersToURL(this.state.filterTypes, this.state.activeFilters);
     }
+
+    // If the input text changes in typeahead, filter the select options according to the input text value
+    if (
+      this.state.currentFilterType.filterType === AllFilterTypes.typeAhead &&
+      this.state.currentValue !== prevState.currentValue
+    ) {
+      const current = Object.assign({}, this.getCurrentFilterTypes());
+      current.filterValues = current.filterValues.filter(menuItem =>
+        String(menuItem.title).toLowerCase().includes(this.state.currentValue.toLowerCase())
+      );
+      this.setState({
+        currentFilterType: current,
+        isOpen: true
+      });
+    }
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     this.promises.cancelAll();
   }
 
-  updateActiveFilters(activeFilters: ActiveFiltersInfo) {
+  updateActiveFilters(activeFilters: ActiveFiltersInfo): void {
     const cleanFilters = FilterHelper.setFiltersToURL(this.state.filterTypes, activeFilters);
     FilterSelected.setSelected(cleanFilters);
     this.setState({ activeFilters: cleanFilters, currentValue: '' });
     this.props.onFilterChange(cleanFilters);
   }
 
-  filterAdded = (field: FilterType, value: string) => {
+  filterAdded = (field: FilterType, value: string): void => {
     const activeFilters = this.state.activeFilters;
     const activeFilter: ActiveFilter = {
       category: field.category,
@@ -255,7 +286,7 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     this.updateActiveFilters(activeFilters);
   };
 
-  selectFilterType = (value: string) => {
+  selectFilterType = (value: string): void => {
     const { currentFilterType } = this.state;
     const filterType = this.state.filterTypes.filter(filter => filter.category === value)[0];
 
@@ -267,25 +298,22 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     }
   };
 
-  filterValueAheadSelected = (_event: any, valueId: string | SelectOptionObject) => {
-    this.filterValueSelected(valueId);
-    this.setState({ isOpen: false });
-  };
-
-  filterValueSelected = (valueId: string | SelectOptionObject) => {
-    const { currentFilterType, currentValue } = this.state;
+  filterValueSelected = (valueId?: string | number): void => {
+    const { currentFilterType } = this.state;
     const filterValue = currentFilterType.filterValues.find(filter => filter.id === valueId);
 
-    if (filterValue && filterValue.id !== currentValue && !this.isActive(currentFilterType, filterValue.title)) {
+    if (filterValue && !this.isActive(currentFilterType, filterValue.title)) {
       this.filterAdded(currentFilterType, filterValue.title);
     }
+
+    setTimeout(() => this.setState({ isOpen: false }));
   };
 
-  updateCurrentValue = value => {
-    this.setState({ currentValue: value });
+  updateCurrentValue = (value: string): void => {
+    this.setState({ currentValue: value, focusedItemIndex: null });
   };
 
-  onValueKeyPress = (keyEvent: any) => {
+  onValueKeyDown = (keyEvent: React.KeyboardEvent): void => {
     const { currentValue, currentFilterType } = this.state;
 
     if (keyEvent.key === 'Enter') {
@@ -299,56 +327,147 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     }
   };
 
+  onTypeaheadInputKeyDown = (keyEvent: React.KeyboardEvent): void => {
+    const { isOpen, focusedItemIndex, currentFilterType } = this.state;
+
+    if (keyEvent.key === 'ArrowUp' || keyEvent.key === 'ArrowDown') {
+      let indexToFocus: number | null = null;
+
+      if (this.state.isOpen) {
+        if (keyEvent.key === 'ArrowUp') {
+          // When no index is set or at the first index, focus to the last, otherwise decrement focus index
+          if (focusedItemIndex === null || focusedItemIndex === 0) {
+            indexToFocus = currentFilterType.filterValues.length - 1;
+          } else {
+            indexToFocus = focusedItemIndex - 1;
+          }
+        } else if (keyEvent.key === 'ArrowDown') {
+          // When no index is set or at the last index, focus to the first, otherwise increment focus index
+          if (focusedItemIndex === null || focusedItemIndex === currentFilterType.filterValues.length - 1) {
+            indexToFocus = 0;
+          } else {
+            indexToFocus = focusedItemIndex + 1;
+          }
+        }
+
+        this.setState({ focusedItemIndex: indexToFocus });
+      }
+    } else if (keyEvent.key === 'Enter') {
+      const focusedItem = focusedItemIndex !== null ? currentFilterType.filterValues[focusedItemIndex] : null;
+
+      if (isOpen && focusedItem) {
+        this.filterValueSelected(focusedItem.id);
+        this.setState({ currentValue: '', focusedItemIndex: null });
+      }
+    }
+  };
+
   isActive = (type: FilterType, value: string): boolean => {
     return this.state.activeFilters.filters.some(active => value === active.value && type.category === active.category);
   };
 
-  removeFilter = (category: string | any, value: string | any) => {
+  removeFilter = (category: string | any, value: string | any): void => {
     const updated = this.state.activeFilters.filters.filter(x => x.category !== category || x.value !== value);
     if (updated.length !== this.state.activeFilters.filters.length) {
       this.updateActiveFilters({ filters: updated, op: this.state.activeFilters.op });
     }
   };
 
-  clearFilters = () => {
+  clearFilters = (): void => {
     this.updateActiveFilters({ filters: [], op: DEFAULT_LABEL_OPERATION });
   };
 
-  renderInput() {
+  onToggle = (): void => {
+    this.setState({
+      isOpen: !this.state.isOpen
+    });
+  };
+
+  onCheckboxChange = (checked: boolean, event: React.FormEvent<HTMLInputElement>): void => {
+    this.setState({ activeToggles: Toggles.setToggle(event.currentTarget.name, checked) });
+    if (this.props.onToggleChange) {
+      this.props.onToggleChange(Toggles.getToggles());
+    }
+  };
+
+  getMenuToggle() {
+    return (toggleRef: React.Ref<MenuToggleElement>): React.ReactElement => (
+      <MenuToggle
+        ref={toggleRef}
+        variant="typeahead"
+        onClick={this.onToggle}
+        isExpanded={this.state.isOpen}
+        isFullWidth
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={this.state.currentValue}
+            onClick={this.onToggle}
+            onChange={(_event, value) => this.updateCurrentValue(value)}
+            id="typeahead-select-input"
+            autoComplete="off"
+            onKeyDown={this.onTypeaheadInputKeyDown}
+            placeholder={this.state.currentFilterType.placeholder}
+            role="combobox"
+            isExpanded={this.state.isOpen}
+            aria-controls="select-typeahead-listbox"
+          />
+        </TextInputGroup>
+      </MenuToggle>
+    );
+  }
+
+  renderInput(): React.ReactNode {
     const { currentFilterType, currentValue } = this.state;
 
     if (!currentFilterType) {
       return null;
     }
+
     if (currentFilterType.filterType === AllFilterTypes.typeAhead) {
+      const toggle = this.getMenuToggle();
+
       return (
         <Select
-          value="default"
-          onSelect={this.filterValueAheadSelected}
-          onToggle={this.onToggle}
-          variant={SelectVariant.typeahead}
+          onSelect={(_event, value) => this.filterValueSelected(value)}
+          onOpenChange={isOpen => this.setState({ isOpen })}
+          toggle={toggle}
           isOpen={this.state.isOpen}
           aria-label="filter_select_value"
-          placeholderText={currentFilterType.placeholder}
-          width="auto"
-          data-test="istio-type-dropdown"
+          className={filterSelectStyle}
         >
-          {currentFilterType.filterValues.map((filter, index) => (
-            <SelectOption key={'filter_' + index} value={filter.id} label={filter.title} />
-          ))}
+          <SelectList data-test="istio-type-dropdown">
+            {currentFilterType.filterValues.length > 0 ? (
+              currentFilterType.filterValues.map((filter, index) => (
+                <SelectOption
+                  key={`filter_${index}`}
+                  value={filter.id}
+                  isFocused={this.state.focusedItemIndex === index}
+                  label={filter.title}
+                >
+                  {filter.title}
+                </SelectOption>
+              ))
+            ) : (
+              <SelectOption key="filter_no_results" value="no_results" isDisabled={true}>
+                No results found
+              </SelectOption>
+            )}
+          </SelectList>
         </Select>
       );
     } else if (currentFilterType.filterType === AllFilterTypes.select) {
       return (
+        //TODO: Replace by Select component when https://github.com/patternfly/patternfly-react/issues/9698 is fixed
         <FormSelect
           value="default"
-          onChange={this.filterValueSelected}
+          onChange={(_event, valueId: string) => this.filterValueSelected(valueId)}
           aria-label="filter_select_value"
-          style={{ width: 'auto' }}
+          style={{ width: 'auto', paddingRight: '2rem' }}
         >
           <FormSelectOption key={'filter_default'} value={'default'} label={currentFilterType.placeholder} />
           {currentFilterType.filterValues.map((filter, index) => (
-            <FormSelectOption key={'filter_' + index} value={filter.id} label={filter.title} />
+            <FormSelectOption key={`filter_${index}`} value={filter.id} label={filter.title} />
           ))}
         </FormSelect>
       );
@@ -371,15 +490,15 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
           value={currentValue}
           aria-label="filter_input_value"
           placeholder={currentFilterType.placeholder}
-          onChange={this.updateCurrentValue}
-          onKeyPress={e => this.onValueKeyPress(e)}
+          onChange={(_event, value) => this.updateCurrentValue(value)}
+          onKeyDown={e => this.onValueKeyDown(e)}
           style={{ width: 'auto' }}
         />
       );
     }
   }
 
-  renderChildren = () => {
+  renderChildren = (): React.ReactNode => {
     return (
       this.props.children && (
         <ToolbarGroup style={{ marginRight: '10px' }}>
@@ -388,11 +507,8 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
               (child, index) =>
                 child && (
                   <ToolbarItem
-                    key={'toolbar_statefulFilters_' + index}
-                    className={classes(
-                      'pf-u-mr-md',
-                      index === (this.props.children as Array<any>).length - 1 ? paddingStyle : dividerStyle
-                    )}
+                    key={`toolbar_statefulFilters_${index}`}
+                    className={index === (this.props.children as Array<any>).length - 1 ? paddingStyle : dividerStyle}
                   >
                     {child}
                   </ToolbarItem>
@@ -406,20 +522,7 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     );
   };
 
-  onToggle = isOpen => {
-    this.setState({
-      isOpen: isOpen
-    });
-  };
-
-  onCheckboxChange = (checked: boolean, event: React.FormEvent<HTMLInputElement>) => {
-    this.setState({ activeToggles: Toggles.setToggle(event.currentTarget.name, checked) });
-    if (this.props.onToggleChange) {
-      this.props.onToggleChange(Toggles.getToggles());
-    }
-  };
-
-  render() {
+  render(): React.ReactNode {
     const showIncludeToggles = serverConfig.kialiFeatureFlags.uiDefaults.list.showIncludeToggles;
     const { currentFilterType, activeFilters } = this.state;
     const filterOptions = this.state.filterTypes.map(option => (
@@ -446,7 +549,7 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
                       <FormSelect
                         value={currentFilterType.category}
                         aria-label="filter_select_type"
-                        onChange={this.selectFilterType}
+                        onChange={(_event, value: string) => this.selectFilterType(value)}
                         className={formSelectStyle}
                       >
                         {filterOptions}
@@ -469,7 +572,7 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
                         isChecked={Toggles.checked.get(t.name)}
                         label={t.label}
                         name={t.name}
-                        onChange={this.onCheckboxChange}
+                        onChange={(event, checked: boolean) => this.onCheckboxChange(checked, event)}
                       />
                     </ToolbarItem>
                   );
@@ -478,11 +581,11 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
             {!this.props.childrenFirst && this.renderChildren()}
             {hasActiveFilters && (
               <ToolbarGroup>
-                <ToolbarItem className={'pf-u-mr-md'}>
-                  <span className={paddingStyle}>Label Operation</span>
+                <ToolbarItem>
+                  <div className={paddingStyle}>Label Operation</div>
                   <FormSelect
                     value={activeFilters.op}
-                    onChange={value =>
+                    onChange={(_event, value) =>
                       this.updateActiveFilters({
                         filters: this.state.activeFilters.filters,
                         op: value as LabelOperation
