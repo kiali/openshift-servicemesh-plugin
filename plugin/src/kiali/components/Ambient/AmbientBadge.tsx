@@ -2,47 +2,24 @@ import * as React from 'react';
 import { Label, Tooltip, TooltipPosition } from '@patternfly/react-core';
 
 type AmbientLabelProps = {
-  tooltip: boolean;
   style?: React.CSSProperties;
+  tooltip?: string;
 };
 
-export class AmbientBadge extends React.Component<AmbientLabelProps, {}> {
-  render() {
-    const msg = 'Istio Ambient profile is detected.';
+export const AmbientBadge: React.FC<AmbientLabelProps> = (props: AmbientLabelProps) => {
+  const tooltipContent = <div style={{ textAlign: 'left' }}>{props.tooltip}</div>;
 
-    const tooltipContent = (
-      <div style={{ textAlign: 'left' }}>
-        <>
-          <div>
-            {msg}
-            <br />
-          </div>
-        </>
-      </div>
-    );
-    const iconComponent = (
-      <span style={this.props.style}>
-        <Label style={{ marginLeft: 5 }} color="blue" isCompact>
-          Ambient
-        </Label>
-        {!this.props.tooltip && (
-          <span style={{ marginLeft: '8px' }}>
-            {msg}
-            <Tooltip key={`tooltip_ambient_label`} position={TooltipPosition.top} content={tooltipContent}>
-              <Label style={{ marginLeft: 5 }} color="blue" isCompact>
-                Ambient
-              </Label>
-            </Tooltip>
-          </span>
-        )}
-      </span>
-    );
-    return this.props.tooltip ? (
-      <Tooltip key={`tooltip_ambient_label`} position={TooltipPosition.right} content={tooltipContent}>
-        {iconComponent}
-      </Tooltip>
-    ) : (
-      iconComponent
-    );
-  }
-}
+  const iconComponent = (
+    <Label style={{ marginLeft: '0.5rem', ...props.style }} color="blue" isCompact>
+      Ambient
+    </Label>
+  );
+
+  return props.tooltip ? (
+    <Tooltip key="tooltip_ambient_label" position={TooltipPosition.right} content={tooltipContent}>
+      {iconComponent}
+    </Tooltip>
+  ) : (
+    iconComponent
+  );
+};

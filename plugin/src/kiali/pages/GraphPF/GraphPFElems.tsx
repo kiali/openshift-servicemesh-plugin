@@ -2,12 +2,9 @@ import * as React from 'react';
 import {
   BadgeLocation,
   Controller,
-  Decorator,
-  DEFAULT_DECORATOR_RADIUS,
   Edge,
   EdgeModel,
   EdgeTerminalType,
-  getDefaultShapeDecoratorCenter,
   GraphElement,
   isEdge,
   isNode,
@@ -39,9 +36,9 @@ import { Namespace } from 'types/Namespace';
 import _ from 'lodash';
 import { PFColors } from 'components/Pf/PfColors';
 import { getEdgeHealth } from 'types/ErrorRate/GraphEdgeStatus';
-import { Span } from 'types/JaegerInfo';
-import { Tooltip } from '@patternfly/react-core';
+import { Span } from 'types/TracingInfo';
 import { IconType } from 'config/Icons';
+import { NodeDecorator } from './NodeDecorator';
 
 // Utilities for working with PF Topology
 // - most of these add cytoscape-like functions
@@ -62,7 +59,6 @@ export type NodeData = DecoratedGraphNodeData & {
   component?: React.ReactNode;
   icon?: React.ReactNode;
   isFind?: boolean;
-  isFocused?: boolean;
   isHighlighted?: boolean;
   isSelected?: boolean;
   isUnhighlighted?: boolean;
@@ -78,9 +74,9 @@ export type NodeData = DecoratedGraphNodeData & {
   showContextMenu?: boolean;
   showStatusDecorator?: boolean;
   statusDecoratorTooltip?: React.ReactNode;
+  truncateLength?: number;
   x?: number;
   y?: number;
-  truncateLength?: number;
 };
 
 export type EdgeData = DecoratedGraphEdgeData & {
@@ -156,13 +152,7 @@ export const getNodeShape = (data: NodeData): NodeShape => {
 };
 
 const getDecorator = (element: Node, quadrant: TopologyQuadrant, icon: IconType, tooltip?: string): React.ReactNode => {
-  const { x, y } = getDefaultShapeDecoratorCenter(quadrant, element);
-
-  return (
-    <Tooltip content={!!tooltip ? tooltip : icon.text}>
-      <Decorator x={x} y={y} radius={DEFAULT_DECORATOR_RADIUS} showBackground icon={React.createElement(icon.icon)} />
-    </Tooltip>
-  );
+  return <NodeDecorator element={element} quadrant={quadrant} icon={icon} tooltip={tooltip} />;
 };
 
 export const setNodeAttachments = (node: Node<NodeModel>, settings: GraphPFSettings): void => {
@@ -572,7 +562,7 @@ const getPathStyleStroke = (data: EdgeData): PFColors => {
 const getPathStyle = (data: EdgeData): React.CSSProperties => {
   return {
     stroke: getPathStyleStroke(data),
-    strokeWidth: 5
+    strokeWidth: 3
   } as React.CSSProperties;
 };
 
@@ -585,7 +575,11 @@ export const setEdgeOptions = (edge: EdgeModel, nodeMap: NodeMap, settings: Grap
   data.tagStatus = getEdgeStatus(data);
 };
 
-export const assignEdgeHealth = (edges: DecoratedGraphEdgeWrapper[], nodeMap: NodeMap, settings: GraphPFSettings) => {
+export const assignEdgeHealth = (
+  edges: DecoratedGraphEdgeWrapper[],
+  nodeMap: NodeMap,
+  settings: GraphPFSettings
+): void => {
   edges?.forEach(edge => {
     const edgeData = edge.data as EdgeData;
 
@@ -619,11 +613,11 @@ export const assignEdgeHealth = (edges: DecoratedGraphEdgeWrapper[], nodeMap: No
 
 ///// PFT helpers
 
-export const elems = (c: Controller): { nodes: Node[]; edges: Edge[] } => {
+export const elems = (c: Controller): { edges: Edge[]; nodes: Node[] } => {
   const elems = c.getElements();
   return {
-    nodes: elems.filter(e => isNode(e)) as Node[],
-    edges: elems.filter(e => isEdge(e)) as Edge[]
+    edges: elems.filter(e => isEdge(e)) as Edge[],
+    nodes: elems.filter(e => isNode(e)) as Node[]
   };
 };
 
@@ -671,9 +665,9 @@ export type SelectOp =
   | 'falsy'
   | 'truthy';
 export type SelectExp = {
+  op?: SelectOp;
   prop: string;
   val?: any;
-  op?: SelectOp;
 };
 export type SelectAnd = SelectExp[];
 export type SelectOr = SelectAnd[];

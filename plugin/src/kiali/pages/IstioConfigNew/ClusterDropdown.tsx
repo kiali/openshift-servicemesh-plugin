@@ -1,15 +1,16 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { style } from 'typestyle';
 import {
   Button,
-  Dropdown,
-  DropdownToggle,
   TextInput,
   Tooltip,
-  DropdownToggleCheckbox,
   Divider,
-  Badge
+  Badge,
+  Checkbox,
+  Dropdown,
+  MenuToggleElement,
+  MenuToggle,
+  DropdownList
 } from '@patternfly/react-core';
 import { activeClustersSelector, clusterFilterSelector } from '../../store/Selectors';
 import { ClusterActions } from '../../actions/ClusterAction';
@@ -22,6 +23,7 @@ import { KialiIcon } from 'config/KialiIcon';
 import { KialiAppState } from '../../store/Store';
 import { KialiDispatch } from '../../types/Redux';
 import { serverConfig } from '../../config';
+import { kialiStyle } from 'styles/StyleUtils';
 
 type ReduxProps = {
   activeClusters: MeshCluster[];
@@ -41,30 +43,41 @@ type ClusterDropdownState = {
   selectedClusters: MeshCluster[];
 };
 
-const checkboxBulkStyle = style({
-  marginLeft: '0.5em',
+const optionBulkStyle = kialiStyle({
+  marginLeft: '0.5rem',
   position: 'relative',
-  top: 8
+  top: '0.5rem'
 });
 
-const checkboxStyle = style({ marginLeft: '1.0em' });
+const optionStyle = kialiStyle({ marginLeft: '1.0rem' });
 
-const checkboxLabelStyle = style({ marginLeft: '0.5em' });
+const optionLabelStyle = kialiStyle({ marginLeft: '0.5rem' });
 
-const headerStyle = style({
-  margin: '0 0.5em 10px 0.5em',
-  width: 300
+const headerStyle = kialiStyle({
+  margin: '0.5rem',
+  marginTop: 0,
+  width: '300px'
 });
 
 const marginBottom = 20;
 
-const clusterContainerStyle = style({
+const clusterContainerStyle = kialiStyle({
   overflow: 'auto'
+});
+
+const dividerStyle = kialiStyle({
+  paddingTop: '0.625rem'
+});
+
+const closeButtonStyle = kialiStyle({
+  borderTopLeftRadius: 0,
+  borderBottomLeftRadius: 0
 });
 
 export class ClusterDropdownComponent extends React.PureComponent<ClusterDropdownProps, ClusterDropdownState> {
   constructor(props: ClusterDropdownProps) {
     super(props);
+
     this.state = {
       isBulkSelectorOpen: false,
       isOpen: false,
@@ -79,7 +92,7 @@ export class ClusterDropdownComponent extends React.PureComponent<ClusterDropdow
 
     return (
       <>
-        <span style={{ paddingRight: '0.75em' }}>Cluster:</span>
+        <span style={{ paddingRight: '0.75rem' }}>Cluster:</span>
         {this.state.selectedClusters.length === 1 ? (
           <span>{this.state.selectedClusters[0].name}</span>
         ) : (
@@ -98,45 +111,45 @@ export class ClusterDropdownComponent extends React.PureComponent<ClusterDropdow
     const isChecked = allSelected ? true : someChecked;
 
     return (
-      <div className={checkboxBulkStyle}>
-        <DropdownToggleCheckbox
+      <div className={optionBulkStyle}>
+        <Checkbox
           id="bulk-select-id"
           key="bulk-select-key"
           aria-label="Select all"
           isChecked={isChecked}
-          onClick={() => {
+          onChange={() => {
             anySelected ? this.onBulkNone() : this.onBulkAll();
           }}
-        ></DropdownToggleCheckbox>
-        <span className={checkboxLabelStyle}>Select all</span>
+        ></Checkbox>
+        <span className={optionLabelStyle}>Select all</span>
       </div>
     );
   }
 
   private getHeader() {
     const hasFilter = !!this.props.filter;
+
     return (
       <div className={headerStyle}>
-        <span style={{ width: '100%' }}>
+        <span style={{ display: 'flex' }}>
           <TextInput
-            style={{ width: hasFilter ? 'calc(100% - 44px)' : '100%' }}
             aria-label="filter-cluster"
             type="text"
             name="cluster-filter"
             placeholder="Filter by Name..."
             value={this.props.filter}
-            onChange={this.onFilterChange}
+            onChange={(_event, value: string) => this.onFilterChange(value)}
           />
           {hasFilter && (
             <Tooltip key="ot_clear_cluster_filter" position="top" content="Clear Filter by Name">
-              <Button onClick={this.clearFilter} isInline>
+              <Button className={closeButtonStyle} onClick={this.clearFilter} isInline>
                 <KialiIcon.Close />
               </Button>
             </Tooltip>
           )}
         </span>
         {this.getBulkSelector()}
-        <Divider style={{ paddingTop: '5px' }} />
+        <Divider className={dividerStyle} />
       </div>
     );
   }
@@ -147,9 +160,10 @@ export class ClusterDropdownComponent extends React.PureComponent<ClusterDropdow
         map[cluster.name] = cluster.name;
         return map;
       }, {});
+
       const clusters = this.filtered().map((cluster: MeshCluster) => (
         <div
-          className={checkboxStyle}
+          className={optionStyle}
           id={`cluster-list-item[${cluster.name}]`}
           key={`cluster-list-item[${cluster.name}]`}
         >
@@ -159,7 +173,7 @@ export class ClusterDropdownComponent extends React.PureComponent<ClusterDropdow
             checked={!!selectedMap[cluster.name]}
             onChange={this.onClusterToggled}
           />
-          <span className={checkboxLabelStyle}>{cluster.name}</span>
+          <span className={optionLabelStyle}>{cluster.name}</span>
         </div>
       ));
 
@@ -174,22 +188,32 @@ export class ClusterDropdownComponent extends React.PureComponent<ClusterDropdow
         </>
       );
     }
-    return <div>No clusters found</div>;
+
+    return <div className={optionStyle}>No clusters found</div>;
   }
 
   render() {
     if (this.props.clusters.length > 1) {
       return (
         <Dropdown
-          toggle={
-            <DropdownToggle data-test="cluster-dropdown" id="cluster-selector" onToggle={this.onToggle}>
+          toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+            <MenuToggle
+              ref={toggleRef}
+              data-test="cluster-dropdown"
+              id="cluster-selector"
+              onClick={() => this.onToggle(!this.state.isOpen)}
+              isExpanded={this.state.isOpen}
+            >
               {this.clusterButtonText()}
-            </DropdownToggle>
-          }
+            </MenuToggle>
+          )}
           isOpen={this.state.isOpen}
+          onOpenChange={(isOpen: boolean) => this.onToggle(isOpen)}
         >
-          {this.getHeader()}
-          {this.getBody()}
+          <DropdownList>
+            {this.getHeader()}
+            {this.getBody()}
+          </DropdownList>
         </Dropdown>
       );
     } else {
@@ -197,11 +221,12 @@ export class ClusterDropdownComponent extends React.PureComponent<ClusterDropdow
     }
   }
 
-  private onToggle = isOpen => {
+  private onToggle = (isOpen: boolean) => {
     if (!isOpen) {
       this.props.setActiveClusters(this.state.selectedClusters);
       this.clearFilter();
     }
+
     this.setState({
       isOpen
     });
@@ -235,7 +260,7 @@ export class ClusterDropdownComponent extends React.PureComponent<ClusterDropdow
   };
 
   private filtered = (): MeshCluster[] => {
-    return this.props.clusters.filter(cl => cl.name.includes(this.props.filter));
+    return this.props.clusters.filter(cl => cl.name.toLowerCase().includes(this.props.filter.toLowerCase()));
   };
 
   private filteredSelected = (): MeshCluster[] => {

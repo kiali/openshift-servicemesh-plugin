@@ -5,8 +5,8 @@ import { PFColors } from './PfColors';
 
 export type PFBadgeType = {
   badge: string;
-  tt?: React.ReactFragment;
   style?: React.CSSProperties;
+  tt?: React.ReactFragment;
 };
 
 // PF Badges used by Kiali, keep alphabetized
@@ -33,14 +33,23 @@ export const PFBadges: { [key: string]: PFBadgeType } = Object.freeze({
     style: { backgroundColor: PFColors.Purple500 }
   } as PFBadgeType,
   FederatedService: { badge: 'FS', tt: 'Federated Service' } as PFBadgeType,
+  GRPCRoute: { badge: 'gRPC', tt: 'GRPCRoute' } as PFBadgeType,
   Gateway: { badge: 'G', tt: 'Gateway' } as PFBadgeType,
+  Grafana: { badge: 'GR', tt: 'Grafana' } as PFBadgeType,
   HTTPRoute: { badge: 'HTTP', tt: 'HTTPRoute' } as PFBadgeType,
   K8sGateway: { badge: 'G', tt: 'Gateway (K8s)' } as PFBadgeType,
+  K8sGRPCRoute: { badge: 'gRPC', tt: 'GRPCRoute (K8s)' } as PFBadgeType,
   K8sHTTPRoute: { badge: 'HTTP', tt: 'HTTPRoute (K8s)' } as PFBadgeType,
+  K8sReferenceGrant: { badge: 'RG', tt: 'ReferenceGrant (K8s)' } as PFBadgeType,
+  K8sTCPRoute: { badge: 'TCP', tt: 'TCPRoute (K8s)' } as PFBadgeType,
+  K8sTLSRoute: { badge: 'TLS', tt: 'TLSRoute (K8s)' } as PFBadgeType,
+  Kiali: { badge: 'KI', tt: 'Kiali' } as PFBadgeType,
   Handler: { badge: 'H', tt: 'Handler' },
   Host: { badge: 'H', tt: 'Host' },
   Instance: { badge: 'I', tt: 'Instance' },
+  Istio: { badge: 'IS', tt: 'Istio' } as PFBadgeType,
   MeshPolicy: { badge: 'MP', tt: 'Mesh Policy' } as PFBadgeType,
+  MetricStore: { badge: 'MS', tt: 'Metric Store' } as PFBadgeType,
   MirroredWorkload: {
     badge: 'MI',
     tt: 'Mirrored Workload',
@@ -53,8 +62,16 @@ export const PFBadges: { [key: string]: PFBadgeType } = Object.freeze({
   Policy: { badge: 'P', tt: 'Policy' } as PFBadgeType,
   RBACConfig: { badge: 'RC', tt: 'RBAC Configuration' } as PFBadgeType,
   RequestAuthentication: { badge: 'RA', tt: 'Request Authentication' } as PFBadgeType,
-  RequestRetry: { badge: 'RR', tt: 'Request Retry', style: { backgroundColor: PFColors.Purple500 } } as PFBadgeType,
-  RequestTimeout: { badge: 'RT', tt: 'Request Timeout', style: { backgroundColor: PFColors.Purple500 } } as PFBadgeType,
+  RequestRetry: {
+    badge: 'RR',
+    tt: 'Request Retry',
+    style: { backgroundColor: PFColors.Purple500 }
+  } as PFBadgeType,
+  RequestTimeout: {
+    badge: 'RT',
+    tt: 'Request Timeout',
+    style: { backgroundColor: PFColors.Purple500 }
+  } as PFBadgeType,
   Rule: { badge: 'R', tt: 'Rule' } as PFBadgeType,
   Service: { badge: 'S', tt: 'Service', style: { backgroundColor: PFColors.LightGreen500 } } as PFBadgeType,
   ServiceEntry: { badge: 'SE', tt: 'Service Entry' } as PFBadgeType,
@@ -64,9 +81,12 @@ export const PFBadges: { [key: string]: PFBadgeType } = Object.freeze({
   WasmPlugin: { badge: 'WP', tt: 'Istio Wasm Plugin' } as PFBadgeType,
   Telemetry: { badge: 'TM', tt: 'Istio Telemetry' } as PFBadgeType,
   Template: { badge: 'T', tt: 'Template' } as PFBadgeType,
+  TCPRoute: { badge: 'TCP', tt: 'TCPRoute' } as PFBadgeType,
+  TLSRoute: { badge: 'TLS', tt: 'TLSRoute' } as PFBadgeType,
+  TraceStore: { badge: 'TS', tt: 'Trace Store' } as PFBadgeType,
   Unknown: { badge: 'U', tt: 'Unknown' } as PFBadgeType,
   VirtualService: { badge: 'VS', tt: 'Virtual Service' } as PFBadgeType,
-  Waypoint: { badge: 'W', tt: 'Waypoint proxy' } as PFBadgeType,
+  Waypoint: { badge: 'WP', tt: 'Waypoint proxy' } as PFBadgeType,
   Workload: { badge: 'W', tt: 'Workload', style: { backgroundColor: PFColors.Blue500 } } as PFBadgeType,
   WorkloadEntry: { badge: 'WE', tt: 'Workload Entry' } as PFBadgeType,
   WorkloadGroup: { badge: 'WG', tt: 'Workload Group' } as PFBadgeType
@@ -78,7 +98,7 @@ export const kialiBadge = kialiStyle({
   color: PFColors.White,
   borderRadius: '20px',
   flexShrink: 0,
-  fontFamily: 'var(--pf-global--FontFamily--sans-serif)',
+  fontFamily: 'var(--pf-v5-global--FontFamily--text)',
   fontSize: 'var(--kiali-global--font-size)',
   lineHeight: '16px',
   marginRight: '4px',
@@ -93,7 +113,7 @@ export const kialiBadgeSmall = kialiStyle({
   color: PFColors.White,
   borderRadius: '20px',
   flexShrink: 0,
-  fontFamily: 'var(--pf-global--FontFamily--sans-serif)',
+  fontFamily: 'var(--pf-v5-global--FontFamily--text)',
   fontSize: '12px',
   lineHeight: '13px',
   marginRight: '5px',
@@ -110,29 +130,27 @@ type PFBadgeProps = {
   position?: TooltipPosition; // default=auto
   size?: 'global' | 'sm';
   style?: CSSProperties;
-  tooltip?: React.ReactFragment;
+  tooltip?: React.ReactNode;
 };
 
-export class PFBadge extends React.PureComponent<PFBadgeProps> {
-  render() {
-    const key = this.props.keyValue || `pfbadge-${this.props.badge.badge}`;
-    const ttKey = `tt-${key}`;
-    const style = { ...this.props.badge.style, ...this.props.style };
-    const tooltip = this.props.tooltip || this.props.badge.tt;
-    const className = this.props.size === 'sm' ? kialiBadgeSmall : kialiBadge;
+export const PFBadge: React.FC<PFBadgeProps> = (props: PFBadgeProps) => {
+  const key = props.keyValue || `pfbadge-${props.badge.badge}`;
+  const ttKey = `tt-${key}`;
+  const style = { ...props.badge.style, ...props.style };
+  const tooltip = props.tooltip || props.badge.tt;
+  const className = props.size === 'sm' ? kialiBadgeSmall : kialiBadge;
 
-    const badge = (
-      <Badge className={className} id={key} isRead={this.props.isRead || false} key={key} style={style}>
-        {this.props.badge.badge}
-      </Badge>
-    );
+  const badge = (
+    <Badge className={className} id={key} isRead={props.isRead || false} key={key} style={style}>
+      {props.badge.badge}
+    </Badge>
+  );
 
-    return !tooltip ? (
-      badge
-    ) : (
-      <Tooltip content={<>{tooltip}</>} id={ttKey} key={ttKey} position={this.props.position || TooltipPosition.auto}>
-        {badge}
-      </Tooltip>
-    );
-  }
-}
+  return !tooltip ? (
+    badge
+  ) : (
+    <Tooltip content={<>{tooltip}</>} id={ttKey} key={ttKey} position={props.position || TooltipPosition.auto}>
+      {badge}
+    </Tooltip>
+  );
+};

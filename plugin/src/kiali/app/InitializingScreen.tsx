@@ -3,9 +3,9 @@ import { Alert, Button, ButtonVariant } from '@patternfly/react-core';
 import { kialiStyle } from 'styles/StyleUtils';
 import { isKioskMode } from '../utils/SearchParamUtils';
 
-import { kialiLogoDark, kialiLogoLight } from 'config';
 import { PF_THEME_DARK, Theme } from 'types/Common';
 import { getKialiTheme } from 'utils/ThemeUtils';
+import { kialiLogoDark, kialiLogoLight } from 'config';
 
 type initializingScreenProps = {
   errorMsg?: string;

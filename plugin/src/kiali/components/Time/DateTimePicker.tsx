@@ -12,8 +12,8 @@ const pickerStyle = kialiStyle({
 const calendarStyle = kialiStyle({
   $nest: {
     '&.react-datepicker': {
-      fontFamily: 'var(--pf-global--FontFamily--sans-serif)',
-      fontSize: 'var(--pf-global--FontSize--md)'
+      fontFamily: 'var(--pf-v5-global--FontFamily--text)',
+      fontSize: 'var(--pf-v5-global--FontSize--md)'
     },
 
     // provide more space for time container given bigger font
@@ -32,12 +32,10 @@ const calendarStyle = kialiStyle({
   }
 });
 
-// Make sure datepicker popper rises above other inflated z-index elements
-// - secondaryMasthead currently at 10
 const popperStyle = kialiStyle({
   $nest: {
     '&.react-datepicker-popper': {
-      zIndex: 11
+      zIndex: 100
     }
   }
 });

@@ -38,15 +38,16 @@ import { NamespaceActions } from '../../../actions/NamespaceAction';
 import { GraphActions } from '../../../actions/GraphActions';
 import { GraphTourStops } from 'pages/Graph/GraphHelpTour';
 import { TourStop } from 'components/Tour/TourStop';
-import { KialiIcon, defaultIconStyle } from 'config/KialiIcon';
+import { KialiIcon } from 'config/KialiIcon';
 import { Replay } from 'components/Time/Replay';
 import { UserSettingsActions } from 'actions/UserSettingsActions';
 import { GraphSecondaryMasthead } from './GraphSecondaryMasthead';
 import { INITIAL_USER_SETTINGS_STATE } from 'reducers/UserSettingsState';
 import { GraphReset } from './GraphReset';
 import { GraphFindPF } from './GraphFindPF';
+import { kialiStyle } from 'styles/StyleUtils';
 
-type ReduxProps = {
+type ReduxStateProps = {
   activeNamespaces: Namespace[];
   edgeLabels: EdgeLabelMode[];
   graphType: GraphType;
@@ -56,7 +57,9 @@ type ReduxProps = {
   showIdleNodes: boolean;
   summaryData: SummaryData | null;
   trafficRates: TrafficRate[];
+};
 
+type ReduxDispatchProps = {
   setActiveNamespaces: (activeNamespaces: Namespace[]) => void;
   setEdgeLabels: (edgeLabels: EdgeLabelMode[]) => void;
   setGraphType: (graphType: GraphType) => void;
@@ -67,6 +70,8 @@ type ReduxProps = {
   toggleReplayActive: () => void;
 };
 
+type ReduxProps = ReduxStateProps & ReduxDispatchProps;
+
 type GraphToolbarProps = ReduxProps & {
   controller?: any;
   cy?: any;
@@ -75,6 +80,11 @@ type GraphToolbarProps = ReduxProps & {
   isPF?: boolean;
   onToggleHelp: () => void;
 };
+
+const helpStyle = kialiStyle({
+  marginRight: '0.5rem',
+  alignSelf: 'center'
+});
 
 class GraphToolbarComponent extends React.PureComponent<GraphToolbarProps> {
   static contextTypes = {
@@ -141,7 +151,7 @@ class GraphToolbarComponent extends React.PureComponent<GraphToolbarProps> {
     }
   }
 
-  componentDidUpdate(prevProps: GraphToolbarProps) {
+  componentDidUpdate(prevProps: GraphToolbarProps): void {
     // ensure redux state and URL are aligned
     if (String(prevProps.edgeLabels) !== String(this.props.edgeLabels)) {
       if (this.props.edgeLabels?.length === 0) {
@@ -188,21 +198,20 @@ class GraphToolbarComponent extends React.PureComponent<GraphToolbarProps> {
     }
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     // If replay was left active then turn it off
     if (this.props.replayActive) {
       this.props.toggleReplayActive();
     }
   }
 
-  render() {
+  render(): React.ReactNode {
     return (
       <>
         <GraphSecondaryMasthead
           disabled={this.props.disabled}
           graphType={this.props.graphType}
           isNodeGraph={!!this.props.node}
-          onToggleHelp={this.props.onToggleHelp}
           onGraphTypeChange={this.props.setGraphType}
         />
         <Toolbar style={{ width: '100%' }}>
@@ -211,7 +220,7 @@ class GraphToolbarComponent extends React.PureComponent<GraphToolbarProps> {
               <ToolbarItem style={{ margin: 0 }}>
                 <Tooltip key={'graph-tour-help-ot'} position={TooltipPosition.right} content={'Back to full graph'}>
                   <Button variant={ButtonVariant.link} onClick={this.handleNamespaceReturn}>
-                    <KialiIcon.Back className={defaultIconStyle} />
+                    <KialiIcon.Back />
                   </Button>
                 </Tooltip>
               </ToolbarItem>
@@ -233,16 +242,18 @@ class GraphToolbarComponent extends React.PureComponent<GraphToolbarProps> {
               </ToolbarItem>
             )}
 
-            <ToolbarItem style={{ marginLeft: 'auto' }}>
+            <ToolbarItem style={{ marginLeft: 'auto', alignSelf: 'center' }}>
               <Tooltip key={'graph-tour-help-ot'} position={TooltipPosition.right} content="Shortcuts and tips...">
                 <TourStop info={GraphTourStops.Shortcuts}>
                   <Button
                     id="graph-tour"
                     variant={ButtonVariant.link}
-                    style={{ paddingLeft: '6px', paddingRight: '0px' }}
+                    className={helpStyle}
                     onClick={this.props.onToggleHelp}
+                    isInline
                   >
-                    <KialiIcon.Help className={defaultIconStyle} />
+                    <KialiIcon.Help />
+                    <span style={{ marginLeft: '5px' }}>Help</span>
                   </Button>
                 </TourStop>
               </Tooltip>
@@ -273,7 +284,7 @@ class GraphToolbarComponent extends React.PureComponent<GraphToolbarProps> {
   };
 }
 
-const mapStateToProps = (state: KialiAppState) => ({
+const mapStateToProps = (state: KialiAppState): ReduxStateProps => ({
   activeNamespaces: activeNamespacesSelector(state),
   edgeLabels: edgeLabelsSelector(state),
   graphType: graphTypeSelector(state),
@@ -285,7 +296,7 @@ const mapStateToProps = (state: KialiAppState) => ({
   trafficRates: trafficRatesSelector(state)
 });
 
-const mapDispatchToProps = (dispatch: KialiDispatch) => {
+const mapDispatchToProps = (dispatch: KialiDispatch): ReduxDispatchProps => {
   return {
     setActiveNamespaces: bindActionCreators(NamespaceActions.setActiveNamespaces, dispatch),
     setEdgeLabels: bindActionCreators(GraphToolbarActions.setEdgeLabels, dispatch),

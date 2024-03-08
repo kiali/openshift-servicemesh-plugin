@@ -2,13 +2,14 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import {
   Card,
-  CardActions,
   CardBody,
   CardHeader,
   CardTitle,
   Dropdown,
   DropdownItem,
-  KebabToggle,
+  DropdownList,
+  MenuToggle,
+  MenuToggleElement,
   ToolbarItem
 } from '@patternfly/react-core';
 import { Edge, EdgeModel, Node, NodeModel } from '@patternfly/react-topology';
@@ -36,14 +37,18 @@ import { bindActionCreators } from 'redux';
 import { GraphActions } from 'actions/GraphActions';
 import { GraphSelectorBuilder } from 'pages/Graph/GraphSelector';
 import { NodeData, elems, selectAnd } from './GraphPFElems';
+import { KialiIcon } from 'config/KialiIcon';
+import { kebabToggleStyle } from 'styles/DropdownStyles';
 
-type ReduxProps = {
-  kiosk: string;
+type ReduxDispatchProps = {
   onReady: (controller: any) => void;
   setEdgeMode: (edgeMode: EdgeMode) => void;
   setLayout: (layout: Layout) => void;
   setUpdateTime: (val: TimeInMilliseconds) => void;
   updateSummary: (event: GraphEvent) => void;
+};
+type ReduxProps = ReduxDispatchProps & {
+  kiosk: string;
 };
 
 type MiniGraphCardPropsPF = ReduxProps & {
@@ -54,37 +59,38 @@ type MiniGraphCardPropsPF = ReduxProps & {
 };
 
 type MiniGraphCardState = {
+  graphData: DecoratedGraphElements;
   isKebabOpen: boolean;
   isTimeOptionsOpen: boolean;
-  graphData: DecoratedGraphElements;
 };
 
 class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, MiniGraphCardState> {
-  constructor(props) {
+  constructor(props: MiniGraphCardPropsPF) {
     super(props);
     this.state = { isKebabOpen: false, isTimeOptionsOpen: false, graphData: props.dataSource.graphData };
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     this.props.dataSource.on('fetchSuccess', this.refresh);
     this.props.dataSource.on('fetchError', this.refresh);
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     this.props.dataSource.removeListener('fetchSuccess', this.refresh);
     this.props.dataSource.removeListener('fetchError', this.refresh);
   }
 
-  private refresh = () => {
+  private refresh = (): void => {
     this.setState({ graphData: this.props.dataSource.graphData });
   };
 
-  render() {
+  render(): React.ReactNode {
     const graphCardActions = [
       <DropdownItem key="viewFullGraph" onClick={this.onViewFullGraph}>
         Show full graph
       </DropdownItem>
     ];
+
     if (isParentKiosk(this.props.kiosk)) {
       if (this.props.serviceDetails === undefined) {
         graphCardActions.push(<LoadingWizardActionsDropdownGroup />);
@@ -110,29 +116,50 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
 
     const rangeEnd: TimeInMilliseconds = this.props.dataSource.graphTimestamp * 1000;
     const rangeStart: TimeInMilliseconds = rangeEnd - this.props.dataSource.graphDuration * 1000;
+
     const intervalTitle =
       rangeEnd > 0 ? toRangeString(rangeStart, rangeEnd, { second: '2-digit' }, { second: '2-digit' }) : 'Loading';
 
     return (
       <>
         <Card style={{ height: '100%' }} id={'MiniGraphCard'} data-test="mini-graph">
-          <CardHeader>
-            <CardActions>
-              <KioskElement>
-                <ToolbarItem>
-                  <TimeDurationIndicator onClick={this.toggleTimeOptionsVisibility} isDuration={true} />
-                </ToolbarItem>
-              </KioskElement>
-              <Dropdown
-                toggle={<KebabToggle onToggle={this.onGraphActionsToggle} />}
-                dropdownItems={graphCardActions}
-                isPlain
-                isOpen={this.state.isKebabOpen}
-                position={'right'}
-              />
-            </CardActions>
+          <CardHeader
+            actions={{
+              actions: (
+                <>
+                  <KioskElement>
+                    <ToolbarItem>
+                      <TimeDurationIndicator onClick={this.toggleTimeOptionsVisibility} isDuration={true} />
+                    </ToolbarItem>
+                  </KioskElement>
+                  <Dropdown
+                    toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                      <MenuToggle
+                        ref={toggleRef}
+                        className={kebabToggleStyle}
+                        aria-label="Actions"
+                        variant="plain"
+                        onClick={() => this.onGraphActionsToggle(!this.state.isKebabOpen)}
+                        isExpanded={this.state.isKebabOpen}
+                      >
+                        <KialiIcon.KebabToggle />
+                      </MenuToggle>
+                    )}
+                    isOpen={this.state.isKebabOpen}
+                    onOpenChange={(isOpen: boolean) => this.onGraphActionsToggle(isOpen)}
+                    popperProps={{ position: 'right' }}
+                  >
+                    <DropdownList>{graphCardActions}</DropdownList>
+                  </Dropdown>
+                </>
+              ),
+              hasNoOffset: false,
+              className: undefined
+            }}
+          >
             <CardTitle style={{ float: 'left' }}>{intervalTitle}</CardTitle>
           </CardHeader>
+
           <CardBody>
             <div style={{ height: '100%' }}>
               <GraphPF
@@ -164,6 +191,7 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
             </div>
           </CardBody>
         </Card>
+
         <TimeDurationModal
           customDuration={false}
           isOpen={this.state.isTimeOptionsOpen}
@@ -174,30 +202,32 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
     );
   }
 
-  private handleLaunchWizard = (key: WizardAction, mode: WizardMode) => {
+  private handleLaunchWizard = (key: WizardAction, mode: WizardMode): void => {
     this.onGraphActionsToggle(false);
     if (this.props.onLaunchWizard) {
       this.props.onLaunchWizard(key, mode);
     }
   };
 
-  private handleDeleteTrafficRouting = (key: string) => {
+  private handleDeleteTrafficRouting = (key: string): void => {
     this.onGraphActionsToggle(false);
     if (this.props.onDeleteTrafficRouting) {
       this.props.onDeleteTrafficRouting(key);
     }
   };
 
-  private handleEdgeTap = (edge: Edge<EdgeModel>) => {
+  private handleEdgeTap = (edge: Edge<EdgeModel>): void => {
     const source = edge.getSource();
     const sourceData = source.getData() as NodeData;
     const target = edge.getTarget();
     const targetData = target.getData() as NodeData;
 
     const selected = selectAnd(elems(source.getController()).nodes, [{ prop: 'isSelected', op: 'truthy' }]);
+
     if (selected.length === 0) {
       return;
     }
+
     const nodeData = selected[0].getData();
     const nodeApp = nodeData.app;
     const nodeService = nodeData.service;
@@ -205,6 +235,7 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
 
     if (source.getId() !== target.getId()) {
       const urlParams = new URLSearchParams(history.location.search);
+
       switch (nodeType) {
         case NodeType.APP: {
           const isInbound = targetData.app === nodeApp;
@@ -227,11 +258,12 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
           urlParams.set(URLParam.BY_LABELS, `${destination}=${isInbound ? sourceData.app : targetData.app}`);
         }
       }
-      history.replace(history.location.pathname + '?' + urlParams.toString());
+
+      history.replace(`${history.location.pathname}?&{urlParams.toString()}`);
     }
   };
 
-  private handleNodeTap = (node: Node<NodeModel>) => {
+  private handleNodeTap = (node: Node<NodeModel>): void => {
     const data = node.getData() as NodeData;
 
     // Do nothing on inaccessible nodes or service entry nodes
@@ -241,8 +273,10 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
 
     // If we are already on the details page of the tapped node, do nothing.
     const displayedNode = this.props.dataSource.fetchParameters.node!;
+
     // Minigraph will consider box nodes as app
     const eNodeType = data.nodeType === 'box' && data.isBox ? data.isBox : data.workload ? 'workload' : data.nodeType;
+
     const isSameResource =
       displayedNode.namespace.name === data.namespace &&
       displayedNode.nodeType === eNodeType &&
@@ -262,7 +296,7 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
     let href = `/namespaces/${data.namespace}/${resourceType}s/${resource}`;
 
     if (data.cluster) {
-      href = href + '?cluster=' + data.cluster;
+      href = `${href}?cluster=${data.cluster}`;
     }
 
     if (isParentKiosk(this.props.kiosk)) {
@@ -272,13 +306,13 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
     }
   };
 
-  private onGraphActionsToggle = (isOpen: boolean) => {
+  private onGraphActionsToggle = (isOpen: boolean): void => {
     this.setState({
       isKebabOpen: isOpen
     });
   };
 
-  private onViewFullGraph = () => {
+  private onViewFullGraph = (): void => {
     const namespace = this.props.dataSource.fetchParameters.namespaces[0].name;
     let graphSelector = new GraphSelectorBuilder().namespace(namespace);
     let graphType: GraphType = GraphType.APP;
@@ -319,8 +353,9 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
     }
   };
 
-  private onViewNodeGraph = () => {
+  private onViewNodeGraph = (): void => {
     let graphType = this.props.dataSource.fetchParameters.graphType;
+
     switch (this.props.dataSource.fetchParameters.node!.nodeType) {
       case NodeType.APP:
         graphType = GraphType.APP;
@@ -347,6 +382,7 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
       showIdleNodes: this.props.dataSource.fetchParameters.showIdleNodes,
       showOperationNodes: this.props.dataSource.fetchParameters.showOperationNodes,
       showServiceNodes: true,
+      showWaypoints: this.props.dataSource.fetchParameters.showWaypoints,
       trafficRates: this.props.dataSource.fetchParameters.trafficRates
     };
 
@@ -354,16 +390,16 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
     history.push(makeNodeGraphUrlFromParams(urlParams, true));
   };
 
-  private toggleTimeOptionsVisibility = () => {
+  private toggleTimeOptionsVisibility = (): void => {
     this.setState(prevState => ({ isTimeOptionsOpen: !prevState.isTimeOptionsOpen }));
   };
 }
 
-const mapStateToProps = (state: KialiAppState) => ({
+const mapStateToProps = (state: KialiAppState): { kiosk: string } => ({
   kiosk: state.globalState.kiosk
 });
 
-const mapDispatchToProps = (dispatch: KialiDispatch) => ({
+const mapDispatchToProps = (dispatch: KialiDispatch): ReduxDispatchProps => ({
   onReady: (controller: any) => dispatch(GraphThunkActions.graphPFReady(controller)),
   setEdgeMode: bindActionCreators(GraphActions.setEdgeMode, dispatch),
   setLayout: bindActionCreators(GraphActions.setLayout, dispatch),
