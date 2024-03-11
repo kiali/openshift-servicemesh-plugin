@@ -1,11 +1,11 @@
 import i18n from 'i18next';
-import HttpBackend, { HttpBackendOptions } from 'i18next-http-backend';
+import HttpBackend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
 
 i18n
   .use(HttpBackend) // loads translations from server
   .use(initReactI18next) // passes i18n down to react-i18next
-  .init<HttpBackendOptions>({
+  .init({
     backend: {
       loadPath: `${process.env.PUBLIC_URL}/locales/{{lng}}/{{ns}}.json`
     },

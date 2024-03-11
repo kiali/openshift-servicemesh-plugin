@@ -28,6 +28,7 @@ import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUti
 import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
 import { useTranslation } from 'react-i18next';
 import { I18N_NAMESPACE } from 'types/Common';
+import { ApiError } from 'types/Api';
 
 interface IstioConfigObject extends IstioObject {
   validation?: ObjectValidation;
@@ -199,7 +200,7 @@ const IstioConfigListPage = () => {
         .then(response => {
           return toIstioItems(response.data);
         })
-        .catch((error: API.ApiError) => {
+        .catch((error: ApiError) => {
           setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
           return [];
         });
@@ -218,7 +219,7 @@ const IstioConfigListPage = () => {
           });
           return istioItems;
         })
-        .catch((error: API.ApiError) => {
+        .catch((error: ApiError) => {
           setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
           return [];
         });

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { kialiStyle } from 'styles/StyleUtils';
 import { legendData, MeshLegendItem, MeshLegendItemRow } from './MeshLegendData';
 import { Button, ButtonVariant, Tooltip } from '@patternfly/react-core';
-import CloseIcon from '@patternfly/react-icons/dist/js/icons/close-icon';
+import { CloseIcon } from '@patternfly/react-icons';
 import { PFColors } from 'components/Pf/PfColors';
 
 export interface MeshLegendProps {

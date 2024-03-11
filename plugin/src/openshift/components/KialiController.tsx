@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { Namespace } from 'types/Namespace';
 import { MessageType } from 'types/MessageCenter';
 import { DurationInSeconds, IntervalInMilliseconds, PF_THEME_DARK, Theme } from 'types/Common';
-import { JaegerInfo } from 'types/JaegerInfo';
+import { TracingInfo } from 'types/TracingInfo';
 import { toGrpcRate, toHttpRate, toTcpRate, TrafficRate } from 'types/Graph';
 import { StatusKey, StatusState } from 'types/StatusState';
 import { PromisesRegistry } from 'utils/CancelablePromises';
@@ -17,7 +17,7 @@ import { MessageCenterActions } from 'actions/MessageCenterActions';
 import { LoginThunkActions } from 'actions/LoginThunkActions';
 import { NamespaceActions } from 'actions/NamespaceAction';
 import { UserSettingsActions } from 'actions/UserSettingsActions';
-import { JaegerActions } from 'actions/JaegerActions';
+import { TracingActions } from 'actions/TracingActions';
 import { LoginActions } from 'actions/LoginActions';
 import { GraphToolbarActions } from 'actions/GraphToolbarActions';
 import { HelpDropdownActions } from 'actions/HelpDropdownActions';
@@ -57,7 +57,7 @@ interface KialiControllerReduxProps {
   setActiveNamespaces: (namespaces: Namespace[]) => void;
   setDuration: (duration: DurationInSeconds) => void;
   setIstioCertsInfo: (istioCertsInfo: CertsInfo[]) => void;
-  setJaegerInfo: (jaegerInfo: JaegerInfo | null) => void;
+  setTracingInfo: (tracingInfo: TracingInfo | null) => void;
   setLandingRoute: (route: string | undefined) => void;
   setMeshTlsStatus: (tlsStatus: TLSStatus) => void;
   setNamespaces: (namespaces: Namespace[], receivedAt: Date) => void;
@@ -118,20 +118,20 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           AlertUtils.addError('Error fetching server status.', error, 'default', MessageType.WARNING);
         });
 
-      const getJaegerInfoPromise = this.promises
-        .register('getJaegerInfo', API.getJaegerInfo())
-        .then(response => this.props.setJaegerInfo(response.data))
+      const getTracingInfoPromise = this.promises
+        .register('getTracingInfo', API.getTracingInfo())
+        .then(response => this.props.setTracingInfo(response.data))
         .catch(error => {
-          this.props.setJaegerInfo(null);
+          this.props.setTracingInfo(null);
           AlertUtils.addError(
-            'Could not fetch Jaeger info. Turning off Jaeger integration.',
+            'Could not fetch Tracing info. Turning off Tracing integration.',
             error,
             'default',
             MessageType.INFO
           );
         });
 
-      await Promise.all([getNamespacesPromise, getServerConfigPromise, getStatusPromise, getJaegerInfoPromise]);
+      await Promise.all([getNamespacesPromise, getServerConfigPromise, getStatusPromise, getTracingInfoPromise]);
 
       this.applyUIDefaults();
       this.setState({ configLoaded: true });
@@ -284,7 +284,7 @@ const mapDispatchToProps = (dispatch: KialiDispatch): KialiControllerReduxProps 
   setActiveNamespaces: bindActionCreators(NamespaceActions.setActiveNamespaces, dispatch),
   setDuration: bindActionCreators(UserSettingsActions.setDuration, dispatch),
   setIstioCertsInfo: bindActionCreators(IstioCertsInfoActions.setinfo, dispatch),
-  setJaegerInfo: bindActionCreators(JaegerActions.setInfo, dispatch),
+  setTracingInfo: bindActionCreators(TracingActions.setInfo, dispatch),
   setLandingRoute: bindActionCreators(LoginActions.setLandingRoute, dispatch),
   setMeshTlsStatus: bindActionCreators(MeshTlsActions.setinfo, dispatch),
   setNamespaces: bindActionCreators(NamespaceActions.receiveList, dispatch),
