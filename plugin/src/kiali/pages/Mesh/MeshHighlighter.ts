@@ -21,7 +21,7 @@
 //
 
 import { Edge, Node } from '@patternfly/react-topology';
-import { Controller, GraphElement } from '@patternfly/react-topology/dist/esm/types';
+import { Controller, GraphElement } from '@patternfly/react-topology';
 import { NodeData, ancestors, predecessors, successors } from './MeshElems';
 
 export class MeshHighlighter {
@@ -120,9 +120,7 @@ export class MeshHighlighter {
     return nodes.reduce((all: GraphElement[], current) => {
       all.push(current);
       if (current.getKind() === 'node' && (current as Node).hasParent()) {
-        all = Array.from(
-          new Set<GraphElement>([...all, ...ancestors(current as Node)])
-        );
+        all = Array.from(new Set<GraphElement>([...all, ...ancestors(current as Node)]));
       }
       return all;
     }, []);
