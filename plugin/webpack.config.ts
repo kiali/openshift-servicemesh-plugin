@@ -6,8 +6,8 @@ import * as path from 'path';
 import { ConsoleRemotePlugin } from '@openshift-console/dynamic-plugin-sdk-webpack';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
-import MergeJsonWebpackPlugin from 'merge-jsons-webpack-plugin';
-import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
+
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
@@ -89,26 +89,10 @@ const config: Configuration = {
   },
   plugins: [
     new ConsoleRemotePlugin(),
-    new MergeJsonWebpackPlugin({
-      output: {
-        groupBy: [
-          {
-            pattern: '**/locales/en/translation.json',
-            fileName: 'locales/en/plugin__ossmconsole.json'
-          },
-          {
-            pattern: '**/locales/zh/translation.json',
-            fileName: 'locales/zh/plugin__ossmconsole.json'
-          }
-        ]
-      },
-      space: 2
-    }),
     new DefinePlugin({
       'process.env.API_PROXY': JSON.stringify(process.env.API_PROXY),
       'process.env.CSS_PREFIX': JSON.stringify(process.env.CSS_PREFIX),
-      'process.env.GLOBAL_SCROLLBAR': JSON.stringify(process.env.GLOBAL_SCROLLBAR),
-      'process.env.I18N_NAMESPACE': JSON.stringify(process.env.I18N_NAMESPACE)
+      'process.env.GLOBAL_SCROLLBAR': JSON.stringify(process.env.GLOBAL_SCROLLBAR)
     }),
     new NodePolyfillPlugin(),
     new ForkTsCheckerWebpackPlugin({
