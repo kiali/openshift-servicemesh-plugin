@@ -26,8 +26,6 @@ import { Namespace } from 'types/Namespace';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
 import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
-import { useTranslation } from 'react-i18next';
-import { I18N_NAMESPACE } from 'types/Common';
 import { ApiError } from 'types/Api';
 
 interface IstioConfigObject extends IstioObject {
@@ -35,40 +33,36 @@ interface IstioConfigObject extends IstioObject {
   reconciledCondition?: StatusCondition;
 }
 
-const useGetColumns: () => TableColumn<IstioConfigObject>[] = () => {
-  const { t } = useTranslation(I18N_NAMESPACE);
-
-  return [
-    {
-      id: 'name',
-      sort: 'metadata.name',
-      title: t('Name'),
-      transforms: [sortable]
-    },
-    {
-      id: 'namespace',
-      sort: 'metadata.namespace',
-      title: t('Namespace'),
-      transforms: [sortable]
-    },
-    {
-      id: 'kind',
-      sort: 'kind',
-      title: t('Kind'),
-      transforms: [sortable]
-    },
-    {
-      id: 'configuration',
-      sort: 'validation.valid',
-      title: t('Configuration'),
-      transforms: [sortable]
-    }
-  ];
-};
+const columns: TableColumn<IstioConfigObject>[] = [
+  {
+    id: 'name',
+    sort: 'metadata.name',
+    title: 'Name',
+    transforms: [sortable]
+  },
+  {
+    id: 'namespace',
+    sort: 'metadata.namespace',
+    title: 'Namespace',
+    transforms: [sortable]
+  },
+  {
+    id: 'kind',
+    sort: 'kind',
+    title: 'Kind',
+    transforms: [sortable]
+  },
+  {
+    id: 'configuration',
+    sort: 'validation.valid',
+    title: 'Configuration',
+    transforms: [sortable]
+  }
+];
 
 const useIstioTableColumns = () => {
   const [activeColumns] = useActiveColumns<IstioConfigObject>({
-    columns: useGetColumns(),
+    columns: columns,
     showNamespaceOverride: true,
     columnManagementID: ''
   });
@@ -78,15 +72,11 @@ const useIstioTableColumns = () => {
 
 const Row = ({ obj, activeColumnIDs }: RowProps<IstioConfigObject>) => {
   const groupVersionKind = getGroupVersionKindForResource(obj);
-
   const nsGroupVersionKind: K8sGroupVersionKind = {
     group: '',
     version: 'v1',
     kind: 'Namespace'
   };
-
-  const columns = useGetColumns();
-
   return (
     <>
       <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
@@ -174,7 +164,6 @@ const newIstioResourceList = {
 };
 
 const IstioConfigListPage = () => {
-  const { t } = useTranslation(I18N_NAMESPACE);
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<IstioConfigObject[]>([]);
@@ -267,9 +256,9 @@ const IstioConfigListPage = () => {
         <ErrorPage title={loadError.title} message={loadError.message}></ErrorPage>
       ) : (
         <>
-          <ListPageHeader title={t('Istio Config')}>
+          <ListPageHeader title="Istio Config">
             <ListPageCreateDropdown items={newIstioResourceList} onClick={onCreate}>
-              {t('Create')}
+              Create
             </ListPageCreateDropdown>
           </ListPageHeader>
           <ListPageBody>
