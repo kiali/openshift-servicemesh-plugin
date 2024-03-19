@@ -23,6 +23,10 @@ import { GraphToolbarActions } from 'actions/GraphToolbarActions';
 import { HelpDropdownActions } from 'actions/HelpDropdownActions';
 import { GlobalActions } from 'actions/GlobalActions';
 import { getPluginConfig } from 'openshift/utils/KialiIntegration';
+import { MeshTlsActions } from 'actions/MeshTlsActions';
+import { TLSStatus } from 'types/TLSStatus';
+import { IstioCertsInfoActions } from 'actions/IstioCertsInfoActions';
+import { CertsInfo } from 'types/CertsInfo';
 import { globalStyle } from 'styles/GlobalStyle';
 import { kialiStyle } from 'styles/StyleUtils';
 import { store } from 'store/ConfigStore';
@@ -65,8 +69,10 @@ interface KialiControllerReduxProps {
   checkCredentials: () => void;
   setActiveNamespaces: (namespaces: Namespace[]) => void;
   setDuration: (duration: DurationInSeconds) => void;
+  setIstioCertsInfo: (istioCertsInfo: CertsInfo[]) => void;
   setJaegerInfo: (jaegerInfo: JaegerInfo | null) => void;
   setLandingRoute: (route: string | undefined) => void;
+  setMeshTlsStatus: (tlsStatus: TLSStatus) => void;
   setNamespaces: (namespaces: Namespace[], receivedAt: Date) => void;
   setRefreshInterval: (interval: IntervalInMilliseconds) => void;
   setTrafficRates: (rates: TrafficRate[]) => void;
@@ -86,14 +92,15 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
   componentDidMount(): void {
     this.getKialiConfig();
+    this.getKialiSecurityInfo();
     this.setDocLayout();
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     this.promises.cancelAll();
   }
 
-  render() {
+  render(): React.ReactNode {
     return this.state.configLoaded ? (
       <div className={`${globalStyle} ${ossmcStyle} ${cssVariables.style}`}>{this.props.children}</div>
     ) : (
@@ -101,14 +108,29 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
     );
   }
 
-  private getKialiConfig = async () => {
+  private getKialiConfig = async (): Promise<void> => {
     try {
+      const getNamespacesPromise = this.promises
+        .register('getNamespaces', API.getNamespaces())
+        .then(response => this.props.setNamespaces(response.data, new Date()))
+        .catch(error => {
+          AlertUtils.addError('Error fetching namespaces.', error, 'default', MessageType.WARNING);
+        });
+
+      const getServerConfigPromise = this.promises
+        .register('getServerConfig', API.getServerConfig())
+        .then(response => setServerConfig(response.data))
+        .catch(error => {
+          AlertUtils.addError('Error fetching server config.', error, 'default', MessageType.WARNING);
+        });
+
       const getStatusPromise = this.promises
         .register('getStatus', API.getStatus())
         .then(response => this.processServerStatus(response.data))
         .catch(error => {
           AlertUtils.addError('Error fetching server status.', error, 'default', MessageType.WARNING);
         });
+
       const getJaegerInfoPromise = this.promises
         .register('getJaegerInfo', API.getJaegerInfo())
         .then(response => this.props.setJaegerInfo(response.data))
@@ -121,18 +143,9 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
             MessageType.INFO
           );
         });
-      const getNamespacesPromise = this.promises.register('getNamespaces', API.getNamespaces());
-      const getServerConfigPromise = this.promises.register('getServerConfig', API.getServerConfig());
 
-      const configs = await Promise.all([
-        getNamespacesPromise,
-        getServerConfigPromise,
-        getStatusPromise,
-        getJaegerInfoPromise
-      ]);
+      await Promise.all([getNamespacesPromise, getServerConfigPromise, getStatusPromise, getJaegerInfoPromise]);
 
-      this.props.setNamespaces(configs[0].data, new Date());
-      setServerConfig(configs[1].data);
       this.applyUIDefaults();
       this.setState({ configLoaded: true });
     } catch (err) {
@@ -140,7 +153,36 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
     }
   };
 
-  private applyUIDefaults() {
+  private getKialiSecurityInfo = async (): Promise<void> => {
+    try {
+      const getMeshMTLSPromise = this.promises
+        .register('getMeshMTLS', API.getMeshTls())
+        .then(response => this.props.setMeshTlsStatus(response.data))
+        .catch(error => {
+          // User without namespaces can't have access to mTLS information. Reduce severity to info.
+          const namespaces = store.getState().namespaces.items;
+          const informative = namespaces && namespaces.length < 1;
+          if (informative) {
+            AlertUtils.addError('Mesh-wide mTLS status feature disabled.', error, 'default', MessageType.INFO);
+          } else {
+            AlertUtils.addError('Error fetching Mesh-wide mTLS status.', error, 'default', MessageType.ERROR);
+          }
+        });
+
+      const getIstioCertsInfoPromise = this.promises
+        .register('getIstioCertsInfo', API.getIstioCertsInfo())
+        .then(response => this.props.setIstioCertsInfo(response.data))
+        .catch(error => {
+          AlertUtils.addError('Error fetching Istio certificates info.', error, 'default', MessageType.WARNING);
+        });
+
+      await Promise.all([getMeshMTLSPromise, getIstioCertsInfoPromise]);
+    } catch (err) {
+      console.error('Error loading kiali security info', err);
+    }
+  };
+
+  private applyUIDefaults = (): void => {
     const uiDefaults = serverConfig.kialiFeatureFlags.uiDefaults;
     if (uiDefaults) {
       // Duration (aka metricsPerRefresh)
@@ -223,9 +265,9 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
       }
       this.props.setTrafficRates(rates);
     }
-  }
+  };
 
-  private setDocLayout = () => {
+  private setDocLayout = (): void => {
     // Set theme checking if Openshift Console has added Dark Theme CSS class
     const theme = document.documentElement.classList.contains(PF_THEME_DARK) ? Theme.DARK : Theme.LIGHT;
     store.dispatch(GlobalActions.setTheme(theme));
@@ -234,7 +276,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
     store.dispatch(GlobalActions.setKiosk('/'));
   };
 
-  private processServerStatus = (status: StatusState) => {
+  private processServerStatus = (status: StatusState): void => {
     this.props.statusRefresh(status);
 
     if (status.status[StatusKey.DISABLED_FEATURES]) {
@@ -249,13 +291,15 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   };
 }
 
-const mapDispatchToProps = (dispatch: KialiDispatch) => ({
+const mapDispatchToProps = (dispatch: KialiDispatch): KialiControllerReduxProps => ({
   addMessage: bindActionCreators(MessageCenterActions.addMessage, dispatch),
   checkCredentials: () => dispatch(LoginThunkActions.checkCredentials()),
   setActiveNamespaces: bindActionCreators(NamespaceActions.setActiveNamespaces, dispatch),
   setDuration: bindActionCreators(UserSettingsActions.setDuration, dispatch),
+  setIstioCertsInfo: bindActionCreators(IstioCertsInfoActions.setinfo, dispatch),
   setJaegerInfo: bindActionCreators(JaegerActions.setInfo, dispatch),
   setLandingRoute: bindActionCreators(LoginActions.setLandingRoute, dispatch),
+  setMeshTlsStatus: bindActionCreators(MeshTlsActions.setinfo, dispatch),
   setNamespaces: bindActionCreators(NamespaceActions.receiveList, dispatch),
   setRefreshInterval: bindActionCreators(UserSettingsActions.setRefreshInterval, dispatch),
   setTrafficRates: bindActionCreators(GraphToolbarActions.setTrafficRates, dispatch),
