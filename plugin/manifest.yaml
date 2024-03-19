@@ -92,6 +92,7 @@ data:
 
       server {
         listen              9443 ssl;
+        listen              [::]:9443 ssl;
         ssl_certificate     /var/serving-cert/tls.crt;
         ssl_certificate_key /var/serving-cert/tls.key;
 
