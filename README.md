@@ -17,7 +17,7 @@ These are the things you need before developers can start working with the OpenS
 3. `oc` client available in the path
 4. `podman` or `docker` client available in the path
 
-## Quickly Deploy the OSSM Console
+## Quickly Deploy the Latest OSSM Console Image
 
 To very quickly get the latest OSSMC plugin deployed in your cluster (e.g. without needing to build/push the operator and its catalog source and index image), run the following.
 
@@ -91,6 +91,20 @@ At this point, the OpenShift Console will start and be accessible at http://loca
 ## Operator
 
 The OpenShift Service Mesh Console will be installed by end users using the Kiali Operator.
+
+### How To Deploy A Dev Build of OSSM Console Using The Operator
+
+Sometimes you want to test a locally built image of the OSSM Console plugin when installed via the Kiali Operator. Follow these steps to do this.
+
+1. Make sure your Kiali dev environment is fully set up. This means you must have the [kiali/kiali repo](https://github.com/kiali/kiali), the [kiali/kiali-operator repo](https://github.com/kiali/kiali-operator), and the [kiali/helm-charts repo](https://github.com/kiali/helm-charts) cloned on your local machine. See the [kiali/kiali README](https://github.com/kiali/kiali/blob/master/README.adoc#developer-setup) for more details.
+2. Log into your OpenShift cluster with `oc login`
+3. Log into your OpenShift image registry. You can find the command to do this in the output of `make cluster-status`
+4. Create a dev build of the OSSMC plugin and push that image into your cluster via `make clean-plugin cluster-push`
+5. Change your current working directory to your local kiali/kiali repo.
+6. If you do not already have the Kiali Operator and a Kiali Server installed, do so now via `make build build-ui cluster-push operator-create kiali-create`
+7. Install your dev build of the OSSMC plugin via `make ossmconsole-create`
+
+Give the Kiali Operator time to process the OSSMConsole CR and time for the OpenShift Console UI to load the plugin (it could take a minute or two). Eventually, the plugin will be fully deployed and ready to use.
 
 ## Releasing OpenShift Service Mesh Console
 
