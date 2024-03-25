@@ -34,7 +34,8 @@
       "store/*": ["./kiali/store/*"],
       "styles/*": ["./kiali/styles/*"],
       "types/*": ["./kiali/types/*"],
-      "utils/*": ["./kiali/utils/*"]
+      "utils/*": ["./kiali/utils/*"],
+      "i18n": ["./kiali/i18n.ts"]
     }
   },
   "exclude": [
