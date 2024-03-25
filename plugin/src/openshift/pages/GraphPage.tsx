@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { GraphPage } from 'pages/Graph/GraphPage';
+import { GraphPage, GraphURLPathProps } from 'pages/Graph/GraphPage';
 import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
 import { getPluginConfig, useInitKialiListeners } from '../utils/KialiIntegration';
-import { useHistory } from 'react-router';
+import { useHistory, useParams } from 'react-router';
 import { setHistory } from 'app/History';
 import { kialiStyle } from 'styles/StyleUtils';
 import { KialiContainer } from 'openshift/components/KialiContainer';
@@ -24,14 +24,36 @@ const GraphPageOSSMC: React.FC<void> = () => {
       .catch(e => console.error(e));
   }, []);
 
+  const { aggregate, aggregateValue, app, namespace, service, version, workload } = useParams<GraphURLPathProps>();
+
   const history = useHistory();
   setHistory(history.location.pathname);
 
   return (
     <KialiContainer>
       <div className={containerPadding}>
-        {pluginConfig.graph.impl === 'cy' && <GraphPage></GraphPage>}
-        {pluginConfig.graph.impl === 'pf' && <GraphPagePF></GraphPagePF>}
+        {pluginConfig.graph.impl === 'cy' && (
+          <GraphPage
+            aggregate={aggregate}
+            aggregateValue={aggregateValue}
+            app={app}
+            namespace={namespace}
+            service={service}
+            version={version}
+            workload={workload}
+          ></GraphPage>
+        )}
+        {pluginConfig.graph.impl === 'pf' && (
+          <GraphPagePF
+            aggregate={aggregate}
+            aggregateValue={aggregateValue}
+            app={app}
+            namespace={namespace}
+            service={service}
+            version={version}
+            workload={workload}
+          ></GraphPagePF>
+        )}
       </div>
     </KialiContainer>
   );

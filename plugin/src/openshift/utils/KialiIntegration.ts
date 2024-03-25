@@ -45,12 +45,15 @@ export const useInitKialiListeners = () => {
       const webParamsIndex = kialiAction.indexOf('?');
 
       // Transform Kiali domain messages into Plugin info that helps to navigate
-      if (kialiAction.startsWith('/graph/namespaces')) {
-        const servicemeshUrl = kialiAction.replace('graph/namespaces', 'ossmconsole/graph');
-        history.push(servicemeshUrl);
-      }
+      if (kialiAction.startsWith('/graph') || kialiAction.startsWith('/graphpf')) {
+        const servicemeshUrl = kialiAction
+          .replace('graph/namespaces', 'ossmconsole/graph')
+          .replace('graphpf/namespaces', 'ossmconsole/graph')
+          .replace('graph/node/namespaces', 'ossmconsole/graph/ns')
+          .replace('graphpf/node/namespaces', 'ossmconsole/graph/ns');
 
-      if (kialiAction.startsWith('/istio')) {
+        history.push(servicemeshUrl);
+      } else if (kialiAction.startsWith('/istio')) {
         let istioConfigUrl = '/k8s';
 
         if (webParamsIndex > -1) {
@@ -70,9 +73,7 @@ export const useInitKialiListeners = () => {
         }
 
         history.push(istioConfigUrl);
-      }
-
-      if (kialiAction.startsWith('/namespaces')) {
+      } else if (kialiAction.startsWith('/namespaces')) {
         const webParams = webParamsIndex > -1 ? kialiAction.substring(webParamsIndex) : '';
 
         const namespacesLength = '/namespaces/'.length;

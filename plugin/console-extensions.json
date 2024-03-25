@@ -36,7 +36,15 @@
     "type": "console.page/route",
     "properties": {
       "exact": true,
-      "path": "/ossmconsole/graph",
+      "path": ["/ossmconsole/graph"],
+      "component": { "$codeRef": "GraphPage" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": ["/ossmconsole/graph/ns/:namespace/services/:service"],
       "component": { "$codeRef": "GraphPage" }
     }
   },
