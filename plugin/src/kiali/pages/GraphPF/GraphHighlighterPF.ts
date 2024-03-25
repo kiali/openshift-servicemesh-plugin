@@ -21,7 +21,7 @@
 //
 
 import { Edge, Node } from '@patternfly/react-topology';
-import { Controller, GraphElement } from '@patternfly/react-topology';
+import { Controller, GraphElement } from '@patternfly/react-topology/dist/esm/types';
 import { BoxByType, NodeAttr } from 'types/Graph';
 import { ancestors, NodeData, predecessors, successors } from './GraphPFElems';
 
@@ -121,7 +121,9 @@ export class GraphHighlighterPF {
     return nodes.reduce((all: GraphElement[], current) => {
       all.push(current);
       if (current.getKind() === 'node' && (current as Node).hasParent()) {
-        all = Array.from(new Set<GraphElement>([...all, ...ancestors(current as Node)]));
+        all = Array.from(
+          new Set<GraphElement>([...all, ...ancestors(current as Node)])
+        );
       }
       return all;
     }, []);
@@ -149,8 +151,12 @@ export class GraphHighlighterPF {
       const children = box.getChildren();
       elems = [...children];
       children.forEach(n => {
-        elems = Array.from(new Set<GraphElement>([...elems, ...predecessors(n as Node)]));
-        elems = Array.from(new Set<GraphElement>([...elems, ...successors(n as Node)]));
+        elems = Array.from(
+          new Set<GraphElement>([...elems, ...predecessors(n as Node)])
+        );
+        elems = Array.from(
+          new Set<GraphElement>([...elems, ...successors(n as Node)])
+        );
       });
       return { toHighlight: this.includeAncestorNodes(elems), unhighlightOthers: true };
     }

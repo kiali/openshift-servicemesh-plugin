@@ -1,5 +1,5 @@
 import { DefaultEdge, Edge, observer, ScaleDetailsLevel, WithSelectionProps } from '@patternfly/react-topology';
-import { useDetailsLevel } from '@patternfly/react-topology';
+import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
 import { PFColors } from 'components/Pf/PfColors';
 import * as React from 'react';
 import { kialiStyle } from 'styles/StyleUtils';
