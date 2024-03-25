@@ -196,7 +196,7 @@ const IstioConfigListPage = () => {
     } else {
       // If no namespace is selected, get istio config for all namespaces
       const getNamespacesData = promises.register('getNamespaces', API.getNamespaces());
-      const getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], [], validate, '', ''));
+      const getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], validate, '', ''));
 
       return Promise.all([getNamespacesData, getIstioConfigData])
         .then(response => {
