@@ -21,8 +21,10 @@ mkdir -p "${TMP_DIR}"
 SOURCE_REPO="${TMP_DIR}/kiali-source"
 
 # SOURCE_DIR = Relative directory inside the local Kiali repo whose content will be copied.
+# SOURCE_LOCALES_DIR = Relative directory inside the local Kiali repo whose locales will be copied.
 # DEST_DIR = Relative directory inside the local OSSM repo where the new files will be copied.
 SOURCE_DIR="frontend/src"
+SOURCE_LOCALES_DIR="frontend/public/locales"
 DEST_DIR="plugin/src/kiali"
 
 # The URL of the remote git repo to clone
@@ -82,6 +84,7 @@ done
 # The absolute source and destination directories
 
 ABS_SOURCE_DIR="${SOURCE_REPO}/${SOURCE_DIR}"
+ABS_SOURCE_LOCALES_DIR="${SOURCE_REPO}/${SOURCE_LOCALES_DIR}"
 ABS_DEST_DIR="${DEST_REPO}/${DEST_DIR}"
 
 # Validate the dest directories exist
@@ -154,6 +157,7 @@ cd ${ABS_DEST_DIR}
 git checkout -b ${DEST_BRANCH}
 rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
 cp -R ${ABS_SOURCE_DIR}/* ${ABS_DEST_DIR}
+cp -R ${ABS_SOURCE_LOCALES_DIR} ${ABS_DEST_DIR}
 cat > ${ABS_DEST_DIR}/README.md <<EOM
 **WARNING**: The code in this directory comes from the kiali/kiali repository and should never be modified here.
 

@@ -14,8 +14,7 @@ FROM registry.access.redhat.com/ubi8/nginx-120:1-38.1655143357
 USER 0
 
 COPY --from=build /usr/src/app/dist /usr/share/nginx/html/
-# add locales
-ADD ./locales /usr/share/nginx/html/locales
+
 RUN chown -R 1001:0 /usr/share/nginx/html/
 
 ARG VERSION_PLUGIN
