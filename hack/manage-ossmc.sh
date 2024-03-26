@@ -15,24 +15,29 @@ kind: OSSMConsole
 metadata:
   namespace: openshift-operators
   name: ossmconsole
+spec:
+  kiali:
+    serviceName: ''
+    serviceNamespace: ''
+  version: default
 EOM
 }
 
 uninstall() {
-for r in $(oc get ossmconsoles --ignore-not-found=true --all-namespaces -o custom-columns=NS:.metadata.namespace,N:.metadata.name --no-headers | sed 's/  */:/g');  
-do oc delete ossmconsoles -n "$(echo "$r"|cut -d: -f1)" "$(echo "$r"|cut -d: -f2)"; done
+  for r in $(oc get ossmconsoles --ignore-not-found=true --all-namespaces -o custom-columns=NS:.metadata.namespace,N:.metadata.name --no-headers | sed 's/  */:/g');  
+  do oc delete ossmconsoles -n "$(echo "$r"|cut -d: -f1)" "$(echo "$r"|cut -d: -f2)"; done
 }
 
 validate-ossmc() {
-    bash <(curl -sL https://raw.githubusercontent.com/kiali/kiali-operator/master/crd-docs/bin/validate-ossmconsole-cr.sh) \
-      -crd https://raw.githubusercontent.com/kiali/kiali-operator/master/crd-docs/crd/kiali.io_ossmconsoles.yaml \
-      --cr-name ossmconsole \
-      -n openshift-operators 
+  bash <(curl -sL https://raw.githubusercontent.com/kiali/kiali-operator/master/crd-docs/bin/validate-ossmconsole-cr.sh) \
+    -crd https://raw.githubusercontent.com/kiali/kiali-operator/master/crd-docs/crd/kiali.io_ossmconsoles.yaml \
+    --cr-name ossmconsole \
+    -n openshift-operators
 }
 
 wait-ossmc() {
-    while ! oc get deployment -n openshift-operators -l app.kubernetes.io/name=ossmconsole 2>/dev/null | grep -q ossmconsole ; do echo -n '.'; sleep 1; done \
-    && oc rollout status deployment -l app.kubernetes.io/name=ossmconsole -n openshift-operators
+  while ! oc get deployment -n openshift-operators -l app.kubernetes.io/name=ossmconsole 2>/dev/null | grep -q ossmconsole ; do echo -n '.'; sleep 1; done \
+  && oc rollout status deployment -l app.kubernetes.io/name=ossmconsole -n openshift-operators
 }
 
 helpmsg() {
@@ -54,8 +59,8 @@ HELP
 }
 
 if [[ $# -gt 1 ]]; then
-    echo "Too many arguments. Aborting.";
-    exit 255
+  echo "Too many arguments. Aborting.";
+  exit 255
 fi
 
 while [[ $# -gt 0 ]]; do
