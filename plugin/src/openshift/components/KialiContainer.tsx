@@ -22,7 +22,13 @@ import 'ace-builds/src-noconflict/ext-searchbox';
 const ossmcStyle = kialiStyle({
   display: 'flex',
   flexDirection: 'column',
-  overflowY: 'auto'
+  overflowY: 'auto',
+  $nest: {
+    '& ul': {
+      paddingLeft: 0,
+      listStyle: 'none'
+    }
+  }
 });
 
 interface Props {
