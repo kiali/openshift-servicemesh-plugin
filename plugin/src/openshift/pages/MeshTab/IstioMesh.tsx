@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useHistory } from 'react-router';
+import { useHistory } from 'react-router-dom';
 import { IstioConfigId } from 'types/IstioConfigDetails';
 import { IstioConfigDetailsPage } from 'pages/IstioConfigDetails/IstioConfigDetailsPage';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
