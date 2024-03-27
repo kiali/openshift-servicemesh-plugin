@@ -15,7 +15,8 @@ import {
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { useHistory, useParams } from 'react-router';
+import { useHistory } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
@@ -26,6 +27,7 @@ import { Namespace } from 'types/Namespace';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
 import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
+import { ApiError } from 'types/Api';
 
 interface IstioConfigObject extends IstioObject {
   validation?: ObjectValidation;
@@ -188,14 +190,14 @@ const IstioConfigListPage = () => {
         .then(response => {
           return toIstioItems(response.data);
         })
-        .catch((error: API.ApiError) => {
+        .catch((error: ApiError) => {
           setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
           return [];
         });
     } else {
       // If no namespace is selected, get istio config for all namespaces
       const getNamespacesData = promises.register('getNamespaces', API.getNamespaces());
-      const getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], [], validate, '', ''));
+      const getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], validate, '', ''));
 
       return Promise.all([getNamespacesData, getIstioConfigData])
         .then(response => {
@@ -207,7 +209,7 @@ const IstioConfigListPage = () => {
           });
           return istioItems;
         })
-        .catch((error: API.ApiError) => {
+        .catch((error: ApiError) => {
           setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
           return [];
         });

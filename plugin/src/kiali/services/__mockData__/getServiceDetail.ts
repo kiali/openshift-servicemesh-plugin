@@ -3,7 +3,9 @@ import { ValidationTypes } from '../../types/IstioObjects';
 
 export const SERVICE_DETAILS: ServiceDetailsInfo = {
   service: {
+    cluster: 'Kubernetes',
     name: 'reviews',
+    namespace: 'bookinfo',
     createdAt: '2018-06-29T16:43:18+02:00',
     type: 'ClusterIP',
     externalName: 'my.database.example.com',
@@ -21,7 +23,8 @@ export const SERVICE_DETAILS: ServiceDetailsInfo = {
         tlsMode: 'istio'
       }
     ],
-    resourceVersion: '2652'
+    resourceVersion: '2652',
+    additionalDetails: []
   },
   istioSidecar: true,
   istioAmbient: false,
@@ -143,6 +146,5 @@ export const SERVICE_DETAILS: ServiceDetailsInfo = {
         ]
       }
     }
-  },
-  additionalDetails: []
+  }
 };

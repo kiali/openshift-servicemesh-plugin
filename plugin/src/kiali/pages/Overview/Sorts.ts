@@ -1,26 +1,29 @@
 import { serverConfig } from 'config';
 import { SortField } from '../../types/SortFilters';
-import { NamespaceInfo } from './NamespaceInfo';
+import { NamespaceInfo } from '../../types/NamespaceInfo';
+import { isRemoteCluster } from './OverviewCardControlPlaneNamespace';
+import { i18n } from 'i18n';
 
 export const sortFields: SortField<NamespaceInfo>[] = [
   {
     id: 'namespace',
-    title: 'Name',
+    title: i18n.t('Name'),
     isNumeric: false,
     param: 'ns',
-    compare: (a: NamespaceInfo, b: NamespaceInfo) => a.name.localeCompare(b.name)
+    compare: (a: NamespaceInfo, b: NamespaceInfo): number => a.name.localeCompare(b.name)
   },
   {
     id: 'health',
-    title: 'Health',
+    title: i18n.t('Health'),
     isNumeric: false,
     param: 'h',
-    compare: (a: NamespaceInfo, b: NamespaceInfo) => {
+    compare: (a: NamespaceInfo, b: NamespaceInfo): number => {
       if (a.status && b.status) {
         let diff = b.status.inError.length - a.status.inError.length;
         if (diff !== 0) {
           return diff;
         }
+
         diff = b.status.inWarning.length - a.status.inWarning.length;
         if (diff !== 0) {
           return diff;
@@ -36,10 +39,10 @@ export const sortFields: SortField<NamespaceInfo>[] = [
   },
   {
     id: 'mtls',
-    title: 'mTLS',
+    title: i18n.t('mTLS'),
     isNumeric: false,
     param: 'm',
-    compare: (a: NamespaceInfo, b: NamespaceInfo) => {
+    compare: (a: NamespaceInfo, b: NamespaceInfo): number => {
       if (a.tlsStatus && b.tlsStatus) {
         return a.tlsStatus.status.localeCompare(b.tlsStatus.status);
       } else if (a.tlsStatus) {
@@ -54,10 +57,10 @@ export const sortFields: SortField<NamespaceInfo>[] = [
   },
   {
     id: 'config',
-    title: 'Istio Config',
+    title: i18n.t('Istio Config'),
     isNumeric: false,
     param: 'ic',
-    compare: (a: NamespaceInfo, b: NamespaceInfo) => {
+    compare: (a: NamespaceInfo, b: NamespaceInfo): number => {
       if (a.validations && b.validations) {
         if (a.validations.errors === b.validations.errors) {
           if (a.validations.warnings === b.validations.warnings) {
@@ -91,15 +94,17 @@ export const sortFields: SortField<NamespaceInfo>[] = [
   },
   {
     id: 'cluster',
-    title: 'Cluster',
+    title: i18n.t('Cluster'),
     isNumeric: false,
     param: 'cl',
-    compare: (a: NamespaceInfo, b: NamespaceInfo) => {
+    compare: (a: NamespaceInfo, b: NamespaceInfo): number => {
       if (a.cluster && b.cluster) {
         let sortValue = a.cluster.localeCompare(b.cluster);
+
         if (sortValue === 0) {
           sortValue = a.name.localeCompare(b.name);
         }
+
         return sortValue;
       } else {
         return 0;
@@ -108,10 +113,22 @@ export const sortFields: SortField<NamespaceInfo>[] = [
   }
 ];
 
-export const sortFunc = (allNamespaces: NamespaceInfo[], sortField: SortField<NamespaceInfo>, isAscending: boolean) => {
-  var sortedNamespaces = allNamespaces
+export const sortFunc = (
+  allNamespaces: NamespaceInfo[],
+  sortField: SortField<NamespaceInfo>,
+  isAscending: boolean
+): NamespaceInfo[] => {
+  const sortedNamespaces = allNamespaces
     .filter(ns => ns.name !== serverConfig.istioNamespace)
     .sort(isAscending ? sortField.compare : (a, b) => sortField.compare(b, a));
 
-  return allNamespaces.filter(ns => ns.name === serverConfig.istioNamespace).concat(sortedNamespaces);
+  // remote cluster control planes should be listed after primary
+  const remoteControlPlanes = allNamespaces.filter(
+    ns => ns.name === serverConfig.istioNamespace && isRemoteCluster(ns.annotations)
+  );
+
+  return allNamespaces
+    .filter(ns => ns.name === serverConfig.istioNamespace && !isRemoteCluster(ns.annotations))
+    .concat(remoteControlPlanes)
+    .concat(sortedNamespaces);
 };

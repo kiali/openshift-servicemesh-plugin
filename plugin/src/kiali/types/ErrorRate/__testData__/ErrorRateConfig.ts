@@ -9,8 +9,8 @@ const codes = ['200', '400', '404', '500'];
 export const annotationSample: HealthAnnotationType = { 'health.kiali.io/rate': '4XX,10,20,http,inbound' };
 
 const precision = 100; // 2 decimals
-const randomRequest = (greater: number = 40): RequestType => {
-  var result = {
+const randomRequest = (greater = 40): RequestType => {
+  let result = {
     http: {}
   };
   codes.forEach(code => {
@@ -24,10 +24,10 @@ export const generateTrafficItem = (
   requests: { [key: string]: number[] },
   annotation?: HealthAnnotationType
 ): TrafficItem => {
-  var responses: Responses = {};
+  let responses: Responses = {};
 
   Object.keys(requests).forEach(key => {
-    var flags = {};
+    let flags = {};
     requests[key].forEach((v, i) => (flags[i] = v));
     responses[key] = {
       hosts: {},
@@ -72,6 +72,7 @@ export const serverRateConfig = {
   authStrategy: '',
   ambientEnabled: false,
   clusters: {},
+  gatewayAPIClasses: [],
   gatewayAPIEnabled: false,
   logLevel: '',
   kialiFeatureFlags: {
@@ -98,11 +99,20 @@ export const serverRateConfig = {
           tcp: 'sent'
         }
       },
+      i18n: {
+        language: 'en',
+        showSelector: false
+      },
       list: {
         includeHealth: true,
         includeIstioResources: true,
         includeValidations: true,
         showIncludeToggles: false
+      },
+      mesh: {
+        findOptions: [],
+        hideOptions: [],
+        impl: 'classic'
       },
       metricsPerRefresh: '1m',
       namespaces: [],
@@ -150,6 +160,8 @@ export const serverRateConfig = {
   },
   installationTag: 'Kiali Console',
   istioAnnotations: {
+    ambientAnnotation: 'ambient.istio.io/redirection',
+    ambientAnnotationEnabled: 'enabled',
     istioInjectionAnnotation: ''
   },
   istioCanaryRevision: {
@@ -159,6 +171,8 @@ export const serverRateConfig = {
   istioIdentityDomain: 'svc.cluster.local',
   istioNamespace: 'istio-system',
   istioLabels: {
+    ambientWaypointLabel: 'gateway.istio.io/managed',
+    ambientWaypointLabelValue: 'istio.io-mesh-controller',
     appLabelName: 'app',
     injectionLabelName: 'istio-injection',
     injectionLabelRev: 'istio.io/rev',

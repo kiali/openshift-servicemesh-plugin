@@ -6,6 +6,7 @@ export const healthConfig = {
   authStrategy: '',
   ambientEnabled: false,
   clusters: {},
+  gatewayAPIClasses: [],
   gatewayAPIEnabled: false,
   logLevel: '',
   kialiFeatureFlags: {
@@ -32,11 +33,20 @@ export const healthConfig = {
           tcp: 'sent'
         }
       },
+      i18n: {
+        language: 'en',
+        showSelector: false
+      },
       list: {
         includeHealth: true,
         includeIstioResources: true,
         includeValidations: true,
         showIncludeToggles: false
+      },
+      mesh: {
+        findOptions: [],
+        hideOptions: [],
+        impl: 'classic'
       },
       metricsPerRefresh: '1m',
       namespaces: [],
@@ -70,6 +80,8 @@ export const healthConfig = {
   },
   installationTag: 'Kiali Console',
   istioAnnotations: {
+    ambientAnnotation: 'ambient.istio.io/redirection',
+    ambientAnnotationEnabled: 'enabled',
     istioInjectionAnnotation: ''
   },
   istioCanaryRevision: {
@@ -79,6 +91,8 @@ export const healthConfig = {
   istioIdentityDomain: 'svc.cluster.local',
   istioNamespace: 'istio-system',
   istioLabels: {
+    ambientWaypointLabel: 'gateway.istio.io/managed',
+    ambientWaypointLabelValue: 'istio.io-mesh-controller',
     appLabelName: 'app',
     injectionLabelName: 'istio-injection',
     injectionLabelRev: 'istio.io/rev',

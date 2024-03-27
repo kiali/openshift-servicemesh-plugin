@@ -24,14 +24,14 @@ import { NamespaceActions } from 'actions/NamespaceAction';
 import { GraphUrlParams, makeNodeGraphUrlFromParams } from 'components/Nav/NavUtils';
 import { history } from '../../../app/History';
 import { GraphNodeDoubleTapEvent } from 'components/CytoscapeGraph/CytoscapeGraph';
-import { serverConfig } from '../../../config';
+import { isMultiCluster, serverConfig } from '../../../config';
 
 type ContextMenuOptionPF = ContextMenuOption & {
   altClickHandler?: (node: GraphElement) => void;
   node?: GraphElement;
 };
 
-const doubleTapHandler = (node: GraphElement) => {
+const doubleTapHandler = (node: GraphElement): void => {
   handleDoubleTap(node);
 };
 
@@ -87,7 +87,7 @@ const nodeContextMenu = (node: GraphElement): React.ReactElement[] => {
 
 // This is temporary until the PFT graph properly handles DoubleTap.  Until then
 // we offer a ContextMenu option for what would normally be handled via DoubleTap.
-const handleDoubleTap = (doubleTapNode: GraphElement) => {
+const handleDoubleTap = (doubleTapNode: GraphElement): void => {
   const dtNodeData = doubleTapNode.getData() as DecoratedGraphNodeData;
   const graphData = doubleTapNode.getGraph().getData().graphData;
 
@@ -190,6 +190,7 @@ const handleDoubleTap = (doubleTapNode: GraphElement) => {
     showIdleNodes: state.graph.toolbarState.showIdleNodes,
     showOperationNodes: state.graph.toolbarState.showOperationNodes,
     showServiceNodes: state.graph.toolbarState.showServiceNodes,
+    showWaypoints: state.graph.toolbarState.showWaypoints,
     trafficRates: graphData.fetchParams.trafficRates
   };
 
@@ -198,12 +199,12 @@ const handleDoubleTap = (doubleTapNode: GraphElement) => {
 };
 
 // This allows us to navigate to the service details page when zoomed in on nodes
-const handleDoubleTapSameNode = (targetNode: NodeParamsType) => {
+const handleDoubleTapSameNode = (targetNode: NodeParamsType): void => {
   const makeAppDetailsPageUrl = (namespace: string, nodeType: string, name?: string): string => {
     return `/namespaces/${namespace}/${nodeType}/${name}`;
   };
   const nodeType = targetNode.nodeType;
-  let urlNodeType = targetNode.nodeType + 's';
+  let urlNodeType = `${targetNode.nodeType}s`;
   let name = targetNode.app;
   if (nodeType === 'service') {
     name = targetNode.service;
@@ -212,8 +213,10 @@ const handleDoubleTapSameNode = (targetNode: NodeParamsType) => {
   } else {
     urlNodeType = 'applications';
   }
-  const detailsPageUrl = makeAppDetailsPageUrl(targetNode.namespace.name, urlNodeType, name);
-  // todo deal with kiosk
+  let detailsPageUrl = makeAppDetailsPageUrl(targetNode.namespace.name, urlNodeType, name);
+  if (targetNode.cluster && isMultiCluster) {
+    detailsPageUrl = `${detailsPageUrl}?clusterName=${targetNode.cluster}`;
+  } // todo deal with kiosk
   //if (isParentKiosk(this.props.kiosk)) {
   //  kioskContextMenuAction(detailsPageUrl);
   //} else {
@@ -230,7 +233,7 @@ export const stylesComponentFactory: ComponentFactory = (
     case ModelKind.edge:
       return withSelection({ multiSelect: false, controlled: false })(StyleEdge as any);
     case ModelKind.graph:
-      return withPanZoom()(GraphComponent);
+      return withSelection({ multiSelect: false, controlled: false })(withPanZoom()(GraphComponent));
     case ModelKind.node: {
       return withDragNode(nodeDragSourceSpec('node', true, true))(
         withContextMenu(e => nodeContextMenu(e))(

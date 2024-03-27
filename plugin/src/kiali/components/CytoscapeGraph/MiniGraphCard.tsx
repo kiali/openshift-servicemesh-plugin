@@ -2,13 +2,14 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import {
   Card,
-  CardActions,
   CardBody,
   CardHeader,
   CardTitle,
   Dropdown,
   DropdownItem,
-  KebabToggle,
+  DropdownList,
+  MenuToggle,
+  MenuToggleElement,
   ToolbarItem
 } from '@patternfly/react-core';
 import { history } from '../../app/History';
@@ -32,6 +33,8 @@ import { TimeDurationIndicator } from '../Time/TimeDurationIndicator';
 import { KioskElement } from '../Kiosk/KioskElement';
 import { GraphSelectorBuilder } from 'pages/Graph/GraphSelector';
 import { isMultiCluster } from '../../config';
+import { KialiIcon } from 'config/KialiIcon';
+import { kebabToggleStyle } from 'styles/DropdownStyles';
 
 const initGraphContainerStyle = kialiStyle({ width: '100%', height: '100%' });
 
@@ -50,35 +53,36 @@ type MiniGraphCardProps = ReduxProps & {
 };
 
 type MiniGraphCardState = {
+  graphData: DecoratedGraphElements;
   isKebabOpen: boolean;
   isTimeOptionsOpen: boolean;
-  graphData: DecoratedGraphElements;
 };
 
 class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGraphCardState> {
   private cytoscapeGraphRef: any;
 
-  constructor(props) {
+  constructor(props: MiniGraphCardProps) {
     super(props);
+
     this.cytoscapeGraphRef = React.createRef();
     this.state = { isKebabOpen: false, isTimeOptionsOpen: false, graphData: props.dataSource.graphData };
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     this.props.dataSource.on('fetchSuccess', this.refresh);
     this.props.dataSource.on('fetchError', this.refresh);
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     this.props.dataSource.removeListener('fetchSuccess', this.refresh);
     this.props.dataSource.removeListener('fetchError', this.refresh);
   }
 
-  private refresh = () => {
+  private refresh = (): void => {
     this.setState({ graphData: this.props.dataSource.graphData });
   };
 
-  render() {
+  render(): React.ReactNode {
     const graphCardActions = [
       <DropdownItem key="viewFullGraph" onClick={this.onViewFullGraph}>
         Show full graph
@@ -115,27 +119,46 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
     return (
       <>
         <Card style={{ height: '100%' }} id={'MiniGraphCard'} data-test="mini-graph">
-          <CardHeader>
-            <CardActions>
-              <KioskElement>
-                <ToolbarItem>
-                  <TimeDurationIndicator onClick={this.toggleTimeOptionsVisibility} isDuration={true} />
-                </ToolbarItem>
-              </KioskElement>
-              <Dropdown
-                toggle={<KebabToggle onToggle={this.onGraphActionsToggle} />}
-                dropdownItems={graphCardActions}
-                isPlain
-                isOpen={this.state.isKebabOpen}
-                position={'right'}
-              />
-            </CardActions>
+          <CardHeader
+            actions={{
+              actions: (
+                <>
+                  <KioskElement>
+                    <ToolbarItem>
+                      <TimeDurationIndicator onClick={this.toggleTimeOptionsVisibility} isDuration={true} />
+                    </ToolbarItem>
+                  </KioskElement>
+
+                  <Dropdown
+                    toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                      <MenuToggle
+                        ref={toggleRef}
+                        className={kebabToggleStyle}
+                        aria-label="Actions"
+                        variant="plain"
+                        onClick={() => this.onGraphActionsToggle(!this.state.isKebabOpen)}
+                        isExpanded={this.state.isKebabOpen}
+                      >
+                        <KialiIcon.KebabToggle />
+                      </MenuToggle>
+                    )}
+                    isOpen={this.state.isKebabOpen}
+                    onOpenChange={(isOpen: boolean) => this.onGraphActionsToggle(isOpen)}
+                    popperProps={{ position: 'right' }}
+                  >
+                    <DropdownList>{graphCardActions}</DropdownList>
+                  </Dropdown>
+                </>
+              ),
+              hasNoOffset: false,
+              className: undefined
+            }}
+          >
             <CardTitle style={{ float: 'left' }}>{intervalTitle}</CardTitle>
           </CardHeader>
           <CardBody>
             <div style={{ height: '100%' }}>
               <CytoscapeGraph
-                compressOnHide={true}
                 containerClassName={
                   this.props.graphContainerStyle ? this.props.graphContainerStyle : initGraphContainerStyle
                 }
@@ -186,25 +209,25 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
     );
   }
 
-  private setCytoscapeGraph(cytoscapeGraph: any) {
+  private setCytoscapeGraph(cytoscapeGraph: any): void {
     this.cytoscapeGraphRef.current = cytoscapeGraph;
   }
 
-  private handleLaunchWizard = (key: WizardAction, mode: WizardMode) => {
+  private handleLaunchWizard = (key: WizardAction, mode: WizardMode): void => {
     this.onGraphActionsToggle(false);
     if (this.props.onLaunchWizard) {
       this.props.onLaunchWizard(key, mode);
     }
   };
 
-  private handleDeleteTrafficRouting = (key: string) => {
+  private handleDeleteTrafficRouting = (key: string): void => {
     this.onGraphActionsToggle(false);
     if (this.props.onDeleteTrafficRouting) {
       this.props.onDeleteTrafficRouting(key);
     }
   };
 
-  private handleNodeTap = (e: GraphNodeTapEvent) => {
+  private handleNodeTap = (e: GraphNodeTapEvent): void => {
     // Do nothing on inaccessible nodes or service entry nodes
     if (e.isInaccessible || e.isServiceEntry) {
       return;
@@ -236,7 +259,7 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
     let href = `/namespaces/${e.namespace}/${resourceType}s/${resource}`;
 
     if (e.cluster && isMultiCluster) {
-      href = href + '?clusterName=' + e.cluster;
+      href = `${href}?clusterName=${e.cluster}`;
     }
 
     if (isParentKiosk(this.props.kiosk)) {
@@ -246,13 +269,13 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
     }
   };
 
-  private onGraphActionsToggle = (isOpen: boolean) => {
+  private onGraphActionsToggle = (isOpen: boolean): void => {
     this.setState({
       isKebabOpen: isOpen
     });
   };
 
-  private onViewFullGraph = () => {
+  private onViewFullGraph = (): void => {
     const namespace = this.props.dataSource.fetchParameters.namespaces[0].name;
     let graphSelector = new GraphSelectorBuilder().namespace(namespace);
     let graphType: GraphType = GraphType.APP;
@@ -293,7 +316,7 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
     }
   };
 
-  private onViewNodeGraph = () => {
+  private onViewNodeGraph = (): void => {
     let graphType = this.props.dataSource.fetchParameters.graphType;
     switch (this.props.dataSource.fetchParameters.node!.nodeType) {
       case NodeType.APP:
@@ -321,6 +344,7 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
       showIdleNodes: this.props.dataSource.fetchParameters.showIdleNodes,
       showOperationNodes: this.props.dataSource.fetchParameters.showOperationNodes,
       showServiceNodes: true,
+      showWaypoints: true,
       trafficRates: this.props.dataSource.fetchParameters.trafficRates
     };
 
@@ -328,7 +352,7 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
     history.push(makeNodeGraphUrlFromParams(urlParams));
   };
 
-  private toggleTimeOptionsVisibility = () => {
+  private toggleTimeOptionsVisibility = (): void => {
     this.setState(prevState => ({ isTimeOptionsOpen: !prevState.isTimeOptionsOpen }));
   };
 }

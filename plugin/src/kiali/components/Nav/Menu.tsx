@@ -3,11 +3,15 @@ import * as React from 'react';
 import { matchPath } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Nav, NavList, NavItem } from '@patternfly/react-core';
-import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { history } from '../../app/History';
 import { navMenuItems } from '../../routes';
 import { homeCluster, serverConfig } from '../../config';
 import { kialiStyle } from 'styles/StyleUtils';
+import { ExternalServiceInfo } from '../../types/StatusState';
+import { KialiIcon } from 'config/KialiIcon';
+import { GetTracingUrlProvider } from '../../utils/tracing/UrlProviders';
+import { WithTranslation, withTranslation } from 'react-i18next';
+import { I18N_NAMESPACE } from 'types/Common';
 
 const externalLinkStyle = kialiStyle({
   $nest: {
@@ -22,27 +26,35 @@ const externalLinkStyle = kialiStyle({
   }
 });
 
-const ExternalLink = ({ href, name }) => (
+const navListStyle = kialiStyle({
+  padding: 0
+});
+
+const iconStyle = kialiStyle({
+  marginLeft: '0.5rem'
+});
+
+const ExternalLink = ({ href, name }: { href: string; name: string }): React.ReactElement => (
   <NavItem isActive={false} key={name}>
     <a className={externalLinkStyle} href={href} target="_blank" rel="noopener noreferrer">
-      {name} <ExternalLinkAltIcon style={{ margin: '-4px 0 0 5px' }} />
+      {name} <KialiIcon.ExternalLink className={iconStyle} />
     </a>
   </NavItem>
 );
 
-type MenuProps = {
+type MenuProps = WithTranslation & {
+  externalServices: ExternalServiceInfo[];
   isNavOpen: boolean;
   location: any;
-  jaegerUrl?: string;
 };
 
 type MenuState = {
   activeItem: string;
 };
 
-export class Menu extends React.Component<MenuProps, MenuState> {
+class MenuComponent extends React.Component<MenuProps, MenuState> {
   static contextTypes = {
-    router: () => null
+    router: (): null => null
   };
 
   constructor(props: MenuProps) {
@@ -52,7 +64,7 @@ export class Menu extends React.Component<MenuProps, MenuState> {
     };
   }
 
-  componentDidUpdate(prevProps: Readonly<MenuProps>) {
+  componentDidUpdate(prevProps: Readonly<MenuProps>): void {
     if (prevProps.isNavOpen !== this.props.isNavOpen) {
       // Dispatch an extra "resize" event when side menu toggle to force that metrics charts resize
       setTimeout(() => {
@@ -61,64 +73,91 @@ export class Menu extends React.Component<MenuProps, MenuState> {
     }
   }
 
-  renderMenuItems = () => {
+  renderMenuItems = (): React.ReactNode => {
     const { location } = this.props;
     const allNavMenuItems = navMenuItems;
     const graphEnableCytoscape = serverConfig.kialiFeatureFlags.uiDefaults.graph.impl !== 'pf';
     const graphEnablePatternfly = serverConfig.kialiFeatureFlags.uiDefaults.graph.impl !== 'cy';
+    const graphEnableMeshClassic = serverConfig.kialiFeatureFlags.uiDefaults.mesh.impl === 'classic';
+    const graphEnableMeshGraph = serverConfig.kialiFeatureFlags.uiDefaults.mesh.impl !== 'classic';
+    const graphEnableMeshOverview = serverConfig.kialiFeatureFlags.uiDefaults.mesh.impl === 'topo-as-overview';
+
     const activeMenuItem = allNavMenuItems.find(item => {
       let isRoute = matchPath(location.pathname, { path: item.to, exact: true, strict: false }) ? true : false;
+
       if (!isRoute && item.pathsActive) {
         isRoute = _.filter(item.pathsActive, path => path.test(location.pathname)).length > 0;
       }
+
       return isRoute;
     });
 
+    const tracingUrl = GetTracingUrlProvider(this.props.externalServices)?.HomeUrl();
+
     return allNavMenuItems
       .filter(item => {
-        if (item.title === 'Mesh') {
-          return homeCluster?.name !== undefined;
-        }
-        if (item.title === 'Graph [Cy]') {
-          return graphEnableCytoscape;
-        }
-        if (item.title === 'Graph [PF]') {
-          return graphEnablePatternfly;
-        }
-        return true;
-      })
-      .map(item => {
-        if (item.title === 'Distributed Tracing') {
-          return (
-            this.props.jaegerUrl && (
-              <ExternalLink key={item.to} href={this.props.jaegerUrl} name="Distributed Tracing" />
-            )
-          );
+        if (item.id === 'mesh_classic') {
+          return graphEnableMeshClassic && homeCluster?.name !== undefined;
         }
 
-        let title = item.title;
-        if (title === 'Graph [Cy]' && !graphEnablePatternfly) {
-          title = 'Graph';
+        if (item.id === 'mesh_graph') {
+          return graphEnableMeshGraph;
         }
-        if (title === 'Graph [PF]' && !graphEnableCytoscape) {
-          title = 'Graph';
+
+        if (item.id === 'overview') {
+          return !graphEnableMeshOverview;
+        }
+
+        if (item.id === 'traffic_graph_cy') {
+          return graphEnableCytoscape;
+        }
+
+        if (item.id === 'traffic_graph_pf') {
+          return graphEnablePatternfly;
+        }
+
+        return true;
+      })
+      .sort((a, b): number => {
+        if (graphEnableMeshOverview && a.id === 'mesh_graph') return -1;
+        if (graphEnableMeshOverview && b.id === 'mesh_graph') return 1;
+        return 0;
+      })
+      .map(item => {
+        let title = item.title;
+
+        if (item.id === 'tracing') {
+          return tracingUrl && <ExternalLink key={item.to} href={tracingUrl} name={this.props.t(title)} />;
+        }
+
+        if (
+          (item.id === 'traffic_graph_cy' && !graphEnablePatternfly) ||
+          (item.id === 'traffic_graph_pf' && !graphEnableCytoscape)
+        ) {
+          title = this.props.t('Traffic Graph');
+        }
+
+        if (item.id === 'mesh_classic' || item.id === 'mesh_graph') {
+          title = this.props.t('Mesh');
         }
 
         return (
           <NavItem isActive={activeMenuItem === item} key={item.to}>
-            <Link id={title} to={item.to} onClick={() => history.push(item.to)}>
-              {title}
+            <Link id={item.id} to={item.to} onClick={() => history.push(item.to)}>
+              {this.props.t(title)}
             </Link>
           </NavItem>
         );
       });
   };
 
-  render() {
+  render(): React.ReactNode {
     return (
-      <Nav aria-label="Nav" theme={'dark'}>
-        <NavList>{this.renderMenuItems()}</NavList>
+      <Nav aria-label="Nav" theme="dark">
+        <NavList className={navListStyle}>{this.renderMenuItems()}</NavList>
       </Nav>
     );
   }
 }
+
+export const Menu = withTranslation(I18N_NAMESPACE)(MenuComponent);

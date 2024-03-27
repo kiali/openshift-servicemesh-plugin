@@ -4,12 +4,13 @@ import { SortField } from '../../../types/SortFilters';
 
 const mockIstioConfigList = (names: string[]): IstioConfigList => {
   const testData: IstioConfigList = {
-    namespace: {
-      name: 'test'
-    },
     gateways: [],
     k8sGateways: [],
+    k8sGRPCRoutes: [],
     k8sHTTPRoutes: [],
+    k8sReferenceGrants: [],
+    k8sTCPRoutes: [],
+    k8sTLSRoutes: [],
     virtualServices: [],
     destinationRules: [],
     serviceEntries: [],
@@ -26,11 +27,11 @@ const mockIstioConfigList = (names: string[]): IstioConfigList => {
     telemetries: []
   };
   names.forEach(name => {
-    testData.authorizationPolicies.push({ metadata: { name: name + '0' }, spec: {} });
-    testData.destinationRules.push({ metadata: { name: name + '1' }, spec: {} });
-    testData.gateways.push({ metadata: { name: name + '2' }, spec: {} });
-    testData.serviceEntries.push({ metadata: { name: name + '3' }, spec: {} });
-    testData.virtualServices.push({ metadata: { name: name + '4' }, spec: {} });
+    testData.authorizationPolicies.push({ metadata: { name: `${name}0` }, spec: {} });
+    testData.destinationRules.push({ metadata: { name: `${name}1` }, spec: {} });
+    testData.gateways.push({ metadata: { name: `${name}2` }, spec: {} });
+    testData.serviceEntries.push({ metadata: { name: `${name}3` }, spec: {} });
+    testData.virtualServices.push({ metadata: { name: `${name}4` }, spec: {} });
   });
   return testData;
 };
@@ -60,7 +61,11 @@ describe('IstioConfigList#filterByName', () => {
     expect(filtered.wasmPlugins.length).toBe(0);
     expect(filtered.telemetries.length).toBe(0);
     expect(filtered.k8sGateways.length).toBe(0);
+    expect(filtered.k8sGRPCRoutes.length).toBe(0);
     expect(filtered.k8sHTTPRoutes.length).toBe(0);
+    expect(filtered.k8sReferenceGrants.length).toBe(0);
+    expect(filtered.k8sTCPRoutes.length).toBe(0);
+    expect(filtered.k8sTLSRoutes.length).toBe(0);
   });
 });
 

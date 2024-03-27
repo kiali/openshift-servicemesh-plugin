@@ -1,19 +1,22 @@
 import * as React from 'react';
 import {
   Checkbox,
-  FormSelect,
-  FormSelectOption,
-  Select,
-  SelectOption,
-  SelectVariant,
   TextInput,
   TextInputTypes,
   Toolbar,
   ToolbarGroup,
   ToolbarItem,
-  SelectOptionObject,
   ToolbarContent,
-  ToolbarFilter
+  ToolbarFilter,
+  Select,
+  SelectList,
+  SelectOption,
+  MenuToggleElement,
+  MenuToggle,
+  TextInputGroup,
+  TextInputGroupMain,
+  ToolbarChipGroup,
+  ToolbarChip
 } from '@patternfly/react-core';
 import {
   ActiveFilter,
@@ -35,52 +38,62 @@ import { labelFilter } from './CommonFilters';
 import { history, HistoryManager } from 'app/History';
 import { serverConfig } from 'config';
 import { PFColors } from '../Pf/PfColors';
-import { classes } from 'typestyle';
+import { WithTranslation, withTranslation } from 'react-i18next';
+import { I18N_NAMESPACE } from 'types/Common';
 
 const toolbarStyle = kialiStyle({
   padding: 0,
-  rowGap: 'var(--pf-global--spacer--md)',
+  rowGap: 'var(--pf-v5-global--spacer--md)',
   $nest: {
-    '& > .pf-c-toolbar__content': {
+    '& > .pf-v5-c-toolbar__content': {
       paddingLeft: 0
     }
   }
 });
 
 const bottomPadding = kialiStyle({
-  paddingBottom: 'var(--pf-global--spacer--md)'
+  paddingBottom: 'var(--pf-v5-global--spacer--md)'
 });
 
 const formSelectStyle = kialiStyle({
-  width: 'auto',
   borderColor: PFColors.BorderColorLight100,
-  backgroundColor: PFColors.BackgroundColor200
+  backgroundColor: PFColors.BackgroundColor200,
+  minWidth: '170px',
+  maxWidth: '170px'
 });
 
-export interface StatefulFiltersProps {
+const filterSelectStyle = kialiStyle({
+  maxHeight: '350px',
+  overflow: 'auto'
+});
+
+type StatefulFiltersProps = WithTranslation & {
   childrenFirst?: boolean;
   initialFilters: FilterType[];
   initialToggles?: ToggleType[];
   onFilterChange: (active: ActiveFiltersInfo) => void;
   onToggleChange?: (active: ActiveTogglesInfo) => void;
-  ref?: React.RefObject<StatefulFilters>;
-}
+  ref?: React.RefObject<StatefulFiltersComponent>;
+};
 
 interface StatefulFiltersState {
   activeFilters: ActiveFiltersInfo;
   activeToggles: number;
-  filterTypes: FilterType[];
   currentFilterType: FilterType;
   currentValue: string;
-  isOpen: boolean;
+  filterTypes: FilterType[];
+  focusedItemIndex: number | null;
+  isFilterTypeOpen: boolean;
+  isFilterValueOpen: boolean;
 }
 
 export class FilterSelected {
   static selectedFilters: ActiveFilter[] | undefined = undefined;
   static opSelected: LabelOperation;
 
-  static init = (filterTypes: FilterType[]) => {
+  static init = (filterTypes: FilterType[]): ActiveFiltersInfo => {
     let active = FilterSelected.getSelected();
+
     if (!FilterSelected.isInitialized()) {
       active = FilterHelper.getFiltersFromURL(filterTypes);
       FilterSelected.setSelected(active);
@@ -88,23 +101,24 @@ export class FilterSelected {
       active = FilterHelper.setFiltersToURL(filterTypes, active);
       FilterSelected.setSelected(active);
     }
+
     return active;
   };
 
-  static resetFilters = () => {
+  static resetFilters = (): void => {
     FilterSelected.selectedFilters = undefined;
   };
 
-  static setSelected = (activeFilters: ActiveFiltersInfo) => {
+  static setSelected = (activeFilters: ActiveFiltersInfo): void => {
     FilterSelected.selectedFilters = activeFilters.filters;
     FilterSelected.opSelected = activeFilters.op;
   };
 
   static getSelected = (): ActiveFiltersInfo => {
-    return { filters: FilterSelected.selectedFilters || [], op: FilterSelected.opSelected || 'or' };
+    return { filters: FilterSelected.selectedFilters ?? [], op: FilterSelected.opSelected ?? 'or' };
   };
 
-  static isInitialized = () => {
+  static isInitialized = (): boolean => {
     return FilterSelected.selectedFilters !== undefined;
   };
 }
@@ -120,10 +134,12 @@ export class Toggles {
 
     // Prefer URL settings
     const urlParams = new URLSearchParams(history.location.search);
+
     toggles.forEach(t => {
       const urlIsChecked = HistoryManager.getBooleanParam(`${t.name}Toggle`, urlParams);
       const isChecked = urlIsChecked === undefined ? t.isChecked : urlIsChecked;
       Toggles.checked.set(t.name, isChecked);
+
       if (isChecked) {
         Toggles.numChecked++;
       }
@@ -135,6 +151,7 @@ export class Toggles {
     HistoryManager.setParam(`${name}Toggle`, `${value}`);
     Toggles.checked.set(name, value);
     Toggles.numChecked = value ? Toggles.numChecked++ : Toggles.numChecked--;
+
     return Toggles.numChecked;
   };
 
@@ -145,36 +162,43 @@ export class Toggles {
 
 const dividerStyle = kialiStyle({
   borderRight: `1px solid ${PFColors.ColorLight300}`,
-  padding: '10px',
+  padding: '0.5rem',
   display: 'inherit'
 });
-const paddingStyle = kialiStyle({ padding: '10px' });
 
-export class StatefulFilters extends React.Component<StatefulFiltersProps, StatefulFiltersState> {
+const paddingStyle = kialiStyle({
+  padding: '0 0.5rem 0.5rem 0.5rem',
+  width: '100%'
+});
+
+export class StatefulFiltersComponent extends React.Component<StatefulFiltersProps, StatefulFiltersState> {
   private promises = new PromisesRegistry();
 
   constructor(props: StatefulFiltersProps) {
     super(props);
     this.state = {
       activeFilters: FilterSelected.init(this.props.initialFilters),
-      activeToggles: Toggles.init(this.props.initialToggles || []),
+      activeToggles: Toggles.init(this.props.initialToggles ?? []),
       currentFilterType: this.props.initialFilters[0],
       filterTypes: this.props.initialFilters,
-      isOpen: false,
-      currentValue: ''
+      isFilterTypeOpen: false,
+      isFilterValueOpen: false,
+      currentValue: '',
+      focusedItemIndex: null
     };
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     this.loadDynamicFilters();
   }
 
-  private loadDynamicFilters() {
+  private loadDynamicFilters = (): void => {
     // Call all loaders from FilterTypes and set results in state
-    const filterTypePromises = this.props.initialFilters.map(ft => {
+    const filterTypePromises = this.props.initialFilters.map(async ft => {
       if (ft.loader) {
         return ft.loader().then(values => {
           ft.filterValues = values;
+
           return {
             category: ft.category,
             placeholder: ft.placeholder,
@@ -196,13 +220,20 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
           console.debug(err);
         }
       });
-  }
+  };
 
-  componentDidUpdate(prev: StatefulFiltersProps) {
+  private getCurrentFilterTypes = (): FilterType => {
+    return (
+      this.props.initialFilters.find(f => f.category === this.state.currentFilterType.category) ??
+      this.props.initialFilters[0]
+    );
+  };
+
+  componentDidUpdate(prevProps: StatefulFiltersProps, prevState: StatefulFiltersState): void {
     // If the props filters changed (e.g. different values), some state update is necessary
     if (
-      this.props.initialFilters !== prev.initialFilters &&
-      !arrayEquals(this.props.initialFilters, prev.initialFilters, (t1, t2) => {
+      this.props.initialFilters !== prevProps.initialFilters &&
+      !arrayEquals(this.props.initialFilters, prevProps.initialFilters, (t1, t2) => {
         return (
           t1.category === t2.category &&
           arrayEquals(t1.filterValues, t2.filterValues, (v1, v2) => {
@@ -211,33 +242,50 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
         );
       })
     ) {
-      const current =
-        this.props.initialFilters.find(f => f.category === this.state.currentFilterType.category) ||
-        this.props.initialFilters[0];
+      const current = this.getCurrentFilterTypes();
       const active = FilterHelper.setFiltersToURL(this.props.initialFilters, this.state.activeFilters);
+
       this.setState({
         currentFilterType: current,
         filterTypes: this.props.initialFilters,
         activeFilters: active
       });
+
       this.loadDynamicFilters();
     } else if (!FilterHelper.filtersMatchURL(this.state.filterTypes, this.state.activeFilters)) {
       FilterHelper.setFiltersToURL(this.state.filterTypes, this.state.activeFilters);
     }
+
+    // If the input text changes in typeahead, filter the select options according to the input text value
+    if (
+      this.state.currentFilterType.filterType === AllFilterTypes.typeAhead &&
+      this.state.currentValue !== prevState.currentValue
+    ) {
+      const current = Object.assign({}, this.getCurrentFilterTypes());
+
+      current.filterValues = current.filterValues.filter(menuItem =>
+        String(menuItem.title).toLowerCase().includes(this.state.currentValue.toLowerCase())
+      );
+
+      this.setState({
+        currentFilterType: current,
+        isFilterValueOpen: true
+      });
+    }
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     this.promises.cancelAll();
   }
 
-  updateActiveFilters(activeFilters: ActiveFiltersInfo) {
+  updateActiveFilters = (activeFilters: ActiveFiltersInfo): void => {
     const cleanFilters = FilterHelper.setFiltersToURL(this.state.filterTypes, activeFilters);
     FilterSelected.setSelected(cleanFilters);
     this.setState({ activeFilters: cleanFilters, currentValue: '' });
     this.props.onFilterChange(cleanFilters);
-  }
+  };
 
-  filterAdded = (field: FilterType, value: string) => {
+  filterAdded = (field: FilterType, value: string): void => {
     const activeFilters = this.state.activeFilters;
     const activeFilter: ActiveFilter = {
       category: field.category,
@@ -255,7 +303,7 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     this.updateActiveFilters(activeFilters);
   };
 
-  selectFilterType = (value: string) => {
+  selectFilterType = (value: string): void => {
     const { currentFilterType } = this.state;
     const filterType = this.state.filterTypes.filter(filter => filter.category === value)[0];
 
@@ -265,27 +313,26 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
         currentFilterType: filterType
       });
     }
+
+    this.setState({ isFilterTypeOpen: false });
   };
 
-  filterValueAheadSelected = (_event: any, valueId: string | SelectOptionObject) => {
-    this.filterValueSelected(valueId);
-    this.setState({ isOpen: false });
-  };
-
-  filterValueSelected = (valueId: string | SelectOptionObject) => {
-    const { currentFilterType, currentValue } = this.state;
+  filterValueSelected = (valueId?: string | number): void => {
+    const { currentFilterType } = this.state;
     const filterValue = currentFilterType.filterValues.find(filter => filter.id === valueId);
 
-    if (filterValue && filterValue.id !== currentValue && !this.isActive(currentFilterType, filterValue.title)) {
+    if (filterValue && !this.isActive(currentFilterType, filterValue.title)) {
       this.filterAdded(currentFilterType, filterValue.title);
     }
+
+    setTimeout(() => this.setState({ isFilterValueOpen: false }));
   };
 
-  updateCurrentValue = value => {
-    this.setState({ currentValue: value });
+  updateCurrentValue = (value: string): void => {
+    this.setState({ currentValue: value, focusedItemIndex: null });
   };
 
-  onValueKeyPress = (keyEvent: any) => {
+  onValueKeyDown = (keyEvent: React.KeyboardEvent): void => {
     const { currentValue, currentFilterType } = this.state;
 
     if (keyEvent.key === 'Enter') {
@@ -299,58 +346,180 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     }
   };
 
+  onTypeaheadInputKeyDown = (keyEvent: React.KeyboardEvent): void => {
+    const { isFilterValueOpen, focusedItemIndex, currentFilterType } = this.state;
+
+    if (keyEvent.key === 'ArrowUp' || keyEvent.key === 'ArrowDown') {
+      let indexToFocus: number | null = null;
+
+      if (this.state.isFilterValueOpen) {
+        if (keyEvent.key === 'ArrowUp') {
+          // When no index is set or at the first index, focus to the last, otherwise decrement focus index
+          if (focusedItemIndex === null || focusedItemIndex === 0) {
+            indexToFocus = currentFilterType.filterValues.length - 1;
+          } else {
+            indexToFocus = focusedItemIndex - 1;
+          }
+        } else if (keyEvent.key === 'ArrowDown') {
+          // When no index is set or at the last index, focus to the first, otherwise increment focus index
+          if (focusedItemIndex === null || focusedItemIndex === currentFilterType.filterValues.length - 1) {
+            indexToFocus = 0;
+          } else {
+            indexToFocus = focusedItemIndex + 1;
+          }
+        }
+
+        this.setState({ focusedItemIndex: indexToFocus });
+      }
+    } else if (keyEvent.key === 'Enter') {
+      const focusedItem = focusedItemIndex !== null ? currentFilterType.filterValues[focusedItemIndex] : null;
+
+      if (isFilterValueOpen && focusedItem) {
+        this.filterValueSelected(focusedItem.id);
+        this.setState({ currentValue: '', focusedItemIndex: null });
+      }
+    }
+  };
+
   isActive = (type: FilterType, value: string): boolean => {
     return this.state.activeFilters.filters.some(active => value === active.value && type.category === active.category);
   };
 
-  removeFilter = (category: string | any, value: string | any) => {
-    const updated = this.state.activeFilters.filters.filter(x => x.category !== category || x.value !== value);
+  removeFilter = (category: string | ToolbarChipGroup, value: string | ToolbarChip): void => {
+    const filterCategory = typeof category === 'string' ? category : category.key;
+    const filterValue = typeof value === 'string' ? value : value.key;
+
+    const updated = this.state.activeFilters.filters.filter(
+      x => x.category !== filterCategory || x.value !== filterValue
+    );
+
     if (updated.length !== this.state.activeFilters.filters.length) {
       this.updateActiveFilters({ filters: updated, op: this.state.activeFilters.op });
     }
   };
 
-  clearFilters = () => {
+  clearFilters = (): void => {
     this.updateActiveFilters({ filters: [], op: DEFAULT_LABEL_OPERATION });
   };
 
-  renderInput() {
+  onFilterTypeToggle = (): void => {
+    this.setState({
+      isFilterTypeOpen: !this.state.isFilterTypeOpen
+    });
+  };
+
+  onFilterValueToggle = (): void => {
+    this.setState({
+      isFilterValueOpen: !this.state.isFilterValueOpen
+    });
+  };
+
+  onCheckboxChange = (checked: boolean, event: React.FormEvent<HTMLInputElement>): void => {
+    this.setState({ activeToggles: Toggles.setToggle(event.currentTarget.name, checked) });
+    if (this.props.onToggleChange) {
+      this.props.onToggleChange(Toggles.getToggles());
+    }
+  };
+
+  renderInput = (): React.ReactNode => {
     const { currentFilterType, currentValue } = this.state;
 
     if (!currentFilterType) {
       return null;
     }
+
     if (currentFilterType.filterType === AllFilterTypes.typeAhead) {
+      const typeaheadToggle = (toggleRef: React.Ref<MenuToggleElement>): React.ReactElement => (
+        <MenuToggle
+          id="filter_select_value-toggle"
+          ref={toggleRef}
+          variant="typeahead"
+          onClick={this.onFilterValueToggle}
+          isExpanded={this.state.isFilterValueOpen}
+          isFullWidth
+        >
+          <TextInputGroup isPlain>
+            <TextInputGroupMain
+              value={this.state.currentValue}
+              onClick={this.onFilterValueToggle}
+              onChange={(_event, value) => this.updateCurrentValue(value)}
+              id="typeahead-select-input"
+              autoComplete="off"
+              onKeyDown={this.onTypeaheadInputKeyDown}
+              placeholder={this.props.t(this.state.currentFilterType.placeholder)}
+              role="combobox"
+              isExpanded={this.state.isFilterValueOpen}
+              aria-controls="select-typeahead-listbox"
+            />
+          </TextInputGroup>
+        </MenuToggle>
+      );
+
       return (
         <Select
-          value="default"
-          onSelect={this.filterValueAheadSelected}
-          onToggle={this.onToggle}
-          variant={SelectVariant.typeahead}
-          isOpen={this.state.isOpen}
-          aria-label="filter_select_value"
-          placeholderText={currentFilterType.placeholder}
-          width="auto"
-          data-test="istio-type-dropdown"
+          id="filter_select_value"
+          onSelect={(_event, value) => this.filterValueSelected(value)}
+          onOpenChange={isFilterValueOpen => this.setState({ isFilterValueOpen })}
+          toggle={typeaheadToggle}
+          isOpen={this.state.isFilterValueOpen}
+          aria-label="Filter Select Value"
+          className={filterSelectStyle}
         >
-          {currentFilterType.filterValues.map((filter, index) => (
-            <SelectOption key={'filter_' + index} value={filter.id} label={filter.title} />
-          ))}
+          <SelectList data-test="istio-type-dropdown">
+            {currentFilterType.filterValues.length > 0 ? (
+              currentFilterType.filterValues.map((filter, index) => (
+                <SelectOption
+                  id={filter.id}
+                  key={filter.id}
+                  value={filter.id}
+                  isFocused={this.state.focusedItemIndex === index}
+                  label={this.props.t(filter.title)}
+                >
+                  {this.props.t(filter.title)}
+                </SelectOption>
+              ))
+            ) : (
+              <SelectOption id="filter_no_results" key="filter_no_results" value="no_results" isDisabled={true}>
+                {this.props.t('No results found')}
+              </SelectOption>
+            )}
+          </SelectList>
         </Select>
       );
     } else if (currentFilterType.filterType === AllFilterTypes.select) {
-      return (
-        <FormSelect
-          value="default"
-          onChange={this.filterValueSelected}
-          aria-label="filter_select_value"
-          style={{ width: 'auto' }}
+      const selectToggle = (toggleRef: React.Ref<MenuToggleElement>): React.ReactElement => (
+        <MenuToggle
+          id="filter_select_value-toggle"
+          ref={toggleRef}
+          onClick={this.onFilterValueToggle}
+          isExpanded={this.state.isFilterValueOpen}
+          isFullWidth
         >
-          <FormSelectOption key={'filter_default'} value={'default'} label={currentFilterType.placeholder} />
-          {currentFilterType.filterValues.map((filter, index) => (
-            <FormSelectOption key={'filter_' + index} value={filter.id} label={filter.title} />
-          ))}
-        </FormSelect>
+          {this.props.t(this.state.currentFilterType.placeholder)}
+        </MenuToggle>
+      );
+
+      return (
+        <Select
+          id="filter_select_value"
+          onSelect={(_event, value) => {
+            this.filterValueSelected(value);
+            this.updateCurrentValue(value as string);
+          }}
+          onOpenChange={isFilterValueOpen => this.setState({ isFilterValueOpen })}
+          toggle={selectToggle}
+          isOpen={this.state.isFilterValueOpen}
+          aria-label="Filter Select Value"
+          className={filterSelectStyle}
+        >
+          <SelectList>
+            {currentFilterType.filterValues.map(filter => (
+              <SelectOption id={filter.id} key={filter.id} value={filter.id}>
+                {this.props.t(filter.title)}
+              </SelectOption>
+            ))}
+          </SelectList>
+        </Select>
       );
     } else if (
       currentFilterType.filterType === AllFilterTypes.label ||
@@ -367,19 +536,20 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     } else {
       return (
         <TextInput
+          id="filter_input_value"
           type={currentFilterType.filterType as TextInputTypes}
           value={currentValue}
-          aria-label="filter_input_value"
-          placeholder={currentFilterType.placeholder}
-          onChange={this.updateCurrentValue}
-          onKeyPress={e => this.onValueKeyPress(e)}
+          aria-label="Filter Input Value"
+          placeholder={this.props.t(currentFilterType.placeholder)}
+          onChange={(_event, value) => this.updateCurrentValue(value)}
+          onKeyDown={e => this.onValueKeyDown(e)}
           style={{ width: 'auto' }}
         />
       );
     }
-  }
+  };
 
-  renderChildren = () => {
+  renderChildren = (): React.ReactNode => {
     return (
       this.props.children && (
         <ToolbarGroup style={{ marginRight: '10px' }}>
@@ -388,11 +558,8 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
               (child, index) =>
                 child && (
                   <ToolbarItem
-                    key={'toolbar_statefulFilters_' + index}
-                    className={classes(
-                      'pf-u-mr-md',
-                      index === (this.props.children as Array<any>).length - 1 ? paddingStyle : dividerStyle
-                    )}
+                    key={`toolbar_statefulFilters_${index}`}
+                    className={index === (this.props.children as Array<any>).length - 1 ? paddingStyle : dividerStyle}
                   >
                     {child}
                   </ToolbarItem>
@@ -406,94 +573,142 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     );
   };
 
-  onToggle = isOpen => {
-    this.setState({
-      isOpen: isOpen
-    });
-  };
-
-  onCheckboxChange = (checked: boolean, event: React.FormEvent<HTMLInputElement>) => {
-    this.setState({ activeToggles: Toggles.setToggle(event.currentTarget.name, checked) });
-    if (this.props.onToggleChange) {
-      this.props.onToggleChange(Toggles.getToggles());
-    }
-  };
-
-  render() {
+  render(): React.ReactNode {
     const showIncludeToggles = serverConfig.kialiFeatureFlags.uiDefaults.list.showIncludeToggles;
+
     const { currentFilterType, activeFilters } = this.state;
-    const filterOptions = this.state.filterTypes.map(option => (
-      <FormSelectOption key={option.category} value={option.category} label={option.category} />
-    ));
+
     const hasActiveFilters =
       this.state.activeFilters.filters.some(f => f.category === labelFilter.category) ||
       this.state.currentFilterType.filterType === AllFilterTypes.label;
+
+    const filterTypeToggle = (toggleRef: React.Ref<MenuToggleElement>): React.ReactElement => (
+      <MenuToggle
+        id="filter_select_type-toggle"
+        className={formSelectStyle}
+        ref={toggleRef}
+        onClick={this.onFilterTypeToggle}
+        isExpanded={this.state.isFilterTypeOpen}
+        isFullWidth
+      >
+        {this.props.t(currentFilterType.category)}
+      </MenuToggle>
+    );
+
+    const filterValueToggle = (toggleRef: React.Ref<MenuToggleElement>): React.ReactElement => (
+      <MenuToggle
+        id="filter_select_value-toggle"
+        ref={toggleRef}
+        onClick={this.onFilterValueToggle}
+        isExpanded={this.state.isFilterValueOpen}
+        isFullWidth
+      >
+        {this.props.t(activeFilters.op)}
+      </MenuToggle>
+    );
+
     return (
       <>
         <Toolbar id="filter-selection" className={toolbarStyle} clearAllFilters={this.clearFilters}>
           {this.props.childrenFirst && this.renderChildren()}
           <ToolbarContent>
             <ToolbarGroup variant="filter-group">
-              {this.state.filterTypes.map((ft, i) => {
-                return (
-                  <ToolbarFilter
-                    key={`toolbar_filter-${ft.category}`}
-                    chips={activeFilters.filters.filter(af => af.category === ft.category).map(af => af.value)}
-                    deleteChip={this.removeFilter}
-                    categoryName={ft.category}
-                  >
-                    {i === 0 && (
-                      <FormSelect
-                        value={currentFilterType.category}
-                        aria-label="filter_select_type"
-                        onChange={this.selectFilterType}
-                        className={formSelectStyle}
-                      >
-                        {filterOptions}
-                      </FormSelect>
-                    )}
-                    {i === 0 && this.renderInput()}
-                  </ToolbarFilter>
-                );
-              })}
+              {this.state.filterTypes.map((ft, i) => (
+                <ToolbarFilter
+                  key={`toolbar_filter-${ft.category}`}
+                  chips={activeFilters.filters
+                    .filter(af => af.category === ft.category)
+                    .map(af => ({
+                      key: af.value,
+                      node: this.props.t(af.value)
+                    }))}
+                  deleteChip={this.removeFilter}
+                  categoryName={{ key: ft.category, name: this.props.t(ft.category) }}
+                >
+                  {i === 0 && (
+                    <Select
+                      id="filter_select_type"
+                      onSelect={(_event, value) => this.selectFilterType(value as string)}
+                      onOpenChange={isFilterTypeOpen => this.setState({ isFilterTypeOpen })}
+                      toggle={filterTypeToggle}
+                      isOpen={this.state.isFilterTypeOpen}
+                      aria-label="Filter Select Type"
+                    >
+                      <SelectList>
+                        {this.state.filterTypes.map(option => (
+                          <SelectOption
+                            id={option.category}
+                            key={option.category}
+                            value={option.category}
+                            isSelected={option.category === currentFilterType.category}
+                          >
+                            {this.props.t(option.category)}
+                          </SelectOption>
+                        ))}
+                      </SelectList>
+                    </Select>
+                  )}
+                  {i === 0 && this.renderInput()}
+                </ToolbarFilter>
+              ))}
             </ToolbarGroup>
+
             <ToolbarGroup>
               {showIncludeToggles &&
                 this.props.initialToggles &&
-                this.props.initialToggles.map((t, i) => {
-                  return (
-                    <ToolbarItem key={`toggle-${i}`}>
-                      <Checkbox
-                        data-test={`toggle-${t.name}`}
-                        id={t.name}
-                        isChecked={Toggles.checked.get(t.name)}
-                        label={t.label}
-                        name={t.name}
-                        onChange={this.onCheckboxChange}
-                      />
-                    </ToolbarItem>
-                  );
-                })}
+                this.props.initialToggles.map((t, i) => (
+                  <ToolbarItem key={`toggle-${i}`}>
+                    <Checkbox
+                      data-test={`toggle-${t.name}`}
+                      id={t.name}
+                      isChecked={Toggles.checked.get(t.name)}
+                      label={t.label}
+                      name={t.name}
+                      onChange={(event, checked: boolean) => this.onCheckboxChange(checked, event)}
+                    />
+                  </ToolbarItem>
+                ))}
             </ToolbarGroup>
+
             {!this.props.childrenFirst && this.renderChildren()}
+
             {hasActiveFilters && (
               <ToolbarGroup>
-                <ToolbarItem className={'pf-u-mr-md'}>
-                  <span className={paddingStyle}>Label Operation</span>
-                  <FormSelect
-                    value={activeFilters.op}
-                    onChange={value =>
+                <ToolbarItem>
+                  <div className={paddingStyle}>Label Operation</div>
+                  <Select
+                    id="filter_select_value"
+                    onSelect={(_event, value) => {
                       this.updateActiveFilters({
                         filters: this.state.activeFilters.filters,
                         op: value as LabelOperation
-                      })
-                    }
-                    aria-label="filter_select_value"
-                    style={{ width: 'auto' }}
+                      });
+                      this.setState({ isFilterValueOpen: false });
+                    }}
+                    onOpenChange={isFilterValueOpen => this.setState({ isFilterValueOpen })}
+                    toggle={filterValueToggle}
+                    isOpen={this.state.isFilterValueOpen}
+                    aria-label="Filter Select Value"
                   >
-                    <FormSelectOption key="filter_or" value="or" label="or" />
-                    <FormSelectOption key="filter_and" value="and" label="and" />
-                  </FormSelect>
+                    <SelectList>
+                      <SelectOption
+                        id={'filter_or'}
+                        key={'filter_or'}
+                        value={'or'}
+                        isSelected={activeFilters.op === 'or'}
+                      >
+                        {this.props.t('or')}
+                      </SelectOption>
+                      <SelectOption
+                        id={'filter_and'}
+                        key={'filter_and'}
+                        value={'and'}
+                        isSelected={activeFilters.op === 'and'}
+                      >
+                        {this.props.t('and')}
+                      </SelectOption>
+                    </SelectList>
+                  </Select>
                 </ToolbarItem>
               </ToolbarGroup>
             )}
@@ -504,3 +719,5 @@ export class StatefulFilters extends React.Component<StatefulFiltersProps, State
     );
   }
 }
+
+export const StatefulFilters = withTranslation(I18N_NAMESPACE, { withRef: true })(StatefulFiltersComponent);

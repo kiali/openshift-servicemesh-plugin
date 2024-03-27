@@ -421,7 +421,7 @@ export class GraphStyles {
         let contentPfBadge = '';
         if (!!c.pfBadge) {
           const pfBadgeStyle = kialiStyle(c.pfBadge.style as NestedCSSProperties);
-          contentPfBadge = `<span class="pf-c-badge pf-m-unread ${kialiBadge} ${pfBadgeStyle}" style="${appBoxStyle}">${c.pfBadge.badge}</span>`;
+          contentPfBadge = `<span class="pf-v5-c-badge pf-m-unread ${kialiBadge} ${pfBadgeStyle}" style="${appBoxStyle}">${c.pfBadge.badge}</span>`;
         }
         const contentDiv = `<div class="${contentClasses} ${contentBox}" style="${appBoxStyle} ${contentStyle}">${contentPfBadge}${c.text}</div>`;
         contentDivs = `${contentDivs}${contentDiv}`;
@@ -458,7 +458,7 @@ export class GraphStyles {
       let contentPfBadge = '';
       if (!!c.pfBadge) {
         const pfBadgeStyle = kialiStyle(c.pfBadge.style as NestedCSSProperties);
-        contentPfBadge = `<span class="pf-c-badge pf-m-unread ${kialiBadge} ${pfBadgeStyle}" style="${''}">${
+        contentPfBadge = `<span class="pf-v5-c-badge pf-m-unread ${kialiBadge} ${pfBadgeStyle}" style="${''}">${
           c.pfBadge.badge
         }</span>`;
       }
@@ -675,7 +675,7 @@ export class GraphStyles {
       return num;
     }
     if (typeof num === 'string' || num instanceof String) {
-      console.log(`Expected number but received string: |${num}|`);
+      console.warn(`GraphStyles: Expected number but received string: |${num}|`);
     }
     // this will return NaN if the string is 'NaN' or any other non-number
     return Number(num);
