@@ -54,14 +54,12 @@ import { TimeDurationModal } from '../../components/Time/TimeDurationModal';
 import { TimeDurationIndicator } from '../../components/Time/TimeDurationIndicator';
 import { serverConfig } from '../../config';
 import { ApiResponse } from 'types/Api';
-import { isParentKiosk, kioskContextMenuAction } from 'components/Kiosk/KioskActions';
 
 const appContainerColors = [PFColors.Blue300, PFColors.Green300, PFColors.Purple300, PFColors.Orange300];
 const proxyContainerColor = PFColors.Gold400;
 const spanColor = PFColors.Cyan300;
 
 type ReduxProps = {
-  kiosk: string;
   timeRange: TimeRange;
 };
 
@@ -825,12 +823,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     const link =
       `/namespaces/${this.props.namespace}/workloads/${this.props.workload}` +
       `?tab=traces&${URLParam.TRACING_TRACE_ID}=${span.traceID}&${URLParam.TRACING_SPAN_ID}=${span.spanID}`;
-
-    if (isParentKiosk(this.props.kiosk)) {
-      kioskContextMenuAction(link);
-    } else {
-      history.push(link);
-    }
+    history.push(link);
   };
 
   private addAccessLogModal = (k: string, v: AccessLog): void => {
@@ -1174,7 +1167,6 @@ const formatDate = (timestamp: string): string => {
 
 const mapStateToProps = (state: KialiAppState): ReduxProps => {
   return {
-    kiosk: state.globalState.kiosk,
     timeRange: timeRangeSelector(state)
   };
 };

@@ -106,8 +106,19 @@ const getHeaders = (): Partial<AxiosHeaders> => {
   if (apiProxy) {
     return { 'Content-Type': 'application/x-www-form-urlencoded' };
   } else {
-    return { 'Content-Type': 'application/json', ...loginHeaders };
+    return { ...loginHeaders };
   }
+};
+
+/** Create content type correctly for a given request type */
+const getHeadersWithMethod = (method: HTTP_VERBS): Partial<AxiosHeaders> => {
+  let allHeaders = getHeaders();
+
+  if (method === HTTP_VERBS.PATCH) {
+    allHeaders['Content-Type'] = 'application/json';
+  }
+
+  return allHeaders;
 };
 
 const basicAuth = (username: UserName, password: Password): BasicAuth => {
@@ -123,8 +134,8 @@ const newRequest = <P>(
   return axios.request<P>({
     method: method,
     url: apiProxy ? `${apiProxy}/${url}` : url,
-    data: apiProxy ? JSON.stringify(data) : data,
-    headers: getHeaders() as AxiosHeaders,
+    data: data,
+    headers: getHeadersWithMethod(method) as AxiosHeaders,
     params: queryParams
   });
 };
@@ -501,8 +512,20 @@ export const getApp = (
   return newRequest<App>(HTTP_VERBS.GET, urls.app(namespace, app), queryParams, {});
 };
 
-export const getApps = (namespace: string, params: AppListQuery): Promise<ApiResponse<AppList>> => {
-  return newRequest<AppList>(HTTP_VERBS.GET, urls.apps(namespace), params, {});
+export const getClustersApps = (
+  namespaces: string,
+  params: AppListQuery,
+  cluster?: string
+): Promise<ApiResponse<AppList>> => {
+  const queryParams: QueryParams<AppListQuery & Namespaces> = {
+    ...params,
+    namespaces: namespaces
+  };
+
+  if (cluster) {
+    queryParams.clusterName = cluster;
+  }
+  return newRequest<AppList>(HTTP_VERBS.GET, urls.clustersApps(), queryParams, {});
 };
 
 export const getAppMetrics = (

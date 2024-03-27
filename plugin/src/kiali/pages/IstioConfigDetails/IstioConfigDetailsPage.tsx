@@ -48,7 +48,7 @@ import { RenderHeader } from '../../components/Nav/Page/RenderHeader';
 import { ErrorMsg } from '../../types/ErrorMsg';
 import { ErrorSection } from '../../components/ErrorSection/ErrorSection';
 import { RefreshNotifier } from '../../components/Refresh/RefreshNotifier';
-import { isParentKiosk, kioskContextMenuAction } from '../../components/Kiosk/KioskActions';
+import { isParentKiosk } from '../../components/Kiosk/KioskActions';
 import { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
 import { basicTabStyle } from 'styles/TabStyles';
@@ -253,13 +253,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
 
   backToList = (): void => {
     // Back to list page
-    const backUrl = `/${Paths.ISTIO}?namespaces=${this.props.istioConfigId.namespace}`;
-
-    if (isParentKiosk(this.props.kiosk)) {
-      kioskContextMenuAction(backUrl);
-    } else {
-      history.push(backUrl);
-    }
+    history.push(`/${Paths.ISTIO}?namespaces=${this.props.istioConfigId.namespace}`);
   };
 
   canDelete = (): boolean => {
