@@ -342,7 +342,6 @@ export class OverviewTrafficPolicies extends React.Component<OverviewTrafficPoli
               Cancel
             </Button>
           ]}
-          aria-label="Confirm Preview Policies Modal"
         >
           {this.props.kind === 'injection' ? (
             <>
@@ -359,6 +358,7 @@ export class OverviewTrafficPolicies extends React.Component<OverviewTrafficPoli
               policies objects. Do you want to {this.props.opTarget} them ?
             </>
           )}
+          {}
         </Modal>
       </>
     );

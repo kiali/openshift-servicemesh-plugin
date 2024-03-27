@@ -13,8 +13,6 @@ import {
   MenuToggle,
   MenuToggleElement
 } from '@patternfly/react-core';
-import { useKialiSelector } from 'kiali/hooks/redux';
-import { isParentKiosk, kioskContextMenuAction } from 'components/Kiosk/KioskActions';
 
 type ActionItem = {
   action: JSX.Element;
@@ -22,8 +20,6 @@ type ActionItem = {
 };
 
 export const IstioActionsNamespaceDropdown: React.FC = () => {
-  const kiosk = useKialiSelector(state => state.globalState.kiosk);
-
   const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(false);
 
   const onSelect = (): void => {
@@ -35,13 +31,7 @@ export const IstioActionsNamespaceDropdown: React.FC = () => {
   };
 
   const onClickCreate = (type: string): void => {
-    const newUrl = `/istio/new/${type}`;
-
-    if (isParentKiosk(kiosk)) {
-      kioskContextMenuAction(newUrl);
-    } else {
-      history.push(newUrl);
-    }
+    history.push(`/istio/new/${type}`);
   };
 
   const dropdownItemsRaw = NEW_ISTIO_RESOURCE.map(
