@@ -162,7 +162,7 @@ const newIstioResourceList = {
   sidecar: 'Sidecar'
 };
 
-const IstioConfigListPage = () => {
+const IstioConfigListPage: React.FC = () => {
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<any[]>([]);
