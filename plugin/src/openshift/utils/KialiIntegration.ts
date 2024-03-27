@@ -1,5 +1,5 @@
 import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
-import { useHistory } from 'react-router';
+import { useHistory } from 'react-router-dom';
 import { refForKialiIstio } from './IstioResources';
 
 export const properties = {
