@@ -41,6 +41,46 @@
     }
   },
   {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": ["/ossmconsole/graph/ns/:namespace/aggregates/:aggregate/:aggregateValue"],
+      "component": { "$codeRef": "GraphPage" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": ["/ossmconsole/graph/ns/:namespace/applications/:app/versions/:version"],
+      "component": { "$codeRef": "GraphPage" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": ["/ossmconsole/graph/ns/:namespace/applications/:app"],
+      "component": { "$codeRef": "GraphPage" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": ["/ossmconsole/graph/ns/:namespace/services/:service"],
+      "component": { "$codeRef": "GraphPage" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": ["/ossmconsole/graph/ns/:namespace/workloads/:workload"],
+      "component": { "$codeRef": "GraphPage" }
+    }
+  },
+  {
     "type": "console.navigation/href",
     "properties": {
       "id": "ossmconsolegraph",
