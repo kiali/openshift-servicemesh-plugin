@@ -31,6 +31,7 @@ When('cypress intercept hooks for sidebar are registered', () => {
   cy.intercept(`${apiProxy}/api/namespaces/istio-system/metrics?*`).as('metricsRequest');
   cy.intercept(`${apiProxy}/api/istio/status?*`).as('overviewRequest');
   cy.intercept(`${apiProxy}/api/namespaces`).as('istioConfigRequest');
+  cy.intercept(`${apiProxy}/api/namespaces/graph*`).as('graphNamespaces');
 });
 
 Then('buttons for Overview, Graph and Istio Config are displayed', () => {
@@ -80,9 +81,12 @@ Then('user sees istio-system overview card', () => {
   });
 });
 
-Then('user sees Graph page elements from Kiali', () => {
-  cy.get('[data-test="namespace-dropdown"]').should('be.visible');
-  // not able to find correct request responsible for loading graph, simple smoke for now
+When('user selects {string} namespace in the graph', (ns: string) => {
+  cy.get('button#namespace-selector').click();
+  cy.get('div[class^="pf-c-dropdown__menu"]').contains('span', ns).parent('div').find('input').check();
+
+  // Click outside the namespace selector to load the namespace graph
+  cy.get('div#global-namespace-selector').click();
 });
 
 Then('user sees Istio Config page elements from Kiali', () => {
@@ -90,5 +94,14 @@ Then('user sees Istio Config page elements from Kiali', () => {
     cy.get('[data-test-id="filter-dropdown-toggle"]').should('be.visible');
     cy.get('[data-test-id="dropdown-button"]').should('be.visible');
     cy.get('[data-test-id="item-filter"]').should('be.visible');
+  });
+});
+
+Then(`user sees the {string} graph summary`, (ns: string) => {
+  cy.wait('@graphNamespaces').then(() => {
+    cy.get('div#summary-panel-graph')
+      .find('div#summary-panel-graph-heading')
+      .find(`span#ns-${ns}`)
+      .should('be.visible');
   });
 });
