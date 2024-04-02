@@ -18,9 +18,11 @@ Feature: Kiali sidebar integration with OCP Console
     Then user sees istio-system overview card
     And user sees memory and cpu charts from Kiali
 
+  @bookinfo-app
   Scenario: Graph page is displayed correctly
     When user is redirected to the OSSMC "Graph" page
-    Then user sees Graph page elements from Kiali
+    And user selects "bookinfo" namespace in the graph
+    Then user sees the "bookinfo" graph summary
 
   Scenario: Istio Config page is displayed correctly
     When user is redirected to the OSSMC "Istio Config" page
