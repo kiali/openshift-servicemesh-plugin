@@ -4,13 +4,13 @@ import { kialiStyle } from 'styles/StyleUtils';
 import { NestedCSSProperties } from 'typestyle/lib/types';
 
 export interface OSSMCError {
-  title?: string;
   message?: string;
+  title?: string;
 }
 
 interface ErrorPageProps {
-  title?: string;
   message?: string;
+  title?: string;
 }
 
 const h1Style: NestedCSSProperties = {

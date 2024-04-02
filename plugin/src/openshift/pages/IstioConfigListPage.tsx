@@ -30,8 +30,8 @@ import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
 import { ApiError } from 'types/Api';
 
 interface IstioConfigObject extends IstioObject {
-  validation?: ObjectValidation;
   reconciledCondition?: StatusCondition;
+  validation?: ObjectValidation;
 }
 
 const columns: TableColumn<IstioConfigObject>[] = [
@@ -61,7 +61,7 @@ const columns: TableColumn<IstioConfigObject>[] = [
   }
 ];
 
-const useIstioTableColumns = () => {
+const useIstioTableColumns = (): TableColumn<IstioConfigObject>[] => {
   const [activeColumns] = useActiveColumns<IstioConfigObject>({
     columns: columns,
     showNamespaceOverride: true,
@@ -71,13 +71,14 @@ const useIstioTableColumns = () => {
   return activeColumns;
 };
 
-const Row = ({ obj, activeColumnIDs }: RowProps<IstioConfigObject>) => {
+const Row: React.FC<RowProps<IstioConfigObject>> = ({ obj, activeColumnIDs }) => {
   const groupVersionKind = getGroupVersionKindForResource(obj);
   const nsGroupVersionKind: K8sGroupVersionKind = {
     group: '',
     version: 'v1',
     kind: 'Namespace'
   };
+
   return (
     <>
       <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
@@ -96,7 +97,7 @@ const Row = ({ obj, activeColumnIDs }: RowProps<IstioConfigObject>) => {
       <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
         {obj.validation ? (
           <ValidationObjectSummary
-            id={obj.metadata.name + '-config-validation'}
+            id={`${obj.metadata.name}-config-validation`}
             validations={[obj.validation]}
             reconciledCondition={obj.reconciledCondition}
           />
@@ -114,7 +115,7 @@ const filters: RowFilter[] = [
     type: 'kind',
     reducer: (obj: IstioConfigObject) => {
       const groupVersionKind = getGroupVersionKindForResource(obj);
-      return groupVersionKind.group + '.' + obj.kind;
+      return `${groupVersionKind.group}.${obj.kind}`;
     },
     filter: (input, obj: IstioConfigObject) => {
       if (!input.selected?.length) {
@@ -122,10 +123,10 @@ const filters: RowFilter[] = [
       }
 
       const groupVersionKind = getGroupVersionKindForResource(obj);
-      return input.selected.includes(groupVersionKind.group + '.' + obj.kind);
+      return input.selected.includes(`${groupVersionKind.group}.${obj.kind}`);
     },
     items: istioResources.map(({ group, kind, title }) => ({
-      id: group + '.' + kind,
+      id: `${group}.${kind}`,
       title: title ? title : kind
     }))
   }
@@ -134,14 +135,12 @@ const filters: RowFilter[] = [
 type IstioTableProps = {
   columns: TableColumn<IstioConfigObject>[];
   data: IstioConfigObject[];
-  unfilteredData: IstioConfigObject[];
+  loadError?: OSSMCError;
   loaded: boolean;
-  loadError?: {
-    message?: string;
-  };
+  unfilteredData: IstioConfigObject[];
 };
 
-const IstioTable = ({ columns, data, unfilteredData, loaded, loadError }: IstioTableProps) => {
+const IstioTable: React.FC<IstioTableProps> = ({ columns, data, unfilteredData, loaded, loadError }) => {
   return (
     <VirtualizedTable<IstioConfigObject>
       data={data}
@@ -164,7 +163,7 @@ const newIstioResourceList = {
   sidecar: 'Sidecar'
 };
 
-const IstioConfigListPage = () => {
+const IstioConfigListPage: React.FC<void> = () => {
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<IstioConfigObject[]>([]);
@@ -216,7 +215,7 @@ const IstioConfigListPage = () => {
     }
   }, [ns, promises]);
 
-  const onCreate = (reference: string) => {
+  const onCreate = (reference: string): void => {
     const groupVersionKind = istioResources.find(res => res.id === reference) as K8sGroupVersionKind;
     const path = `/k8s/ns/${ns ?? 'default'}/${referenceFor(groupVersionKind)}/~new`;
     history.push(path);
@@ -264,7 +263,13 @@ const IstioConfigListPage = () => {
           </ListPageHeader>
           <ListPageBody>
             <ListPageFilter data={data} loaded={loaded} rowFilters={filters} onFilterChange={onFilterChange} />
-            <IstioTable columns={columns} data={filteredData} unfilteredData={data} loaded={loaded} />
+            <IstioTable
+              columns={columns}
+              data={filteredData}
+              unfilteredData={data}
+              loaded={loaded}
+              loadError={loadError}
+            />
           </ListPageBody>
         </>
       )}

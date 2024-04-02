@@ -10012,7 +10012,7 @@ victory-box-plot@^36.6.11:
     victory-core "^36.6.11"
     victory-vendor "^36.6.11"
 
-victory-brush-container@36.6.11, victory-brush-container@^36.6.11:
+victory-brush-container@^36.6.11:
   version "36.6.11"
   resolved "https://registry.yarnpkg.com/victory-brush-container/-/victory-brush-container-36.6.11.tgz#a88a51f9f533632cec060d1383fed05bf787579e"
   integrity sha512-o0pPKzfQhKRlYNYUx3tHjuv9iTXqvgRtmu59L/h6l11DPaRo+jcHDBKEDRuoZxTinR/a1yqfLEJ1i9QgSE8o6w==
@@ -10107,7 +10107,7 @@ victory-pie@^36.6.11:
     victory-core "^36.6.11"
     victory-vendor "^36.6.11"
 
-victory-polar-axis@36.6.11, victory-polar-axis@^36.6.11:
+victory-polar-axis@^36.6.11:
   version "36.6.11"
   resolved "https://registry.yarnpkg.com/victory-polar-axis/-/victory-polar-axis-36.6.11.tgz#6079c6efcd550a4f870305f0a92c2900bfaf7097"
   integrity sha512-wDkyY1rKQTRUVt4+e0QNQgSIJCqXazNhkjWXla8ZWj52GzPP/QSDuzr8SO1oHA3++1jOpdD0R2FTxm+pAea/Yw==
@@ -10125,7 +10125,7 @@ victory-scatter@^36.6.11:
     prop-types "^15.8.1"
     victory-core "^36.6.11"
 
-victory-selection-container@36.6.11, victory-selection-container@^36.6.11:
+victory-selection-container@^36.6.11:
   version "36.6.11"
   resolved "https://registry.yarnpkg.com/victory-selection-container/-/victory-selection-container-36.6.11.tgz#d364dc04f775b3842a68df294426609a6e2bd654"
   integrity sha512-pRQz++0ERZVuIgxpmqLkDgf6hiCAS2m8iGcox8tryWzE1NpADG/IJiHh3AeJgGeiLNMeoJ48hsOZP1C9CCxwrQ==
@@ -10134,7 +10134,7 @@ victory-selection-container@36.6.11, victory-selection-container@^36.6.11:
     prop-types "^15.8.1"
     victory-core "^36.6.11"
 
-victory-shared-events@36.6.11, victory-shared-events@^36.6.11:
+victory-shared-events@^36.6.11:
   version "36.6.11"
   resolved "https://registry.yarnpkg.com/victory-shared-events/-/victory-shared-events-36.6.11.tgz#f034c8551f1ed3e8e7ba4311e3c1b515e9f51f97"
   integrity sha512-ia6ijfgfYMb+gGFPEq4F6rqzB9p5EkjKpjvmEv4Ww7VjrtdORu7PPfAgTxXw/9QgFSq4iOUnDtzjObABua09fQ==
@@ -10165,7 +10165,7 @@ victory-tooltip@^36.6.11:
     prop-types "^15.8.1"
     victory-core "^36.6.11"
 
-victory-vendor@36.6.11, victory-vendor@^36.6.11:
+victory-vendor@^36.6.11:
   version "36.6.11"
   resolved "https://registry.yarnpkg.com/victory-vendor/-/victory-vendor-36.6.11.tgz#acae770717c2dae541a54929c304ecab5ab6ac2a"
   integrity sha512-nT8kCiJp8dQh8g991J/R5w5eE2KnO8EAIP0xocWlh9l2okngMWglOPoMZzJvek8Q1KUc4XE/mJxTZnvOB1sTYg==

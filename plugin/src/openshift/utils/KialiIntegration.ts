@@ -31,7 +31,7 @@ let kialiListener: (Event: MessageEvent) => void;
 // This listener is responsible to receive the Kiali event that is sent inside the React page to the plugin
 // When users "clicks" a link in Kiali, there is no navigation in the Kiali side; and event it's send to the parent
 // And the "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
-export const useInitKialiListeners = () => {
+export const useInitKialiListeners = (): void => {
   const history = useHistory();
 
   if (!kialiListener) {
@@ -67,7 +67,7 @@ export const useInitKialiListeners = () => {
           }
 
           const namespace = kialiAction.substring(nsParamIndex + 'namespaces='.length, endNsParamIndex);
-          istioConfigUrl += '/ns/' + namespace + '/istio';
+          istioConfigUrl += `/ns/${namespace}/istio`;
         } else {
           istioConfigUrl += '/all-namespaces/istio';
         }
@@ -91,7 +91,7 @@ export const useInitKialiListeners = () => {
           // As the "app" concept is based on Pod "app" annotations, a start could be to show those pods
           // TBD a better link i.e. the "App" concept used for Developer preview
           const application = detail.substring('/applications/'.length);
-          detailUrl = '/k8s/ns/' + namespace + '/pods?labels=app%3D' + application;
+          detailUrl = `/k8s/ns/${namespace}/pods?labels=app%3D${application}`;
         }
 
         if (detail.startsWith('/workloads')) {
@@ -99,12 +99,12 @@ export const useInitKialiListeners = () => {
           // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
           // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
           const workload = detail.substring('/workloads'.length);
-          detailUrl = '/k8s/ns/' + namespace + '/deployments' + workload + '/ossmconsole' + webParams;
+          detailUrl = `/k8s/ns/${namespace}/deployments${workload}/ossmconsole${webParams}`;
         }
 
         if (detail.startsWith('/services')) {
           // OpenShift Console has a "services" list page
-          detailUrl = '/k8s/ns/' + namespace + detail + '/ossmconsole' + webParams;
+          detailUrl = `/k8s/ns/${namespace}${detail}/ossmconsole${webParams}`;
         }
 
         if (detail.startsWith('/istio')) {
@@ -113,7 +113,7 @@ export const useInitKialiListeners = () => {
           if (detailUrl.length === 0) {
             detailUrl = '/k8s/all-namespaces/istio';
           } else {
-            detailUrl = '/k8s/ns/' + namespace + detailUrl;
+            detailUrl = `/k8s/ns/${namespace}${detailUrl}`;
           }
         }
 

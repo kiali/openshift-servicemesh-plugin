@@ -57,11 +57,11 @@ interface KialiControllerReduxProps {
   setActiveNamespaces: (namespaces: Namespace[]) => void;
   setDuration: (duration: DurationInSeconds) => void;
   setIstioCertsInfo: (istioCertsInfo: CertsInfo[]) => void;
-  setTracingInfo: (tracingInfo: TracingInfo | null) => void;
   setLandingRoute: (route: string | undefined) => void;
   setMeshTlsStatus: (tlsStatus: TLSStatus) => void;
   setNamespaces: (namespaces: Namespace[], receivedAt: Date) => void;
   setRefreshInterval: (interval: IntervalInMilliseconds) => void;
+  setTracingInfo: (tracingInfo: TracingInfo | null) => void;
   setTrafficRates: (rates: TrafficRate[]) => void;
   statusRefresh: (statusState: StatusState) => void;
 }
@@ -268,7 +268,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
     if (status.status[StatusKey.DISABLED_FEATURES]) {
       this.props.addMessage(
-        'The following features are disabled: ' + status.status[StatusKey.DISABLED_FEATURES],
+        `The following features are disabled: ${status.status[StatusKey.DISABLED_FEATURES]}`,
         '',
         'default',
         MessageType.INFO,
