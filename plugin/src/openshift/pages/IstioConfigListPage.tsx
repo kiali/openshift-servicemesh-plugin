@@ -165,8 +165,8 @@ const newIstioResourceList = {
 const IstioConfigListPage = () => {
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
-  const [listItems, setListItems] = React.useState<any[]>([]);
-  const [loadError, setLoadError] = React.useState<OSSMCError>();
+  const [listItems, setListItems] = React.useState<IstioConfigObject[]>([]);
+  const [loadError, setLoadError] = React.useState<OSSMCError | null>(null);
   const history = useHistory();
 
   const promises = React.useMemo(() => new PromisesRegistry(), []);
@@ -221,6 +221,10 @@ const IstioConfigListPage = () => {
   };
 
   React.useEffect(() => {
+    // initialize page
+    setLoaded(false);
+    setLoadError(null);
+
     fetchIstioConfigs()
       .then(istioConfigs => {
         const istioConfigObjects = istioConfigs.map(istioConfig => {
@@ -232,11 +236,12 @@ const IstioConfigListPage = () => {
         });
 
         setListItems(istioConfigObjects);
-        setLoaded(true);
       })
       .catch(error => {
         setLoadError({ title: error.response.statusText, message: error.response.data.error });
-        return [];
+      })
+      .finally(() => {
+        setLoaded(true);
       });
   }, [ns, fetchIstioConfigs]);
 
