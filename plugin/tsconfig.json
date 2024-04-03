@@ -27,6 +27,7 @@
       "components/*": ["./kiali/components/*"],
       "config": ["./kiali/config"],
       "config/*": ["./kiali/config/*"],
+      "hooks/*": ["./kiali/hooks/*"],
       "pages/*": ["./kiali/pages/*"],
       "reducers/*": ["./kiali/reducers/*"],
       "routes/*": ["./kiali/routes/*"],

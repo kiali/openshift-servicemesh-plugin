@@ -167,7 +167,7 @@ const IstioConfigListPage: React.FC<void> = () => {
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<IstioConfigObject[]>([]);
-  const [loadError, setLoadError] = React.useState<OSSMCError | null>(null);
+  const [loadError, setLoadError] = React.useState<OSSMCError>();
   const history = useHistory();
 
   const promises = React.useMemo(() => new PromisesRegistry(), []);
@@ -203,9 +203,11 @@ const IstioConfigListPage: React.FC<void> = () => {
           let istioItems: IstioConfigItem[] = [];
           // convert istio objects from all namespaces
           const namespaces: Namespace[] = response[0].data;
+
           namespaces.forEach(namespace => {
             istioItems = istioItems.concat(toIstioItems(response[1].data[namespace.name]));
           });
+
           return istioItems;
         })
         .catch((error: ApiError) => {
@@ -224,27 +226,22 @@ const IstioConfigListPage: React.FC<void> = () => {
   React.useEffect(() => {
     // initialize page
     setLoaded(false);
-    setLoadError(null);
+    setLoadError(undefined);
 
-    fetchIstioConfigs()
-      .then(istioConfigs => {
-        const istioConfigObjects = istioConfigs.map(istioConfig => {
-          const istioConfigObject = getIstioObject(istioConfig) as IstioConfigObject;
-          istioConfigObject.validation = istioConfig.validation;
-          istioConfigObject.reconciledCondition = getReconciliationCondition(istioConfig);
+    fetchIstioConfigs().then(istioConfigs => {
+      const istioConfigObjects = istioConfigs.map(istioConfig => {
+        const istioConfigObject = getIstioObject(istioConfig) as IstioConfigObject;
+        istioConfigObject.validation = istioConfig.validation;
+        istioConfigObject.reconciledCondition = getReconciliationCondition(istioConfig);
 
-          return istioConfigObject;
-        });
-
-        setListItems(istioConfigObjects);
-      })
-      .catch(error => {
-        setLoadError({ title: error.response.statusText, message: error.response.data.error });
-      })
-      .finally(() => {
-        setLoaded(true);
+        return istioConfigObject;
       });
-  }, [ns, fetchIstioConfigs]);
+
+      setListItems(istioConfigObjects);
+
+      setLoaded(true);
+    });
+  }, [fetchIstioConfigs]);
 
   const [data, filteredData, onFilterChange] = useListPageFilter(listItems, filters);
 
