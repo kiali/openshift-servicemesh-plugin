@@ -57,7 +57,7 @@ import { TLSStatus } from '../types/TLSStatus';
 import {
   Workload,
   WorkloadListQuery,
-  WorkloadNamespaceResponse,
+  ClusterWorkloadsResponse,
   WorkloadQuery,
   WorkloadUpdateQuery
 } from '../types/Workload';
@@ -106,19 +106,8 @@ const getHeaders = (): Partial<AxiosHeaders> => {
   if (apiProxy) {
     return { 'Content-Type': 'application/x-www-form-urlencoded' };
   } else {
-    return { ...loginHeaders };
+    return { 'Content-Type': 'application/json', ...loginHeaders };
   }
-};
-
-/** Create content type correctly for a given request type */
-const getHeadersWithMethod = (method: HTTP_VERBS): Partial<AxiosHeaders> => {
-  let allHeaders = getHeaders();
-
-  if (method === HTTP_VERBS.PATCH) {
-    allHeaders['Content-Type'] = 'application/json';
-  }
-
-  return allHeaders;
 };
 
 const basicAuth = (username: UserName, password: Password): BasicAuth => {
@@ -134,8 +123,8 @@ const newRequest = <P>(
   return axios.request<P>({
     method: method,
     url: apiProxy ? `${apiProxy}/${url}` : url,
-    data: data,
-    headers: getHeadersWithMethod(method) as AxiosHeaders,
+    data: apiProxy ? JSON.stringify(data) : data,
+    headers: getHeaders() as AxiosHeaders,
     params: queryParams
   });
 };
@@ -173,7 +162,7 @@ export const getAuthInfo = async (): Promise<ApiResponse<AuthInfo>> => {
   return newRequest<AuthInfo>(HTTP_VERBS.GET, urls.authInfo, {}, {});
 };
 
-export const checkOpenshiftAuth = async (data: unknown): Promise<ApiResponse<LoginSession>> => {
+export const checkOpenshiftAuth = async (data: string): Promise<ApiResponse<LoginSession>> => {
   return newRequest<LoginSession>(HTTP_VERBS.POST, urls.authenticate, {}, data);
 };
 
@@ -922,11 +911,20 @@ export const getServiceDetail = async (
   });
 };
 
-export const getWorkloads = (
-  namespace: string,
-  params: WorkloadListQuery
-): Promise<ApiResponse<WorkloadNamespaceResponse>> => {
-  return newRequest<WorkloadNamespaceResponse>(HTTP_VERBS.GET, urls.workloads(namespace), params, {});
+export const getClustersWorkloads = (
+  namespaces: string,
+  params: AppListQuery,
+  cluster?: string
+): Promise<ApiResponse<ClusterWorkloadsResponse>> => {
+  const queryParams: QueryParams<WorkloadListQuery & Namespaces> = {
+    ...params,
+    namespaces: namespaces
+  };
+
+  if (cluster) {
+    queryParams.clusterName = cluster;
+  }
+  return newRequest<ClusterWorkloadsResponse>(HTTP_VERBS.GET, urls.clustersWorkloads(), queryParams, {});
 };
 
 export const getWorkload = (
