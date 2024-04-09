@@ -24,8 +24,16 @@ ABS_DEST_DIR="${DEST_REPO}/${DEST_DIR}"
 # Delete existing kiali folder before download hack scripts
 rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
 
+# Get current OSSMC git branch to clone corresponding branch of Kiali (both applications should have the same version)
+KIALI_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "${KIALI_BRANCH}" == "main" ]; then
+    KIALI_BRANCH="v1.73"
+fi
+
 # Clone kiali repo into kiali folder (no-checkout option to avoid download whole repository)
-git clone --filter=tree:0 --no-checkout --depth 1 --sparse https://github.com/kiali/kiali.git ${ABS_DEST_DIR}
+echo "Downloading hack scripts from Kiali branch ${KIALI_BRANCH}"
+git clone --filter=tree:0 --no-checkout --depth 1 --sparse --single-branch --branch ${KIALI_BRANCH} https://github.com/kiali/kiali.git ${ABS_DEST_DIR}
 
 cd ${ABS_DEST_DIR}
 
