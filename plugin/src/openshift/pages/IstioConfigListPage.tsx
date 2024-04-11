@@ -15,7 +15,8 @@ import {
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { useHistory, useParams } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
