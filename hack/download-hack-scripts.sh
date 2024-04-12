@@ -27,9 +27,13 @@ rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
 # Get current OSSMC git branch to clone corresponding branch of Kiali (both applications should have the same version)
 KIALI_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-if [ "${KIALI_BRANCH}" == "main" ]; then
-    KIALI_BRANCH="v1.73"
-fi
+case "${KIALI_BRANCH}" in
+    v1.*)
+        echo "OSSMC release branch ${KIALI_BRANCH}";;
+    *)
+        echo "This branch is not an OSSMC release branch (v1.*)"
+        KIALI_BRANCH="v1.73";;
+esac
 
 # Clone kiali repo into kiali folder (no-checkout option to avoid download whole repository)
 echo "Downloading hack scripts from Kiali branch ${KIALI_BRANCH}"
