@@ -1,6 +1,7 @@
 import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
 import { useHistory } from 'react-router-dom';
 import { refForKialiIstio } from './IstioResources';
+import { History } from 'history';
 
 export const properties = {
   // This API is hardcoded but:
@@ -25,6 +26,17 @@ export const getPluginConfig = async function (): Promise<PluginConfig> {
   });
 };
 
+// Navigates to the proper OpenShift Console page
+// If the Kiali event comes from an OSSMC page, add the new entry to the history.
+// Otherwise, last history entry is invalid and has to be replaced with the new one.
+const navigateToConsoleUrl = (history: History, url: string): void => {
+  if (history.location.pathname.startsWith('/ossmconsole')) {
+    history.push(url);
+  } else {
+    history.replace(url);
+  }
+};
+
 // Global scope variable to hold the kiali listener
 let kialiListener: (Event: MessageEvent) => void;
 
@@ -44,17 +56,17 @@ export const useInitKialiListeners = (): void => {
 
       const webParamsIndex = kialiAction.indexOf('?');
 
+      let consoleUrl = '';
+
       // Transform Kiali domain messages into Plugin info that helps to navigate
       if (kialiAction.startsWith('/graph') || kialiAction.startsWith('/graphpf')) {
-        const servicemeshUrl = kialiAction
+        consoleUrl = kialiAction
           .replace('graph/namespaces', 'ossmconsole/graph')
           .replace('graphpf/namespaces', 'ossmconsole/graph')
           .replace('graph/node/namespaces', 'ossmconsole/graph/ns')
           .replace('graphpf/node/namespaces', 'ossmconsole/graph/ns');
-
-        history.push(servicemeshUrl);
       } else if (kialiAction.startsWith('/istio')) {
-        let istioConfigUrl = '/k8s';
+        consoleUrl = '/k8s';
 
         if (webParamsIndex > -1) {
           const nsParamIndex = kialiAction.indexOf('namespaces=', webParamsIndex);
@@ -67,12 +79,10 @@ export const useInitKialiListeners = (): void => {
           }
 
           const namespace = kialiAction.substring(nsParamIndex + 'namespaces='.length, endNsParamIndex);
-          istioConfigUrl += `/ns/${namespace}/istio`;
+          consoleUrl += `/ns/${namespace}/istio`;
         } else {
-          istioConfigUrl += '/all-namespaces/istio';
+          consoleUrl += '/all-namespaces/istio';
         }
-
-        history.push(istioConfigUrl);
       } else if (kialiAction.startsWith('/namespaces')) {
         const webParams = webParamsIndex > -1 ? kialiAction.substring(webParamsIndex) : '';
 
@@ -84,14 +94,12 @@ export const useInitKialiListeners = (): void => {
           webParamsIndex > -1 ? webParamsIndex : kialiAction.length
         );
 
-        let detailUrl = '';
-
         if (detail.startsWith('/applications')) {
           // OpenShift Console doesn't have an "application" concept
           // As the "app" concept is based on Pod "app" annotations, a start could be to show those pods
           // TBD a better link i.e. the "App" concept used for Developer preview
           const application = detail.substring('/applications/'.length);
-          detailUrl = `/k8s/ns/${namespace}/pods?labels=app%3D${application}`;
+          consoleUrl = `/k8s/ns/${namespace}/pods?labels=app%3D${application}`;
         }
 
         if (detail.startsWith('/workloads')) {
@@ -99,26 +107,26 @@ export const useInitKialiListeners = (): void => {
           // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
           // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
           const workload = detail.substring('/workloads'.length);
-          detailUrl = `/k8s/ns/${namespace}/deployments${workload}/ossmconsole${webParams}`;
+          consoleUrl = `/k8s/ns/${namespace}/deployments${workload}/ossmconsole${webParams}`;
         }
 
         if (detail.startsWith('/services')) {
           // OpenShift Console has a "services" list page
-          detailUrl = `/k8s/ns/${namespace}${detail}/ossmconsole${webParams}`;
+          consoleUrl = `/k8s/ns/${namespace}${detail}/ossmconsole${webParams}`;
         }
 
         if (detail.startsWith('/istio')) {
-          detailUrl = refForKialiIstio(detail);
+          consoleUrl = refForKialiIstio(detail);
 
-          if (detailUrl.length === 0) {
-            detailUrl = '/k8s/all-namespaces/istio';
+          if (consoleUrl.length === 0) {
+            consoleUrl = '/k8s/all-namespaces/istio';
           } else {
-            detailUrl = `/k8s/ns/${namespace}${detailUrl}`;
+            consoleUrl = `/k8s/ns/${namespace}${consoleUrl}`;
           }
         }
-
-        history.push(detailUrl);
       }
+
+      setTimeout(() => navigateToConsoleUrl(history, consoleUrl), 0);
     };
 
     window.addEventListener('message', kialiListener);
