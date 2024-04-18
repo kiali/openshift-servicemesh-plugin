@@ -21,49 +21,54 @@ import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
 import { ValidationObjectSummary } from 'components/Validations/ValidationObjectSummary';
-import { IstioConfigItem, toIstioItems } from 'types/IstioConfigList';
+import { filterByName, filterByNamespaces, IstioConfigItem, toIstioItems } from 'types/IstioConfigList';
 import * as API from 'services/Api';
-import { Namespace } from 'types/Namespace';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
 import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
 import { ApiError } from 'types/Api';
+import { useTranslation } from 'react-i18next';
+import { I18N_NAMESPACE } from 'types/Common';
 
 interface IstioConfigObject extends IstioObject {
   reconciledCondition?: StatusCondition;
   validation?: ObjectValidation;
 }
 
-const columns: TableColumn<IstioConfigObject>[] = [
-  {
-    id: 'name',
-    sort: 'metadata.name',
-    title: 'Name',
-    transforms: [sortable]
-  },
-  {
-    id: 'namespace',
-    sort: 'metadata.namespace',
-    title: 'Namespace',
-    transforms: [sortable]
-  },
-  {
-    id: 'kind',
-    sort: 'kind',
-    title: 'Kind',
-    transforms: [sortable]
-  },
-  {
-    id: 'configuration',
-    sort: 'validation.valid',
-    title: 'Configuration',
-    transforms: [sortable]
-  }
-];
+const useGetColumns: () => TableColumn<IstioConfigObject>[] = () => {
+  const { t } = useTranslation(I18N_NAMESPACE);
+
+  return [
+    {
+      id: 'name',
+      sort: 'metadata.name',
+      title: t('Name'),
+      transforms: [sortable]
+    },
+    {
+      id: 'namespace',
+      sort: 'metadata.namespace',
+      title: t('Namespace'),
+      transforms: [sortable]
+    },
+    {
+      id: 'kind',
+      sort: 'kind',
+      title: t('Kind'),
+      transforms: [sortable]
+    },
+    {
+      id: 'configuration',
+      sort: 'validation.valid',
+      title: t('Configuration'),
+      transforms: [sortable]
+    }
+  ];
+};
 
 const useIstioTableColumns = (): TableColumn<IstioConfigObject>[] => {
   const [activeColumns] = useActiveColumns<IstioConfigObject>({
-    columns: columns,
+    columns: useGetColumns(),
     showNamespaceOverride: true,
     columnManagementID: ''
   });
@@ -78,6 +83,8 @@ const Row: React.FC<RowProps<IstioConfigObject>> = ({ obj, activeColumnIDs }) =>
     version: 'v1',
     kind: 'Namespace'
   };
+
+  const columns = useGetColumns();
 
   return (
     <>
@@ -164,6 +171,7 @@ const newIstioResourceList = {
 };
 
 const IstioConfigListPage: React.FC<void> = () => {
+  const { t } = useTranslation(I18N_NAMESPACE);
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<IstioConfigObject[]>([]);
@@ -202,11 +210,9 @@ const IstioConfigListPage: React.FC<void> = () => {
         .then(response => {
           let istioItems: IstioConfigItem[] = [];
           // convert istio objects from all namespaces
-          const namespaces: Namespace[] = response[0].data;
+          const namespaces = response[0].data.map(item => item.name);
 
-          namespaces.forEach(namespace => {
-            istioItems = istioItems.concat(toIstioItems(response[1].data[namespace.name]));
-          });
+          istioItems = toIstioItems(filterByNamespaces(filterByName(response[1].data, []), namespaces));
 
           return istioItems;
         })
@@ -253,9 +259,9 @@ const IstioConfigListPage: React.FC<void> = () => {
         <ErrorPage title={loadError.title} message={loadError.message}></ErrorPage>
       ) : (
         <>
-          <ListPageHeader title="Istio Config">
+          <ListPageHeader title={t('Istio Config')}>
             <ListPageCreateDropdown items={newIstioResourceList} onClick={onCreate}>
-              Create
+              {t('Create')}
             </ListPageCreateDropdown>
           </ListPageHeader>
           <ListPageBody>
