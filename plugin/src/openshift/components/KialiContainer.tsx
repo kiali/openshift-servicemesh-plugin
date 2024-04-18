@@ -18,11 +18,18 @@ import 'ace-builds/src-noconflict/theme-twilight';
 
 // Enables the search box for the ACE editor
 import 'ace-builds/src-noconflict/ext-searchbox';
+import { cssRule } from 'typestyle';
 
 const ossmcStyle = kialiStyle({
   display: 'flex',
   flexDirection: 'column',
   overflowY: 'auto'
+});
+
+// Overwrite listStyle css value for ul in tooltip
+cssRule('.pf-v5-c-tooltip ul', {
+  paddingLeft: 0,
+  listStyle: 'none'
 });
 
 interface Props {
