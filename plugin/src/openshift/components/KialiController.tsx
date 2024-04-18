@@ -201,6 +201,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
             break;
           }
         }
+
         if (refreshInterval >= 0) {
           this.props.setRefreshInterval(refreshInterval);
           console.debug(`Setting UI Default: refreshInterval [${uiDefaults.refreshInterval}=${refreshInterval}ms]`);

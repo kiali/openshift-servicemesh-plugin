@@ -36,7 +36,7 @@
       "styles/*": ["./kiali/styles/*"],
       "types/*": ["./kiali/types/*"],
       "utils/*": ["./kiali/utils/*"],
-      "i18n": ["./kiali/i18n.ts"]
+      "i18n": ["./openshift/i18n.ts"]
     }
   },
   "exclude": [
