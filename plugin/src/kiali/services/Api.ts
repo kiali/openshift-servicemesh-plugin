@@ -102,12 +102,11 @@ const loginHeaders = config.login.headers;
 
 /**  Helpers to Requests */
 
-const getHeaders = (): Partial<AxiosHeaders> => {
-  if (apiProxy) {
-    return { 'Content-Type': 'application/x-www-form-urlencoded' };
-  } else {
-    return { 'Content-Type': 'application/json', ...loginHeaders };
+const getHeaders = (urlEncoded?: boolean): Partial<AxiosHeaders> => {
+  if (apiProxy || urlEncoded) {
+    return { 'Content-Type': 'application/x-www-form-urlencoded', ...loginHeaders };
   }
+  return { 'Content-Type': 'application/json', ...loginHeaders };
 };
 
 const basicAuth = (username: UserName, password: Password): BasicAuth => {
@@ -143,7 +142,7 @@ export const login = async (
   const axiosRequest = {
     method: HTTP_VERBS.POST,
     url: apiProxy ? `${apiProxy}/${urls.authenticate}` : urls.authenticate,
-    headers: getHeaders() as AxiosHeaders,
+    headers: getHeaders(true) as AxiosHeaders,
     data: params
   };
 
@@ -163,7 +162,13 @@ export const getAuthInfo = async (): Promise<ApiResponse<AuthInfo>> => {
 };
 
 export const checkOpenshiftAuth = async (data: string): Promise<ApiResponse<LoginSession>> => {
-  return newRequest<LoginSession>(HTTP_VERBS.POST, urls.authenticate, {}, data);
+  return axios.request<LoginSession>({
+    method: HTTP_VERBS.POST,
+    url: urls.authenticate,
+    data: data,
+    headers: getHeaders(true) as AxiosHeaders,
+    params: {}
+  });
 };
 
 export const getStatus = (): Promise<ApiResponse<StatusState>> => {
@@ -438,8 +443,20 @@ export const getClustersTls = (namespaces: string, cluster?: string): Promise<Ap
   return newRequest<[TLSStatus]>(HTTP_VERBS.GET, urls.clustersTls(), queryParams, {});
 };
 
-export const getServices = (namespace: string, params?: ServiceListQuery): Promise<ApiResponse<ServiceList>> => {
-  return newRequest<ServiceList>(HTTP_VERBS.GET, urls.services(namespace), params, {});
+export const getClustersServices = (
+  namespaces: string,
+  params: ServiceListQuery,
+  cluster?: string
+): Promise<ApiResponse<ServiceList>> => {
+  const queryParams: QueryParams<ServiceListQuery & Namespaces> = {
+    ...params,
+    namespaces: namespaces
+  };
+
+  if (cluster) {
+    queryParams.clusterName = cluster;
+  }
+  return newRequest<ServiceList>(HTTP_VERBS.GET, urls.clustersServices(), queryParams, {});
 };
 
 export const getServiceMetrics = (
