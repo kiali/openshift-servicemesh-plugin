@@ -15,7 +15,7 @@ import {
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { useHistory, useParams } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
@@ -163,11 +163,21 @@ const newIstioResourceList = {
 };
 
 const IstioConfigListPage: React.FC = () => {
-  const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<IstioConfigObject[]>([]);
   const [loadError, setLoadError] = React.useState<OSSMCError | null>(null);
   const history = useHistory();
+
+  let namespace = '';
+
+  // Obtain the namespace from url
+  const location = useLocation();
+  const path = location.pathname.substring(5);
+  const items = path.split('/');
+
+  if (items[0] === 'ns') {
+    namespace = items[1];
+  }
 
   const promises = React.useMemo(() => new PromisesRegistry(), []);
 
@@ -181,8 +191,11 @@ const IstioConfigListPage: React.FC = () => {
         return false;
       });
 
-    if (ns) {
-      const getIstioConfigData = promises.register('getIstioConfig', API.getIstioConfig(ns, [], validate, '', ''));
+    if (namespace) {
+      const getIstioConfigData = promises.register(
+        'getIstioConfig',
+        API.getIstioConfig(namespace, [], validate, '', '')
+      );
 
       return getIstioConfigData
         .then(response => {
@@ -212,11 +225,11 @@ const IstioConfigListPage: React.FC = () => {
           return [];
         });
     }
-  }, [ns, promises]);
+  }, [namespace, promises]);
 
   const onCreate = (reference: string) => {
     const groupVersionKind = istioResources.find(res => res.id === reference) as K8sGroupVersionKind;
-    const path = `/k8s/ns/${ns ?? 'default'}/${referenceFor(groupVersionKind)}/~new`;
+    const path = `/k8s/ns/${namespace ?? 'default'}/${referenceFor(groupVersionKind)}/~new`;
     history.push(path);
   };
 
@@ -243,7 +256,7 @@ const IstioConfigListPage: React.FC = () => {
       .finally(() => {
         setLoaded(true);
       });
-  }, [ns, fetchIstioConfigs]);
+  }, [namespace, fetchIstioConfigs]);
 
   const [data, filteredData, onFilterChange] = useListPageFilter(listItems, filters);
 

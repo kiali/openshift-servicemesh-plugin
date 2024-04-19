@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useHistory } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { ServiceId } from 'types/ServiceId';
 import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
@@ -13,10 +13,10 @@ configure({ isolateGlobalState: true });
 const ServiceMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
-  const history = useHistory();
-  setHistory(history.location.pathname);
+  const location = useLocation();
+  setHistory(location.pathname);
 
-  const path = history.location.pathname.substring(8);
+  const path = location.pathname.substring(8);
   const items = path.split('/');
   const namespace = items[0];
   const service = items[2];
