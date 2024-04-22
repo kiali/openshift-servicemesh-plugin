@@ -74,12 +74,11 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
 
   state = {
-    configLoaded: false
+    loaded: false
   };
 
   componentDidMount(): void {
-    this.getKialiConfig();
-    this.getKialiSecurityInfo();
+    this.loadKiali();
   }
 
   componentWillUnmount(): void {
@@ -87,12 +86,21 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   }
 
   render(): React.ReactNode {
-    return this.state.configLoaded ? (
+    return this.state.loaded ? (
       <>{this.props.children}</>
     ) : (
       <h1 className={centerVerticalHorizontalStyle}>Loading...</h1>
     );
   }
+
+  private loadKiali = async (): Promise<void> => {
+    await this.getKialiConfig();
+    await this.getKialiSecurityInfo();
+
+    this.applyUIDefaults();
+    this.setDocLayout();
+    this.setState({ loaded: true });
+  };
 
   private getKialiConfig = async (): Promise<void> => {
     try {
@@ -131,10 +139,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         });
 
       await Promise.all([getNamespacesPromise, getServerConfigPromise, getStatusPromise, getTracingInfoPromise]);
-
-      this.applyUIDefaults();
-      this.setDocLayout();
-      this.setState({ configLoaded: true });
     } catch (err) {
       console.error('Error loading kiali config', err);
     }
@@ -176,12 +180,14 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
       if (uiDefaults.metricsPerRefresh) {
         const validDurations = humanDurations(serverConfig, '', '');
         let metricsPerRefresh = 0;
+
         for (const [key, value] of Object.entries(validDurations)) {
           if (value === uiDefaults.metricsPerRefresh) {
             metricsPerRefresh = Number(key);
             break;
           }
         }
+
         if (metricsPerRefresh > 0) {
           this.props.setDuration(metricsPerRefresh);
           console.debug(
@@ -224,6 +230,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
             console.debug(`Ignoring invalid UI Default: namespace [${name}]`);
           }
         }
+
         if (activeNamespaces.length > 0) {
           this.props.setActiveNamespaces(activeNamespaces);
           console.debug(`Setting UI Default: namespaces ${JSON.stringify(activeNamespaces.map(ns => ns.name))}`);
@@ -242,15 +249,19 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
       const httpRate = toHttpRate(uiDefaults.graph.traffic.http);
       const tcpRate = toTcpRate(uiDefaults.graph.traffic.tcp);
       const rates: TrafficRate[] = [];
+
       if (grpcRate) {
         rates.push(TrafficRate.GRPC_GROUP, grpcRate);
       }
+
       if (httpRate) {
         rates.push(TrafficRate.HTTP_GROUP, httpRate);
       }
+
       if (tcpRate) {
         rates.push(TrafficRate.TCP_GROUP, tcpRate);
       }
+
       this.props.setTrafficRates(rates);
     }
   };
