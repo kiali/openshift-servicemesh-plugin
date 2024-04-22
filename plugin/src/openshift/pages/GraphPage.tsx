@@ -2,7 +2,7 @@ import * as React from 'react';
 import { GraphPage } from 'pages/Graph/GraphPage';
 import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
 import { getPluginConfig, useInitKialiListeners } from '../utils/KialiIntegration';
-import { useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { setHistory } from 'app/History';
 import { kialiStyle } from 'styles/StyleUtils';
 import { KialiContainer } from 'openshift/components/KialiContainer';
@@ -28,11 +28,11 @@ const GraphPageOSSMC: React.FC<void> = () => {
       .catch(e => console.error(e));
   }, []);
 
-  const location = useLocation();
-  setHistory(location.pathname);
+  const history = useHistory();
+  setHistory(history.location.pathname);
 
   // Obtain graph params from url pathname
-  const path = location.pathname.substring(19);
+  const path = history.location.pathname.substring(19);
   const items = path.split('/');
 
   let namespace = '';
