@@ -15,7 +15,7 @@ import {
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
@@ -171,8 +171,7 @@ const IstioConfigListPage: React.FC = () => {
   let namespace = '';
 
   // Obtain the namespace from url
-  const location = useLocation();
-  const path = location.pathname.substring(5);
+  const path = history.location.pathname.substring(5);
   const items = path.split('/');
 
   if (items[0] === 'ns') {
