@@ -126,7 +126,9 @@ export const useInitKialiListeners = () => {
         }
       }
 
-      setTimeout(() => navigateToConsoleUrl(history, consoleUrl), 0);
+      if (consoleUrl) {
+        setTimeout(() => navigateToConsoleUrl(history, consoleUrl), 0);
+      }
     };
 
     window.addEventListener('message', kialiListener);
