@@ -80,7 +80,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   componentDidMount(): void {
     this.getKialiConfig();
     this.getKialiSecurityInfo();
-    this.setDocLayout();
   }
 
   componentWillUnmount(): void {
@@ -134,6 +133,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
       await Promise.all([getNamespacesPromise, getServerConfigPromise, getStatusPromise, getTracingInfoPromise]);
 
       this.applyUIDefaults();
+      this.setDocLayout();
       this.setState({ configLoaded: true });
     } catch (err) {
       console.error('Error loading kiali config', err);

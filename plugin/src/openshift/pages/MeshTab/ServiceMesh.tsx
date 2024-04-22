@@ -1,25 +1,23 @@
 import * as React from 'react';
-import { useHistory } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom-v5-compat';
 import { ServiceId } from 'types/ServiceId';
 import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 import { KialiContainer } from 'openshift/components/KialiContainer';
+import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 
 const ServiceMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
-  const history = useHistory();
-  setHistory(history.location.pathname);
+  const location = useLocation();
+  setHistory(location.pathname);
 
-  const path = history.location.pathname.substring(8);
-  const items = path.split('/');
-  const namespace = items[0];
-  const service = items[2];
+  const { ns, name } = useParams<ResourceURLPathProps>();
 
   const serviceId: ServiceId = {
-    namespace,
-    service
+    namespace: ns!,
+    service: name!
   };
 
   return (

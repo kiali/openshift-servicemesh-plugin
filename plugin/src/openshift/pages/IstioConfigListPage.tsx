@@ -15,8 +15,7 @@ import {
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { useHistory } from 'react-router-dom';
-import { useParams } from 'react-router-dom-v5-compat';
+import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
@@ -176,7 +175,7 @@ const IstioConfigListPage: React.FC<void> = () => {
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<IstioConfigObject[]>([]);
   const [loadError, setLoadError] = React.useState<OSSMCError>();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const promises = React.useMemo(() => new PromisesRegistry(), []);
 
@@ -226,7 +225,7 @@ const IstioConfigListPage: React.FC<void> = () => {
   const onCreate = (reference: string): void => {
     const groupVersionKind = istioResources.find(res => res.id === reference) as K8sGroupVersionKind;
     const path = `/k8s/ns/${ns ?? 'default'}/${referenceFor(groupVersionKind)}/~new`;
-    history.push(path);
+    navigate(path);
   };
 
   React.useEffect(() => {

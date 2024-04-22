@@ -125,6 +125,12 @@ export const kialiIstioResources = {
   '/istio/telemetries': '/telemetry.istio.io~v1alpha1~Telemetry'
 };
 
+export type ResourceURLPathProps = {
+  name: string;
+  ns: string;
+  plural: string;
+};
+
 export const referenceFor = (groupVersionKind: K8sGroupVersionKind): string => {
   return `${groupVersionKind.group}~${groupVersionKind.version}~${groupVersionKind.kind}`;
 };

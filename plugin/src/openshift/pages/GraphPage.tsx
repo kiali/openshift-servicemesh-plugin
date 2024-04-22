@@ -1,9 +1,8 @@
 import * as React from 'react';
+import { useParams, useLocation } from 'react-router-dom-v5-compat';
 import { GraphPage, GraphURLPathProps } from 'pages/Graph/GraphPage';
 import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
 import { getPluginConfig, useInitKialiListeners } from '../utils/KialiIntegration';
-import { useHistory } from 'react-router-dom';
-import { useParams } from 'react-router-dom-v5-compat';
 import { setHistory } from 'app/History';
 import { kialiStyle } from 'styles/StyleUtils';
 import { KialiContainer } from 'openshift/components/KialiContainer';
@@ -27,8 +26,8 @@ const GraphPageOSSMC: React.FC<void> = () => {
 
   const { aggregate, aggregateValue, app, namespace, service, version, workload } = useParams<GraphURLPathProps>();
 
-  const history = useHistory();
-  setHistory(history.location.pathname);
+  const location = useLocation();
+  setHistory(location.pathname);
 
   return (
     <KialiContainer>

@@ -1,7 +1,6 @@
 import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
-import { useHistory } from 'react-router-dom';
+import { Location, NavigateFunction, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
-import { History } from 'history';
 
 export const properties = {
   // This API is hardcoded but:
@@ -29,11 +28,11 @@ export const getPluginConfig = async function (): Promise<PluginConfig> {
 // Navigates to the proper OpenShift Console page
 // If the Kiali event comes from an OSSMC page, add the new entry to the history.
 // Otherwise, last history entry is invalid and has to be replaced with the new one.
-const navigateToConsoleUrl = (history: History, url: string): void => {
-  if (history.location.pathname.startsWith('/ossmconsole')) {
-    history.push(url);
+const navigateToConsoleUrl = (location: Location, navigate: NavigateFunction, url: string): void => {
+  if (location.pathname.startsWith('/ossmconsole')) {
+    navigate(url);
   } else {
-    history.replace(url);
+    navigate(url, { replace: true });
   }
 };
 
@@ -44,7 +43,8 @@ let kialiListener: (Event: MessageEvent) => void;
 // When users "clicks" a link in Kiali, there is no navigation in the Kiali side; and event it's send to the parent
 // And the "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
 export const useInitKialiListeners = (): void => {
-  const history = useHistory();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   if (!kialiListener) {
     kialiListener = (ev: MessageEvent) => {
@@ -126,7 +126,9 @@ export const useInitKialiListeners = (): void => {
         }
       }
 
-      setTimeout(() => navigateToConsoleUrl(history, consoleUrl), 0);
+      if (consoleUrl) {
+        setTimeout(() => navigateToConsoleUrl(location, navigate, consoleUrl), 0);
+      }
     };
 
     window.addEventListener('message', kialiListener);
