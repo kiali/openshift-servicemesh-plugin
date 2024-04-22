@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { ActionKeys } from 'actions/ActionKeys';
 import { store } from 'store/ConfigStore';
 import { GraphPage } from 'pages/Graph/GraphPage';
@@ -30,10 +30,10 @@ const ProjectMeshTab: React.FC<void> = () => {
       .catch(e => console.error(e));
   }, []);
 
-  const location = useLocation();
-  setHistory(location.pathname);
+  const history = useHistory();
+  setHistory(history.location.pathname);
 
-  const path = location.pathname.substring(8);
+  const path = history.location.pathname.substring(8);
   const items = path.split('/');
   const namespace = items[2];
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { IstioConfigId } from 'types/IstioConfigDetails';
 import { IstioConfigDetailsPage } from 'pages/IstioConfigDetails/IstioConfigDetailsPage';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
@@ -27,10 +27,10 @@ const configTypes = {
 const IstioConfigMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
-  const location = useLocation();
-  setHistory(location.pathname);
+  const history = useHistory();
+  setHistory(history.location.pathname);
 
-  const path = location.pathname.substring(8);
+  const path = history.location.pathname.substring(8);
   const items = path.split('/');
   const namespace = items[0];
   const objectType = configTypes[items[1].substring(items[1].lastIndexOf('~') + 1)].toLowerCase();

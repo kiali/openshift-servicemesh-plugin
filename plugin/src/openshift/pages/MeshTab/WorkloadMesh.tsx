@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { WorkloadId } from 'types/Workload';
 import { WorkloadDetailsPage } from 'pages/WorkloadDetails/WorkloadDetailsPage';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
@@ -13,10 +13,10 @@ configure({ isolateGlobalState: true });
 const WorkloadMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
-  const location = useLocation();
-  setHistory(location.pathname);
+  const history = useHistory();
+  setHistory(history.location.pathname);
 
-  const path = location.pathname.substring(8);
+  const path = history.location.pathname.substring(8);
   const items = path.split('/');
   const namespace = items[0];
   let workload = items[2];

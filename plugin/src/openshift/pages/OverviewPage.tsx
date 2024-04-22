@@ -2,7 +2,7 @@ import * as React from 'react';
 import { OverviewPage } from 'pages/Overview/OverviewPage';
 import { useInitKialiListeners } from '../utils/KialiIntegration';
 import { setHistory } from 'app/History';
-import { useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { configure } from 'mobx';
 
@@ -12,8 +12,8 @@ configure({ isolateGlobalState: true });
 const OverviewPageOSSMC: React.FC<void> = () => {
   useInitKialiListeners();
 
-  const location = useLocation();
-  setHistory(location.pathname);
+  const history = useHistory();
+  setHistory(history.location.pathname);
 
   return (
     <KialiContainer>
