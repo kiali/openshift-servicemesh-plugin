@@ -35,7 +35,8 @@ import {
   OutboundTrafficPolicy,
   CanaryUpgradeStatus,
   PodLogsQuery,
-  LogLevelQuery
+  LogLevelQuery,
+  LogType
 } from '../types/IstioObjects';
 import { ComponentStatus, IstiodResourceThresholds } from '../types/IstioStatus';
 import { TracingInfo, TracingResponse, TracingSingleResponse } from '../types/TracingInfo';
@@ -85,9 +86,9 @@ interface Namespaces {
 type QueryParams<T> = T & ClusterParam;
 
 /**
- * Some platforms defines a proxy to the internal Kiali backend (like Openshift Console)
+ * OSSMC plugin needs a service api proxy to communicate with the Kiali backend
  * https://github.com/openshift/enhancements/blob/master/enhancements/console/dynamic-plugins.md#delivering-plugins
- * API Proxy defined by the platform is added before url request
+ * API Proxy defined by the plugin is added before the url request
  * This environment variable is not defined in standalone Kiali application
  */
 const apiProxy = process.env.API_PROXY ?? null;
@@ -104,6 +105,7 @@ const loginHeaders = config.login.headers;
 
 const getHeaders = (urlEncoded?: boolean): Partial<AxiosHeaders> => {
   if (apiProxy) {
+    // apiProxy is used by OSSMC, which doesn't need Kiali login headers (and can cause CORS issues)
     return { 'Content-Type': 'application/x-www-form-urlencoded' };
   } else if (urlEncoded) {
     return { 'Content-Type': 'application/x-www-form-urlencoded', ...loginHeaders };
@@ -1014,7 +1016,7 @@ export const getPodLogs = (
   maxLines?: number,
   sinceTime?: number,
   duration?: DurationInSeconds,
-  isProxy?: boolean,
+  logType?: LogType,
   cluster?: string
 ): Promise<ApiResponse<PodLogs>> => {
   const params: QueryParams<PodLogsQuery> = {};
@@ -1039,7 +1041,9 @@ export const getPodLogs = (
     params.clusterName = cluster;
   }
 
-  params.isProxy = !!isProxy;
+  if (logType) {
+    params.logType = logType;
+  }
 
   return newRequest<PodLogs>(HTTP_VERBS.GET, urls.podLogs(namespace, name), params, {});
 };
