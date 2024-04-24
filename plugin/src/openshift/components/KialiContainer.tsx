@@ -3,9 +3,10 @@ import { Provider } from 'react-redux';
 import { store } from 'store/ConfigStore';
 import { KialiController } from '../components/KialiController';
 import { MessageCenter } from 'components/MessageCenter';
-import { globalStyle } from 'styles/GlobalStyle';
-import cssVariables from 'styles/variables.module.scss';
-import { kialiStyle } from 'styles/StyleUtils';
+import { globalStyle as kialiStyle } from 'styles/GlobalStyle';
+import { globalStyle as ossmcStyle } from '../styles/GlobalStyle';
+import kialiCSSVariables from 'styles/variables.module.scss';
+import ossmcCSSVariables from '../styles/variables.module.scss';
 
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/dist/themes/light-border.css';
@@ -18,19 +19,6 @@ import 'ace-builds/src-noconflict/theme-twilight';
 
 // Enables the search box for the ACE editor
 import 'ace-builds/src-noconflict/ext-searchbox';
-import { cssRule } from 'typestyle';
-
-const ossmcStyle = kialiStyle({
-  display: 'flex',
-  flexDirection: 'column',
-  overflowY: 'auto'
-});
-
-// Overwrite listStyle css value for ul in tooltip
-cssRule('.pf-v5-c-tooltip ul', {
-  paddingLeft: 0,
-  listStyle: 'none'
-});
 
 interface Props {
   children: React.ReactNode;
@@ -40,7 +28,7 @@ export const KialiContainer: React.FC<Props> = ({ children }) => {
   return (
     <Provider store={store}>
       <MessageCenter drawerTitle="Message Center" />
-      <div className={`${globalStyle} ${ossmcStyle} ${cssVariables.style}`}>
+      <div className={`${kialiStyle} ${ossmcStyle} ${kialiCSSVariables.style} ${ossmcCSSVariables.style}`}>
         <KialiController>{children}</KialiController>
       </div>
     </Provider>
