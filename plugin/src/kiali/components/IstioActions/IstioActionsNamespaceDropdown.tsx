@@ -1,85 +1,97 @@
 import * as React from 'react';
-import { Dropdown, DropdownGroup, DropdownItem, DropdownPosition, DropdownToggle } from '@patternfly/react-core';
 import { history } from '../../app/History';
 import { serverConfig } from '../../config';
 import { NEW_ISTIO_RESOURCE } from '../../pages/IstioConfigNew/IstioConfigNewPage';
 import { K8SGATEWAY } from '../../pages/IstioConfigNew/K8sGatewayForm';
+import { K8S_REFERENCE_GRANT } from '../../pages/IstioConfigNew/K8sReferenceGrantForm';
 import { groupMenuStyle } from 'styles/DropdownStyles';
-
-type Props = {};
-
-type State = {
-  dropdownOpen: boolean;
-};
+import {
+  Dropdown,
+  DropdownGroup,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
+  MenuToggleElement
+} from '@patternfly/react-core';
+import { useKialiSelector } from 'hooks/redux';
+import { isParentKiosk, kioskContextMenuAction } from 'components/Kiosk/KioskActions';
 
 type ActionItem = {
-  name: string;
   action: JSX.Element;
+  name: string;
 };
 
-export class IstioActionsNamespaceDropdown extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      dropdownOpen: false
-    };
-  }
+export const IstioActionsNamespaceDropdown: React.FC = () => {
+  const kiosk = useKialiSelector(state => state.globalState.kiosk);
 
-  onSelect = _ => {
-    this.setState({
-      dropdownOpen: !this.state.dropdownOpen
-    });
+  const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(false);
+
+  const onSelect = (): void => {
+    setDropdownOpen(!dropdownOpen);
   };
 
-  onToggle = (dropdownState: boolean) => {
-    this.setState({
-      dropdownOpen: dropdownState
-    });
+  const onToggle = (dropdownState: boolean): void => {
+    setDropdownOpen(dropdownState);
   };
 
-  onClickCreate = (type: string) => {
-    history.push('/istio/new/' + type);
+  const onClickCreate = (type: string): void => {
+    const newUrl = `/istio/new/${type}`;
+
+    if (isParentKiosk(kiosk)) {
+      kioskContextMenuAction(newUrl);
+    } else {
+      history.push(newUrl);
+    }
   };
 
-  render() {
-    const dropdownItemsRaw = NEW_ISTIO_RESOURCE.map(
-      (r): ActionItem => ({
-        name: r.value,
-        action: (
-          <DropdownItem
-            key={'createIstioConfig_' + r.value}
-            isDisabled={r.value === K8SGATEWAY ? !serverConfig.gatewayAPIEnabled : r.disabled}
-            onClick={() => this.onClickCreate(r.value)}
-            data-test={'create_' + r.label}
-          >
-            {r.label}
-          </DropdownItem>
-        )
-      })
-    );
+  const dropdownItemsRaw = NEW_ISTIO_RESOURCE.map(
+    (r): ActionItem => ({
+      name: r.value,
+      action: (
+        <DropdownItem
+          key={`createIstioConfig_${r.value}`}
+          isDisabled={
+            r.value === K8SGATEWAY || r.value === K8S_REFERENCE_GRANT ? !serverConfig.gatewayAPIEnabled : r.disabled
+          }
+          onClick={() => onClickCreate(r.value)}
+          data-test={`create_${r.label}`}
+        >
+          {r.label}
+        </DropdownItem>
+      )
+    })
+  );
 
-    const dropdownItems = [
-      <DropdownGroup
-        key={'group_create'}
-        label={'Create'}
-        className={groupMenuStyle}
-        children={dropdownItemsRaw.map(r => r.action)}
-      />
-    ];
-    return (
-      <Dropdown
-        data-test="actions-dropdown"
-        id="actions"
-        toggle={
-          <DropdownToggle onToggle={this.onToggle} data-test="config-actions-dropdown">
-            Actions
-          </DropdownToggle>
-        }
-        onSelect={this.onSelect}
-        position={DropdownPosition.right}
-        isOpen={this.state.dropdownOpen}
-        dropdownItems={dropdownItems}
-      />
-    );
-  }
-}
+  const dropdownItems = [
+    <DropdownGroup
+      key={'group_create'}
+      label={'Create'}
+      className={groupMenuStyle}
+      children={dropdownItemsRaw.map(r => r.action)}
+    />
+  ];
+
+  return (
+    <Dropdown
+      data-test="istio-actions-dropdown"
+      id="actions"
+      toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+          ref={toggleRef}
+          id="actions-toggle"
+          onClick={() => onToggle(!dropdownOpen)}
+          data-test="istio-actions-toggle"
+          isExpanded={dropdownOpen}
+        >
+          Actions
+        </MenuToggle>
+      )}
+      isOpen={dropdownOpen}
+      onOpenChange={(isOpen: boolean) => onToggle(isOpen)}
+      onSelect={onSelect}
+      popperProps={{ position: 'right' }}
+    >
+      <DropdownList>{dropdownItems}</DropdownList>
+    </Dropdown>
+  );
+};

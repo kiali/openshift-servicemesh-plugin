@@ -3,6 +3,7 @@ import * as FilterHelper from './FilterHelper';
 import { SortField } from '../../types/SortFilters';
 import * as API from '../../services/Api';
 import { HistoryManager, URLParam } from '../../app/History';
+import { ApiError } from 'types/Api';
 
 export interface Props<R> {
   currentSortField: SortField<R>;
@@ -10,9 +11,9 @@ export interface Props<R> {
 }
 
 export interface State<R> {
-  listItems: R[];
   currentSortField: SortField<R>;
   isSortAscending: boolean;
+  listItems: R[];
 }
 
 export abstract class Component<P extends Props<R>, S extends State<R>, R> extends React.Component<P, S> {
@@ -26,23 +27,23 @@ export abstract class Component<P extends Props<R>, S extends State<R>, R> exten
     this.sortItemList = this.sortItemList.bind(this);
   }
 
-  onFilterChange = () => {
+  onFilterChange = (): void => {
     // Resetting pagination when filters change
     this.updateListItems(true);
   };
 
-  handleError = (error: string) => {
+  handleError = (error: string): void => {
     FilterHelper.handleError(error);
   };
 
-  handleAxiosError(message: string, error: API.ApiError) {
+  handleApiError(message: string, error: ApiError): void {
     const errMsg = `${message}: ${API.getErrorString(error)}`;
     // TODO: Do we really need this console logging?
     console.error(errMsg);
     this.handleError(errMsg);
   }
 
-  updateSort = (sortField: SortField<R>, isSortAscending: boolean) => {
+  updateSort = (sortField: SortField<R>, isSortAscending: boolean): void => {
     this.setState({
       currentSortField: sortField,
       isSortAscending: isSortAscending,

@@ -19,20 +19,21 @@ import { history, URLParam } from '../../app/History';
 import { MiniGraphCard } from '../../components/CytoscapeGraph/MiniGraphCard';
 import { IstioConfigCard } from '../../components/IstioConfigCard/IstioConfigCard';
 import { MiniGraphCardPF } from 'pages/GraphPF/MiniGraphCardPF';
+import { isGateway } from '../../helpers/LabelFilterHelper';
 
 type WorkloadInfoProps = {
   duration: DurationInSeconds;
-  namespace: string;
-  workload?: Workload;
   health?: WorkloadHealth;
+  namespace: string;
   refreshWorkload: () => void;
+  workload?: Workload;
 };
 
 type WorkloadInfoState = {
-  validations?: Validations;
   currentTab: string;
-  workloadIstioConfig?: IstioConfigList;
   tabHeight?: number;
+  validations?: Validations;
+  workloadIstioConfig?: IstioConfigList;
 };
 
 const fullHeightStyle = kialiStyle({
@@ -61,18 +62,18 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
     };
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     this.fetchBackend();
   }
 
-  componentDidUpdate(prev: WorkloadInfoProps) {
+  componentDidUpdate(prev: WorkloadInfoProps): void {
     // Fetch WorkloadInfo backend on duration changes or WorkloadDetailsPage update
     if (prev.duration !== this.props.duration || this.props.workload !== prev.workload) {
       this.fetchBackend();
     }
   }
 
-  private fetchBackend = () => {
+  private fetchBackend = (): void => {
     if (!this.props.workload) {
       return;
     }
@@ -88,7 +89,7 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
     const labels = this.props.workload.labels;
     const wkLabels: string[] = [];
     Object.keys(labels).forEach(key => {
-      const label = key + (labels[key] ? '=' + labels[key] : '');
+      const label = `${key}${labels[key] ? `=${labels[key]}` : ''}`;
       wkLabels.push(label);
     });
     const workloadSelector = wkLabels.join(',');
@@ -139,11 +140,13 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
       path: ''
     };
 
+    const istioLabels = serverConfig.istioLabels;
+    const istioAnnotations = serverConfig.istioAnnotations;
     const validations: Validations = {};
     const isWaypoint =
-      serverConfig.ambientEnabled === true &&
+      serverConfig.ambientEnabled &&
       workload.labels &&
-      workload.labels['gateway.istio.io/managed'] === 'istio.io-mesh-controller';
+      workload.labels[istioLabels.ambientWaypointLabel] === istioLabels.ambientWaypointLabelValue;
 
     if (workload.pods.length > 0) {
       validations.pod = {};
@@ -154,13 +157,15 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
           valid: true,
           checks: []
         };
-        if (!isIstioNamespace(this.props.namespace)) {
+        if (!isIstioNamespace(this.props.namespace) && !isGateway(this.props.workload?.labels || {})) {
           if (!isWaypoint) {
             if (!pod.istioContainers || pod.istioContainers.length === 0) {
               if (
                 !(
-                  serverConfig.ambientEnabled === true &&
-                  (pod.annotations ? pod.annotations['ambient.istio.io/redirection'] === 'enabled' : false)
+                  serverConfig.ambientEnabled &&
+                  (pod.annotations
+                    ? pod.annotations[istioAnnotations.ambientAnnotation] === istioAnnotations.ambientAnnotationEnabled
+                    : false)
                 )
               ) {
                 validations.pod[pod.name].checks.push(noIstiosidecar);
@@ -222,7 +227,7 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
     return validations;
   }
 
-  goToMetrics = (e: GraphEdgeTapEvent) => {
+  goToMetrics = (e: GraphEdgeTapEvent): void => {
     if (e.source !== e.target && this.props.workload) {
       const direction = e.source === this.props.workload.name ? 'outbound' : 'inbound';
       const destination = direction === 'inbound' ? 'source_canonical_service' : 'destination_canonical_service';
@@ -230,13 +235,13 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
       urlParams.set('tab', direction === 'inbound' ? 'in_metrics' : 'out_metrics');
       urlParams.set(
         URLParam.BY_LABELS,
-        destination + '=' + (e.source === this.props.workload.name ? e.target : e.source)
+        `${destination}=${e.source === this.props.workload.name ? e.target : e.source}`
       );
-      history.replace(history.location.pathname + '?' + urlParams.toString());
+      history.replace(`${history.location.pathname}?${urlParams.toString()}`);
     }
   };
 
-  render() {
+  render(): React.ReactNode {
     const workload = this.props.workload;
     const pods = workload?.pods || [];
     const istioConfigItems = this.state.workloadIstioConfig

@@ -125,11 +125,17 @@ export const kialiIstioResources = {
   '/istio/telemetries': '/telemetry.istio.io~v1alpha1~Telemetry'
 };
 
-export const referenceFor = (groupVersionKind: K8sGroupVersionKind) => {
+export type ResourceURLPathProps = {
+  name: string;
+  ns: string;
+  plural: string;
+};
+
+export const referenceFor = (groupVersionKind: K8sGroupVersionKind): string => {
   return `${groupVersionKind.group}~${groupVersionKind.version}~${groupVersionKind.kind}`;
 };
 
-export const referenceForObj = (obj: K8sResourceCommon) => {
+export const referenceForObj = (obj: K8sResourceCommon): string => {
   const groupVersionKind = getGroupVersionKindForResource(obj);
   return referenceFor(groupVersionKind);
 };
@@ -144,5 +150,6 @@ export const refForKialiIstio = (kialiIstioUrl: string): string => {
       return kialiIstioResources[key] + kialiIstioUrl.substring(key.length);
     }
   }
+
   return '';
 };

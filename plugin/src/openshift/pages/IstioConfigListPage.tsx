@@ -15,53 +15,59 @@ import {
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { useHistory, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
 import { ValidationObjectSummary } from 'components/Validations/ValidationObjectSummary';
-import { IstioConfigItem, toIstioItems } from 'types/IstioConfigList';
+import { filterByName, filterByNamespaces, IstioConfigItem, toIstioItems } from 'types/IstioConfigList';
 import * as API from 'services/Api';
-import { Namespace } from 'types/Namespace';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
 import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
+import { ApiError } from 'types/Api';
+import { useTranslation } from 'react-i18next';
+import { I18N_NAMESPACE } from 'types/Common';
 
 interface IstioConfigObject extends IstioObject {
-  validation?: ObjectValidation;
   reconciledCondition?: StatusCondition;
+  validation?: ObjectValidation;
 }
 
-const columns: TableColumn<IstioConfigObject>[] = [
-  {
-    id: 'name',
-    sort: 'metadata.name',
-    title: 'Name',
-    transforms: [sortable]
-  },
-  {
-    id: 'namespace',
-    sort: 'metadata.namespace',
-    title: 'Namespace',
-    transforms: [sortable]
-  },
-  {
-    id: 'kind',
-    sort: 'kind',
-    title: 'Kind',
-    transforms: [sortable]
-  },
-  {
-    id: 'configuration',
-    sort: 'validation.valid',
-    title: 'Configuration',
-    transforms: [sortable]
-  }
-];
+const useGetColumns: () => TableColumn<IstioConfigObject>[] = () => {
+  const { t } = useTranslation(I18N_NAMESPACE);
 
-const useIstioTableColumns = () => {
+  return [
+    {
+      id: 'name',
+      sort: 'metadata.name',
+      title: t('Name'),
+      transforms: [sortable]
+    },
+    {
+      id: 'namespace',
+      sort: 'metadata.namespace',
+      title: t('Namespace'),
+      transforms: [sortable]
+    },
+    {
+      id: 'kind',
+      sort: 'kind',
+      title: t('Kind'),
+      transforms: [sortable]
+    },
+    {
+      id: 'configuration',
+      sort: 'validation.valid',
+      title: t('Configuration'),
+      transforms: [sortable]
+    }
+  ];
+};
+
+const useIstioTableColumns = (): TableColumn<IstioConfigObject>[] => {
   const [activeColumns] = useActiveColumns<IstioConfigObject>({
-    columns: columns,
+    columns: useGetColumns(),
     showNamespaceOverride: true,
     columnManagementID: ''
   });
@@ -69,13 +75,16 @@ const useIstioTableColumns = () => {
   return activeColumns;
 };
 
-const Row = ({ obj, activeColumnIDs }: RowProps<IstioConfigObject>) => {
+const Row: React.FC<RowProps<IstioConfigObject>> = ({ obj, activeColumnIDs }) => {
   const groupVersionKind = getGroupVersionKindForResource(obj);
   const nsGroupVersionKind: K8sGroupVersionKind = {
     group: '',
     version: 'v1',
     kind: 'Namespace'
   };
+
+  const columns = useGetColumns();
+
   return (
     <>
       <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
@@ -94,7 +103,7 @@ const Row = ({ obj, activeColumnIDs }: RowProps<IstioConfigObject>) => {
       <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
         {obj.validation ? (
           <ValidationObjectSummary
-            id={obj.metadata.name + '-config-validation'}
+            id={`${obj.metadata.name}-config-validation`}
             validations={[obj.validation]}
             reconciledCondition={obj.reconciledCondition}
           />
@@ -112,7 +121,7 @@ const filters: RowFilter[] = [
     type: 'kind',
     reducer: (obj: IstioConfigObject) => {
       const groupVersionKind = getGroupVersionKindForResource(obj);
-      return groupVersionKind.group + '.' + obj.kind;
+      return `${groupVersionKind.group}.${obj.kind}`;
     },
     filter: (input, obj: IstioConfigObject) => {
       if (!input.selected?.length) {
@@ -120,10 +129,10 @@ const filters: RowFilter[] = [
       }
 
       const groupVersionKind = getGroupVersionKindForResource(obj);
-      return input.selected.includes(groupVersionKind.group + '.' + obj.kind);
+      return input.selected.includes(`${groupVersionKind.group}.${obj.kind}`);
     },
     items: istioResources.map(({ group, kind, title }) => ({
-      id: group + '.' + kind,
+      id: `${group}.${kind}`,
       title: title ? title : kind
     }))
   }
@@ -132,14 +141,12 @@ const filters: RowFilter[] = [
 type IstioTableProps = {
   columns: TableColumn<IstioConfigObject>[];
   data: IstioConfigObject[];
-  unfilteredData: IstioConfigObject[];
+  loadError?: OSSMCError;
   loaded: boolean;
-  loadError?: {
-    message?: string;
-  };
+  unfilteredData: IstioConfigObject[];
 };
 
-const IstioTable = ({ columns, data, unfilteredData, loaded, loadError }: IstioTableProps) => {
+const IstioTable: React.FC<IstioTableProps> = ({ columns, data, unfilteredData, loaded, loadError }) => {
   return (
     <VirtualizedTable<IstioConfigObject>
       data={data}
@@ -162,12 +169,13 @@ const newIstioResourceList = {
   sidecar: 'Sidecar'
 };
 
-const IstioConfigListPage = () => {
+const IstioConfigListPage: React.FC<void> = () => {
+  const { t } = useTranslation(I18N_NAMESPACE);
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<IstioConfigObject[]>([]);
-  const [loadError, setLoadError] = React.useState<OSSMCError | null>(null);
-  const history = useHistory();
+  const [loadError, setLoadError] = React.useState<OSSMCError>();
+  const navigate = useNavigate();
 
   const promises = React.useMemo(() => new PromisesRegistry(), []);
 
@@ -188,62 +196,57 @@ const IstioConfigListPage = () => {
         .then(response => {
           return toIstioItems(response.data);
         })
-        .catch((error: API.ApiError) => {
+        .catch((error: ApiError) => {
           setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
           return [];
         });
     } else {
       // If no namespace is selected, get istio config for all namespaces
       const getNamespacesData = promises.register('getNamespaces', API.getNamespaces());
-      const getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], [], validate, '', ''));
+      const getIstioConfigData = promises.register('getIstioConfig', API.getAllIstioConfigs([], validate, '', ''));
 
       return Promise.all([getNamespacesData, getIstioConfigData])
         .then(response => {
           let istioItems: IstioConfigItem[] = [];
           // convert istio objects from all namespaces
-          const namespaces: Namespace[] = response[0].data;
-          namespaces.forEach(namespace => {
-            istioItems = istioItems.concat(toIstioItems(response[1].data[namespace.name]));
-          });
+          const namespaces = response[0].data.map(item => item.name);
+
+          istioItems = toIstioItems(filterByNamespaces(filterByName(response[1].data, []), namespaces));
+
           return istioItems;
         })
-        .catch((error: API.ApiError) => {
+        .catch((error: ApiError) => {
           setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
           return [];
         });
     }
   }, [ns, promises]);
 
-  const onCreate = (reference: string) => {
+  const onCreate = (reference: string): void => {
     const groupVersionKind = istioResources.find(res => res.id === reference) as K8sGroupVersionKind;
     const path = `/k8s/ns/${ns ?? 'default'}/${referenceFor(groupVersionKind)}/~new`;
-    history.push(path);
+    navigate(path);
   };
 
   React.useEffect(() => {
     // initialize page
     setLoaded(false);
-    setLoadError(null);
+    setLoadError(undefined);
 
-    fetchIstioConfigs()
-      .then(istioConfigs => {
-        const istioConfigObjects = istioConfigs.map(istioConfig => {
-          const istioConfigObject = getIstioObject(istioConfig) as IstioConfigObject;
-          istioConfigObject.validation = istioConfig.validation;
-          istioConfigObject.reconciledCondition = getReconciliationCondition(istioConfig);
+    fetchIstioConfigs().then(istioConfigs => {
+      const istioConfigObjects = istioConfigs.map(istioConfig => {
+        const istioConfigObject = getIstioObject(istioConfig) as IstioConfigObject;
+        istioConfigObject.validation = istioConfig.validation;
+        istioConfigObject.reconciledCondition = getReconciliationCondition(istioConfig);
 
-          return istioConfigObject;
-        });
-
-        setListItems(istioConfigObjects);
-      })
-      .catch(error => {
-        setLoadError({ title: error.response.statusText, message: error.response.data.error });
-      })
-      .finally(() => {
-        setLoaded(true);
+        return istioConfigObject;
       });
-  }, [ns, fetchIstioConfigs]);
+
+      setListItems(istioConfigObjects);
+
+      setLoaded(true);
+    });
+  }, [fetchIstioConfigs]);
 
   const [data, filteredData, onFilterChange] = useListPageFilter(listItems, filters);
 
@@ -255,14 +258,20 @@ const IstioConfigListPage = () => {
         <ErrorPage title={loadError.title} message={loadError.message}></ErrorPage>
       ) : (
         <>
-          <ListPageHeader title="Istio Config">
+          <ListPageHeader title={t('Istio Config')}>
             <ListPageCreateDropdown items={newIstioResourceList} onClick={onCreate}>
-              Create
+              {t('Create')}
             </ListPageCreateDropdown>
           </ListPageHeader>
           <ListPageBody>
             <ListPageFilter data={data} loaded={loaded} rowFilters={filters} onFilterChange={onFilterChange} />
-            <IstioTable columns={columns} data={filteredData} unfilteredData={data} loaded={loaded} />
+            <IstioTable
+              columns={columns}
+              data={filteredData}
+              unfilteredData={data}
+              loaded={loaded}
+              loadError={loadError}
+            />
           </ListPageBody>
         </>
       )}

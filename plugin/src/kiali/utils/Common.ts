@@ -1,8 +1,8 @@
 import { Namespace } from '../types/Namespace';
 
-export const removeDuplicatesArray = a => [...Array.from(new Set(a))] as string[];
+export const removeDuplicatesArray = (a: string[]): string[] => [...Array.from(new Set(a))] as string[];
 
-export const arrayEquals = <T>(a1: T[], a2: T[], comparator: (v1: T, v2: T) => boolean) => {
+export const arrayEquals = <T>(a1: T[], a2: T[], comparator: (v1: T, v2: T) => boolean): boolean => {
   if (a1.length !== a2.length) {
     return false;
   }

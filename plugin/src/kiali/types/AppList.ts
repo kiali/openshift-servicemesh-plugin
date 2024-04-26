@@ -1,22 +1,24 @@
-import { Namespace } from './Namespace';
 import { AppHealth } from './Health';
 import { ObjectReference } from './IstioObjects';
 
 export interface AppList {
-  namespace: Namespace;
-  applications: AppOverview[];
-}
-
-export interface AppOverview {
-  name: string;
+  applications: AppListItem[];
   cluster?: string;
-  istioSidecar: boolean;
-  istioAmbient: boolean;
-  labels: { [key: string]: string };
-  istioReferences: ObjectReference[];
-  health: AppHealth;
 }
 
-export interface AppListItem extends AppOverview {
+export interface AppListItem {
+  cluster?: string;
+  health: AppHealth;
+  istioAmbient: boolean;
+  istioReferences: ObjectReference[];
+  istioSidecar: boolean;
+  labels: { [key: string]: string };
+  name: string;
   namespace: string;
+}
+
+export interface AppListQuery {
+  health: 'true' | 'false';
+  istioResources: 'true' | 'false';
+  rateInterval: string;
 }

@@ -1,34 +1,35 @@
 import * as Enzyme from 'enzyme';
 import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
-require('jest-localstorage-mock');
-require('jest-canvas-mock');
+import { jest } from '@jest/globals';
+import jsdom from 'jsdom';
 
-var JSDOM = require('jsdom').JSDOM;
+import 'jest-canvas-mock';
 
-global.window = new JSDOM().window;
-window.SVGPathElement = function () {};
-window.customElements = function () {};
-window.customElements.define = function () {};
+const JSDOM = jsdom.JSDOM;
 
-// Mock local storage
-const localStorageMock = (() => {
-  var store = {};
-  return {
-    getItem: function (key: string) {
-      return store[key];
-    },
-    setItem: function (key: string, value: unknown) {
-      store[key] = String(value);
-    },
-    clear: function () {
-      store = {};
-    },
-    removeItem: function (key: string) {
-      delete store[key];
-    }
-  };
-})();
+if (!global.window) {
+  global.window = new JSDOM().window;
+}
 
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+window.SVGPathElement = () => {};
+window.customElements = () => {};
+window.customElements.define = () => {};
 
 Enzyme.configure({ adapter: new Adapter() });
+
+jest.mock('i18n', () => ({
+  i18n: {
+    t: (key: string) => key,
+    changeLanguage: () => new Promise(() => {})
+  }
+}));
+
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key
+  }),
+  withTranslation: () => (component: any) => {
+    component.defaultProps = { ...component.defaultProps, t: (key: string) => key };
+    return component;
+  }
+}));

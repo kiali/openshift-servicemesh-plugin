@@ -14,7 +14,8 @@ import {
   PageSection,
   PageSidebar,
   PageToggleButton,
-  ButtonVariant
+  ButtonVariant,
+  PageSidebarBody
 } from '@patternfly/react-core';
 import { BarsIcon } from '@patternfly/react-icons';
 import { kialiStyle } from 'styles/StyleUtils';
@@ -24,11 +25,13 @@ import { KialiAppState } from '../../store/Store';
 import { UserSettingsThunkActions } from '../../actions/UserSettingsThunkActions';
 import { Menu } from './Menu';
 import { Link } from 'react-router-dom';
+import { ExternalServiceInfo } from '../../types/StatusState';
 
 type PropsType = RouteComponentProps & {
   navCollapsed: boolean;
   setNavCollapsed: (collapse: boolean) => void;
-  jaegerUrl?: string;
+  tracingUrl?: string;
+  externalServices: ExternalServiceInfo[];
 };
 
 type NavigationState = {
@@ -40,14 +43,6 @@ type NavigationState = {
 const flexBoxColumnStyle = kialiStyle({
   display: 'flex',
   flexDirection: 'column'
-});
-
-const pageSidebarStyle = kialiStyle({
-  $nest: {
-    '& .pf-c-page__sidebar-body': {
-      padding: 0
-    }
-  }
 });
 
 export class NavigationComponent extends React.Component<PropsType, NavigationState> {
@@ -70,8 +65,8 @@ export class NavigationComponent extends React.Component<PropsType, NavigationSt
     }
   };
 
-  goTojaeger() {
-    window.open(this.props.jaegerUrl, '_blank');
+  goTotracing() {
+    window.open(this.props.tracingUrl, '_blank');
   }
 
   componentDidMount() {
@@ -120,8 +115,8 @@ export class NavigationComponent extends React.Component<PropsType, NavigationSt
           <PageToggleButton
             variant={ButtonVariant.plain}
             aria-label="Kiali navigation"
-            isNavOpen={isNavOpen}
-            onNavToggle={isMobileView ? this.onNavToggleMobile : this.onNavToggleDesktop}
+            isSidebarOpen={isNavOpen}
+            onSidebarToggle={isMobileView ? this.onNavToggleMobile : this.onNavToggleDesktop}
           >
             <BarsIcon />
           </PageToggleButton>
@@ -137,14 +132,22 @@ export class NavigationComponent extends React.Component<PropsType, NavigationSt
       </Masthead>
     );
 
-    const menu = <Menu isNavOpen={isNavOpen} location={this.props.location} jaegerUrl={this.props.jaegerUrl} />;
+    const menu = (
+      <Menu isNavOpen={isNavOpen} location={this.props.location} externalServices={this.props.externalServices} />
+    );
 
     const Sidebar = (
-      <PageSidebar className={pageSidebarStyle} style={{ width: '210px' }} nav={menu} isNavOpen={isNavOpen} />
+      <PageSidebar style={{ width: '210px' }} isSidebarOpen={isNavOpen}>
+        <PageSidebarBody>{menu}</PageSidebarBody>
+      </PageSidebar>
     );
 
     return (
-      <Page header={masthead} sidebar={Sidebar} onPageResize={this.onPageResize}>
+      <Page
+        header={masthead}
+        sidebar={Sidebar}
+        onPageResize={(_, { mobileView, windowSize }) => this.onPageResize({ mobileView, windowSize })}
+      >
         <MessageCenter drawerTitle="Message Center" />
         <PageSection className={flexBoxColumnStyle} variant="light">
           <RenderPage isGraph={this.isGraph()} />
@@ -156,7 +159,8 @@ export class NavigationComponent extends React.Component<PropsType, NavigationSt
 
 const mapStateToProps = (state: KialiAppState) => ({
   navCollapsed: state.userSettings.interface.navCollapse,
-  jaegerUrl: state.jaegerState.info && state.jaegerState.info.url ? state.jaegerState.info.url : undefined
+  tracingUrl: state.tracingState.info && state.tracingState.info.url ? state.tracingState.info.url : undefined,
+  externalServices: state.statusState.externalServices
 });
 
 const mapDispatchToProps = (dispatch: KialiDispatch) => ({

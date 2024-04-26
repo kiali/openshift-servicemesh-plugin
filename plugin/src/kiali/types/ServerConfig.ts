@@ -1,13 +1,21 @@
 import { DurationInSeconds } from './Common';
 import { MeshCluster } from './Mesh';
 
-export type IstioLabelKey = 'appLabelName' | 'versionLabelName' | 'injectionLabelName' | 'injectionLabelRev';
+export type IstioLabelKey =
+  | 'ambientWaypointLabel'
+  | 'ambientWaypointLabelValue'
+  | 'appLabelName'
+  | 'versionLabelName'
+  | 'injectionLabelName'
+  | 'injectionLabelRev';
 
 interface DeploymentConfig {
   viewOnlyMode: boolean;
 }
 
 interface IstioAnnotations {
+  ambientAnnotation: string;
+  ambientAnnotationEnabled: string;
   // this could also be the name of the pod label, both label and annotation are supported
   istioInjectionAnnotation: string;
 }
@@ -38,6 +46,11 @@ interface GraphUIDefaults {
   traffic: GraphTraffic;
 }
 
+interface I18nUIDefaults {
+  language: string;
+  showSelector: boolean;
+}
+
 interface ListUIDefaults {
   includeHealth: boolean;
   includeIstioResources: boolean;
@@ -45,9 +58,17 @@ interface ListUIDefaults {
   showIncludeToggles: boolean;
 }
 
+interface MeshUIDefaults {
+  findOptions: GraphFindOption[];
+  hideOptions: GraphFindOption[];
+  impl: string; // classic | topo | topo-no-overview
+}
+
 interface UIDefaults {
   graph: GraphUIDefaults;
+  i18n: I18nUIDefaults;
   list: ListUIDefaults;
+  mesh: MeshUIDefaults;
   metricsPerRefresh?: string;
   namespaces?: string[];
   refreshInterval?: string;
@@ -60,10 +81,15 @@ interface CertificatesInformationIndicators {
 interface KialiFeatureFlags {
   certificatesInformationIndicators: CertificatesInformationIndicators;
   disabledFeatures: string[];
-  istioInjectionAction: boolean;
   istioAnnotationAction: boolean;
+  istioInjectionAction: boolean;
   istioUpgradeAction: boolean;
   uiDefaults: UIDefaults;
+}
+
+export interface GatewayAPIClass {
+  className: string;
+  name: string;
 }
 
 // Not based exactly on Kiali configuration but rather whether things like prometheus config
@@ -96,18 +122,18 @@ export interface HealthConfig {
 
 // rateHealthConfig
 export interface RateHealthConfig {
-  namespace?: RegexConfig;
   kind?: RegexConfig;
   name?: RegexConfig;
+  namespace?: RegexConfig;
   tolerance: ToleranceConfig[];
 }
 // toleranceConfig
 export interface ToleranceConfig {
   code: RegexConfig;
   degraded: number;
+  direction?: RegexConfig;
   failure: number;
   protocol?: RegexConfig;
-  direction?: RegexConfig;
 }
 
 /*
@@ -120,14 +146,15 @@ export interface ServerConfig {
   authStrategy: string;
   clusters: { [key: string]: MeshCluster };
   deployment: DeploymentConfig;
+  gatewayAPIClasses: GatewayAPIClass[];
   gatewayAPIEnabled: boolean;
   healthConfig: HealthConfig;
   installationTag?: string;
   istioAnnotations: IstioAnnotations;
   istioCanaryRevision: IstioCanaryRevision;
   istioIdentityDomain: string;
-  istioNamespace: string;
   istioLabels: { [key in IstioLabelKey]: string };
+  istioNamespace: string;
   kialiFeatureFlags: KialiFeatureFlags;
   logLevel: string;
   prometheus: {

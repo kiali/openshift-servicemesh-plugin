@@ -4,7 +4,7 @@ import { serverConfig } from '../../config';
 import { ControlPlaneMetricsMap, Metric } from '../../types/Metrics';
 import { DurationInSeconds } from '../../types/Common';
 import { OverviewCardDataPlaneNamespace } from './OverviewCardDataPlaneNamespace';
-import { OverviewCardControlPlaneNamespace } from './OverviewCardControlPlaneNamespace';
+import { isRemoteCluster, OverviewCardControlPlaneNamespace } from './OverviewCardControlPlaneNamespace';
 import { IstiodResourceThresholds } from 'types/IstioStatus';
 import { connect } from 'react-redux';
 import { KialiAppState } from 'store/Store';
@@ -13,43 +13,42 @@ type ReduxProps = {
   istioAPIEnabled: boolean;
 };
 
-type Props = {
-  name: string;
-  duration: DurationInSeconds;
-  direction: DirectionType;
-  metrics?: Metric[];
-  errorMetrics?: Metric[];
+type Props = ReduxProps & {
+  annotations?: { [key: string]: string };
   controlPlaneMetrics?: ControlPlaneMetricsMap;
+  direction: DirectionType;
+  duration: DurationInSeconds;
+  errorMetrics?: Metric[];
   istiodResourceThresholds?: IstiodResourceThresholds;
+  metrics?: Metric[];
+  name: string;
 };
 
-class OverviewCardSparklineChartsComponent extends React.Component<Props & ReduxProps> {
-  render() {
-    return (
-      <>
-        {this.props.name !== serverConfig.istioNamespace && (
-          <OverviewCardDataPlaneNamespace
-            metrics={this.props.metrics}
-            errorMetrics={this.props.errorMetrics}
-            duration={this.props.duration}
-            direction={this.props.direction}
-          />
-        )}
-        {this.props.name === serverConfig.istioNamespace && this.props.istioAPIEnabled && (
-          <OverviewCardControlPlaneNamespace
-            pilotLatency={this.props.controlPlaneMetrics?.istiod_proxy_time}
-            istiodContainerMemory={this.props.controlPlaneMetrics?.istiod_container_mem}
-            istiodContainerCpu={this.props.controlPlaneMetrics?.istiod_container_cpu}
-            istiodProcessMemory={this.props.controlPlaneMetrics?.istiod_process_mem}
-            istiodProcessCpu={this.props.controlPlaneMetrics?.istiod_process_cpu}
-            duration={this.props.duration}
-            istiodResourceThresholds={this.props.istiodResourceThresholds}
-          />
-        )}
-      </>
-    );
-  }
-}
+const OverviewCardSparklineChartsComponent: React.FC<Props> = (props: Props) => {
+  return (
+    <>
+      {props.name !== serverConfig.istioNamespace && (
+        <OverviewCardDataPlaneNamespace
+          metrics={props.metrics}
+          errorMetrics={props.errorMetrics}
+          duration={props.duration}
+          direction={props.direction}
+        />
+      )}
+
+      {props.name === serverConfig.istioNamespace && props.istioAPIEnabled && !isRemoteCluster(props.annotations) && (
+        <OverviewCardControlPlaneNamespace
+          pilotLatency={props.controlPlaneMetrics?.istiod_proxy_time}
+          istiodContainerMemory={props.controlPlaneMetrics?.istiod_container_mem}
+          istiodContainerCpu={props.controlPlaneMetrics?.istiod_container_cpu}
+          istiodProcessMemory={props.controlPlaneMetrics?.istiod_process_mem}
+          istiodProcessCpu={props.controlPlaneMetrics?.istiod_process_cpu}
+          istiodResourceThresholds={props.istiodResourceThresholds}
+        />
+      )}
+    </>
+  );
+};
 
 const mapStateToProps = (state: KialiAppState): ReduxProps => ({
   istioAPIEnabled: state.statusState.istioEnvironment.istioAPIEnabled

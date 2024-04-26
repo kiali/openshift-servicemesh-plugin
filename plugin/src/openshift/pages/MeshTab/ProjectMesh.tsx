@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useHistory } from 'react-router';
+import { useParams, useLocation } from 'react-router-dom-v5-compat';
 import { ActionKeys } from 'actions/ActionKeys';
 import { store } from 'store/ConfigStore';
 import { GraphPage } from 'pages/Graph/GraphPage';
@@ -8,6 +8,7 @@ import { getPluginConfig, useInitKialiListeners } from '../../utils/KialiIntegra
 import { setHistory } from 'app/History';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { kialiStyle } from 'styles/StyleUtils';
+import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 
 const containerPadding = kialiStyle({ padding: '0 20px 0 20px' });
 
@@ -26,15 +27,13 @@ const ProjectMeshTab: React.FC<void> = () => {
       .catch(e => console.error(e));
   }, []);
 
-  const history = useHistory();
-  setHistory(history.location.pathname);
+  const location = useLocation();
+  setHistory(location.pathname);
 
-  const path = history.location.pathname.substring(8);
-  const items = path.split('/');
-  const namespace = items[2];
+  const { name: namespace } = useParams<ResourceURLPathProps>();
 
   // Set namespace of the project as active namespace in redux store
-  store.dispatch({ type: ActionKeys.SET_ACTIVE_NAMESPACES, payload: [{ name: namespace }] });
+  store.dispatch({ type: ActionKeys.SET_ACTIVE_NAMESPACES, payload: [{ name: namespace! }] });
 
   return (
     <KialiContainer>

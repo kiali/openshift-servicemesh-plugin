@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { useHistory } from 'react-router';
+import { useParams, useLocation } from 'react-router-dom-v5-compat';
 import { IstioConfigId } from 'types/IstioConfigDetails';
 import { IstioConfigDetailsPage } from 'pages/IstioConfigDetails/IstioConfigDetailsPage';
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 import { KialiContainer } from 'openshift/components/KialiContainer';
+import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 
 const configTypes = {
   DestinationRule: 'DestinationRules',
@@ -23,19 +24,15 @@ const configTypes = {
 const IstioConfigMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
-  const history = useHistory();
-  setHistory(history.location.pathname);
+  const location = useLocation();
+  setHistory(location.pathname);
 
-  const path = history.location.pathname.substring(8);
-  const items = path.split('/');
-  const namespace = items[0];
-  const objectType = configTypes[items[1].substring(items[1].lastIndexOf('~') + 1)].toLowerCase();
-  const object = items[2];
+  const { name, ns, plural } = useParams<ResourceURLPathProps>();
 
   const istioConfigId: IstioConfigId = {
-    namespace,
-    objectType,
-    object
+    namespace: ns!,
+    objectType: configTypes[plural!.substring(plural!.lastIndexOf('~') + 1)].toLowerCase(),
+    object: name!
   };
 
   return (

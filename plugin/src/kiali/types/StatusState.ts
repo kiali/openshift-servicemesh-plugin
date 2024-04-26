@@ -10,20 +10,25 @@ export enum StatusKey {
 
 export type Status = { [K in StatusKey]?: string };
 
+export type TempoConfig = {
+  datasource_uid: string;
+  org_id: string;
+};
+
 export interface ExternalServiceInfo {
   name: string;
-  version?: string;
+  tempoConfig?: TempoConfig;
   url?: string;
+  version?: string;
 }
 
 export interface IstioEnvironment {
-  isMaistra: boolean;
   istioAPIEnabled: boolean;
 }
 
 export interface StatusState {
-  status: Status;
   externalServices: ExternalServiceInfo[];
-  warningMessages: string[];
   istioEnvironment: IstioEnvironment;
+  status: Status;
+  warningMessages: string[];
 }

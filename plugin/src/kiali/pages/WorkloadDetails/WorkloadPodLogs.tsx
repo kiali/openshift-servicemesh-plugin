@@ -5,35 +5,37 @@ import {
   ButtonVariant,
   Card,
   CardBody,
+  Checkbox,
+  Divider,
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  Form,
+  FormGroup,
   Grid,
   GridItem,
+  MenuGroup,
+  MenuToggle,
+  MenuToggleElement,
   TextInput,
   Toolbar,
   ToolbarGroup,
   ToolbarItem,
   Tooltip,
-  TooltipPosition,
-  Form,
-  FormGroup,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
-  DropdownGroup,
-  DropdownSeparator,
-  Checkbox
+  TooltipPosition
 } from '@patternfly/react-core';
 import memoize from 'micro-memoize';
 import { AutoSizer, List } from 'react-virtualized';
 import { kialiStyle } from 'styles/StyleUtils';
 import { addError, addSuccess } from 'utils/AlertUtils';
-import { Pod, LogEntry, AccessLog, PodLogs } from '../../types/IstioObjects';
+import { AccessLog, LogEntry, LogType, Pod, PodLogs } from '../../types/IstioObjects';
 import { getPodLogs, getWorkloadSpans, setPodEnvoyProxyLogLevel } from '../../services/Api';
 import { PromisesRegistry } from '../../utils/CancelablePromises';
 import { ToolbarDropdown } from '../../components/ToolbarDropdown/ToolbarDropdown';
-import { TimeRange, evalTimeRange, TimeInMilliseconds, isEqualTimeRange, TimeInSeconds } from '../../types/Common';
+import { evalTimeRange, isEqualTimeRange, TimeInMilliseconds, TimeInSeconds, TimeRange } from '../../types/Common';
 import { RenderComponentScroll } from '../../components/Nav/Page';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
-import { KialiIcon, defaultIconStyle } from '../../config/KialiIcon';
+import { KialiIcon } from '../../config/KialiIcon';
 import screenfull, { Screenfull } from 'screenfull';
 import { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
@@ -42,36 +44,39 @@ import { PFColors, PFColorVal } from 'components/Pf/PfColors';
 import { AccessLogModal } from 'components/Envoy/AccessLogModal';
 import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
 import { history, URLParam } from 'app/History';
-import { TracingQuery, Span } from 'types/Tracing';
-import { AxiosResponse } from 'axios';
+import { Span, TracingQuery } from 'types/Tracing';
 import moment from 'moment';
 import { formatDuration } from 'utils/tracing/TracingHelper';
-import { infoStyle } from 'styles/DropdownStyles';
+import { infoStyle, kebabToggleStyle } from 'styles/DropdownStyles';
 import { isValid } from 'utils/Common';
 import { KioskElement } from '../../components/Kiosk/KioskElement';
 import { TimeDurationModal } from '../../components/Time/TimeDurationModal';
 import { TimeDurationIndicator } from '../../components/Time/TimeDurationIndicator';
 import { serverConfig } from '../../config';
+import { ApiResponse } from 'types/Api';
+import { isParentKiosk, kioskContextMenuAction } from 'components/Kiosk/KioskActions';
 
 const appContainerColors = [PFColors.Blue300, PFColors.Green300, PFColors.Purple300, PFColors.Orange300];
 const proxyContainerColor = PFColors.Gold400;
 const spanColor = PFColors.Cyan300;
 
 type ReduxProps = {
+  kiosk: string;
   timeRange: TimeRange;
 };
 
 export type WorkloadPodLogsProps = ReduxProps & {
+  cluster?: string;
   lastRefreshAt: TimeInMilliseconds;
   namespace: string;
   pods: Pod[];
   workload: string;
-  cluster?: string;
 };
 
 type ContainerOption = {
   color: PFColorVal;
   displayName: string;
+  isAmbient: boolean;
   isProxy: boolean;
   isSelected: boolean;
   name: string;
@@ -106,6 +111,7 @@ interface WorkloadPodLogsState {
   showSpans: boolean;
   showTimestamps: boolean;
   showToolbar: boolean;
+  showZtunnel: boolean;
   useRegex: boolean;
 }
 
@@ -120,7 +126,6 @@ enum LogLevel {
   Critical = 'critical'
 }
 
-const RETURN_KEY_CODE = 13;
 const NoLogsFoundMessage = 'No container logs found for the time period.';
 
 const MaxLinesDefault = 3000;
@@ -136,22 +141,29 @@ const MaxLinesOptions = {
 };
 
 const alInfoIcon = kialiStyle({
-  display: 'inline-block',
-  margin: '0px 5px 0px 0px',
-  width: '10px'
+  display: 'flex',
+  width: '0.75rem'
+});
+
+const checkInfoIcon = kialiStyle({
+  display: 'flex',
+  width: '0.75rem',
+  marginLeft: '-5px',
+  marginTop: '5px'
 });
 
 const infoIcons = kialiStyle({
   marginLeft: '0.5em',
-  width: '24px'
+  marginTop: '30%',
+  width: '1.5rem'
 });
 
 const toolbarTail = kialiStyle({
-  marginTop: '2px'
+  marginTop: '0.125rem'
 });
 
 const logsDiv = kialiStyle({
-  marginRight: '5px'
+  marginRight: '0.5rem'
 });
 
 const logsDisplay = kialiStyle({
@@ -163,21 +175,68 @@ const logsDisplay = kialiStyle({
   width: '100%'
 });
 
-// For some reason checkbox as a ToolbarItem needs to be tweaked
-const toolbarInputStyle = (color: string): string =>
+const iconStyle = kialiStyle({
+  marginLeft: '0.5rem'
+});
+
+const copyActionStyle = kialiStyle({
+  marginLeft: 'auto',
+  marginTop: '0.375rem'
+});
+
+const expandActionStyle = kialiStyle({
+  marginTop: '0.375rem'
+});
+
+const checkboxStyle = kialiStyle({
+  marginLeft: '0.5rem',
+  marginRight: '1rem'
+});
+
+const logListStyle = kialiStyle({
+  overflow: 'auto !important',
+  paddingTop: '0.375rem',
+  paddingBottom: '0.75rem'
+});
+
+const noLogsStyle = kialiStyle({
+  paddingTop: '0.75rem',
+  paddingLeft: '0.75rem'
+});
+
+const logLineStyle = kialiStyle({
+  display: 'flex',
+  height: '1.5rem',
+  lineHeight: '1.5rem',
+  paddingLeft: '0.75rem'
+});
+
+const logInfoStyle = kialiStyle({
+  paddingLeft: 0,
+  width: '0.75rem',
+  height: '0.75rem',
+  fontFamily: 'monospace',
+  fontSize: '0.75rem'
+});
+
+const logMessaageStyle = kialiStyle({
+  fontSize: '0.75rem',
+  paddingRight: '1rem'
+});
+
+const colorCheck = (color: string): string =>
   kialiStyle({
-    $nest: {
-      '&.pf-c-check input[type=checkbox]': {
-        accentColor: color,
-        marginTop: '2px'
-      }
-    }
+    accentColor: color
   });
 
-const logsBackground = (enabled: boolean) => ({ backgroundColor: enabled ? PFColors.Black1000 : PFColors.Black500 });
-const logsHeight = (showToolbar: boolean, fullscreen: boolean, showMaxLinesWarning: boolean) => {
+const logsBackground = (enabled: boolean): React.CSSProperties => ({
+  backgroundColor: enabled ? PFColors.Black1000 : PFColors.Black500
+});
+
+const logsHeight = (showToolbar: boolean, fullscreen: boolean, showMaxLinesWarning: boolean): React.CSSProperties => {
   const toolbarHeight = showToolbar ? '0px' : '49px';
   const maxLinesWarningHeight = showMaxLinesWarning ? '27px' : '0px';
+
   return {
     height: fullscreen
       ? `calc(100vh - 130px + ${toolbarHeight} - ${maxLinesWarningHeight})`
@@ -196,6 +255,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
 
     const urlParams = new URLSearchParams(history.location.search);
     const showSpans = urlParams.get(URLParam.SHOW_SPANS);
+    const showZtunnel = urlParams.get(URLParam.SHOW_ZTUNNEL);
 
     const defaultState = {
       accessLogModals: new Map<string, AccessLog>(),
@@ -212,10 +272,12 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
       showClearShowLogButton: false,
       showLogValue: '',
       showSpans: showSpans === 'true',
+      showZtunnel: showZtunnel === 'true',
       showTimestamps: false,
       showToolbar: true,
       useRegex: false
     };
+
     if (this.props.pods.length < 1) {
       this.state = {
         ...defaultState,
@@ -241,7 +303,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     };
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     const screenFullAlias = screenfull as Screenfull;
     screenFullAlias.onchange(() => this.setState({ fullscreen: !this.state.fullscreen }));
 
@@ -252,6 +314,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
         pod.name,
         this.state.containerOptions,
         this.state.showSpans,
+        this.state.showZtunnel,
         this.state.maxLines,
         this.props.timeRange,
         this.props.cluster
@@ -259,7 +322,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     }
   }
 
-  componentDidUpdate(prevProps: WorkloadPodLogsProps, prevState: WorkloadPodLogsState) {
+  componentDidUpdate(prevProps: WorkloadPodLogsProps, prevState: WorkloadPodLogsState): void {
     const prevContainerOptions = prevState.containerOptions ? prevState.containerOptions : undefined;
     const newContainerOptions = this.state.containerOptions ? this.state.containerOptions : undefined;
     const updateContainerOptions = newContainerOptions && newContainerOptions !== prevContainerOptions;
@@ -267,13 +330,23 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     const lastRefreshChanged = prevProps.lastRefreshAt !== this.props.lastRefreshAt;
     const showSpansChanged = prevState.showSpans !== this.state.showSpans;
     const timeRangeChanged = !isEqualTimeRange(this.props.timeRange, prevProps.timeRange);
-    if (updateContainerOptions || updateMaxLines || lastRefreshChanged || showSpansChanged || timeRangeChanged) {
+    const showZtunnel = prevState.showZtunnel !== this.state.showZtunnel;
+
+    if (
+      updateContainerOptions ||
+      updateMaxLines ||
+      lastRefreshChanged ||
+      showSpansChanged ||
+      timeRangeChanged ||
+      showZtunnel
+    ) {
       const pod = this.props.pods[this.state.podValue!];
       this.fetchEntries(
         this.props.namespace,
         pod.name,
         newContainerOptions!,
         this.state.showSpans,
+        this.state.showZtunnel,
         this.state.maxLines,
         this.props.timeRange,
         this.props.cluster
@@ -281,11 +354,11 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     }
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     this.promises.cancelAll();
   }
 
-  render() {
+  render(): React.ReactNode {
     return (
       <>
         <RenderComponentScroll>
@@ -296,11 +369,14 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                   <CardBody>
                     {this.state.showToolbar && (
                       <Toolbar style={{ padding: 0, width: '100%' }}>
-                        <ToolbarGroup style={{ margin: 0, marginRight: '5px' }}>
-                          <PFBadge badge={PFBadges.Pod} position={TooltipPosition.top} />
+                        <ToolbarGroup style={{ margin: 0, marginRight: '0.5rem' }}>
+                          <ToolbarItem>
+                            <PFBadge badge={PFBadges.Pod} position={TooltipPosition.top} style={{ marginTop: '30%' }} />
+                          </ToolbarItem>
+
                           <ToolbarItem>
                             <ToolbarDropdown
-                              id={'wpl_pods'}
+                              id="wpl_pods"
                               tooltip="Display logs for the selected pod"
                               handleSelect={key => this.setPod(key)}
                               value={this.state.podValue}
@@ -308,6 +384,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                               options={this.podOptions!}
                             />
                           </ToolbarItem>
+
                           <ToolbarItem>
                             <TextInput
                               id="log_show"
@@ -316,12 +393,13 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                               validated={isValid(this.state.showLogValue ? !this.state.showError : undefined)}
                               autoComplete="on"
                               type="text"
-                              onKeyPress={this.checkSubmitShow}
-                              onChange={this.updateShow}
+                              onKeyDown={this.checkSubmitShow}
+                              onChange={(_event, val) => this.updateShow(val)}
                               defaultValue={this.state.showLogValue}
                               aria-label="show log text"
                               placeholder="Show..."
                             />
+
                             {this.state.showClearShowLogButton && (
                               <Tooltip key="clear_show_log" position="top" content="Clear Show Log Entries...">
                                 <Button variant={ButtonVariant.control} onClick={this.clearShow}>
@@ -329,6 +407,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                                 </Button>
                               </Tooltip>
                             )}
+
                             <TextInput
                               id="log_hide"
                               name="log_hide"
@@ -336,12 +415,13 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                               validated={isValid(this.state.hideLogValue ? !this.state.hideError : undefined)}
                               autoComplete="on"
                               type="text"
-                              onKeyPress={this.checkSubmitHide}
-                              onChange={this.updateHide}
+                              onKeyDown={this.checkSubmitHide}
+                              onChange={(_event, val) => this.updateHide(val)}
                               defaultValue={this.state.hideLogValue}
                               aria-label="hide log text"
                               placeholder="Hide..."
                             />
+
                             {this.state.showClearHideLogButton && (
                               <Tooltip key="clear_hide_log" position="top" content="Clear Hide Log Entries...">
                                 <Button variant={ButtonVariant.control} onClick={this.clearHide}>
@@ -349,20 +429,26 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                                 </Button>
                               </Tooltip>
                             )}
+
                             {this.state.showError && <div style={{ color: 'red' }}>{this.state.showError}</div>}
                             {this.state.hideError && <div style={{ color: 'red' }}>{this.state.hideError}</div>}
-                            <Tooltip
-                              key="show_hide_log_help"
-                              position="top"
-                              content="Show only, or Hide all, matching log entries. Match by case-sensitive substring (default) or regular expression (as set in the kebab menu)."
-                            >
-                              <KialiIcon.Info className={infoIcons} />
-                            </Tooltip>
+
+                            <ToolbarItem>
+                              <Tooltip
+                                key="show_hide_log_help"
+                                position="top"
+                                content="Show only, or Hide all, matching log entries. Match by case-sensitive substring (default) or regular expression (as set in the kebab menu)."
+                              >
+                                <KialiIcon.Info className={infoIcons} />
+                              </Tooltip>
+                            </ToolbarItem>
                           </ToolbarItem>
-                          <ToolbarItem>
+
+                          <ToolbarItem style={{ alignSelf: 'center' }}>
                             <Checkbox
-                              className={toolbarInputStyle(spanColor)}
                               id="log-spans"
+                              className={checkboxStyle}
+                              inputClassName={colorCheck(spanColor)}
                               isChecked={this.state.showSpans}
                               label={
                                 <span
@@ -374,20 +460,22 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                                   spans
                                 </span>
                               }
-                              onChange={checked => this.toggleSpans(checked)}
+                              onChange={(_event, checked) => this.toggleSpans(checked)}
                             />
                           </ToolbarItem>
+
                           <ToolbarItem style={{ marginLeft: 'auto' }}>
                             <ToolbarDropdown
-                              id={'wpl_maxLines'}
+                              id="wpl_maxLines"
                               handleSelect={key => this.setMaxLines(Number(key))}
                               value={this.state.maxLines}
                               label={MaxLinesOptions[this.state.maxLines]}
                               options={MaxLinesOptions}
-                              tooltip={'Truncate after N log lines'}
-                              classNameSelect={toolbarTail}
+                              tooltip="Truncate after N log lines"
+                              className={toolbarTail}
                             />
                           </ToolbarItem>
+
                           <KioskElement>
                             <ToolbarItem>
                               <TimeDurationIndicator onClick={this.toggleTimeOptionsVisibility} />
@@ -405,6 +493,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
           )}
           {this.state.loadingLogsError && <div>{this.state.loadingLogsError}</div>}
         </RenderComponentScroll>
+
         <TimeDurationModal
           customDuration={true}
           isOpen={this.state.isTimeOptionsOpen}
@@ -415,41 +504,76 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     );
   }
 
-  private toggleSpans = (checked: boolean) => {
+  private toggleSpans = (checked: boolean): void => {
     const urlParams = new URLSearchParams(history.location.search);
     urlParams.set(URLParam.SHOW_SPANS, String(checked));
-    history.replace(history.location.pathname + '?' + urlParams.toString());
+    history.replace(`${history.location.pathname}?${urlParams.toString()}`);
+
     this.setState({ showSpans: !this.state.showSpans });
   };
 
-  private getContainerLegend = () => {
+  private getContainerLegend = (): React.ReactNode => {
     return (
-      <Form data-test={'workload-logs-pod-containers'}>
+      <Form data-test="workload-logs-pod-containers" style={{ marginTop: '0.375rem' }}>
         <FormGroup fieldId="container-log-selection" isInline>
           <PFBadge
             badge={{ badge: PFBadges.Container.badge, tt: 'Containers' }}
-            style={{ marginRight: '10px' }}
+            style={{ marginRight: '0.75rem', height: '1.25rem' }}
             position={TooltipPosition.top}
           />
+
           {this.state.containerOptions!.map((c, i) => {
             return (
-              <Checkbox
-                className={toolbarInputStyle(c.color)}
-                id={`container-${c.displayName}`}
-                key={`c-d-${i}`}
-                isChecked={c.isSelected}
-                label={
-                  <span
-                    style={{
-                      color: c.color,
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {c.displayName}
-                  </span>
-                }
-                onChange={() => this.toggleSelected(c)}
-              />
+              <>
+                <Checkbox
+                  id={`container-${c.displayName}`}
+                  key={`c-d-${i}`}
+                  className={checkboxStyle}
+                  inputClassName={colorCheck(c.color)}
+                  isChecked={c.isSelected}
+                  label={
+                    <span
+                      style={{
+                        color: c.color,
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {c.displayName}
+                    </span>
+                  }
+                  onChange={() => this.toggleSelected(c)}
+                />
+                {c.isAmbient && (
+                  <>
+                    <Checkbox
+                      id={`ztunnel-${c.displayName}`}
+                      key={`ztunnel-${i}`}
+                      className={checkboxStyle}
+                      inputClassName={colorCheck(proxyContainerColor)}
+                      isChecked={this.state.showZtunnel}
+                      label={
+                        <span
+                          style={{
+                            color: proxyContainerColor,
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          ztunnel
+                        </span>
+                      }
+                      onChange={() => this.toggleZtunnel()}
+                    />
+                    <Tooltip
+                      key={`al-tt-tl`}
+                      position={TooltipPosition.auto}
+                      entryDelay={1000}
+                      content="A filtered subset of log entries from the ztunnel's (ambient node proxy) pod logs, relevant to the selected workload pod"
+                    >
+                      <KialiIcon.Info key={`al-i-ki`} className={checkInfoIcon} color={proxyContainerColor} />
+                    </Tooltip>
+                  </>
+                )}
+              </>
             );
           })}
         </FormGroup>
@@ -457,27 +581,36 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     );
   };
 
-  private toggleSelected = (c: ContainerOption) => {
+  private toggleSelected = (c: ContainerOption): void => {
     c.isSelected = !c.isSelected;
     this.setState({ containerOptions: [...this.state.containerOptions!] });
   };
 
-  private toggleTimeOptionsVisibility = () => {
+  private toggleZtunnel = (): void => {
+    const urlParams = new URLSearchParams(history.location.search);
+    urlParams.set(URLParam.SHOW_ZTUNNEL, String(!this.state.showZtunnel));
+    history.replace(`${history.location.pathname}?${urlParams.toString()}`);
+
+    this.setState({ showZtunnel: !this.state.showZtunnel });
+  };
+
+  private toggleTimeOptionsVisibility = (): void => {
     this.setState(prevState => ({ isTimeOptionsOpen: !prevState.isTimeOptionsOpen }));
   };
 
-  private renderLogLine = ({ index, style }: { index: number; style: Object }) => {
+  private renderLogLine = ({ index, style }: { index: number; style: React.CSSProperties }): React.ReactNode => {
     let e = this.filteredEntries(
       this.state.entries,
       this.state.showLogValue,
       this.state.hideLogValue,
       this.state.useRegex
     )[index];
+
     if (e.span) {
       return (
-        <div key={`s-${index}`} style={{ height: '22px', lineHeight: '22px', paddingLeft: '10px', ...style }}>
+        <div key={`s-${index}`} className={logLineStyle} style={{ ...style }}>
           {this.state.showTimestamps && (
-            <span key={`al-s-${index}`} style={{ color: spanColor, fontSize: '12px', marginRight: '5px' }}>
+            <span key={`al-s-${index}`} className={logMessaageStyle} style={{ color: spanColor }}>
               {e.timestamp}
             </span>
           )}
@@ -490,13 +623,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
             <Button
               key={`s-b-${index}`}
               variant={ButtonVariant.plain}
-              style={{
-                paddingLeft: '6px',
-                width: '10px',
-                height: '10px',
-                fontFamily: 'monospace',
-                fontSize: '12px'
-              }}
+              className={logInfoStyle}
               onClick={() => {
                 this.gotoSpan(e.span!);
               }}
@@ -504,15 +631,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
               <KialiIcon.Info key={`al-i-${index}`} className={alInfoIcon} color={spanColor} />
             </Button>
           </Tooltip>
-          <p
-            key={`al-p-${index}`}
-            style={{
-              color: spanColor,
-              fontSize: '12px',
-              verticalAlign: 'center',
-              display: 'inline-block'
-            }}
-          >
+          <p key={`al-p-${index}`} className={logMessaageStyle} style={{ color: spanColor }}>
             {this.entryToString(e)}
           </p>
         </div>
@@ -523,18 +642,19 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     const messageColor = le.color! ?? PFColors.Color200;
 
     return !le.accessLog ? (
-      <div key={`le-d-${index}`} style={{ height: '22px', lineHeight: '22px', paddingLeft: '10px', ...style }}>
-        <p key={`le-${index}`} style={{ color: messageColor, fontSize: '12px' }}>
+      <div key={`le-d-${index}`} className={logLineStyle} style={{ ...style }}>
+        <p key={`le-${index}`} className={logMessaageStyle} style={{ color: messageColor }}>
           {this.entryToString(e)}
         </p>
       </div>
     ) : (
-      <div key={`al-${index}`} style={{ height: '22px', lineHeight: '22px', paddingLeft: '10px', ...style }}>
+      <div key={`al-${index}`} className={logLineStyle} style={{ ...style }}>
         {this.state.showTimestamps && (
-          <span key={`al-s-${index}`} style={{ color: messageColor, fontSize: '12px', marginRight: '5px' }}>
+          <span key={`al-s-${index}`} className={logMessaageStyle} style={{ color: messageColor }}>
             {formatDate(le.timestamp)}
           </span>
         )}
+
         <Tooltip
           key={`al-tt-${index}`}
           position={TooltipPosition.auto}
@@ -544,13 +664,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
           <Button
             key={`al-b-${index}`}
             variant={ButtonVariant.plain}
-            style={{
-              paddingLeft: '6px',
-              width: '10px',
-              height: '10px',
-              fontFamily: 'monospace',
-              fontSize: '12px'
-            }}
+            className={logInfoStyle}
             onClick={() => {
               this.addAccessLogModal(le.message, le.accessLog!);
             }}
@@ -558,18 +672,17 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
             <KialiIcon.Info key={`al-i-${index}`} className={alInfoIcon} color={messageColor} />
           </Button>
         </Tooltip>
-        <p
-          key={`al-p-${index}`}
-          style={{ color: messageColor, fontSize: '12px', verticalAlign: 'center', display: 'inline-block' }}
-        >
+
+        <p key={`al-p-${index}`} className={logMessaageStyle} style={{ color: messageColor }}>
           {le.message}
         </p>
       </div>
     );
   };
 
-  private getLogsDiv = () => {
+  private getLogsDiv = (): React.ReactNode => {
     const hasProxyContainer = this.state.containerOptions?.some(opt => opt.isProxy);
+
     const logDropDowns = Object.keys(LogLevel).map(level => {
       return (
         <DropdownItem
@@ -583,9 +696,9 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
         </DropdownItem>
       );
     });
+
     const dropdownGroupLabel = (
-      // nowrap is needed for the info icon to appear on same line as the label text
-      <div style={{ whiteSpace: 'nowrap' }}>
+      <h1 className="pf-v5-c-menu__group-title">
         Set Proxy Log Level
         <Tooltip
           position={TooltipPosition.right}
@@ -603,43 +716,50 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
         >
           <KialiIcon.Info className={infoStyle} />
         </Tooltip>
-      </div>
+      </h1>
     );
 
     const kebabActions = [
       <DropdownItem key="toggleToolbar" onClick={this.toggleToolbar}>
         {`${this.state.showToolbar ? 'Collapse' : 'Expand'} Toolbar`}
       </DropdownItem>,
+
       <DropdownItem key="toggleRegex" onClick={this.toggleUseRegex}>
         {`Match via ${this.state.useRegex ? 'Substring' : 'Regex'}`}
       </DropdownItem>,
+
       <DropdownItem key="toggleTimestamps" onClick={this.toggleShowTimestamps}>
         {`${this.state.showTimestamps ? 'Remove' : 'Show'} Timestamps`}
       </DropdownItem>,
-      <DropdownSeparator key="logLevelSeparator" />,
-      <DropdownGroup label={dropdownGroupLabel} key="setLogLevels">
+
+      <Divider key="logLevelSeparator" />,
+
+      <MenuGroup key="setLogLevels" label={dropdownGroupLabel}>
         {hasProxyContainer && logDropDowns}
-      </DropdownGroup>
+      </MenuGroup>
     ];
 
     const logEntries = this.state.entries
       ? this.filteredEntries(this.state.entries, this.state.showLogValue, this.state.hideLogValue, this.state.useRegex)
       : [];
+
     return (
       <div key="logsDiv" id="logsDiv" className={logsDiv}>
-        <Toolbar style={{ padding: '5px 0' }}>
-          <ToolbarGroup>
+        <Toolbar style={{ padding: '0.25rem 0' }}>
+          <ToolbarGroup style={{ margin: 0 }}>
             <ToolbarItem>{this.getContainerLegend()}</ToolbarItem>
-            <ToolbarItem style={{ marginLeft: 'auto' }}>
+            <ToolbarItem className={copyActionStyle}>
               <Tooltip key="copy_logs" position="top" content="Copy logs to clipboard">
                 <CopyToClipboard text={this.entriesToString(this.state.entries)}>
                   <Button variant={ButtonVariant.link} isInline>
-                    <KialiIcon.Copy className={defaultIconStyle} />
+                    <KialiIcon.Copy />
+                    <span className={iconStyle}>Copy</span>
                   </Button>
                 </CopyToClipboard>
               </Tooltip>
             </ToolbarItem>
-            <ToolbarItem>
+
+            <ToolbarItem className={expandActionStyle}>
               <Tooltip key="fullscreen_logs" position="top" content="Expand logs full screen">
                 <Button
                   variant={ButtonVariant.link}
@@ -647,24 +767,39 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                   isDisabled={!this.hasEntries(this.state.entries)}
                   isInline
                 >
-                  <KialiIcon.Expand className={defaultIconStyle} />
+                  <KialiIcon.Expand />
+                  <span className={iconStyle}>Expand</span>
                 </Button>
               </Tooltip>
             </ToolbarItem>
+
             <ToolbarItem>
               <Dropdown
-                style={{ width: '20px' }}
-                toggle={<KebabToggle onToggle={this.setKebabOpen} />}
-                dropdownItems={kebabActions}
-                isPlain
+                toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                  <MenuToggle
+                    ref={toggleRef}
+                    className={kebabToggleStyle}
+                    aria-label="Actions"
+                    variant="plain"
+                    onClick={() => this.setKebabOpen(!this.state.kebabOpen)}
+                    isExpanded={this.state.kebabOpen}
+                    style={{ float: 'right' }}
+                  >
+                    <KialiIcon.KebabToggle />
+                  </MenuToggle>
+                )}
                 isOpen={this.state.kebabOpen}
-                position={'right'}
-              />
+                onOpenChange={(isOpen: boolean) => this.setKebabOpen(isOpen)}
+                popperProps={{ position: 'right' }}
+              >
+                <DropdownList>{kebabActions}</DropdownList>
+              </Dropdown>
             </ToolbarItem>
           </ToolbarGroup>
         </Toolbar>
+
         {this.state.linesTruncatedContainers.length > 0 && (
-          <div style={{ marginBottom: '5px' }}>
+          <div style={{ marginBottom: '0.5rem' }}>
             <Alert
               variant="danger"
               isInline={true}
@@ -675,6 +810,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
             />
           </div>
         )}
+
         <div
           key="logsText"
           id="logsText"
@@ -702,11 +838,9 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                 height={height}
                 width={width}
                 scrollToIndex={logEntries.length - 1}
-                noRowsRenderer={() => (
-                  <div style={{ paddingTop: '10px', paddingLeft: '10px' }}>{NoLogsFoundMessage}</div>
-                )}
-                containerStyle={{ overflow: 'initial !important' }}
-                style={{ overflowX: 'auto', overflowY: 'auto' }}
+                noRowsRenderer={() => <div className={noLogsStyle}>{NoLogsFoundMessage}</div>}
+                containerStyle={{ overflow: 'initial' }}
+                className={logListStyle}
               />
             )}
           </AutoSizer>
@@ -715,8 +849,8 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     );
   };
 
-  private getAccessLogModals = (): React.ReactFragment[] => {
-    const modals: React.ReactFragment[] = [];
+  private getAccessLogModals = (): React.ReactNode[] => {
+    const modals: React.ReactNode[] = [];
     let i = 0;
 
     this.state.accessLogModals.forEach((v, k) => {
@@ -726,6 +860,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
           accessLog={v}
           accessLogMessage={k}
           onClose={() => this.removeAccessLogModal(k)}
+          isZtunnel={this.state.showZtunnel}
         />
       );
     });
@@ -733,52 +868,57 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     return modals;
   };
 
-  private setPod = (podValue: string) => {
+  private setPod = (podValue: string): void => {
     const pod = this.props.pods[Number(podValue)];
     const containerNames = this.getContainerOptions(pod);
     this.setState({ containerOptions: containerNames, podValue: Number(podValue) });
   };
 
-  private setMaxLines = (maxLines: number) => {
+  private setMaxLines = (maxLines: number): void => {
     this.setState({ maxLines: maxLines });
   };
 
-  private setKebabOpen = (kebabOpen: boolean) => {
+  private setKebabOpen = (kebabOpen: boolean): void => {
     this.setState({ kebabOpen: kebabOpen });
   };
 
-  private gotoSpan = (span: Span) => {
+  private gotoSpan = (span: Span): void => {
     const link =
       `/namespaces/${this.props.namespace}/workloads/${this.props.workload}` +
-      `?tab=traces&${URLParam.JAEGER_TRACE_ID}=${span.traceID}&${URLParam.JAEGER_SPAN_ID}=${span.spanID}`;
-    history.push(link);
+      `?tab=traces&${URLParam.TRACING_TRACE_ID}=${span.traceID}&${URLParam.TRACING_SPAN_ID}=${span.spanID}`;
+
+    if (isParentKiosk(this.props.kiosk)) {
+      kioskContextMenuAction(link);
+    } else {
+      history.push(link);
+    }
   };
 
-  private addAccessLogModal = (k: string, v: AccessLog) => {
+  private addAccessLogModal = (k: string, v: AccessLog): void => {
     const accessLogModals = new Map<string, AccessLog>(this.state.accessLogModals);
     accessLogModals.set(k, v);
     this.setState({ accessLogModals: accessLogModals });
   };
 
-  private removeAccessLogModal = (k: string) => {
+  private removeAccessLogModal = (k: string): void => {
     this.state.accessLogModals.delete(k);
     const accessLogModals = new Map<string, AccessLog>(this.state.accessLogModals);
     this.setState({ accessLogModals: accessLogModals });
   };
 
-  private toggleShowTimestamps = () => {
+  private toggleShowTimestamps = (): void => {
     this.setState({ showTimestamps: !this.state.showTimestamps, kebabOpen: false });
   };
 
-  private toggleToolbar = () => {
+  private toggleToolbar = (): void => {
     this.setState({ showToolbar: !this.state.showToolbar, kebabOpen: false });
   };
 
-  private toggleUseRegex = () => {
+  private toggleUseRegex = (): void => {
     this.setState({ useRegex: !this.state.useRegex, kebabOpen: false });
   };
 
-  private setLogLevel = (level: LogLevel) => {
+  private setLogLevel = (level: LogLevel): void => {
     this.setState({ kebabOpen: false });
     const pod = this.props.pods[this.state.podValue!];
 
@@ -791,18 +931,18 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
       });
   };
 
-  private checkSubmitShow = event => {
-    const keyCode = event.keyCode ? event.keyCode : event.which;
-    if (keyCode === RETURN_KEY_CODE) {
+  private checkSubmitShow = (event: React.KeyboardEvent): void => {
+    if (event.key === 'Enter') {
       event.preventDefault();
+
       this.setState({
-        showClearShowLogButton: !!event.target.value,
-        showLogValue: event.target.value
+        showClearShowLogButton: !!(event.target as HTMLInputElement).value,
+        showLogValue: (event.target as HTMLInputElement).value
       });
     }
   };
 
-  private updateShow = val => {
+  private updateShow = (val: string): void => {
     if ('' === val) {
       this.clearShow();
     }
@@ -822,6 +962,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
         try {
           const regexp = RegExp(showValue);
           filteredEntries = filteredEntries.filter(e => !e.logEntry || regexp.test(e.logEntry.message));
+
           if (!!this.state.showError) {
             this.setState({ showError: undefined });
           }
@@ -840,6 +981,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
         try {
           const regexp = RegExp(hideValue);
           filteredEntries = filteredEntries.filter(e => !e.logEntry || !regexp.test(e.logEntry.message));
+
           if (!!this.state.hideError) {
             this.setState({ hideError: undefined });
           }
@@ -856,7 +998,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     return filteredEntries;
   });
 
-  private clearShow = () => {
+  private clearShow = (): void => {
     // TODO: when TextInput refs are fixed in PF4 then use the ref and remove the direct HTMLElement usage
     // this.showInputRef.value = '';
     const htmlInputElement: HTMLInputElement = document.getElementById('log_show') as HTMLInputElement;
@@ -871,27 +1013,28 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     });
   };
 
-  private checkSubmitHide = event => {
-    const keyCode = event.keyCode ? event.keyCode : event.which;
-    if (keyCode === RETURN_KEY_CODE) {
+  private checkSubmitHide = (event: React.KeyboardEvent): void => {
+    if (event.key === 'Enter') {
       event.preventDefault();
+
       this.setState({
-        showClearHideLogButton: !!event.target.value,
-        hideLogValue: event.target.value
+        showClearHideLogButton: !!(event.target as HTMLInputElement).value,
+        hideLogValue: (event.target as HTMLInputElement).value
       });
     }
   };
 
-  private updateHide = val => {
+  private updateHide = (val: string): void => {
     if ('' === val) {
       this.clearHide();
     }
   };
 
-  private clearHide = () => {
+  private clearHide = (): void => {
     // TODO: when TextInput refs are fixed in PF4 then use the ref and remove the direct HTMLElement usage
     // this.hideInputRef.value = '';
     const htmlInputElement: HTMLInputElement = document.getElementById('log_hide') as HTMLInputElement;
+
     if (htmlInputElement !== null) {
       htmlInputElement.value = '';
     }
@@ -903,12 +1046,14 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     });
   };
 
-  private toggleFullscreen = () => {
+  private toggleFullscreen = (): void => {
     const screenFullAlias = screenfull as Screenfull; // this casting was necessary
+
     if (screenFullAlias.isFullscreen) {
       screenFullAlias.exit();
     } else {
       const element = document.getElementById('logs');
+
       if (screenFullAlias.isEnabled) {
         if (element) {
           screenFullAlias.request(element);
@@ -919,23 +1064,37 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
 
   private getContainerOptions = (pod: Pod): ContainerOption[] => {
     // sort containers by name, consistently positioning proxy container first.
-    let containers = [...(pod.istioContainers || [])];
-    containers.push(...(pod.containers || []));
+    let containers = [...(pod.istioContainers ?? [])];
+    containers.push(...(pod.containers ?? []));
+
     containers = containers.sort((c1, c2) => {
       if (c1.isProxy !== c2.isProxy) {
         return c1.isProxy ? 0 : 1;
       }
       return c1.name < c2.name ? 0 : 1;
     });
+
     let appContainerCount = 0;
     let containerOptions = containers.map(c => {
       const name = c.name;
+
+      const isAmbient = c.isAmbient;
+
       if (c.isProxy) {
-        return { color: proxyContainerColor, displayName: name, isProxy: true, isSelected: true, name: name };
+        const proxyName = pod.name.includes('ztunnel') ? 'ztunnel' : 'sidecar-proxy';
+
+        return {
+          color: proxyContainerColor,
+          displayName: proxyName,
+          isAmbient: isAmbient,
+          isProxy: true,
+          isSelected: true,
+          name: name
+        };
       }
 
       const color = appContainerColors[appContainerCount++ % appContainerColors.length];
-      return { color: color, displayName: name, isProxy: false, isSelected: true, name: name };
+      return { color: color, displayName: name, isAmbient: isAmbient, isProxy: false, isSelected: true, name: name };
     });
 
     return containerOptions;
@@ -946,30 +1105,64 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     podName: string,
     containerOptions: ContainerOption[],
     showSpans: boolean,
+    showZtunnel: boolean,
     maxLines: number,
     timeRange: TimeRange,
     cluster?: string
-  ) => {
+  ): void => {
     const now: TimeInMilliseconds = Date.now();
     const timeRangeDates = evalTimeRange(timeRange);
     const sinceTime: TimeInSeconds = Math.floor(timeRangeDates[0].getTime() / 1000);
     const endTime: TimeInMilliseconds = timeRangeDates[1].getTime();
+
     // to save work on the server-side, only supply duration when time range is in the past
     let duration = 0;
+
     if (endTime < now) {
       duration = Math.floor(timeRangeDates[1].getTime() / 1000) - sinceTime;
     }
 
     const selectedContainers = containerOptions.filter(c => c.isSelected);
-    const promises: Promise<AxiosResponse<PodLogs | Span[]>>[] = selectedContainers.map(c => {
-      return getPodLogs(namespace, podName, c.name, maxLines, sinceTime, duration, c.isProxy, cluster);
+    const extraContainers: ContainerOption[] = [];
+
+    if (showZtunnel) {
+      for (const c of containerOptions) {
+        if (c.isAmbient) {
+          const ztunnel = { ...c };
+          ztunnel.isAmbient = false;
+          ztunnel.color = proxyContainerColor;
+          ztunnel.displayName = 'ztunnel';
+          extraContainers.push(ztunnel);
+        }
+      }
+    }
+
+    const promises: Promise<ApiResponse<PodLogs | Span[]>>[] = selectedContainers.map(c => {
+      return getPodLogs(
+        namespace,
+        podName,
+        c.name,
+        maxLines,
+        sinceTime,
+        duration,
+        c.isProxy ? LogType.PROXY : LogType.APP,
+        cluster
+      );
     });
+
+    if (showZtunnel) {
+      extraContainers.forEach(c => {
+        promises.push(getPodLogs(namespace, podName, c.name, maxLines, sinceTime, duration, LogType.ZTUNNEL, cluster));
+      });
+    }
+
     if (showSpans) {
       // Convert seconds to microseconds
       const params: TracingQuery = {
         endMicros: endTime * 1000,
         startMicros: sinceTime * 1000000
       };
+
       promises.unshift(getWorkloadSpans(namespace, this.props.workload, params, this.props.cluster));
     }
 
@@ -979,8 +1172,10 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
         let entries = [] as Entry[];
         if (showSpans) {
           const spans = showSpans ? (responses[0].data as Span[]) : ([] as Span[]);
+
           entries = spans.map(span => {
             let startTimeU = Math.floor(span.startTime / 1000);
+
             return {
               timestamp: moment(startTimeU).utc().format('YYYY-MM-DD HH:mm:ss.SSS'),
               timestampUnix: startTimeU,
@@ -991,13 +1186,18 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
         }
 
         let linesTruncatedContainers: string[] = [];
+
+        // TODO: Merge just if showZtunnel?
+        const allContainers = selectedContainers.concat(extraContainers);
         for (let i = 0; i < responses.length; i++) {
           const response = responses[i].data as PodLogs;
           const containerLogEntries = response.entries as LogEntry[];
+
           if (!containerLogEntries) {
             continue;
           }
-          const color = selectedContainers[i].color;
+
+          const color = allContainers[i].color;
           containerLogEntries.forEach(le => {
             le.color = color;
             entries.push({ timestamp: le.timestamp, timestampUnix: le.timestampUnix, logEntry: le } as Entry);
@@ -1026,8 +1226,10 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
           this.setState({ loadingLogs: false });
           return;
         }
-        const errorMsg = error.response?.data?.error || error.message;
+
+        const errorMsg = error.response?.data?.error ?? error.message;
         const now = Date.now();
+
         this.setState({
           loadingLogs: false,
           entries: [
@@ -1074,8 +1276,9 @@ const formatDate = (timestamp: string): string => {
   return entryTimestamp;
 };
 
-const mapStateToProps = (state: KialiAppState) => {
+const mapStateToProps = (state: KialiAppState): ReduxProps => {
   return {
+    kiosk: state.globalState.kiosk,
     timeRange: timeRangeSelector(state)
   };
 };

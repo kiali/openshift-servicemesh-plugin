@@ -24,7 +24,7 @@ export const sortFields: SortField<AppListItem>[] = [
     title: 'Namespace',
     isNumeric: false,
     param: 'ns',
-    compare: (a, b) => {
+    compare: (a: AppListItem, b: AppListItem): number => {
       let sortValue = a.namespace.localeCompare(b.namespace);
       if (sortValue === 0) {
         sortValue = a.name.localeCompare(b.name);
@@ -37,14 +37,14 @@ export const sortFields: SortField<AppListItem>[] = [
     title: 'App Name',
     isNumeric: false,
     param: 'wn',
-    compare: (a, b) => a.name.localeCompare(b.name)
+    compare: (a: AppListItem, b: AppListItem): number => a.name.localeCompare(b.name)
   },
   {
     id: 'details',
     title: 'Details',
     isNumeric: false,
     param: 'is',
-    compare: (a, b) => {
+    compare: (a: AppListItem, b: AppListItem): number => {
       // First sort by missing sidecar
       const aSC = hasMissingSidecar(a) ? 1 : 0;
       const bSC = hasMissingSidecar(b) ? 1 : 0;
@@ -69,7 +69,7 @@ export const sortFields: SortField<AppListItem>[] = [
     title: 'Health',
     isNumeric: false,
     param: 'he',
-    compare: (a, b) => {
+    compare: (a: AppListItem, b: AppListItem): number => {
       if (hasHealth(a) && hasHealth(b)) {
         const statusForA = a.health.getGlobalStatus();
         const statusForB = b.health.getGlobalStatus();
@@ -94,7 +94,7 @@ export const sortFields: SortField<AppListItem>[] = [
     title: 'Cluster',
     isNumeric: false,
     param: 'cl',
-    compare: (a: AppListItem, b: AppListItem) => {
+    compare: (a: AppListItem, b: AppListItem): number => {
       if (a.cluster && b.cluster) {
         let sortValue = a.cluster.localeCompare(b.cluster);
         if (sortValue === 0) {

@@ -1,15 +1,15 @@
 import * as React from 'react';
+import { useLocation } from 'react-router-dom-v5-compat';
 import { OverviewPage } from 'pages/Overview/OverviewPage';
 import { useInitKialiListeners } from '../utils/KialiIntegration';
 import { setHistory } from 'app/History';
-import { useHistory } from 'react-router';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 
 const OverviewPageOSSMC: React.FC<void> = () => {
   useInitKialiListeners();
 
-  const history = useHistory();
-  setHistory(history.location.pathname);
+  const location = useLocation();
+  setHistory(location.pathname);
 
   return (
     <KialiContainer>
