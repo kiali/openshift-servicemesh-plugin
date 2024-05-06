@@ -73,6 +73,10 @@ else
 	@$(eval KIALI_URL_TO_USE = $${KIALI_URL})
 endif
 
+## prepare-git: Prepares the local dev environment so you can git commit
+prepare-git:
+	cd ${PLUGIN_DIR} && yarn add pretty-quick
+
 ## prepare-dev-env: Prepares the local dev environment so you can run the plugin and OpenShift console locally.
 prepare-dev-env: .determine-kiali-url
 	@cd ${PLUGIN_DIR} && yarn install
