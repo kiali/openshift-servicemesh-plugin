@@ -2,8 +2,8 @@ name: Release
 
 on:
   schedule:
-  # Every Monday at 01:00 (UTC) - this action takes several hours to complete
-  - cron: "00 1 * * MON"
+  # Every Tuesday at 01:00 (UTC) which is the day after the server release is done. This action takes several hours to complete.
+  - cron: "00 1 * * TUE"
   workflow_dispatch:
     inputs:
       plugin_quay_repository:
@@ -11,6 +11,10 @@ on:
         type: string
         default: quay.io/kiali/ossmconsole
         required: true
+      kiali_source_code_version:
+        description: The version of the Kiali source code to build with OSSMC. This is either a branch or tag name. The default is the version of the OSSMC release being built. This means by default the versions of the Kiali source and OSSMC will be the same.
+        type: string
+        required: false
 
 jobs:
   initialize:
@@ -23,6 +27,7 @@ jobs:
       branch_version: ${{ env.branch_version }}
       next_version: ${{ env.next_version }}
       plugin_quay_tag: ${{ env.plugin_quay_tag }}
+      kiali_src_code_version: ${{ env.kiali_src_code_version }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -146,6 +151,20 @@ jobs:
 
         echo "plugin_quay_tag=$PLUGIN_QUAY_TAG" >> $GITHUB_ENV
 
+    - name: Determine Kiali Source Code Version To Copy
+      env:
+        RELEASE_VERSION: ${{ env.release_version }}
+      id: determine_kiali_src_code_version
+      run: |
+        if [ -z "${{ github.event.inputs.kiali_source_code_version }}" ];
+        then
+          KIALI_SRC_CODE_VERSION="$RELEASE_VERSION"
+        else
+          KIALI_SRC_CODE_VERSION="${{ github.event.inputs.kiali_source_code_version }}"
+        fi
+
+        echo "kiali_src_code_version=$KIALI_SRC_CODE_VERSION" >> $GITHUB_ENV
+
     - name: Cleanup
       run: rm bump.py minor.py
 
@@ -161,6 +180,8 @@ jobs:
 
         echo "Plugin Quay tag: ${{ env.plugin_quay_tag }}"
 
+        echo "Kiali Source Code Version to Copy: ${{ env.kiali_src_code_version }}"
+
   release:
     name: Release
     if: ${{ needs.initialize.outputs.release_type != 'skip' && ((github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule') }}
@@ -172,6 +193,7 @@ jobs:
       NEXT_VERSION: ${{ needs.initialize.outputs.next_version }}
       RELEASE_BRANCH: ${{ github.ref_name }}
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
+      KIALI_SRC_CODE_VERSION: ${{ needs.initialize.outputs.kiali_src_code_version }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -195,17 +217,20 @@ jobs:
     - name: Print disk space after
       run: df -h
 
+    - name: Configure git
+      run: |
+        git config user.email 'kiali-dev@googlegroups.com'
+        git config user.name 'kiali-bot'
+
+    - name: Copy Kiali source code
+      run: |
+        hack/copy-frontend-src-to-ossmc.sh --source-ref "$KIALI_SRC_CODE_VERSION"
+
     - name: Build and push images
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
         make build-push-plugin-multi-arch
-
-    - name: Configure git
-      run: |
-        git config user.email 'kiali-dev@googlegroups.com'
-
-        git config user.name 'kiali-bot'
 
     - name: Create tag
       run: |
