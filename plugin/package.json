@@ -1,6 +1,6 @@
 {
   "name": "ossmconsole",
-  "version": "1.73.7",
+  "version": "1.73.8",
   "private": true,
   "repository": {
     "type": "git",
@@ -139,7 +139,7 @@
   },
   "consolePlugin": {
     "name": "ossmconsole",
-    "version": "1.73.7",
+    "version": "1.73.8",
     "displayName": "OpenShift Service Mesh Console",
     "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {
