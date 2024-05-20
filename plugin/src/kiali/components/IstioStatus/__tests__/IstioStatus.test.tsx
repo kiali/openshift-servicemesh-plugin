@@ -23,7 +23,7 @@ const testSnapshot = (wrapper: any): void => {
 
 const testTooltip = (wrapper: any): void => {
   expect(wrapper.name()).toEqual('Tooltip');
-  expect(wrapper.props().position).toEqual('left');
+  expect(wrapper.props().position).toEqual('top');
   expect(wrapper.props().enableFlip).toEqual(true);
   expect(wrapper.children().length).toEqual(1);
 };

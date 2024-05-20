@@ -20,6 +20,8 @@ import { NamespaceThunkActions } from '../../actions/NamespaceThunkActions';
 import { connectRefresh } from '../Refresh/connectRefresh';
 import { kialiStyle } from 'styles/StyleUtils';
 import { IconProps, createIcon } from 'config/KialiIcon';
+import { Link } from 'react-router-dom';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 type ReduxStateProps = {
   namespaces?: Namespace[];
@@ -43,6 +45,7 @@ type Props = ReduxStateProps &
     cluster?: string;
     icons?: StatusIcons;
     lastRefreshAt: TimeInMilliseconds;
+    location?: string;
   };
 
 const ValidToColor = {
@@ -68,46 +71,68 @@ const iconStyle = kialiStyle({
   verticalAlign: '-0.125rem'
 });
 
-export class IstioStatusComponent extends React.Component<Props> {
-  componentDidMount(): void {
-    this.props.refreshNamespaces();
-    this.fetchStatus();
-  }
-
-  componentDidUpdate(prevProps: Readonly<Props>): void {
-    if (this.props.lastRefreshAt !== prevProps.lastRefreshAt) {
-      this.fetchStatus();
+export const meshLinkStyle = kialiStyle({
+  display: 'flex',
+  justifyContent: 'center',
+  marginTop: '0.75rem',
+  $nest: {
+    '& > span': {
+      marginRight: '0.5rem'
     }
   }
+});
 
-  fetchStatus = (): void => {
-    API.getIstioStatus(this.props.cluster)
+export const IstioStatusComponent: React.FC<Props> = (props: Props) => {
+  const { t } = useKialiTranslation();
+
+  const { cluster, namespaces, setIstioStatus, refreshNamespaces, lastRefreshAt } = props;
+
+  React.useEffect(() => {
+    refreshNamespaces();
+  }, [refreshNamespaces]);
+
+  const fetchStatus = React.useCallback((): void => {
+    API.getIstioStatus(cluster)
       .then(response => {
-        this.props.setIstioStatus(response.data);
+        setIstioStatus(response.data);
       })
       .catch(error => {
         // User without namespaces can't have access to mTLS information. Reduce severity to info.
-        const informative = this.props.namespaces && this.props.namespaces.length < 1;
+        const informative = namespaces && namespaces.length < 1;
 
         if (informative) {
-          AlertUtils.addError('Istio deployment status disabled.', error, 'default', MessageType.INFO);
+          AlertUtils.addError(t('Istio deployment status disabled.'), error, 'default', MessageType.INFO);
         } else {
-          AlertUtils.addError('Error fetching Istio deployment status.', error, 'default', MessageType.ERROR);
+          AlertUtils.addError(t('Error fetching Istio deployment status.'), error, 'default', MessageType.ERROR);
         }
       });
+  }, [cluster, namespaces, setIstioStatus, t]);
+
+  React.useEffect(() => {
+    fetchStatus();
+  }, [lastRefreshAt, fetchStatus]);
+
+  const tooltipContent = (): React.ReactNode => {
+    return (
+      <>
+        <IstioStatusList status={props.status} />
+        {!props.location?.endsWith('/mesh') && (
+          <div className={meshLinkStyle}>
+            <span>{t('More info at')}</span>
+            <Link to="/mesh">{t('Mesh page')}</Link>
+          </div>
+        )}
+      </>
+    );
   };
 
-  tooltipContent = (): React.ReactNode => {
-    return <IstioStatusList status={this.props.status} />;
-  };
-
-  tooltipColor = (): string => {
+  const tooltipColor = (): string => {
     let coreUnhealthy = false;
     let addonUnhealthy = false;
     let notReady = false;
 
-    Object.keys(this.props.status ?? {}).forEach((compKey: string) => {
-      const { status, is_core } = this.props.status[compKey];
+    Object.keys(props.status ?? {}).forEach((compKey: string) => {
+      const { status, is_core } = props.status[compKey];
       const isNotReady: boolean = status === Status.NotReady;
       const isUnhealthy: boolean = status !== Status.Healthy && !isNotReady;
 
@@ -123,48 +148,46 @@ export class IstioStatusComponent extends React.Component<Props> {
     return ValidToColor[`${coreUnhealthy}-${addonUnhealthy}-${notReady}`];
   };
 
-  healthyComponents = (): boolean => {
-    return this.props.status.reduce((healthy: boolean, compStatus: ComponentStatus) => {
+  const healthyComponents = (): boolean => {
+    return props.status.reduce((healthy: boolean, compStatus: ComponentStatus) => {
       return healthy && compStatus.status === Status.Healthy;
     }, true);
   };
 
-  render(): React.ReactNode {
-    if (!this.healthyComponents()) {
-      const icons = this.props.icons ? { ...defaultIcons, ...this.props.icons } : defaultIcons;
-      const iconColor = this.tooltipColor();
-      let icon = ResourcesFullIcon;
-      let dataTest = 'istio-status';
+  if (!healthyComponents()) {
+    const icons = props.icons ? { ...defaultIcons, ...props.icons } : defaultIcons;
+    const iconColor = tooltipColor();
+    let icon = ResourcesFullIcon;
+    let dataTest = 'istio-status';
 
-      if (iconColor === PFColors.Danger) {
-        icon = icons.ErrorIcon;
-        dataTest = `${dataTest}-danger`;
-      } else if (iconColor === PFColors.Warning) {
-        icon = icons.WarningIcon;
-        dataTest = `${dataTest}-warning`;
-      } else if (iconColor === PFColors.Info) {
-        icon = icons.InfoIcon;
-        dataTest = `${dataTest}-info`;
-      } else if (iconColor === PFColors.Success) {
-        icon = icons.HealthyIcon;
-        dataTest = `${dataTest}-success`;
-      }
-
-      const iconProps: IconProps = {
-        className: iconStyle,
-        dataTest: dataTest
-      };
-
-      return (
-        <Tooltip position={TooltipPosition.left} enableFlip={true} content={this.tooltipContent()} maxWidth="25rem">
-          {createIcon(iconProps, icon, iconColor)}
-        </Tooltip>
-      );
+    if (iconColor === PFColors.Danger) {
+      icon = icons.ErrorIcon;
+      dataTest = `${dataTest}-danger`;
+    } else if (iconColor === PFColors.Warning) {
+      icon = icons.WarningIcon;
+      dataTest = `${dataTest}-warning`;
+    } else if (iconColor === PFColors.Info) {
+      icon = icons.InfoIcon;
+      dataTest = `${dataTest}-info`;
+    } else if (iconColor === PFColors.Success) {
+      icon = icons.HealthyIcon;
+      dataTest = `${dataTest}-success`;
     }
 
-    return null;
+    const iconProps: IconProps = {
+      className: iconStyle,
+      dataTest: dataTest
+    };
+
+    return (
+      <Tooltip position={TooltipPosition.top} enableFlip={true} content={tooltipContent()} maxWidth="25rem">
+        {createIcon(iconProps, icon, iconColor)}
+      </Tooltip>
+    );
   }
-}
+
+  return null;
+};
 
 const mapStateToProps = (state: KialiAppState): ReduxStateProps => ({
   status: istioStatusSelector(state),

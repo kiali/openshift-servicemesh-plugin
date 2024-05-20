@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import FlexView from 'react-flexview';
 import { kialiStyle } from 'styles/StyleUtils';
 import { DurationInSeconds, IntervalInMilliseconds, TimeInMilliseconds, TimeInSeconds } from '../../types/Common';
-import { Layout } from '../../types/Graph';
+import { Layout, UNKNOWN } from '../../types/Graph';
 import * as AlertUtils from '../../utils/AlertUtils';
 import { ErrorBoundary } from '../../components/ErrorBoundary/ErrorBoundary';
 import {
@@ -31,7 +31,7 @@ import {
   MeshDefinition,
   MeshTarget
 } from 'types/Mesh';
-import { FocusNode, Mesh } from './Mesh';
+import { FocusNode, Mesh, getLayoutByName } from './Mesh';
 import { MeshActions } from 'actions/MeshActions';
 import { MeshLegend } from './MeshLegend';
 import { MeshToolbarActions } from 'actions/MeshToolbarActions';
@@ -39,6 +39,8 @@ import { MeshToolbar } from './toolbar/MeshToolbar';
 import { TargetPanel } from './target/TargetPanel';
 import { MeshTour } from './MeshHelpTour';
 import { MeshThunkActions } from 'actions/MeshThunkActions';
+import { toRangeString } from 'components/Time/Utils';
+import { HistoryManager, URLParam } from 'app/History';
 
 type ReduxProps = {
   activeTour?: TourInfo;
@@ -75,11 +77,20 @@ export type MeshData = {
   fetchParams: MeshFetchParams;
   isLoading: boolean;
   isError?: boolean;
+  name: string;
   timestamp: TimeInMilliseconds;
+};
+
+// MeshRefs are passed back from the graph when it is ready, to allow for
+// other components, or test code, to manipulate the graph programatically.
+export type MeshRefs = {
+  controller: Controller;
+  setSelectedIds: (values: string[]) => void;
 };
 
 type MeshPageState = {
   meshData: MeshData;
+  meshRefs?: MeshRefs;
 };
 
 const containerStyle = kialiStyle({
@@ -124,14 +135,12 @@ const MeshErrorBoundaryFallback = () => {
 };
 
 class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
-  private controller?: Controller;
   private readonly errorBoundaryRef: any;
   private focusNode?: FocusNode;
   private meshDataSource: MeshDataSource;
 
   constructor(props: MeshPageProps) {
     super(props);
-    this.controller = undefined;
     this.errorBoundaryRef = React.createRef();
     const focusNodeId = getFocusSelector();
     this.focusNode = focusNodeId ? { id: focusNodeId, isSelected: true } : undefined;
@@ -143,12 +152,24 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
         elementsChanged: false,
         fetchParams: this.meshDataSource.fetchParameters,
         isLoading: true,
+        name: UNKNOWN,
         timestamp: 0
       }
     };
   }
 
   componentDidMount() {
+    // Let URL override current redux state at mount time. Update URL with unset params.
+    const urlLayout = HistoryManager.getParam(URLParam.MESH_LAYOUT);
+
+    if (urlLayout) {
+      if (urlLayout !== this.props.layout.name) {
+        this.props.setLayout(getLayoutByName(urlLayout));
+      }
+    } else {
+      HistoryManager.setParam(URLParam.MESH_LAYOUT, this.props.layout.name);
+    }
+
     // Connect to mesh data source updates
     this.meshDataSource.on('loadStart', this.handleMeshDataSourceStart);
     this.meshDataSource.on('fetchError', this.handleMeshDataSourceError);
@@ -162,10 +183,6 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
     // the toolbar can render and ensure all redux props are updated with URL
     // settings. That in turn ensures the initial fetchParams are correct.
     const isInitialLoad = !this.state.meshData.timestamp;
-
-    if (curr.target?.type === 'mesh') {
-      this.controller = curr.target.elem as Controller;
-    }
 
     if (
       isInitialLoad ||
@@ -203,7 +220,7 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
         <FlexView className={conStyle} column={true}>
           <div>
             <MeshToolbar
-              controller={this.controller}
+              controller={this.state.meshRefs?.controller}
               disabled={this.state.meshData.isLoading}
               elementsChanged={this.state.meshData.elementsChanged}
               onToggleHelp={this.toggleHelp}
@@ -220,7 +237,7 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
               )}
               {isReady && (
                 <Chip className={`${meshChip} ${meshBackground}`} isReadOnly={true}>
-                  {`TODO: ${'Mesh Name Here'}`}
+                  {this.displayTimeRange()}
                 </Chip>
               )}
               <div id="mesh-container" className={meshContainerStyle}>
@@ -232,7 +249,13 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
                   isLoading={this.state.meshData.isLoading}
                   isMiniMesh={false}
                 >
-                  <Mesh focusNode={this.focusNode} meshData={this.state.meshData} isMiniMesh={false} {...this.props} />
+                  <Mesh
+                    {...this.props}
+                    focusNode={this.focusNode}
+                    isMiniMesh={false}
+                    meshData={this.state.meshData}
+                    onReady={this.handleReady}
+                  />
                 </EmptyMeshLayout>
               </div>
             </ErrorBoundary>
@@ -258,11 +281,16 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
     console.debug(`onFocus(${focusNode})`);
   };
 
+  private handleReady = (refs: MeshRefs) => {
+    this.setState({ meshRefs: refs });
+  };
+
   private handleEmptyMeshAction = () => {
     this.loadMeshFromBackend();
   };
 
   private handleMeshDataSourceSuccess = (
+    meshName: string,
     meshTimestamp: TimeInSeconds,
     elements: DecoratedMeshElements,
     fetchParams: MeshFetchParams
@@ -274,6 +302,7 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
         elementsChanged: this.elementsChanged(prevElements, elements),
         fetchParams: fetchParams,
         isLoading: false,
+        name: meshName,
         timestamp: meshTimestamp * 1000
       }
     });
@@ -290,6 +319,7 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
         isError: true,
         isLoading: false,
         fetchParams: fetchParams,
+        name: UNKNOWN,
         timestamp: Date.now()
       }
     });
@@ -302,6 +332,7 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
         elementsChanged: false,
         fetchParams: fetchParams,
         isLoading: true,
+        name: isPreviousDataInvalid ? UNKNOWN : this.state.meshData.name,
         timestamp: isPreviousDataInvalid ? Date.now() : this.state.meshData.timestamp
       }
     });
@@ -368,6 +399,13 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
       .map(e => e.data.id)
       .sort()
       .every((eId, index) => eId === aIds[index]);
+  };
+
+  private displayTimeRange = (): string => {
+    const rangeEnd: TimeInMilliseconds = this.state.meshData.timestamp;
+    const rangeStart: TimeInMilliseconds = rangeEnd - this.props.duration * 1000;
+
+    return toRangeString(rangeStart, rangeEnd, { second: '2-digit' }, { second: '2-digit' });
   };
 }
 

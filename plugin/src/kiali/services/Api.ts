@@ -40,7 +40,7 @@ import {
 } from '../types/IstioObjects';
 import { ComponentStatus, IstiodResourceThresholds } from '../types/IstioStatus';
 import { TracingInfo, TracingResponse, TracingSingleResponse } from '../types/TracingInfo';
-import { MeshClusters, MeshDefinition, MeshQuery } from '../types/Mesh';
+import { MeshDefinition, MeshQuery } from '../types/Mesh';
 import { DashboardQuery, IstioMetricsOptions, MetricsStatsQuery } from '../types/MetricsOptions';
 import { IstioMetricsMap, MetricsPerNamespace, MetricsStatsResult } from '../types/Metrics';
 import { Namespace } from '../types/Namespace';
@@ -182,6 +182,16 @@ export const getStatus = (): Promise<ApiResponse<StatusState>> => {
 
 export const getNamespaces = (): Promise<ApiResponse<Namespace[]>> => {
   return newRequest<Namespace[]>(HTTP_VERBS.GET, urls.namespaces, {}, {});
+};
+
+export const getNamespaceInfo = (namespace: string, cluster?: string): Promise<ApiResponse<Namespace>> => {
+  const queryParams: ClusterParam = {};
+
+  if (cluster) {
+    queryParams.clusterName = cluster;
+  }
+
+  return newRequest<Namespace>(HTTP_VERBS.GET, urls.namespaceInfo(namespace), queryParams, {});
 };
 
 export const getNamespaceMetrics = (
@@ -1184,10 +1194,6 @@ export const getIstioPermissions = (namespaces: string[], cluster?: string): Pro
 
 export const getMetricsStats = (queries: MetricsStatsQuery[]): Promise<ApiResponse<MetricsStatsResult>> => {
   return newRequest<MetricsStatsResult>(HTTP_VERBS.POST, urls.metricsStats, {}, { queries: queries });
-};
-
-export const getClusters = (): Promise<ApiResponse<MeshClusters>> => {
-  return newRequest<MeshClusters>(HTTP_VERBS.GET, urls.clusters, {}, {});
 };
 
 export function deleteServiceTrafficRouting(
