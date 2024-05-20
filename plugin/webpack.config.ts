@@ -63,8 +63,12 @@ const config: Configuration = {
         use: ['style-loader', 'css-loader']
       },
       {
-        test: /\.(png|jpg|jpeg|gif|svg|woff2?|ttf|eot|otf)(\?.*$|$)/,
+        test: /\.(png|jpg|jpeg|gif|woff2?|ttf|eot|otf)(\?.*$|$)/,
         type: 'asset/resource'
+      },
+      {
+        test: /\.(svg)$/,
+        use: ['@svgr/webpack', 'file-loader']
       },
       {
         test: /\.m?js/,

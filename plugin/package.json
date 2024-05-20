@@ -83,6 +83,7 @@
     "@badeball/cypress-cucumber-preprocessor": "^19.2.0",
     "@bahmutov/cypress-esbuild-preprocessor": "^2.2.0",
     "@openshift-console/dynamic-plugin-sdk-webpack": "^1.1.0",
+    "@svgr/webpack": "^8.1.0",
     "@types/cytoscape": "3.14.0",
     "@types/enzyme": "3.10.5",
     "@types/jest": "23.3.10",
@@ -110,6 +111,7 @@
     "enzyme-to-json": "3.4.4",
     "eslint": "^8.1.0",
     "eslint-config-react-app": "^7.0.1",
+    "file-loader": "^6.2.0",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
     "husky": "^8.0.3",
     "i18next-parser": "^8.12.0",
@@ -152,14 +154,15 @@
     "displayName": "OpenShift Service Mesh Console",
     "description": "Provides Service Mesh/Istio Observability",
     "exposedModules": {
-      "ReduxReducer": "./openshift/utils/Reducer.ts",
-      "OverviewPage": "./openshift/pages/OverviewPage",
       "GraphPage": "./openshift/pages/GraphPage",
       "IstioConfigListPage": "./openshift/pages/IstioConfigListPage",
       "IstioMeshTab": "./openshift/pages/MeshTab/IstioMesh",
+      "MeshPage": "./openshift/pages/MeshPage",
+      "OverviewPage": "./openshift/pages/OverviewPage",
+      "ProjectMeshTab": "./openshift/pages/MeshTab/ProjectMesh",
+      "ReduxReducer": "./openshift/utils/Reducer.ts",
       "ServiceMeshTab": "./openshift/pages/MeshTab/ServiceMesh",
-      "WorkloadMeshTab": "./openshift/pages/MeshTab/WorkloadMesh",
-      "ProjectMeshTab": "./openshift/pages/MeshTab/ProjectMesh"
+      "WorkloadMeshTab": "./openshift/pages/MeshTab/WorkloadMesh"
     },
     "dependencies": {
       "@console/pluginAPI": "*"

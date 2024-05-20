@@ -5,3 +5,4 @@ export const serviceMesh = i18next.t('Service Mesh');
 export const overview = i18next.t('Overview');
 export const graph = i18next.t('Graph');
 export const istioConfig = i18next.t('Istio Config');
+export const mesh = i18next.t('Mesh');

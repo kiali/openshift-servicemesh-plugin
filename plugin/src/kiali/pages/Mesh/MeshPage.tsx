@@ -11,6 +11,7 @@ import {
   durationSelector,
   meshFindValueSelector,
   meshHideValueSelector,
+  meshWideMTLSEnabledSelector,
   refreshIntervalSelector
 } from '../../store/Selectors';
 import { KialiAppState } from '../../store/Store';
@@ -174,18 +175,17 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
     this.meshDataSource.on('loadStart', this.handleMeshDataSourceStart);
     this.meshDataSource.on('fetchError', this.handleMeshDataSourceError);
     this.meshDataSource.on('fetchSuccess', this.handleMeshDataSourceSuccess);
+
+    // Ensure we initialize the mesh. We wait for the toolbar to render
+    // and ensure all redux props are updated with URL settings.
+    // That in turn ensures the initial fetchParams are correct.
+    setTimeout(() => this.loadMeshFromBackend(), 0);
   }
 
   componentDidUpdate(prev: MeshPageProps) {
     const curr = this.props;
 
-    // Ensure we initialize the mesh. We wait for the first update so that
-    // the toolbar can render and ensure all redux props are updated with URL
-    // settings. That in turn ensures the initial fetchParams are correct.
-    const isInitialLoad = !this.state.meshData.timestamp;
-
     if (
-      isInitialLoad ||
       prev.duration !== curr.duration ||
       (prev.findValue !== curr.findValue && curr.findValue.includes('label:')) ||
       (prev.hideValue !== curr.hideValue && curr.hideValue.includes('label:')) ||
@@ -418,8 +418,10 @@ const mapStateToProps = (state: KialiAppState) => ({
   isPageVisible: state.globalState.isPageVisible,
   kiosk: state.globalState.kiosk,
   layout: state.mesh.layout,
+  mtlsEnabled: meshWideMTLSEnabledSelector(state),
   refreshInterval: refreshIntervalSelector(state),
   showLegend: state.mesh.toolbarState.showLegend,
+  showOutOfMesh: state.graph.toolbarState.showOutOfMesh,
   target: state.mesh.target
 });
 
@@ -431,7 +433,7 @@ const mapDispatchToProps = (dispatch: KialiDispatch) => ({
   setTarget: bindActionCreators(MeshActions.setTarget, dispatch),
   setUpdateTime: bindActionCreators(MeshActions.setUpdateTime, dispatch),
   startTour: bindActionCreators(TourActions.startTour, dispatch),
-  toggleMeshLegend: bindActionCreators(MeshToolbarActions.toggleLegend, dispatch)
+  toggleLegend: bindActionCreators(MeshToolbarActions.toggleLegend, dispatch)
 });
 
 export const MeshPage = connectRefresh(connect(mapStateToProps, mapDispatchToProps)(MeshPageComponent));
