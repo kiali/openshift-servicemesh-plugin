@@ -252,7 +252,7 @@ jobs:
       run: |
         hack/update-version-string.sh "${NEXT_VERSION}-SNAPSHOT"
 
-        git add Makefile plugin/package.json
+        git add Makefile plugin/package.json plugin/plugin-metadata.ts
 
         git commit -m "Prepare for next version"
 
