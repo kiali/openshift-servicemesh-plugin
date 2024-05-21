@@ -10,6 +10,8 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import MergeJsonWebpackPlugin from 'merge-jsons-webpack-plugin';
 import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
 
+import pluginMetadata from './plugin-metadata';
+
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
 }
@@ -63,8 +65,12 @@ const config: Configuration = {
         use: ['style-loader', 'css-loader']
       },
       {
-        test: /\.(png|jpg|jpeg|gif|svg|woff2?|ttf|eot|otf)(\?.*$|$)/,
+        test: /\.(png|jpg|jpeg|gif|woff2?|ttf|eot|otf)(\?.*$|$)/,
         type: 'asset/resource'
+      },
+      {
+        test: /\.(svg)$/,
+        use: ['@svgr/webpack', 'file-loader']
       },
       {
         test: /\.m?js/,
@@ -89,7 +95,7 @@ const config: Configuration = {
     }
   },
   plugins: [
-    new ConsoleRemotePlugin(),
+    new ConsoleRemotePlugin({ pluginMetadata }),
     new MergeJsonWebpackPlugin({
       output: {
         groupBy: [

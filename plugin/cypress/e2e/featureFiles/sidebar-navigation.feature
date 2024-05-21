@@ -16,7 +16,6 @@ Feature: Kiali sidebar integration with OCP Console
   Scenario: Overview page is displayed correctly
     When user is redirected to the OSSMC "Overview" page
     Then user sees istio-system overview card
-    And user sees memory and cpu charts from Kiali
 
   @bookinfo-app
   Scenario: Graph page is displayed correctly
@@ -27,3 +26,7 @@ Feature: Kiali sidebar integration with OCP Console
   Scenario: Istio Config page is displayed correctly
     When user is redirected to the OSSMC "Istio Config" page
     Then user sees Istio Config page elements from Kiali
+
+  Scenario: Mesh page is displayed correctly
+    When user is redirected to the OSSMC "Mesh" page
+    Then user sees the mesh side panel

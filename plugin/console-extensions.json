@@ -109,6 +109,24 @@
     }
   },
   {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": ["/ossmconsole/mesh"],
+      "component": { "$codeRef": "MeshPage" }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "ossmconsolegraph",
+      "name": "%plugin__ossmconsole~Mesh%",
+      "href": "/ossmconsole/mesh",
+      "perspective": "admin",
+      "section": "ossmconsole"
+    }
+  },
+  {
     "type": "console.tab/horizontalNav",
     "properties": {
       "model": {

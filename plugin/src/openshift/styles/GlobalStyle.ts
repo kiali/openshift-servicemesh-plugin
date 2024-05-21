@@ -17,3 +17,5 @@ export const globalStyle = kialiStyle({
     }
   }
 });
+
+export const graphContainer = kialiStyle({ padding: '0 20px 0 20px' });

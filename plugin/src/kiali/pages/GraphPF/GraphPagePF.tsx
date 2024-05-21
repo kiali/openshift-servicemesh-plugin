@@ -69,10 +69,11 @@ import { canCreate, canUpdate } from '../../types/Permissions';
 import { connectRefresh } from '../../components/Refresh/connectRefresh';
 import { triggerRefresh } from '../../hooks/refresh';
 import { GraphData } from 'pages/Graph/GraphPage';
-import { GraphPF, FocusNode } from './GraphPF';
+import { GraphPF, FocusNode, getLayoutByName } from './GraphPF';
 import * as CytoscapeGraphUtils from '../../components/CytoscapeGraph/CytoscapeGraphUtils';
 import { Controller } from '@patternfly/react-topology';
 import { GraphLegendPF } from './GraphLegendPF';
+import { HistoryManager, URLParam } from 'app/History';
 
 // GraphURLPathProps holds path variable values.  Currently all path variables are relevant only to a node graph
 export type GraphURLPathProps = {
@@ -343,19 +344,30 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
       this.props.setNode(urlNode);
     }
 
+    // trace url info
     const urlTrace = getTraceId();
     if (urlTrace !== this.props.trace?.traceID) {
       this.props.setTraceId(urlTrace);
     }
+
+    // layout url info
+    const urlLayout = HistoryManager.getParam(URLParam.GRAPH_LAYOUT);
+    if (urlLayout) {
+      if (urlLayout !== this.props.layout.name) {
+        this.props.setLayout(getLayoutByName(urlLayout));
+      }
+    } else {
+      HistoryManager.setParam(URLParam.GRAPH_LAYOUT, this.props.layout.name);
+    }
+
+    // Ensure we initialize the graph. We wait for the toolbar to render and
+    // ensure all redux props are updated with URL settings.
+    // That in turn ensures the initial fetchParams are correct.
+    setTimeout(() => this.loadGraphDataFromBackend(), 0);
   }
 
   componentDidUpdate(prev: GraphPagePropsPF): void {
     const curr = this.props;
-
-    // Ensure we initialize the graph. We wait for the first update so that
-    // the toolbar can render and ensure all redux props are updated with URL
-    // settings. That in turn ensures the initial fetchParams are correct.
-    const isInitialLoad = !this.state.graphData.timestamp;
 
     if (curr.summaryData?.summaryType === 'graph') {
       this.controller = curr.summaryData.summaryTarget;
@@ -372,7 +384,6 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
       this.props.onNamespaceChange();
     }
     if (
-      isInitialLoad ||
       activeNamespacesChanged ||
       prev.boxByCluster !== curr.boxByCluster ||
       prev.boxByNamespace !== curr.boxByNamespace ||

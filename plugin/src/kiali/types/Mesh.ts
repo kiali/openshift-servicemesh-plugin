@@ -1,5 +1,6 @@
 import { Controller, ElementModel, GraphElement } from '@patternfly/react-topology';
 import { AppenderString } from './Common';
+import { NamespaceInfo } from './NamespaceInfo';
 
 export interface MeshCluster {
   accessible: boolean;
@@ -25,6 +26,7 @@ export type MeshClusters = MeshCluster[];
 
 export enum MeshInfraType {
   CLUSTER = 'cluster',
+  DATAPLANE = 'dataplane',
   GRAFANA = 'grafana',
   ISTIOD = 'istiod',
   KIALI = 'kiali',
@@ -43,24 +45,23 @@ export type MeshNodeHealthData = string;
 
 // Node data expected from server
 export interface MeshNodeData {
-  // required
   cluster: string;
+  healthData?: MeshNodeHealthData;
   id: string;
+  infraData?: MeshCluster | NamespaceInfo[] | any; // add other type options as the case arises
   infraName: string;
   infraType: MeshInfraType;
-  namespace: string;
-  nodeType: MeshNodeType;
-
-  // optional
-  healthData?: MeshNodeHealthData;
-  infraData?: MeshCluster; // add other type options as the case arises
   isAmbient?: boolean;
   isBox?: string;
+  isCanary?: boolean;
+  isExternal?: boolean;
   isInaccessible?: boolean;
   isMTLS?: boolean;
-  isOutOfMesh?: boolean;
   labels?: { [key: string]: string };
+  namespace: string;
+  nodeType: MeshNodeType;
   parent?: string;
+  version?: string;
 }
 
 // Edge data expected from server
@@ -90,6 +91,7 @@ export interface MeshQuery {
 
 export interface MeshDefinition {
   elements: MeshElements;
+  name: string;
   timestamp: number;
 }
 
@@ -100,11 +102,11 @@ export interface DecoratedMeshNodeData extends MeshNodeData {
 
 // Edge data after decorating at fetch-time (what is mainly used by ui code)
 export interface DecoratedMeshEdgeData extends MeshEdgeData {
-  // Default value -1
-  isMTLS: number;
-
   // assigned when graph is updated, the edge health depends on the node health, traffic, and config
   healthStatus?: string; // status name
+
+  // Default value -1
+  isMTLS: number;
 }
 
 export interface DecoratedMeshNodeWrapper {
@@ -144,5 +146,12 @@ export const MeshAttr = {
   isInaccessible: 'isInaccessible',
   isOutOfMesh: 'isOutOfMesh',
   namespace: 'namespace',
-  nodeType: 'nodeType'
+  nodeType: 'nodeType',
+  version: 'version'
 };
+
+// determine if the infra is deployed externally, typically
+// tested against the clusterName.
+export function isExternal(name: string): boolean {
+  return name === '_external_';
+}

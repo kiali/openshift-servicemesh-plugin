@@ -1,4 +1,5 @@
 import { Before, Then, When } from '@badeball/cypress-cucumber-preprocessor';
+import { Controller, Edge, Node, isEdge, isNode } from '@patternfly/react-topology';
 import { getApiProxy } from '../support/utils';
 
 Before(() => {
@@ -28,10 +29,10 @@ When('user clicks on the Service Mesh icon in the left navigation bar', () => {
 
 When('cypress intercept hooks for sidebar are registered', () => {
   const apiProxy = getApiProxy();
-  cy.intercept(`${apiProxy}/api/namespaces/istio-system/metrics?*`).as('metricsRequest');
   cy.intercept(`${apiProxy}/api/istio/status?*`).as('overviewRequest');
   cy.intercept(`${apiProxy}/api/namespaces`).as('istioConfigRequest');
   cy.intercept(`${apiProxy}/api/namespaces/graph*`).as('graphNamespaces');
+  cy.intercept(`${apiProxy}/api/mesh/graph?*`).as('meshRequest');
 });
 
 Then('buttons for Overview, Graph and Istio Config are displayed', () => {
@@ -65,14 +66,14 @@ Then('user is redirected to the OSSMC {string} page', (hrefName: string) => {
           cy.url().should('include', '/k8s/all-namespaces/istio');
         });
       break;
+    case 'Mesh':
+      cy.get('a[href*="/ossmconsole/mesh"]')
+        .click()
+        .then(() => {
+          cy.url().should('include', '/ossmconsole/mesh');
+        });
+      break;
   }
-});
-
-Then('user sees memory and cpu charts from Kiali', () => {
-  cy.wait('@metricsRequest').then(() => {
-    cy.get('[data-test="memory-chart"]').should('be.visible');
-    cy.get('[data-test="cpu-chart"]').should('be.visible');
-  });
 });
 
 Then('user sees istio-system overview card', () => {
@@ -83,7 +84,7 @@ Then('user sees istio-system overview card', () => {
 
 When('user selects {string} namespace in the graph', (ns: string) => {
   cy.get('button#namespace-selector').click();
-  cy.get('div[class^="pf-c-dropdown__menu"]').contains('span', ns).parent('div').find('input').check();
+  cy.get('div[class$="c-menu"]').contains('span', ns).parent('div').find('input').check();
 
   // Click outside the namespace selector to load the namespace graph
   cy.get('div#global-namespace-selector').click();
@@ -99,9 +100,17 @@ Then('user sees Istio Config page elements from Kiali', () => {
 
 Then(`user sees the {string} graph summary`, (ns: string) => {
   cy.wait('@graphNamespaces').then(() => {
-    cy.get('div#summary-panel-graph')
-      .find('div#summary-panel-graph-heading')
-      .find(`span#ns-${ns}`)
-      .should('be.visible');
+    cy.get('div#summary-panel-graph-heading').find(`div#ns-${ns}`).should('be.visible');
+  });
+});
+
+Then('user sees the mesh side panel', () => {
+  cy.wait('@meshRequest').then(() => {
+    cy.get('#loading_kiali_spinner').should('not.exist');
+    cy.get('#target-panel-mesh')
+      .should('be.visible')
+      .within(div => {
+        cy.contains('Mesh Name: Istio Mesh');
+      });
   });
 });

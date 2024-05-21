@@ -18,6 +18,7 @@ import { PFBadges, PFBadgeType } from 'components/Pf/PfBadges';
 import { DEGRADED, FAILURE } from 'types/Health';
 import { DecoratedMeshEdgeData, DecoratedMeshEdgeWrapper, DecoratedMeshNodeData, MeshInfraType } from 'types/Mesh';
 import { BoxByType } from 'types/Graph';
+import { NamespaceInfo } from 'types/NamespaceInfo';
 
 // Utilities for working with PF Topology
 // - most of these add cytoscape-like functions
@@ -56,9 +57,9 @@ export type NodeData = DecoratedMeshNodeData & {
   showContextMenu?: boolean;
   showStatusDecorator?: boolean;
   statusDecoratorTooltip?: React.ReactNode;
+  truncateLength?: number;
   x?: number;
   y?: number;
-  truncateLength?: number;
 };
 
 export type EdgeData = DecoratedMeshEdgeData & {
@@ -91,7 +92,7 @@ export const getNodeStatus = (data: NodeData): NodeStatus => {
 
 export const getNodeShape = (data: NodeData): NodeShape => {
   switch (data.infraType) {
-    case MeshInfraType.NAMESPACE:
+    case MeshInfraType.DATAPLANE:
       return NodeShape.rect;
     default:
       return NodeShape.hexagon;
@@ -114,21 +115,18 @@ export const setNodeLabel = (node: NodeModel, _nodeMap: NodeMap): void => {
   const content: string[] = [];
 
   // append name
-  if (!isBox) {
-    content.push(infraName);
-  }
+  content.push(infraName);
 
   // set PfBadge
   let pfBadge: PFBadgeType | undefined;
   if (isBox) {
     switch (isBox) {
       case BoxByType.CLUSTER:
-        content.push(data.cluster);
-        pfBadge = PFBadges.Cluster;
+        if (!data.isExternal) {
+          pfBadge = PFBadges.Cluster;
+        }
         break;
       case BoxByType.NAMESPACE:
-      case BoxByType.DATAPLANES:
-        content.push(data.namespace);
         pfBadge = PFBadges.Namespace;
         break;
       default:
@@ -138,6 +136,10 @@ export const setNodeLabel = (node: NodeModel, _nodeMap: NodeMap): void => {
     switch (infraType) {
       case MeshInfraType.CLUSTER:
         pfBadge = PFBadges.Cluster;
+        break;
+      case MeshInfraType.DATAPLANE:
+        pfBadge = PFBadges.DataPlane;
+        content.push(`${(data.infraData as NamespaceInfo[]).length} Namespaces`);
         break;
       case MeshInfraType.GRAFANA:
         pfBadge = PFBadges.Grafana;
@@ -190,10 +192,19 @@ const getEdgeStatus = (data: EdgeData): NodeStatus => {
   }
 };
 
-const getPathStyle = (_data: EdgeData): React.CSSProperties => {
-  return {
-    strokeWidth: 3
-  } as React.CSSProperties;
+const getPathStyle = (data: EdgeData): React.CSSProperties => {
+  switch (data.healthStatus) {
+    case FAILURE.name:
+    case DEGRADED.name:
+      return {
+        strokeWidth: 3,
+        strokeDasharray: '10 10'
+      } as React.CSSProperties;
+    default:
+      return {
+        strokeWidth: 3
+      } as React.CSSProperties;
+  }
 };
 
 export const setEdgeOptions = (edge: EdgeModel, nodeMap: NodeMap): void => {
@@ -207,15 +218,16 @@ export const setEdgeOptions = (edge: EdgeModel, nodeMap: NodeMap): void => {
   data.tagStatus = status;
 };
 
-export const assignEdgeHealth = (_edges: DecoratedMeshEdgeWrapper[], _nodeMap: NodeMap) => {
+export const assignEdgeHealth = (_edges: DecoratedMeshEdgeWrapper[], _nodeMap: NodeMap): void => {
   // unset implies healthy or n/a
   return;
 };
 
 ///// PFT helpers
 
-export const elems = (c: Controller): { nodes: Node[]; edges: Edge[] } => {
+export const elems = (c: Controller): { edges: Edge[]; nodes: Node[] } => {
   const elems = c.getElements();
+
   return {
     nodes: elems.filter(e => isNode(e)) as Node[],
     edges: elems.filter(e => isEdge(e)) as Edge[]
@@ -266,9 +278,9 @@ export type SelectOp =
   | 'falsy'
   | 'truthy';
 export type SelectExp = {
+  op?: SelectOp;
   prop: string;
   val?: any;
-  op?: SelectOp;
 };
 export type SelectAnd = SelectExp[];
 export type SelectOr = SelectAnd[];
