@@ -229,7 +229,7 @@ jobs:
 
     - name: Create tag
       run: |
-        git add Makefile plugin/package.json
+        git add Makefile plugin/package.json plugin/plugin-metadata.ts
 
         git commit -m "Release $RELEASE_VERSION"
 
