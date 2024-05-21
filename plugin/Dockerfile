@@ -7,7 +7,7 @@ ADD . /usr/src/app
 WORKDIR /usr/src/app
 RUN yarn install --network-timeout 7200000 && yarn build
 
-FROM registry.access.redhat.com/ubi8/nginx-120:1-38.1655143357
+FROM registry.access.redhat.com/ubi9/nginx-124:1-10
 
 # Add application sources to a directory that the assemble script expects them
 # and set permissions so that the container runs without root access
