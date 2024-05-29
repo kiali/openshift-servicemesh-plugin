@@ -134,14 +134,14 @@ prepare-dev-env: .determine-kiali-url
 .ensure-buildx-builder: .ensure-docker-buildx
 	@if ! docker buildx inspect ossmconsole-builder > /dev/null 2>&1; then \
 	  echo "The buildx builder instance named 'ossmconsole-builder' does not exist. Creating one now."; \
-	  if ! docker buildx create --name=ossmconsole-builder --driver-opt=image=moby/buildkit:v0.12.5 --config ./make/buildkitd.toml --use; then \
+	  if ! docker buildx create --name=ossmconsole-builder --driver-opt=image=moby/buildkit:v0.13.2 --config ./make/buildkitd.toml --use; then \
 	    echo "Failed to create the buildx builder 'ossmconsole-builder'"; \
 	    exit 1; \
 	  fi \
 	fi; \
 	if [[ $$(uname -s) == "Linux" ]]; then \
 	  echo "Ensuring QEMU is set up for this Linux host"; \
-	  if ! docker run --privileged --rm quay.io/kiali/binfmt:latest --install all; then \
+	  if ! docker run --privileged --rm tonistiigi/binfmt:latest --install all; then \
 	    echo "Failed to ensure QEMU is set up. This build will be allowed to continue, but it may fail at a later step."; \
 	  fi \
 	fi
