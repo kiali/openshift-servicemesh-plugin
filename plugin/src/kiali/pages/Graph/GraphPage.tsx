@@ -395,7 +395,6 @@ class GraphPageComponent extends React.Component<GraphPageProps, GraphPageState>
     if (activeNamespacesChanged) {
       this.props.onNamespaceChange();
     }
-
     if (
       activeNamespacesChanged ||
       prev.boxByCluster !== curr.boxByCluster ||
@@ -509,7 +508,10 @@ class GraphPageComponent extends React.Component<GraphPageProps, GraphPageState>
                 />
               )}
               {isReady && (
-                <div className={cytoscapeToolbarWrapperDivStyle}>
+                <div
+                  className={cytoscapeToolbarWrapperDivStyle}
+                  style={{ left: this.props.showLegend ? '225px' : '0' }}
+                >
                   <CytoscapeToolbar
                     cytoscapeGraphRef={this.cytoscapeGraphRef}
                     disabled={this.state.graphData.isLoading}
