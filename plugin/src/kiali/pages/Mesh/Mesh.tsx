@@ -411,7 +411,7 @@ const TopologyContent: React.FC<{
 
     if (initialGraph) {
       console.debug('mesh onReady');
-      onReady({ controller: controller, setSelectedIds: setSelectedIds });
+      onReady({ getController: () => controller, setSelectedIds: setSelectedIds });
     }
 
     // notify that the graph has been updated
@@ -543,7 +543,7 @@ const TopologyContent: React.FC<{
                       controller.getGraph().layout();
                     }
                   },
-                  legend: false, // Actual Legend is still TODO...
+                  legend: true,
                   legendIcon: <MapIcon />,
                   legendTip: 'Legend',
                   legendCallback: () => {
