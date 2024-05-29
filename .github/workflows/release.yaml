@@ -225,7 +225,7 @@ jobs:
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
-        make -e TARGET_ARCHS="amd64 arm64" build-push-plugin-multi-arch
+        make build-push-plugin-multi-arch
 
     - name: Create tag
       run: |
