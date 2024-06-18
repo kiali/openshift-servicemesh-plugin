@@ -26,8 +26,7 @@ import { PromisesRegistry } from 'utils/CancelablePromises';
 import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUtils';
 import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
 import { ApiError } from 'types/Api';
-import { useTranslation } from 'react-i18next';
-import { I18N_NAMESPACE } from 'types/Common';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 interface IstioConfigObject extends IstioObject {
   reconciledCondition?: StatusCondition;
@@ -35,7 +34,7 @@ interface IstioConfigObject extends IstioObject {
 }
 
 const useGetColumns: () => TableColumn<IstioConfigObject>[] = () => {
-  const { t } = useTranslation(I18N_NAMESPACE);
+  const { t } = useKialiTranslation();
 
   return [
     {
@@ -121,7 +120,7 @@ const filters: RowFilter[] = [
     type: 'kind',
     reducer: (obj: IstioConfigObject) => {
       const groupVersionKind = getGroupVersionKindForResource(obj);
-      return `${groupVersionKind.group}.${obj.kind}`;
+      return `${groupVersionKind?.group}.${obj.kind}`;
     },
     filter: (input, obj: IstioConfigObject) => {
       if (!input.selected?.length) {
@@ -170,7 +169,7 @@ const newIstioResourceList = {
 };
 
 const IstioConfigListPage: React.FC<void> = () => {
-  const { t } = useTranslation(I18N_NAMESPACE);
+  const { t } = useKialiTranslation();
   const { ns } = useParams<{ ns: string }>();
   const [loaded, setLoaded] = React.useState<boolean>(false);
   const [listItems, setListItems] = React.useState<IstioConfigObject[]>([]);
