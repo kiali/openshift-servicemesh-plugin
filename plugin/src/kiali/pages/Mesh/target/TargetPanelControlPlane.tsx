@@ -36,6 +36,7 @@ import { panelBodyStyle, panelHeadingStyle, panelStyle } from 'pages/Graph/Summa
 import { MeshMTLSStatus } from 'components/MTls/MeshMTLSStatus';
 import { t } from 'utils/I18nUtils';
 import { UNKNOWN } from 'types/Graph';
+import { TargetPanelConfigTable } from './TargetPanelConfigTable';
 
 type TargetPanelControlPlaneProps = TargetPanelCommonProps & {
   meshStatus: string;
@@ -130,11 +131,9 @@ export class TargetPanelControlPlane extends React.Component<
         <div className={panelHeadingStyle}>{renderNodeHeader(data, {})}</div>
 
         <div className={panelBodyStyle}>
-          <div style={{ textAlign: 'left' }}>{`${t('Version')}: ${data.version || UNKNOWN}`}</div>
+          <div>{t('Version: {{version}}', { version: data.version || t(UNKNOWN) })}</div>
 
-          <div style={{ textAlign: 'left' }}>
-            <MeshMTLSStatus />
-          </div>
+          <MeshMTLSStatus />
 
           <ControlPlaneNamespaceStatus
             outboundTrafficPolicy={this.state.outboundPolicyMode}
@@ -165,8 +164,8 @@ export class TargetPanelControlPlane extends React.Component<
           )}
 
           {targetPanelHR}
-          <span>{`${t('Configuration')}:`}</span>
-          <pre>{JSON.stringify(data.infraData, null, 2)}</pre>
+
+          <TargetPanelConfigTable configData={data.infraData} targetName={data.infraName} width="40%" />
         </div>
       </div>
     );
@@ -324,12 +323,13 @@ export class TargetPanelControlPlane extends React.Component<
   private fetchMetrics = async (): Promise<void> => {
     const rateParams = computePrometheusRateParams(this.props.duration, 10);
     const options: IstioMetricsOptions = {
-      filters: ['request_count', 'request_error_count'],
-      duration: this.props.duration,
-      step: rateParams.step,
-      rateInterval: rateParams.rateInterval,
       direction: direction,
-      reporter: direction === 'inbound' ? 'destination' : 'source'
+      duration: this.props.duration,
+      filters: ['request_count', 'request_error_count'],
+      includeAmbient: serverConfig.ambientEnabled,
+      rateInterval: rateParams.rateInterval,
+      reporter: direction === 'inbound' ? 'destination' : 'source',
+      step: rateParams.step
     };
 
     const data = this.state.controlPlaneNode!.getData() as NodeData;

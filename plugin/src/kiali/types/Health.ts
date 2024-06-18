@@ -12,11 +12,16 @@ import { calculateErrorRate } from './ErrorRate';
 import { ToleranceConfig } from './ServerConfig';
 import { serverConfig } from '../config';
 import { HealthAnnotationType } from './HealthAnnotation';
-import { i18n } from 'i18n';
+import { t } from 'utils/I18nUtils';
 
 interface HealthConfig {
   items: HealthItem[];
   statusConfig?: HealthItemConfig;
+}
+
+export const enum HealthItemType {
+  TRAFFIC_STATUS = 'traffic_status',
+  POD_STATUS = 'pod_status'
 }
 
 export interface HealthItem {
@@ -24,6 +29,7 @@ export interface HealthItem {
   status: Status;
   text?: string;
   title: string;
+  type: HealthItemType;
 }
 
 export interface HealthItemConfig {
@@ -58,10 +64,8 @@ export interface WorkloadHealthResponse {
   workloadStatus: WorkloadStatus;
 }
 
-export const TRAFFICSTATUS = i18n.t('Traffic Status');
-
 const createTrafficTitle = (time: string): string => {
-  return `${TRAFFICSTATUS} (${i18n.t('Last')} ${time})`;
+  return t('Traffic Status (Last {{duration}})', { duration: time });
 };
 
 /*
@@ -99,14 +103,14 @@ export const FAILURE: Status = {
   className: 'icon-failure',
   color: PFColors.Danger,
   icon: ExclamationCircleIcon,
-  name: i18n.t('Failure'),
+  name: t('Failure'),
   priority: 4
 };
 
 export const DEGRADED: Status = {
   className: 'icon-degraded',
   color: PFColors.Warning,
-  name: i18n.t('Degraded'),
+  name: t('Degraded'),
   icon: ExclamationTriangleIcon,
   priority: 3
 };
@@ -115,7 +119,7 @@ export const NOT_READY: Status = {
   className: 'icon-idle',
   color: PFColors.InfoBackground,
   icon: MinusCircleIcon,
-  name: i18n.t('Not Ready'),
+  name: t('Not Ready'),
   priority: 2
 };
 
@@ -123,14 +127,14 @@ export const HEALTHY: Status = {
   className: 'icon-healthy',
   color: PFColors.Success,
   icon: CheckCircleIcon,
-  name: i18n.t('Healthy'),
+  name: t('Healthy'),
   priority: 1
 };
 
 export const NA: Status = {
   className: 'icon-na',
   color: PFColors.Color200,
-  name: i18n.t('No health information'),
+  name: t('No health information'),
   icon: UnknownIcon,
   priority: 0
 };
@@ -147,7 +151,7 @@ export interface ThresholdStatus {
   violation?: string;
 }
 
-export const POD_STATUS = i18n.t('Pod Status');
+export const POD_STATUS = 'pod_status';
 
 // Use -1 rather than NaN to allow straigthforward comparison
 export const RATIO_NA = -1;
@@ -310,7 +314,7 @@ export abstract class Health {
     for (let i = 0; i < this.health.items.length; i++) {
       const item = this.health.items[i];
 
-      if (item.title.startsWith(TRAFFICSTATUS)) {
+      if (item.type === HealthItemType.TRAFFIC_STATUS) {
         return item;
       }
     }
@@ -322,7 +326,7 @@ export abstract class Health {
     for (let i = 0; i < this.health.items.length; i++) {
       const item = this.health.items[i];
 
-      if (item.title.startsWith(POD_STATUS)) {
+      if (item.type === HealthItemType.POD_STATUS) {
         return item;
       }
     }
@@ -354,6 +358,7 @@ export class ServiceHealth extends Health {
           : `${reqError.errorRatio.global.status.value.toFixed(2)}%`;
 
       const item: HealthItem = {
+        type: HealthItemType.TRAFFIC_STATUS,
         title: createTrafficTitle(getName(ctx.rateInterval).toLowerCase()),
         status: reqError.errorRatio.global.status.status,
         children: [
@@ -375,7 +380,8 @@ export class ServiceHealth extends Health {
       };
     } else {
       items.push({
-        title: TRAFFICSTATUS,
+        type: HealthItemType.TRAFFIC_STATUS,
+        title: t('Traffic Status'),
         status: NA,
         text: 'No Istio sidecar'
       });
@@ -420,7 +426,8 @@ export class AppHealth extends Health {
       const podsStatus = children.map(i => i.status).reduce((prev, cur) => mergeStatus(prev, cur), NA);
 
       const item: HealthItem = {
-        title: POD_STATUS,
+        type: HealthItemType.POD_STATUS,
+        title: t('Pod Status'),
         status: podsStatus,
         children: children
       };
@@ -436,6 +443,7 @@ export class AppHealth extends Health {
       const both = mergeStatus(reqIn.status, reqOut.status);
 
       const item: HealthItem = {
+        type: HealthItemType.TRAFFIC_STATUS,
         title: createTrafficTitle(getName(ctx.rateInterval).toLowerCase()),
         status: both,
         children: [getRequestErrorsSubItem(reqIn, 'Inbound'), getRequestErrorsSubItem(reqOut, 'Outbound')]
@@ -489,7 +497,8 @@ export class WorkloadHealth extends Health {
       );
 
       const item: HealthItem = {
-        title: POD_STATUS,
+        type: HealthItemType.POD_STATUS,
+        title: t('Pod Status'),
         status: podsStatus,
         children: [
           {
@@ -542,6 +551,7 @@ export class WorkloadHealth extends Health {
       const both = mergeStatus(reqIn.status, reqOut.status);
 
       const item: HealthItem = {
+        type: HealthItemType.TRAFFIC_STATUS,
         title: createTrafficTitle(getName(ctx.rateInterval).toLowerCase()),
         status: both,
         children: [getRequestErrorsSubItem(reqIn, 'Inbound'), getRequestErrorsSubItem(reqOut, 'Outbound')]
