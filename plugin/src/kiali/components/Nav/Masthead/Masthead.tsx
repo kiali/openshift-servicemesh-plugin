@@ -3,18 +3,17 @@ import { Label, Flex, FlexItem, Tooltip, Toolbar, ToolbarItem } from '@patternfl
 
 import { homeCluster, serverConfig } from '../../../config';
 import { IstioStatus } from '../../IstioStatus/IstioStatus';
-import { PfSpinner } from '../../PfSpinner';
 import { UserDropdown } from './UserDropdown';
 import { HelpDropdown } from './HelpDropdown';
 import { MessageCenterTrigger } from '../../../components/MessageCenter/MessageCenterTrigger';
 import { ThemeSwitch } from './ThemeSwitch';
 import { LanguageSwitch } from './LanguageSwitch';
 import { KialiIcon } from 'config/KialiIcon';
-import { useTranslation } from 'react-i18next';
-import { I18N_NAMESPACE } from 'types/Common';
+import { useKialiTranslation } from 'utils/I18nUtils';
+import { PfSpinner } from 'components/Pf/PfSpinner';
 
 export const MastheadItems: React.FC = () => {
-  const { t } = useTranslation(I18N_NAMESPACE);
+  const { t } = useKialiTranslation();
 
   return (
     <>

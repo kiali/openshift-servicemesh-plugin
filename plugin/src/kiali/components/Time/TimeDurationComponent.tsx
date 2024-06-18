@@ -1,17 +1,17 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { DurationDropdown } from '../DurationDropdown/DurationDropdown';
+import { DurationDropdown } from '../Dropdown/DurationDropdown';
 import { Refresh } from 'components/Refresh/Refresh';
 import { KialiAppState } from 'store/Store';
 import { durationSelector, replayActiveSelector } from 'store/Selectors';
-import { DurationInSeconds, I18N_NAMESPACE } from 'types/Common';
+import { DurationInSeconds } from 'types/Common';
 import { Tooltip, TooltipPosition, Button, ButtonVariant } from '@patternfly/react-core';
 import { KialiIcon } from 'config/KialiIcon';
 import { UserSettingsActions } from 'actions/UserSettingsActions';
 import { KialiDispatch } from 'types/Redux';
 import { bindActionCreators } from 'redux';
 import { kialiStyle } from 'styles/StyleUtils';
-import { useTranslation } from 'react-i18next';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 type ReduxStateProps = {
   duration: DurationInSeconds;
@@ -34,7 +34,7 @@ const closeReplayStyle = kialiStyle({
 });
 
 const TimeDurationComp: React.FC<TimeControlsProps> = (props: TimeControlsProps) => {
-  const { t } = useTranslation(I18N_NAMESPACE);
+  const { t } = useKialiTranslation();
 
   const onToggleReplay = (): void => {
     props.toggleReplayActive();
