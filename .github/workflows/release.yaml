@@ -200,10 +200,6 @@ jobs:
       with:
         ref: ${{ github.ref_name }}
 
-    - name: Set version to release
-      run: |
-        hack/update-version-string.sh "$RELEASE_VERSION"
-
     # /opt/hostedtoolcache directory is large and has tools we do not need so delete it to free up space
     - name: Print disk space before
       run: df -h
@@ -220,6 +216,10 @@ jobs:
     - name: Copy Kiali source code
       run: |
         hack/copy-frontend-src-to-ossmc.sh --source-ref "$KIALI_SRC_CODE_VERSION"
+
+    - name: Set version to release
+      run: |
+        hack/update-version-string.sh "$RELEASE_VERSION"
 
     - name: Build and push images
       run: |
