@@ -6,6 +6,7 @@ import {
   ListPageCreateDropdown,
   ListPageFilter,
   ListPageHeader,
+  ResourceIcon,
   ResourceLink,
   RowFilter,
   RowProps,
@@ -15,7 +16,7 @@ import {
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { useNavigate, useParams } from 'react-router-dom-v5-compat';
+import { Link, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
@@ -84,10 +85,17 @@ const Row: React.FC<RowProps<IstioConfigObject>> = ({ obj, activeColumnIDs }) =>
 
   const columns = useGetColumns();
 
+  const istioObjectPath = `/k8s/ns/${obj.metadata.namespace}/${referenceFor(groupVersionKind)}/${
+    obj.metadata.name
+  }/ossmconsole`;
+
   return (
     <>
       <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-        <ResourceLink groupVersionKind={groupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+        <span>
+          <ResourceIcon groupVersionKind={groupVersionKind} />
+          <Link to={istioObjectPath}>{obj.metadata.name}</Link>
+        </span>
       </TableData>
       <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
         <ResourceLink
@@ -162,6 +170,7 @@ const newIstioResourceList = {
   authorization_policy: 'AuthorizationPolicy',
   gateway: 'Gateway',
   k8s_gateway: 'K8sGateway',
+  k8s_reference_grant: 'K8sReferenceGrant',
   peer_authentication: 'PeerAuthentication',
   request_authentication: 'RequestAuthentication',
   service_entry: 'ServiceEntry',

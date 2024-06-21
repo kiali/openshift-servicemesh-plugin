@@ -5,23 +5,13 @@ import { IstioConfigDetailsPage } from 'pages/IstioConfigDetails/IstioConfigDeta
 import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 import { KialiContainer } from 'openshift/components/KialiContainer';
-import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
-
-const configTypes = {
-  DestinationRule: 'DestinationRules',
-  EnvoyFilter: 'EnvoyFilters',
-  Gateway: 'Gateways',
-  VirtualService: 'VirtualServices',
-  ServiceEntry: 'ServiceEntries',
-  Sidecar: 'Sidecars',
-  WorkloadEntry: 'WorkloadEntries',
-  WorkloadGroup: 'WorkloadGroups',
-  AuthorizationPolicy: 'AuthorizationPolicies',
-  PeerAuthentication: 'PeerAuthentications',
-  RequestAuthentication: 'RequestAuthentications'
-};
+import { ResourceURLPathProps, istioResources } from 'openshift/utils/IstioResources';
+import { ErrorPage } from 'openshift/components/ErrorPage';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 const IstioConfigMeshTab: React.FC<void> = () => {
+  const { t } = useKialiTranslation();
+
   useInitKialiListeners();
 
   const location = useLocation();
@@ -29,17 +19,35 @@ const IstioConfigMeshTab: React.FC<void> = () => {
 
   const { name, ns, plural } = useParams<ResourceURLPathProps>();
 
-  const istioConfigId: IstioConfigId = {
-    namespace: ns!,
-    objectType: configTypes[plural!.substring(plural!.lastIndexOf('~') + 1)].toLowerCase(),
-    object: name!
-  };
-
-  return (
-    <KialiContainer>
-      <IstioConfigDetailsPage istioConfigId={istioConfigId}></IstioConfigDetailsPage>
-    </KialiContainer>
+  const errorPage = (
+    <ErrorPage title={t('Istio detail error')} message={t('Istio object is not defined correctly')}></ErrorPage>
   );
+
+  if (name && ns && plural) {
+    const [group, version, kind] = plural.split('~');
+
+    const istioResource = istioResources.find(
+      item => item.group === group && item.version === version && item.kind === kind
+    );
+
+    if (istioResource?.objectType) {
+      const istioConfigId: IstioConfigId = {
+        namespace: ns,
+        objectType: istioResource?.objectType,
+        object: name
+      };
+
+      return (
+        <KialiContainer>
+          <IstioConfigDetailsPage istioConfigId={istioConfigId}></IstioConfigDetailsPage>
+        </KialiContainer>
+      );
+    } else {
+      return errorPage;
+    }
+  } else {
+    return errorPage;
+  }
 };
 
 export default IstioConfigMeshTab;
