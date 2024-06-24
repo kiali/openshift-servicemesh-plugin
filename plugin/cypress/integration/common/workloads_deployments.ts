@@ -20,8 +20,19 @@ When('cypress intercept hooks for workloads are registered', () => {
   // placeholder for future implementation (intercepting API calls for graphs etc)
 });
 
-When('user navigates into {string} page', (url: string) => {
-  cy.visit(url);
+When('user navigates to the {string} deployment details page', (deployment: string) => {
+  cy.get('button[class$="c-nav__link"]')
+    .contains('Workloads')
+    .click()
+    .then(() => {
+      cy.get('a[class$="c-nav__link"]')
+        .contains('Deployments')
+        .click()
+        .then(() => {
+          cy.get('input[data-test-id="item-filter"]').type(deployment);
+          cy.get(`[data-test-id="${deployment}"]`).click();
+        });
+    });
 });
 
 When('user clicks tab with {string} button', (tabName: string) => {
@@ -32,12 +43,12 @@ When('user clicks on Service Mesh tab in horizontal nav', () => {
   cy.get('[data-test-id="horizontal-link-Service Mesh"]').contains('Service Mesh').click();
 });
 
-Then('user is able to see WorkloadDescriptionCard with Kiali Workload', () => {
-  cy.get('[data-test="workload-description-card"]').contains('kiali').should('be.visible');
+Then('user is able to see the WorkloadDescriptionCard with {string} Workload', (workload: string) => {
+  cy.get('[data-test="workload-description-card"]').contains(workload).should('be.visible');
 });
 
-When('Kiali container is selected', () => {
-  cy.get('[data-test="workload-logs-pod-containers"]').contains('kiali').click();
+When('{string} container is selected', (container: string) => {
+  cy.get('[data-test="workload-logs-pod-containers"]').contains(container).click();
 });
 
 Then('user sees {string} dropdown', (dropdownText: string) => {

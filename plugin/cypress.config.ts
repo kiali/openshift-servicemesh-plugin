@@ -44,6 +44,7 @@ export default defineConfig({
       );
 
       config.env.cookie = false;
+      config.env.API_PROXY = '/api/proxy/plugin/ossmconsole/kiali';
       // config.env.AUTH_STRATEGY = await getAuthStrategy(config.baseUrl!); // TODO we are not using kiali api, rewrite this to use openshift API
 
       return config;
