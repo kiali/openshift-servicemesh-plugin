@@ -92,10 +92,10 @@ const Row: React.FC<RowProps<IstioConfigObject>> = ({ obj, activeColumnIDs }) =>
   return (
     <>
       <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-        <span>
+        <>
           <ResourceIcon groupVersionKind={groupVersionKind} />
           <Link to={istioObjectPath}>{obj.metadata.name}</Link>
-        </span>
+        </>
       </TableData>
       <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
         <ResourceLink
@@ -109,11 +109,13 @@ const Row: React.FC<RowProps<IstioConfigObject>> = ({ obj, activeColumnIDs }) =>
       </TableData>
       <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
         {obj.validation ? (
-          <ValidationObjectSummary
-            id={`${obj.metadata.name}-config-validation`}
-            validations={[obj.validation]}
-            reconciledCondition={obj.reconciledCondition}
-          />
+          <Link to={istioObjectPath}>
+            <ValidationObjectSummary
+              id={`${obj.metadata.name}-config-validation`}
+              validations={[obj.validation]}
+              reconciledCondition={obj.reconciledCondition}
+            />
+          </Link>
         ) : (
           <>N/A</>
         )}
@@ -220,6 +222,16 @@ const IstioConfigListPage: React.FC<void> = () => {
           const namespaces = response[0].data.map(item => item.name);
 
           istioItems = toIstioItems(filterByNamespaces(filterByName(response[1].data, []), namespaces));
+
+          // Fulfill kind and apiVersion values until https://github.com/kiali/kiali/issues/7452 is fixed
+          istioItems.forEach(istioItem => {
+            const istioResource = istioResources.find(item => item.id.toLowerCase() === istioItem.type.toLowerCase());
+
+            if (istioResource) {
+              istioItem[istioResource.id].kind = istioResource.kind;
+              istioItem[istioResource.id].apiVersion = `${istioResource.group}/${istioResource.version}`;
+            }
+          });
 
           return istioItems;
         })
