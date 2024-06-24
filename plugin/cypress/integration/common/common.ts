@@ -1,5 +1,5 @@
 import { Given } from '@badeball/cypress-cucumber-preprocessor';
-import { isLocalhost } from '../utils';
+import { isLocalhost } from '../../support/utils';
 
 Given('user is logged as administrator in OCP Console', () => {
   const user = Cypress.env('OC_CLUSTER_USER');
