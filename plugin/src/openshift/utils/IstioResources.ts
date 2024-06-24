@@ -13,21 +13,21 @@ export type IstioResourceType = K8sGroupVersionKind & {
 // List of Istio resources that the OpenShift Console watches for building the Istio Config page in a "native" way
 export const istioResources: IstioResourceType[] = [
   {
-    id: 'authorization_policy',
+    id: 'authorizationPolicy',
     group: 'security.istio.io',
     version: 'v1',
     kind: 'AuthorizationPolicy',
     objectType: 'authorizationpolicies'
   },
   {
-    id: 'destination_rule',
+    id: 'destinationRule',
     group: 'networking.istio.io',
     version: 'v1',
     kind: 'DestinationRule',
     objectType: 'destinationrules'
   },
   {
-    id: 'envoy_filter',
+    id: 'envoyFilter',
     group: 'networking.istio.io',
     version: 'v1alpha3',
     kind: 'EnvoyFilter',
@@ -41,7 +41,7 @@ export const istioResources: IstioResourceType[] = [
     objectType: 'gateways'
   },
   {
-    id: 'k8s_gateway',
+    id: 'k8sGateway',
     group: 'gateway.networking.k8s.io',
     version: 'v1',
     kind: 'Gateway',
@@ -49,7 +49,7 @@ export const istioResources: IstioResourceType[] = [
     objectType: 'k8sgateways'
   },
   {
-    id: 'k8s_grpc_route',
+    id: 'k8sGRPCRoute',
     group: 'gateway.networking.k8s.io',
     version: 'v1',
     kind: 'GRPCRoute',
@@ -57,7 +57,7 @@ export const istioResources: IstioResourceType[] = [
     objectType: 'k8sgrpcroutes'
   },
   {
-    id: 'k8s_http_route',
+    id: 'k8sHTTPRoute',
     group: 'gateway.networking.k8s.io',
     version: 'v1',
     kind: 'HTTPRoute',
@@ -65,7 +65,7 @@ export const istioResources: IstioResourceType[] = [
     objectType: 'k8shttproutes'
   },
   {
-    id: 'k8s_reference_grant',
+    id: 'k8sReferenceGrant',
     group: 'gateway.networking.k8s.io',
     version: 'v1beta1',
     kind: 'ReferenceGrant',
@@ -73,7 +73,7 @@ export const istioResources: IstioResourceType[] = [
     objectType: 'k8sreferencegrants'
   },
   {
-    id: 'k8s_tcp_route',
+    id: 'k8sTCProute',
     group: 'gateway.networking.k8s.io',
     version: 'v1alpha2',
     kind: 'TCPRoute',
@@ -81,7 +81,7 @@ export const istioResources: IstioResourceType[] = [
     objectType: 'k8stcproutes'
   },
   {
-    id: 'k8s_tls_route',
+    id: 'k8sTLSroute',
     group: 'gateway.networking.k8s.io',
     version: 'v1alpha2',
     kind: 'TLSRoute',
@@ -89,28 +89,28 @@ export const istioResources: IstioResourceType[] = [
     objectType: 'k8stlsroutes'
   },
   {
-    id: 'peer_authentication',
+    id: 'peerAuthentication',
     group: 'security.istio.io',
     version: 'v1',
     kind: 'PeerAuthentication',
     objectType: 'peerauthentications'
   },
   {
-    id: 'proxy_config',
+    id: 'proxyConfig',
     group: 'networking.istio.io',
     version: 'v1beta1',
     kind: 'ProxyConfig',
     objectType: 'proxyconfigs'
   },
   {
-    id: 'request_authentication',
+    id: 'requestAuthentication',
     group: 'security.istio.io',
     version: 'v1',
     kind: 'RequestAuthentication',
     objectType: 'requestauthentications'
   },
   {
-    id: 'service_entry',
+    id: 'serviceEntry',
     group: 'networking.istio.io',
     version: 'v1',
     kind: 'ServiceEntry',
@@ -131,28 +131,28 @@ export const istioResources: IstioResourceType[] = [
     objectType: 'telemetries'
   },
   {
-    id: 'virtual_service',
+    id: 'virtualService',
     group: 'networking.istio.io',
     version: 'v1',
     kind: 'VirtualService',
     objectType: 'virtualservices'
   },
   {
-    id: 'workload_entry',
+    id: 'workloadEntry',
     group: 'networking.istio.io',
     version: 'v1',
     kind: 'WorkloadEntry',
     objectType: 'workloadentries'
   },
   {
-    id: 'workload_group',
+    id: 'workloadGroup',
     group: 'networking.istio.io',
     version: 'v1',
     kind: 'WorkloadGroup',
     objectType: 'workloadgroups'
   },
   {
-    id: 'wasm_plugin',
+    id: 'wasmPlugin',
     group: 'extensions.istio.io',
     version: 'v1alpha1',
     kind: 'WasmPlugin',
