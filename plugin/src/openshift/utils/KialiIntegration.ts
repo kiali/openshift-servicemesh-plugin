@@ -116,12 +116,12 @@ export const useInitKialiListeners = (): void => {
         }
 
         if (detail.startsWith('/istio')) {
-          consoleUrl = refForKialiIstio(detail);
+          const istioUrl = refForKialiIstio(detail);
 
-          if (consoleUrl.length === 0) {
+          if (istioUrl.length === 0) {
             consoleUrl = '/k8s/all-namespaces/istio';
           } else {
-            consoleUrl = `/k8s/ns/${namespace}${consoleUrl}`;
+            consoleUrl = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
           }
         }
       }

@@ -6,6 +6,7 @@ import {
   ListPageCreateDropdown,
   ListPageFilter,
   ListPageHeader,
+  ResourceIcon,
   ResourceLink,
   RowFilter,
   RowProps,
@@ -15,7 +16,7 @@ import {
   useListPageFilter,
   VirtualizedTable
 } from '@openshift-console/dynamic-plugin-sdk';
-import { useNavigate, useParams } from 'react-router-dom-v5-compat';
+import { Link, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { sortable } from '@patternfly/react-table';
 import { istioResources, referenceFor } from '../utils/IstioResources';
 import { IstioObject, ObjectValidation, StatusCondition } from 'types/IstioObjects';
@@ -84,10 +85,17 @@ const Row: React.FC<RowProps<IstioConfigObject>> = ({ obj, activeColumnIDs }) =>
 
   const columns = useGetColumns();
 
+  const istioObjectPath = `/k8s/ns/${obj.metadata.namespace}/${referenceFor(groupVersionKind)}/${
+    obj.metadata.name
+  }/ossmconsole`;
+
   return (
     <>
       <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-        <ResourceLink groupVersionKind={groupVersionKind} name={obj.metadata.name} namespace={obj.metadata.namespace} />
+        <>
+          <ResourceIcon groupVersionKind={groupVersionKind} />
+          <Link to={istioObjectPath}>{obj.metadata.name}</Link>
+        </>
       </TableData>
       <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
         <ResourceLink
@@ -101,11 +109,13 @@ const Row: React.FC<RowProps<IstioConfigObject>> = ({ obj, activeColumnIDs }) =>
       </TableData>
       <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
         {obj.validation ? (
-          <ValidationObjectSummary
-            id={`${obj.metadata.name}-config-validation`}
-            validations={[obj.validation]}
-            reconciledCondition={obj.reconciledCondition}
-          />
+          <Link to={istioObjectPath}>
+            <ValidationObjectSummary
+              id={`${obj.metadata.name}-config-validation`}
+              validations={[obj.validation]}
+              reconciledCondition={obj.reconciledCondition}
+            />
+          </Link>
         ) : (
           <>N/A</>
         )}
@@ -162,10 +172,23 @@ const newIstioResourceList = {
   authorization_policy: 'AuthorizationPolicy',
   gateway: 'Gateway',
   k8s_gateway: 'K8sGateway',
+  k8s_reference_grant: 'K8sReferenceGrant',
   peer_authentication: 'PeerAuthentication',
   request_authentication: 'RequestAuthentication',
   service_entry: 'ServiceEntry',
   sidecar: 'Sidecar'
+};
+
+const setKindApiVersion = (istioItems: IstioConfigItem[]): void => {
+  // Fulfill kind and apiVersion values until https://github.com/kiali/kiali/issues/7452 is fixed
+  istioItems.forEach(istioItem => {
+    const istioResource = istioResources.find(item => item.id.toLowerCase() === istioItem.type.toLowerCase());
+
+    if (istioResource) {
+      istioItem[istioResource.id].kind = istioResource.kind;
+      istioItem[istioResource.id].apiVersion = `${istioResource.group}/${istioResource.version}`;
+    }
+  });
 };
 
 const IstioConfigListPage: React.FC<void> = () => {
@@ -193,7 +216,11 @@ const IstioConfigListPage: React.FC<void> = () => {
 
       return getIstioConfigData
         .then(response => {
-          return toIstioItems(response.data);
+          const istioItems = toIstioItems(response.data);
+
+          setKindApiVersion(istioItems);
+
+          return istioItems;
         })
         .catch((error: ApiError) => {
           setLoadError({ title: error.response?.statusText, message: error.response?.data.error });
@@ -206,11 +233,12 @@ const IstioConfigListPage: React.FC<void> = () => {
 
       return Promise.all([getNamespacesData, getIstioConfigData])
         .then(response => {
-          let istioItems: IstioConfigItem[] = [];
           // convert istio objects from all namespaces
           const namespaces = response[0].data.map(item => item.name);
 
-          istioItems = toIstioItems(filterByNamespaces(filterByName(response[1].data, []), namespaces));
+          const istioItems = toIstioItems(filterByNamespaces(filterByName(response[1].data, []), namespaces));
+
+          setKindApiVersion(istioItems);
 
           return istioItems;
         })

@@ -1,12 +1,14 @@
 {
   "Configuration": "配置",
   "Create": "创建",
-  "Graph": "图",
   "Istio Config": "Istio配置",
+  "Istio detail error": "Istio detail error",
+  "Istio object is not defined correctly": "Istio object is not defined correctly",
   "Kind": "Kind",
   "Mesh": "Mesh",
   "Name": "名称",
   "Namespace": "命名空间",
   "Overview": "概述",
-  "Service Mesh": "服务网格"
+  "Service Mesh": "服务网格",
+  "Traffic Graph": "图"
 }
