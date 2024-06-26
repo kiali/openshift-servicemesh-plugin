@@ -11,6 +11,7 @@ import MergeJsonWebpackPlugin from 'merge-jsons-webpack-plugin';
 import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
 
 import pluginMetadata from './plugin-metadata';
+import extensions from './console-extensions';
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
@@ -95,7 +96,7 @@ const config: Configuration = {
     }
   },
   plugins: [
-    new ConsoleRemotePlugin({ pluginMetadata }),
+    new ConsoleRemotePlugin({ pluginMetadata, extensions }),
     new MergeJsonWebpackPlugin({
       output: {
         groupBy: [
