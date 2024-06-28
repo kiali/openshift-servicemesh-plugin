@@ -1,3 +1,4 @@
+import { PFColors } from 'components/Pf/PfColors';
 import { kialiStyle } from 'styles/StyleUtils';
 import { cssRule } from 'typestyle';
 
@@ -18,4 +19,6 @@ export const globalStyle = kialiStyle({
   }
 });
 
-export const graphContainer = kialiStyle({ padding: '0 20px 0 20px' });
+export const paddingContainer = kialiStyle({ padding: '0 20px 10px 20px' });
+
+export const grayContainer = kialiStyle({ background: PFColors.BackgroundColor200, height: '100%' });

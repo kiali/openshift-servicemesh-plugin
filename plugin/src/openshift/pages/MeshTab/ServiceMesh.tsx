@@ -6,6 +6,7 @@ import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
+import { grayContainer } from 'openshift/styles/GlobalStyle';
 
 const ServiceMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
@@ -22,7 +23,9 @@ const ServiceMeshTab: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <ServiceDetailsPage serviceId={serviceId}></ServiceDetailsPage>
+      <div className={grayContainer}>
+        <ServiceDetailsPage serviceId={serviceId}></ServiceDetailsPage>
+      </div>
     </KialiContainer>
   );
 };
