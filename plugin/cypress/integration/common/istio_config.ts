@@ -82,7 +82,7 @@ Then('user only sees {string}', (sees: string) => {
 });
 
 Then('the user can create a {string} Istio object', (object: string) => {
-  cy.get('div[data-test="item-create"]').find('button').click();
+  cy.getBySel('item-create').find('button').click();
 
   const istioResource = istioResources.find(item => item.id.toLowerCase() === object.toLowerCase());
 
@@ -99,7 +99,7 @@ Then('the user can create a {string} K8s Istio object', (object: string) => {
     expect(response.status).to.equal(200);
     const gatewayAPIEnabled = response.body.gatewayAPIEnabled;
 
-    cy.get('div[data-test="item-create"]').find('button').click();
+    cy.getBySel('item-create').find('button').click();
 
     const istioResource = istioResources.find(item => item.id.toLowerCase() === object.toLowerCase());
 
