@@ -10,7 +10,6 @@ Feature: Kiali Istio Config page
   Background:
     Given user is logged as administrator in OCP Console
     And user clicks on the Service Mesh icon in the left navigation bar
-    And cypress intercept hooks for istio config are registered
     And user navigates to the OSSMC "Istio Config" page
     And user selects the "bookinfo" namespace
 
