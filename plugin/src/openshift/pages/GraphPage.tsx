@@ -5,7 +5,7 @@ import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
 import { getPluginConfig, useInitKialiListeners } from '../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 import { KialiContainer } from 'openshift/components/KialiContainer';
-import { graphContainer } from 'openshift/styles/GlobalStyle';
+import { paddingContainer } from 'openshift/styles/GlobalStyle';
 
 const GraphPageOSSMC: React.FC<void> = () => {
   useInitKialiListeners();
@@ -29,7 +29,7 @@ const GraphPageOSSMC: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <div className={graphContainer}>
+      <div className={paddingContainer}>
         {pluginConfig.graph.impl === 'cy' && (
           <GraphPage
             aggregate={aggregate}
