@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { OverviewPage } from 'pages/Overview/OverviewPage';
-import { useInitKialiListeners } from '../utils/KialiIntegration';
-import { setHistory } from 'app/History';
+import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
 import { useHistory } from 'react-router-dom';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { configure } from 'mobx';
@@ -13,7 +12,7 @@ const OverviewPageOSSMC: React.FC<void> = () => {
   useInitKialiListeners();
 
   const history = useHistory();
-  setHistory(history.location.pathname);
+  setRouterBasename(history.location.pathname);
 
   return (
     <KialiContainer>

@@ -2,8 +2,7 @@ import * as React from 'react';
 import { useHistory } from 'react-router-dom';
 import { WorkloadId } from 'types/Workload';
 import { WorkloadDetailsPage } from 'pages/WorkloadDetails/WorkloadDetailsPage';
-import { useInitKialiListeners } from '../../utils/KialiIntegration';
-import { setHistory } from 'app/History';
+import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { configure } from 'mobx';
 
@@ -14,7 +13,7 @@ const WorkloadMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
 
   const history = useHistory();
-  setHistory(history.location.pathname);
+  setRouterBasename(history.location.pathname);
 
   const path = history.location.pathname.substring(8);
   const items = path.split('/');
