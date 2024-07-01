@@ -1,6 +1,7 @@
 import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
-import { Location, NavigateFunction, useLocation, useNavigate } from 'react-router-dom-v5-compat';
+import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
+import { setHistory } from 'app/History';
 
 export const properties = {
   // This API is hardcoded but:
@@ -17,7 +18,7 @@ export type PluginConfig = {
 };
 
 // Get OSSMC plugin config from 'plugin-config.json' resource
-export const getPluginConfig = async function (): Promise<PluginConfig> {
+export const getPluginConfig = async (): Promise<PluginConfig> => {
   return await new Promise((resolve, reject) => {
     consoleFetchJSON(properties.pluginConfig)
       .then(config => resolve(config))
@@ -25,11 +26,19 @@ export const getPluginConfig = async function (): Promise<PluginConfig> {
   });
 };
 
+// Set the router basename where OSSMC page is loaded
+export const setRouterBasename = (pathname: string): void => {
+  const ossmConsoleIndex = pathname.indexOf('/ossmconsole');
+  const basename = pathname.substring(0, ossmConsoleIndex);
+
+  setHistory(basename);
+};
+
 // Navigates to the proper OpenShift Console page
 // If the Kiali event comes from an OSSMC page, add the new entry to the history.
 // Otherwise, last history entry is invalid and has to be replaced with the new one.
-const navigateToConsoleUrl = (location: Location, navigate: NavigateFunction, url: string): void => {
-  if (location.pathname.startsWith('/ossmconsole')) {
+const navigateToConsoleUrl = (pathname: string, navigate: NavigateFunction, url: string): void => {
+  if (pathname.startsWith('/ossmconsole')) {
     navigate(url);
   } else {
     navigate(url, { replace: true });
@@ -43,7 +52,7 @@ let kialiListener: (Event: MessageEvent) => void;
 // When users "clicks" a link in Kiali, there is no navigation in the Kiali side; and event it's send to the parent
 // And the "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
 export const useInitKialiListeners = (): void => {
-  const location = useLocation();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
 
   if (!kialiListener) {
@@ -127,7 +136,7 @@ export const useInitKialiListeners = (): void => {
       }
 
       if (consoleUrl) {
-        setTimeout(() => navigateToConsoleUrl(location, navigate, consoleUrl), 0);
+        setTimeout(() => navigateToConsoleUrl(pathname, navigate, consoleUrl), 0);
       }
     };
 

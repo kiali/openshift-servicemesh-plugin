@@ -2,22 +2,20 @@ import * as React from 'react';
 import { useParams, useLocation } from 'react-router-dom-v5-compat';
 import { IstioConfigId } from 'types/IstioConfigDetails';
 import { IstioConfigDetailsPage } from 'pages/IstioConfigDetails/IstioConfigDetailsPage';
-import { useInitKialiListeners } from '../../utils/KialiIntegration';
-import { setHistory } from 'app/History';
+import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps, istioResources } from 'openshift/utils/IstioResources';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 import { useKialiTranslation } from 'utils/I18nUtils';
 
 const IstioConfigMeshTab: React.FC<void> = () => {
-  const { t } = useKialiTranslation();
-
   useInitKialiListeners();
 
-  const location = useLocation();
-  setHistory(location.pathname);
-
+  const { t } = useKialiTranslation();
+  const { pathname } = useLocation();
   const { name, ns, plural } = useParams<ResourceURLPathProps>();
+
+  setRouterBasename(pathname);
 
   const errorPage = (
     <ErrorPage title={t('Istio detail error')} message={t('Istio object is not defined correctly')}></ErrorPage>
