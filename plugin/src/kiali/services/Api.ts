@@ -90,7 +90,7 @@ const newRequest = <P>(method: HTTP_VERBS, url: string, queryParams: any, data: 
   return axios.request<P>({
     method: method,
     url: apiProxy ? `${apiProxy}/${url}` : url,
-    data: apiProxy ? JSON.stringify(data) : data,
+    data: data,
     headers: getHeaders(),
     params: queryParams
   });
@@ -816,7 +816,7 @@ export const getIstioPermissions = (namespaces: string[], cluster?: string) => {
 };
 
 export const getMetricsStats = (queries: MetricsStatsQuery[]) => {
-  return newRequest<MetricsStatsResult>(HTTP_VERBS.POST, urls.metricsStats, {}, { queries: queries });
+  return newRequest<MetricsStatsResult>(HTTP_VERBS.POST, urls.metricsStats, {}, JSON.stringify({ queries }));
 };
 
 export const getClusters = () => {
