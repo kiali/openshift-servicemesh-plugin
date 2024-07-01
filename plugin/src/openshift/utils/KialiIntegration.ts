@@ -2,6 +2,7 @@ import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
 import { useHistory } from 'react-router-dom';
 import { refForKialiIstio } from './IstioResources';
 import { History } from 'history';
+import { setHistory } from 'app/History';
 
 export const properties = {
   // This API is hardcoded but:
@@ -24,6 +25,14 @@ export const getPluginConfig = async function (): Promise<PluginConfig> {
       .then(config => resolve(config))
       .catch(error => reject(error));
   });
+};
+
+// Set the router basename where OSSMC page is loaded
+export const setRouterBasename = (pathname: string): void => {
+  const ossmConsoleIndex = pathname.indexOf('/ossmconsole');
+  const basename = pathname.substring(0, ossmConsoleIndex);
+
+  setHistory(basename);
 };
 
 // Navigates to the proper OpenShift Console page

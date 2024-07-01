@@ -4,8 +4,7 @@ import { ActionKeys } from 'actions/ActionKeys';
 import { store } from 'store/ConfigStore';
 import { GraphPage } from 'pages/Graph/GraphPage';
 import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
-import { getPluginConfig, useInitKialiListeners } from '../../utils/KialiIntegration';
-import { setHistory } from 'app/History';
+import { getPluginConfig, setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { kialiStyle } from 'styles/StyleUtils';
 import { configure } from 'mobx';
@@ -31,7 +30,7 @@ const ProjectMeshTab: React.FC<void> = () => {
   }, []);
 
   const history = useHistory();
-  setHistory(history.location.pathname);
+  setRouterBasename(history.location.pathname);
 
   const path = history.location.pathname.substring(8);
   const items = path.split('/');

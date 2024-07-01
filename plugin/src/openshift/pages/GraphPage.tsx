@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { GraphPage } from 'pages/Graph/GraphPage';
 import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
-import { getPluginConfig, useInitKialiListeners } from '../utils/KialiIntegration';
+import { getPluginConfig, setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
 import { useHistory } from 'react-router-dom';
-import { setHistory } from 'app/History';
 import { kialiStyle } from 'styles/StyleUtils';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { configure } from 'mobx';
@@ -29,7 +28,7 @@ const GraphPageOSSMC: React.FC<void> = () => {
   }, []);
 
   const history = useHistory();
-  setHistory(history.location.pathname);
+  setRouterBasename(history.location.pathname);
 
   // Obtain graph params from url pathname
   const path = history.location.pathname.substring(19);

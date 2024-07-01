@@ -155,7 +155,6 @@ const IstioTable = ({ columns, data, unfilteredData, loaded, loadError }: IstioT
 const newIstioResourceList = {
   authorization_policy: 'AuthorizationPolicy',
   gateway: 'Gateway',
-  k8s_gateway: 'K8sGateway',
   peer_authentication: 'PeerAuthentication',
   request_authentication: 'RequestAuthentication',
   service_entry: 'ServiceEntry',
@@ -228,7 +227,7 @@ const IstioConfigListPage: React.FC = () => {
 
   const onCreate = (reference: string) => {
     const groupVersionKind = istioResources.find(res => res.id === reference) as K8sGroupVersionKind;
-    const path = `/k8s/ns/${namespace ?? 'default'}/${referenceFor(groupVersionKind)}/~new`;
+    const path = `/k8s/ns/${namespace || 'default'}/${referenceFor(groupVersionKind)}/~new`;
     history.push(path);
   };
 
