@@ -140,11 +140,7 @@
     "yarn": ">=1.0.0"
   },
   "cypress-cucumber-preprocessor": {
-    "stepDefinitions": [
-      "cypress/e2e/[filepath]/**/*.{js,ts}",
-      "cypress/e2e/[filepath].{js,ts}",
-      "cypress/support/step_definitions/**/*.{js,ts}"
-    ],
+    "stepDefinitions": "cypress/integration/**/*.{js,ts}",
     "filterSpecs": true
   }
 }

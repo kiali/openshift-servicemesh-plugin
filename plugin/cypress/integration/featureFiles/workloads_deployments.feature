@@ -8,19 +8,19 @@ Feature: Kiali workloads integration with OCP Console
     Background:
         Given user is logged as administrator in OCP Console
         And cypress intercept hooks for workloads are registered
-        And user navigates into "k8s/ns/istio-system/deployments/kiali" page
+        And user navigates to the "kiali" deployment details page
         And user clicks on Service Mesh tab in horizontal nav
 
     Scenario: Verify that content of the Overview tab is correct
         When user clicks tab with "Overview" button
-        Then user is able to see WorkloadDescriptionCard with Kiali Workload
+        Then user is able to see the WorkloadDescriptionCard with "kiali" Workload
 
     Scenario: Verify that content of the Traffic tab is correct
         When user clicks tab with "Traffic" button
 
     Scenario: Verify that content of the Logs tab is correct
         When user clicks tab with "Logs" button
-        Then Kiali container is selected
+        Then "kiali" container is selected
 
     Scenario: Verify that content of the Inbound Metrics tab is correct
         When user clicks tab with "Inbound Metrics" button
