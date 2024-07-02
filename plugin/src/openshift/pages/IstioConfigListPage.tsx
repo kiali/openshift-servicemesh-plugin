@@ -28,6 +28,7 @@ import { getIstioObject, getReconciliationCondition } from 'utils/IstioConfigUti
 import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
 import { ApiError } from 'types/Api';
 import { useKialiTranslation } from 'utils/I18nUtils';
+import { OSSM_CONSOLE } from 'openshift/utils/KialiIntegration';
 
 interface IstioConfigObject extends IstioObject {
   reconciledCondition?: StatusCondition;
@@ -87,7 +88,7 @@ const Row: React.FC<RowProps<IstioConfigObject>> = ({ obj, activeColumnIDs }) =>
 
   const istioObjectPath = `/k8s/ns/${obj.metadata.namespace}/${referenceFor(groupVersionKind)}/${
     obj.metadata.name
-  }/ossmconsole`;
+  }/${OSSM_CONSOLE}`;
 
   return (
     <>
@@ -169,14 +170,13 @@ const IstioTable: React.FC<IstioTableProps> = ({ columns, data, unfilteredData, 
 };
 
 const newIstioResourceList = {
-  authorization_policy: 'AuthorizationPolicy',
+  authorizationPolicy: 'AuthorizationPolicy',
   gateway: 'Gateway',
-  k8s_gateway: 'K8sGateway',
-  k8s_reference_grant: 'K8sReferenceGrant',
-  peer_authentication: 'PeerAuthentication',
-  request_authentication: 'RequestAuthentication',
-  service_entry: 'ServiceEntry',
-  sidecar: 'Sidecar'
+  k8sGateway: 'K8sGateway',
+  k8sReferenceGrant: 'K8sReferenceGrant',
+  peerAuthentication: 'PeerAuthentication',
+  requestAuthentication: 'RequestAuthentication',
+  serviceEntry: 'ServiceEntry'
 };
 
 const setKindApiVersion = (istioItems: IstioConfigItem[]): void => {

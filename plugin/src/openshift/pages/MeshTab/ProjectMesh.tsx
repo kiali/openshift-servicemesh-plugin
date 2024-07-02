@@ -4,8 +4,7 @@ import { ActionKeys } from 'actions/ActionKeys';
 import { store } from 'store/ConfigStore';
 import { GraphPage } from 'pages/Graph/GraphPage';
 import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
-import { getPluginConfig, useInitKialiListeners } from '../../utils/KialiIntegration';
-import { setHistory } from 'app/History';
+import { getPluginConfig, setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 import { paddingContainer } from 'openshift/styles/GlobalStyle';
@@ -19,16 +18,16 @@ const ProjectMeshTab: React.FC<void> = () => {
     }
   });
 
+  const { pathname } = useLocation();
+  const { name: namespace } = useParams<ResourceURLPathProps>();
+
   React.useEffect(() => {
     getPluginConfig()
       .then(config => setPluginConfig(config))
       .catch(e => console.error(e));
   }, []);
 
-  const location = useLocation();
-  setHistory(location.pathname);
-
-  const { name: namespace } = useParams<ResourceURLPathProps>();
+  setRouterBasename(pathname);
 
   // Set namespace of the project as active namespace in redux store
   store.dispatch({ type: ActionKeys.SET_ACTIVE_NAMESPACES, payload: [{ name: namespace! }] });
