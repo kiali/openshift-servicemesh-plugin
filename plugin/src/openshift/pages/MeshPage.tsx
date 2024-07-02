@@ -4,7 +4,7 @@ import { useInitKialiListeners } from '../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { MeshPage } from 'pages/Mesh/MeshPage';
-import { graphContainer } from 'openshift/styles/GlobalStyle';
+import { paddingContainer } from 'openshift/styles/GlobalStyle';
 
 const MeshPageOSSMC: React.FC<void> = () => {
   useInitKialiListeners();
@@ -14,7 +14,7 @@ const MeshPageOSSMC: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <div className={graphContainer}>
+      <div className={paddingContainer}>
         <MeshPage></MeshPage>
       </div>
     </KialiContainer>

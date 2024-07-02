@@ -6,6 +6,7 @@ import { useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
+import { grayContainer } from 'openshift/styles/GlobalStyle';
 
 const WorkloadMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
@@ -44,7 +45,9 @@ const WorkloadMeshTab: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <WorkloadDetailsPage workloadId={workloadId}></WorkloadDetailsPage>
+      <div className={grayContainer}>
+        <WorkloadDetailsPage workloadId={workloadId}></WorkloadDetailsPage>
+      </div>
     </KialiContainer>
   );
 };

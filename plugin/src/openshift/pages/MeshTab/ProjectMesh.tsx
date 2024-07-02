@@ -7,10 +7,8 @@ import { GraphPagePF } from 'pages/GraphPF/GraphPagePF';
 import { getPluginConfig, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { setHistory } from 'app/History';
 import { KialiContainer } from 'openshift/components/KialiContainer';
-import { kialiStyle } from 'styles/StyleUtils';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
-
-const containerPadding = kialiStyle({ padding: '0 20px 0 20px' });
+import { paddingContainer } from 'openshift/styles/GlobalStyle';
 
 const ProjectMeshTab: React.FC<void> = () => {
   useInitKialiListeners();
@@ -37,7 +35,7 @@ const ProjectMeshTab: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <div className={containerPadding}>
+      <div className={paddingContainer}>
         {pluginConfig.graph.impl === 'cy' && <GraphPage></GraphPage>}
         {pluginConfig.graph.impl === 'pf' && <GraphPagePF></GraphPagePF>}
       </div>
