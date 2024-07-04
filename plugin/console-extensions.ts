@@ -215,17 +215,17 @@ const extensions: EncodedExtension[] = [
   consoleSection,
 
   // Console routes for each OSSMC page
-  ...consoleRoute('overview', 'Overview', Page.OVERVIEW, ['/ossmconsole/overview']),
+  ...consoleRoute('overview', 'Overview', Page.OVERVIEW, [`/${OSSM_CONSOLE}/overview`]),
   ...consoleRoute('graph', 'Traffic Graph', Page.GRAPH, [
-    '/ossmconsole/graph',
-    '/ossmconsole/graph/ns/:namespace/aggregates/:aggregate/:aggregateValue',
-    '/ossmconsole/graph/ns/:namespace/applications/:app/versions/:version',
-    '/ossmconsole/graph/ns/:namespace/applications/:app',
-    '/ossmconsole/graph/ns/:namespace/services/:service',
-    '/ossmconsole/graph/ns/:namespace/workloads/:workload'
+    `/${OSSM_CONSOLE}/graph`,
+    `/${OSSM_CONSOLE}/graph/ns/:namespace/aggregates/:aggregate/:aggregateValue`,
+    `/${OSSM_CONSOLE}/graph/ns/:namespace/applications/:app/versions/:version`,
+    `/${OSSM_CONSOLE}/graph/ns/:namespace/applications/:app`,
+    `/${OSSM_CONSOLE}/graph/ns/:namespace/services/:service`,
+    `/${OSSM_CONSOLE}/graph/ns/:namespace/workloads/:workload`
   ]),
   ...consoleRoute('istio', 'Istio Config', Page.ISTIO, ['/k8s/all-namespaces/istio', '/k8s/ns/:ns/istio']),
-  ...consoleRoute('mesh', 'Mesh', Page.MESH, ['/ossmconsole/mesh']),
+  ...consoleRoute('mesh', 'Mesh', Page.MESH, [`/${OSSM_CONSOLE}/mesh`]),
 
   // K8s horizontal navs - service mesh tab of k8s resources
   horizontalNav(K8sResource.Project, Tab.PROJECT),
