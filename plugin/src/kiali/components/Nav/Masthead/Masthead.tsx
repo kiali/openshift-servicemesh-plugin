@@ -38,7 +38,7 @@ export const MastheadItems: React.FC = () => {
               <ThemeSwitch />
             </FlexItem>
             <FlexItem>
-              <IstioStatus cluster={homeCluster?.name} location={'masthead'} />
+              <IstioStatus location={'masthead'} />
             </FlexItem>
             <FlexItem style={{ marginRight: 0 }}>
               <MessageCenterTrigger />
@@ -51,7 +51,7 @@ export const MastheadItems: React.FC = () => {
                 <LanguageSwitch />
               </FlexItem>
             )}
-            <FlexItem>
+            <FlexItem data-test="user-dropdown">
               <UserDropdown />
             </FlexItem>
           </Flex>

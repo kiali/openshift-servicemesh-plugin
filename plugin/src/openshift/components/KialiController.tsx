@@ -95,7 +95,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
   private loadKiali = async (): Promise<void> => {
     await this.getKialiConfig();
-    await this.getKialiSecurityInfo();
 
     this.applyUIDefaults();
     this.setDocLayout();
@@ -138,28 +137,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           );
         });
 
-      await Promise.all([getNamespacesPromise, getServerConfigPromise, getStatusPromise, getTracingInfoPromise]);
-    } catch (err) {
-      console.error('Error loading kiali config', err);
-    }
-  };
-
-  private getKialiSecurityInfo = async (): Promise<void> => {
-    try {
-      const getMeshMTLSPromise = this.promises
-        .register('getMeshMTLS', API.getMeshTls())
-        .then(response => this.props.setMeshTlsStatus(response.data))
-        .catch(error => {
-          // User without namespaces can't have access to mTLS information. Reduce severity to info.
-          const namespaces = store.getState().namespaces.items;
-          const informative = namespaces && namespaces.length < 1;
-          if (informative) {
-            AlertUtils.addError('Mesh-wide mTLS status feature disabled.', error, 'default', MessageType.INFO);
-          } else {
-            AlertUtils.addError('Error fetching Mesh-wide mTLS status.', error, 'default', MessageType.ERROR);
-          }
-        });
-
       const getIstioCertsInfoPromise = this.promises
         .register('getIstioCertsInfo', API.getIstioCertsInfo())
         .then(response => this.props.setIstioCertsInfo(response.data))
@@ -167,9 +144,15 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           AlertUtils.addError('Error fetching Istio certificates info.', error, 'default', MessageType.WARNING);
         });
 
-      await Promise.all([getMeshMTLSPromise, getIstioCertsInfoPromise]);
+      await Promise.all([
+        getNamespacesPromise,
+        getServerConfigPromise,
+        getStatusPromise,
+        getTracingInfoPromise,
+        getIstioCertsInfoPromise
+      ]);
     } catch (err) {
-      console.error('Error loading kiali security info', err);
+      console.error('Error loading kiali config', err);
     }
   };
 

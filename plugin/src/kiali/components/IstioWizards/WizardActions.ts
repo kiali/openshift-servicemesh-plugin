@@ -16,6 +16,10 @@ import {
   HTTPRouteDestination,
   IstioObject,
   K8sGateway,
+  K8sGRPCHeaderMatch,
+  K8sGRPCMethodMatch,
+  K8sGRPCRoute,
+  K8sGRPCRouteMatch,
   K8sHTTPHeaderFilter,
   K8sHTTPMatch,
   K8sHTTPRequestMirrorFilter,
@@ -60,7 +64,8 @@ import { ServiceEntryState } from '../../pages/IstioConfigNew/ServiceEntryForm';
 import { K8sRouteBackendRef } from './K8sTrafficShifting';
 import { QUERY_PARAMS, PATH, HEADERS, METHOD } from './K8sRequestRouting/K8sMatchBuilder';
 import { ServiceOverview } from '../../types/ServiceList';
-import { ADD, SET, REQ_MOD, REQ_RED, REQ_MIR } from './K8sRequestRouting/K8sFilterBuilder';
+import { ADD, SET, REQ_MOD, RESP_MOD, REQ_RED, REQ_MIR } from './K8sRequestRouting/K8sFilterBuilder';
+import { ANYTHING, PRESENCE } from './RequestRouting/MatchBuilder';
 
 export const WIZARD_TRAFFIC_SHIFTING = 'traffic_shifting';
 export const WIZARD_TCP_TRAFFIC_SHIFTING = 'tcp_traffic_shifting';
@@ -69,6 +74,7 @@ export const WIZARD_FAULT_INJECTION = 'fault_injection';
 export const WIZARD_REQUEST_TIMEOUTS = 'request_timeouts';
 
 export const WIZARD_K8S_REQUEST_ROUTING = 'k8s_request_routing';
+export const WIZARD_K8S_GRPC_REQUEST_ROUTING = 'k8s_grpc_request_routing';
 
 export const WIZARD_ENABLE_AUTO_INJECTION = 'enable_auto_injection';
 export const WIZARD_DISABLE_AUTO_INJECTION = 'disable_auto_injection';
@@ -81,7 +87,8 @@ export const SERVICE_WIZARD_ACTIONS = [
   WIZARD_TRAFFIC_SHIFTING,
   WIZARD_TCP_TRAFFIC_SHIFTING,
   WIZARD_REQUEST_TIMEOUTS,
-  WIZARD_K8S_REQUEST_ROUTING
+  WIZARD_K8S_REQUEST_ROUTING,
+  WIZARD_K8S_GRPC_REQUEST_ROUTING
 ];
 
 export type WizardAction =
@@ -90,7 +97,8 @@ export type WizardAction =
   | 'traffic_shifting'
   | 'tcp_traffic_shifting'
   | 'request_timeouts'
-  | 'k8s_request_routing';
+  | 'k8s_request_routing'
+  | 'k8s_grpc_request_routing';
 export type WizardMode = 'create' | 'update';
 
 export const WIZARD_TITLES = {
@@ -99,7 +107,8 @@ export const WIZARD_TITLES = {
   [WIZARD_TRAFFIC_SHIFTING]: 'Traffic Shifting',
   [WIZARD_TCP_TRAFFIC_SHIFTING]: 'TCP Traffic Shifting',
   [WIZARD_REQUEST_TIMEOUTS]: 'Request Timeouts',
-  [WIZARD_K8S_REQUEST_ROUTING]: 'K8s Gateway API Routing'
+  [WIZARD_K8S_REQUEST_ROUTING]: 'K8s HTTP Routing',
+  [WIZARD_K8S_GRPC_REQUEST_ROUTING]: 'K8s GRPC Routing'
 };
 
 export type ServiceWizardProps = {
@@ -108,6 +117,7 @@ export type ServiceWizardProps = {
   destinationRules: DestinationRule[];
   gateways: string[];
   istioAPIEnabled: boolean;
+  k8sGRPCRoutes: K8sGRPCRoute[];
   k8sGateways: string[];
   k8sHTTPRoutes: K8sHTTPRoute[];
   namespace: string;
@@ -139,6 +149,7 @@ export type WizardPreviews = {
   dr?: DestinationRule;
   gw?: Gateway;
   k8sgateway?: K8sGateway;
+  k8sgrpcroute?: K8sGRPCRoute;
   k8shttproute?: K8sHTTPRoute;
   pa?: PeerAuthentication;
   vs?: VirtualService;
@@ -183,10 +194,11 @@ export type WorkloadWizardState = {
 export const KIALI_WIZARD_LABEL = 'kiali_wizard';
 export const KIALI_RELATED_LABEL = 'kiali_wizard_related';
 
-// Wizard don't operate with EnvoyFilters so they can use the v1beta1 version
-export const ISTIO_NETWORKING_VERSION = 'networking.istio.io/v1beta1';
-export const ISTIO_SECURITY_VERSION = 'security.istio.io/v1beta1';
-export const GATEWAY_NETWORKING_VERSION = 'gateway.networking.k8s.io/v1';
+// Wizard don't operate with EnvoyFilters so they can use the v1 version
+const ISTIO_NETWORKING_VERSION = 'networking.istio.io/v1';
+const ISTIO_SECURITY_VERSION = 'security.istio.io/v1';
+const GATEWAY_NETWORKING_VERSION = 'gateway.networking.k8s.io/v1';
+const GATEWAY_NETWORKING_VERSION_BETA = 'gateway.networking.k8s.io/v1beta1';
 
 export const fqdnServiceName = (serviceName: string, namespace: string): string => {
   return `${serviceName}.${namespace}.${serverConfig.istioIdentityDomain}`;
@@ -197,7 +209,7 @@ const buildHTTPMatchRequest = (matches: string[]): HTTPMatchRequest[] => {
   const matchHeaders: HTTPMatchRequest = { headers: {} };
   // Headers are grouped
   matches
-    .filter(match => match.startsWith('headers'))
+    .filter(match => match.startsWith(HEADERS))
     .forEach(match => {
       // match follows format:  headers [<header-name>] <op> <value>
       const i0 = match.indexOf('[');
@@ -207,14 +219,18 @@ const buildHTTPMatchRequest = (matches: string[]): HTTPMatchRequest[] => {
       const j1 = match.indexOf(' ', i1 + 1);
       const op = match.substring(i1 + 1, j1).trim();
       const value = match.substring(j1 + 1).trim();
-      matchHeaders.headers![headerName] = { [op]: value };
+      if (op === PRESENCE) {
+        matchHeaders.headers![headerName] = {};
+      } else {
+        matchHeaders.headers![headerName] = { [op]: value };
+      }
     });
   if (Object.keys(matchHeaders.headers || {}).length > 0) {
     matchRequests.push(matchHeaders);
   }
   // Rest of matches
   matches
-    .filter(match => !match.startsWith('headers'))
+    .filter(match => !match.startsWith(HEADERS))
     .forEach(match => {
       // match follows format: <name> <op> <value>
       const i = match.indexOf(' ');
@@ -305,10 +321,55 @@ const buildK8sHTTPRouteMatch = (matches: string[]): K8sHTTPRouteMatch => {
   return matchRoute;
 };
 
+const buildK8sGRPCRouteMatch = (matches: string[]): K8sGRPCRouteMatch => {
+  const matchRoute: K8sGRPCRouteMatch = {};
+  const matchHeaders: K8sGRPCHeaderMatch[] = [];
+  const matchMethods: K8sGRPCMethodMatch[] = [];
+
+  matches
+    .filter(match => match.startsWith(HEADERS))
+    .forEach(match => {
+      // match follows format:  headers [<header-name>] <op> <value>
+      const i0 = match.indexOf('[');
+      const j0 = match.indexOf(']');
+      const headerName = match.substring(i0 + 1, j0).trim();
+      const i1 = match.indexOf(' ', j0 + 1);
+      const j1 = match.indexOf(' ', i1 + 1);
+      const op = match.substring(i1 + 1, j1).trim();
+      const value = match.substring(j1 + 1).trim();
+      matchHeaders.push({
+        name: headerName,
+        type: op,
+        value: value
+      });
+    });
+  // Method
+  matches
+    .filter(match => match.startsWith(METHOD))
+    .forEach(match => {
+      // match follows format: <name> <op> <value>
+      const i = match.indexOf(' ');
+      const j = match.indexOf(' ', i + 1);
+      const k = match.indexOf(' ', j + 1);
+      const service = match.substring(i, j).trim();
+      const op = match.substring(j + 1, k).trim();
+      const value = match.substring(k + 1).trim();
+      matchMethods.push({ service: service, type: op, method: value });
+    });
+  if (matchHeaders.length > 0) {
+    matchRoute.headers = matchHeaders;
+  }
+  if (matchMethods.length > 0) {
+    // should be only one method
+    matchRoute.method = matchMethods[0];
+  }
+  return matchRoute;
+};
+
 const buildK8sHTTPRouteFilter = (filters: string[]): K8sHTTPRouteFilter[] => {
   const routeFilter: K8sHTTPRouteFilter[] = [];
   filters
-    .filter(filter => filter.startsWith(REQ_MOD))
+    .filter(filter => filter.startsWith(REQ_MOD) || filter.startsWith(RESP_MOD))
     .forEach(filter => {
       const requestHeaderModifier: K8sHTTPHeaderFilter = {};
       // match follows format:  requestHeaderModifier [<header-name>] <add/set/remove> <value/null>
@@ -340,7 +401,11 @@ const buildK8sHTTPRouteFilter = (filters: string[]): K8sHTTPRouteFilter[] => {
         }
       }
 
-      routeFilter.push({ type: 'RequestHeaderModifier', requestHeaderModifier: requestHeaderModifier });
+      if (filter.startsWith(REQ_MOD)) {
+        routeFilter.push({ type: 'RequestHeaderModifier', requestHeaderModifier: requestHeaderModifier });
+      } else if (filter.startsWith(RESP_MOD)) {
+        routeFilter.push({ type: 'ResponseHeaderModifier', responseHeaderModifier: requestHeaderModifier });
+      }
     });
 
   filters
@@ -385,7 +450,10 @@ const buildK8sHTTPRouteFilter = (filters: string[]): K8sHTTPRouteFilter[] => {
   return routeFilter;
 };
 
-const parseStringMatch = (value: StringMatch): string => {
+const parseStringMatch = (value: StringMatch | string): string => {
+  if (typeof value === 'string') {
+    return `${PRESENCE} ${ANYTHING}`;
+  }
   if (value.exact) {
     return `exact ${value.exact}`;
   }
@@ -404,7 +472,11 @@ const parseHttpMatchRequest = (httpMatchRequest: HTTPMatchRequest): string[] => 
   if (httpMatchRequest.headers) {
     Object.keys(httpMatchRequest.headers).forEach(headerName => {
       const value = httpMatchRequest.headers![headerName];
-      matches.push(`headers [${headerName}] ${parseStringMatch(value)}`);
+      if (Object.keys(value).length === 0) {
+        matches.push(`headers [${headerName}] ${parseStringMatch(ANYTHING)}`);
+      } else {
+        matches.push(`headers [${headerName}] ${parseStringMatch(value)}`);
+      }
     });
   }
   if (httpMatchRequest.uri) {
@@ -419,6 +491,23 @@ const parseHttpMatchRequest = (httpMatchRequest: HTTPMatchRequest): string[] => 
   if (httpMatchRequest.authority) {
     matches.push(`authority ${parseStringMatch(httpMatchRequest.authority)}`);
   }
+  return matches;
+};
+
+const parseK8sGRPCMatchRequest = (grpcRouteMatch: K8sGRPCRouteMatch): string[] => {
+  const matches: string[] = [];
+  // Headers
+  if (grpcRouteMatch.headers) {
+    grpcRouteMatch.headers.forEach(header => {
+      matches.push(`headers [${header.name}] ${header.type} ${header.value}`);
+    });
+  }
+  if (grpcRouteMatch.method) {
+    matches.push(
+      `method ${grpcRouteMatch.method.method} ${grpcRouteMatch.method.type} ${grpcRouteMatch.method.service}`
+    );
+  }
+
   return matches;
 };
 
@@ -449,6 +538,11 @@ const parseK8sHTTPRouteFilter = (httpRouteFilter: K8sHTTPRouteFilter): string[] 
   let matches: string[] = [];
   if (httpRouteFilter.requestHeaderModifier) {
     matches = matches.concat(parseK8sHTTPHeaderFilter('requestHeaderModifier', httpRouteFilter.requestHeaderModifier));
+  }
+  if (httpRouteFilter.responseHeaderModifier) {
+    matches = matches.concat(
+      parseK8sHTTPHeaderFilter('responseHeaderModifier', httpRouteFilter.responseHeaderModifier)
+    );
   }
   if (httpRouteFilter.requestRedirect) {
     matches = matches.concat(parseK8sHTTPRouteRequestRedirect(httpRouteFilter.requestRedirect));
@@ -524,6 +618,7 @@ export const buildIstioConfig = (wProps: ServiceWizardProps, wState: ServiceWiza
     drName = wProps.destinationRules[0].metadata.name;
   }
   let wizardK8sHTTPRoute: K8sHTTPRoute | undefined = undefined;
+  let wizardK8sGRPCRoute: K8sGRPCRoute | undefined = undefined;
   let wizardDR: DestinationRule | undefined = undefined;
   let wizardVS: VirtualService | undefined = undefined;
   let wizardGW: Gateway | undefined;
@@ -535,7 +630,7 @@ export const buildIstioConfig = (wProps: ServiceWizardProps, wState: ServiceWiza
     wProps.gateways.concat(wProps.k8sGateways)
   );
 
-  if (wProps.type !== WIZARD_K8S_REQUEST_ROUTING) {
+  if (wProps.type !== WIZARD_K8S_REQUEST_ROUTING && wProps.type !== WIZARD_K8S_GRPC_REQUEST_ROUTING) {
     wizardDR = {
       kind: 'DestinationRule',
       apiVersion: ISTIO_NETWORKING_VERSION,
@@ -1048,13 +1143,119 @@ export const buildIstioConfig = (wProps: ServiceWizardProps, wState: ServiceWiza
       }
     }
   }
+  if (wProps.type === WIZARD_K8S_GRPC_REQUEST_ROUTING) {
+    let k8sRouteName = wProps.serviceName;
+    if (
+      wProps.k8sGRPCRoutes &&
+      wProps.k8sGRPCRoutes.length === 1 &&
+      wProps.k8sGRPCRoutes[0].metadata.name !== k8sRouteName
+    ) {
+      k8sRouteName = wProps.k8sGRPCRoutes[0].metadata.name;
+    }
+
+    wizardK8sGW =
+      wState.k8sGateway && wState.k8sGateway.addGateway && wState.k8sGateway.newGateway
+        ? {
+            kind: 'Gateway',
+            apiVersion: GATEWAY_NETWORKING_VERSION,
+            metadata: {
+              namespace: wProps.namespace,
+              name: fullNewGatewayName.substr(wProps.namespace.length + 1),
+              labels: {
+                [KIALI_WIZARD_LABEL]: wProps.type,
+                app: fullNewGatewayName.substr(wProps.namespace.length + 1)
+              }
+            },
+            spec: {
+              gatewayClassName: wState.k8sGateway.gatewayClass,
+              listeners: [
+                {
+                  name: 'default',
+                  // here gwHosts for K8s API Gateway contains single host
+                  hostname: wState.k8sGateway.gwHosts,
+                  port: wState.k8sGateway.port,
+                  protocol: 'HTTP',
+                  allowedRoutes: {
+                    namespaces: {
+                      from: 'All',
+                      selector: {
+                        matchLabels: {}
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        : undefined;
+
+    wizardK8sGRPCRoute = {
+      kind: 'GRPCRoute',
+      apiVersion: GATEWAY_NETWORKING_VERSION,
+      metadata: {
+        namespace: wProps.namespace,
+        name: k8sRouteName,
+        labels: {
+          [KIALI_WIZARD_LABEL]: wProps.type
+        }
+      },
+      spec: {}
+    };
+    wizardK8sGRPCRoute.spec.hostnames =
+      wState.k8sRouteHosts.length > 1 || (wState.k8sRouteHosts.length === 1 && wState.k8sRouteHosts[0].length > 0)
+        ? wState.k8sRouteHosts
+        : [wProps.serviceName];
+    switch (wProps.type) {
+      case WIZARD_K8S_GRPC_REQUEST_ROUTING: {
+        // parentRefs to K8sGateway
+        if (wState.k8sGateway && wState.k8sGateway.addGateway) {
+          wizardK8sGRPCRoute.spec.parentRefs = [];
+          if (wState.k8sGateway.newGateway) {
+            const namespaceAndName = fullNewGatewayName.split('/');
+            const gwNamespace = namespaceAndName[0];
+            const gwName = namespaceAndName[1];
+            wizardK8sGRPCRoute.spec.parentRefs.push({
+              name: gwName,
+              namespace: gwNamespace
+            });
+          } else if (wState.k8sGateway.selectedGateway.length > 0) {
+            const namespaceAndName = wState.k8sGateway.selectedGateway.split('/');
+            const gwNamespace = namespaceAndName[0];
+            const gwName = namespaceAndName[1];
+            wizardK8sGRPCRoute.spec.parentRefs.push({
+              name: gwName,
+              namespace: gwNamespace
+            });
+          }
+        }
+        if (wState.k8sRules && wState.k8sRules.length > 0) {
+          wizardK8sGRPCRoute.spec.rules = [];
+          wState.k8sRules.forEach(rule => {
+            if (rule.matches.length > 0 || rule.filters.length > 0) {
+              wizardK8sGRPCRoute!.spec!.rules!.push({
+                matches: [buildK8sGRPCRouteMatch(rule.matches)],
+                filters: buildK8sHTTPRouteFilter(rule.filters),
+                backendRefs: rule.backendRefs
+              });
+            } else {
+              wizardK8sGRPCRoute!.spec!.rules!.push({
+                backendRefs: rule.backendRefs
+              });
+            }
+          });
+        }
+        break;
+      }
+    }
+  }
   return {
     dr: wizardDR,
     vs: wizardVS,
     gw: wizardGW,
     k8sgateway: wizardK8sGW,
     pa: wizardPA,
-    k8shttproute: wizardK8sHTTPRoute
+    k8shttproute: wizardK8sHTTPRoute,
+    k8sgrpcroute: wizardK8sGRPCRoute
   };
 };
 
@@ -1290,6 +1491,37 @@ export const getInitK8sRules = (httpRoutes: K8sHTTPRoute[]): K8sRule[] => {
   return rules;
 };
 
+export const getInitK8sGRPCRules = (grpcRoutes: K8sGRPCRoute[]): K8sRule[] => {
+  const rules: K8sRule[] = [];
+  if (grpcRoutes && grpcRoutes.length === 1 && grpcRoutes[0].spec.rules) {
+    grpcRoutes[0].spec.rules.forEach(grpcRoute => {
+      const rule: K8sRule = {
+        matches: [],
+        filters: [],
+        backendRefs: []
+      };
+      if (grpcRoute.matches) {
+        grpcRoute.matches.forEach(m => (rule.matches = rule.matches.concat(parseK8sGRPCMatchRequest(m))));
+      }
+      if (grpcRoute.backendRefs) {
+        grpcRoute.backendRefs.forEach(bRef => {
+          rule.backendRefs.push({
+            name: bRef.name,
+            weight: !bRef.weight || bRef.weight === 1 ? 100 : bRef.weight,
+            port: !bRef.port ? 80 : bRef.port
+          });
+        });
+      }
+
+      // Not adding a rule if it has empty routes, probably this means that an existing service was removed
+      if (rule.backendRefs && rule.backendRefs.length > 0) {
+        rules.push(rule);
+      }
+    });
+  }
+  return rules;
+};
+
 export const getInitFaultInjectionRoute = (
   workloads: WorkloadOverview[],
   virtualServices: VirtualService[],
@@ -1468,7 +1700,7 @@ export const hasGateway = (virtualServices: VirtualService[]): boolean => {
   return false;
 };
 
-export const hasK8sGateway = (k8sHTTPRoutes: K8sHTTPRoute[]): boolean => {
+export const hasK8sGateway = (k8sHTTPRoutes: K8sHTTPRoute[], k8sGRPCRoutes: K8sGRPCRoute[]): boolean => {
   // We need to if sentence, otherwise a potential undefined is not well handled
   if (
     k8sHTTPRoutes &&
@@ -1476,6 +1708,15 @@ export const hasK8sGateway = (k8sHTTPRoutes: K8sHTTPRoute[]): boolean => {
     k8sHTTPRoutes[0] &&
     k8sHTTPRoutes[0].spec.parentRefs &&
     k8sHTTPRoutes[0].spec.parentRefs.length > 0
+  ) {
+    return true;
+  }
+  if (
+    k8sGRPCRoutes &&
+    k8sGRPCRoutes.length === 1 &&
+    k8sGRPCRoutes[0] &&
+    k8sGRPCRoutes[0].spec.parentRefs &&
+    k8sGRPCRoutes[0].spec.parentRefs.length > 0
   ) {
     return true;
   }
@@ -1489,7 +1730,8 @@ export const getInitHosts = (virtualServices: VirtualService[]): string[] => {
   return [];
 };
 
-export const getInitK8sHosts = (k8sHTTPRoutes: K8sHTTPRoute[]): string[] => {
+export const getInitK8sHosts = (k8sHTTPRoutes: K8sHTTPRoute[], k8sGRPCRoutes: K8sGRPCRoute[]): string[] => {
+  const result = new Set<string>();
   if (
     k8sHTTPRoutes &&
     k8sHTTPRoutes.length === 1 &&
@@ -1497,9 +1739,22 @@ export const getInitK8sHosts = (k8sHTTPRoutes: K8sHTTPRoute[]): string[] => {
     k8sHTTPRoutes[0].spec.hostnames &&
     k8sHTTPRoutes[0].spec.hostnames.length > 0
   ) {
-    return k8sHTTPRoutes[0].spec.hostnames;
+    k8sHTTPRoutes[0].spec.hostnames.forEach(value => {
+      result.add(value);
+    });
   }
-  return [];
+  if (
+    k8sGRPCRoutes &&
+    k8sGRPCRoutes.length === 1 &&
+    k8sGRPCRoutes[0] &&
+    k8sGRPCRoutes[0].spec.hostnames &&
+    k8sGRPCRoutes[0].spec.hostnames.length > 0
+  ) {
+    k8sGRPCRoutes[0].spec.hostnames.forEach(value => {
+      result.add(value);
+    });
+  }
+  return Array.from(result);
 };
 
 // VirtualServices added from the Kiali Wizard only support to add a single gateway
@@ -1529,7 +1784,7 @@ export const getInitGateway = (virtualServices: VirtualService[]): [string, bool
 // HTTPRoutes added from the Kiali Wizard only support to add a single K8s API gateway
 // mesh gateway is not supported yet.
 // This method returns a gateway selected by the user
-export const getInitK8sGateway = (k8sHTTPRoutes: K8sHTTPRoute[]): string => {
+export const getInitK8sGateway = (k8sHTTPRoutes: K8sHTTPRoute[], k8sGRPCRoutes: K8sGRPCRoute[]): string => {
   if (
     k8sHTTPRoutes &&
     k8sHTTPRoutes.length === 1 &&
@@ -1539,6 +1794,17 @@ export const getInitK8sGateway = (k8sHTTPRoutes: K8sHTTPRoute[]): string => {
   ) {
     const name = k8sHTTPRoutes[0].spec.parentRefs[0].name;
     const namespace = k8sHTTPRoutes[0].spec.parentRefs[0].namespace;
+    return `${namespace !== '' ? `${namespace}/` : ''}${name}`;
+  }
+  if (
+    k8sGRPCRoutes &&
+    k8sGRPCRoutes.length === 1 &&
+    k8sGRPCRoutes[0] &&
+    k8sGRPCRoutes[0].spec.parentRefs &&
+    k8sGRPCRoutes[0].spec.parentRefs.length > 0
+  ) {
+    const name = k8sGRPCRoutes[0].spec.parentRefs[0].name;
+    const namespace = k8sGRPCRoutes[0].spec.parentRefs[0].namespace;
     return `${namespace !== '' ? `${namespace}/` : ''}${name}`;
   }
   return '';
@@ -1719,7 +1985,7 @@ export const buildGraphSidecars = (namespace: string, graph: GraphDefinition): S
 export const buildGraphAuthorizationPolicy = (namespace: string, graph: GraphDefinition): AuthorizationPolicy[] => {
   const denyAll: AuthorizationPolicy = {
     kind: 'AuthorizationPolicy',
-    apiVersion: 'security.istio.io/v1beta1',
+    apiVersion: 'security.istio.io/v1',
     metadata: {
       name: `deny-all-${namespace}`,
       namespace: namespace,
@@ -1892,7 +2158,7 @@ export const buildK8sReferenceGrant = (
 ): K8sReferenceGrant => {
   const k8sReferenceGrant: K8sReferenceGrant = {
     kind: 'ReferenceGrant',
-    apiVersion: GATEWAY_NETWORKING_VERSION,
+    apiVersion: GATEWAY_NETWORKING_VERSION_BETA,
     metadata: {
       name: name,
       namespace: namespace,
