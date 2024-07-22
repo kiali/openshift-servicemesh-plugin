@@ -27,7 +27,7 @@ export const SERVICE_DETAILS: ServiceDetailsInfo = {
     additionalDetails: []
   },
   istioSidecar: true,
-  istioAmbient: false,
+  isAmbient: false,
   endpoints: [
     {
       addresses: [
@@ -85,6 +85,7 @@ export const SERVICE_DETAILS: ServiceDetailsInfo = {
     }
   ],
   k8sHTTPRoutes: [],
+  k8sGRPCRoutes: [],
   destinationRules: [
     {
       metadata: {

@@ -8,7 +8,6 @@ export interface MeshCluster {
   isKialiHome: boolean;
   kialiInstances: KialiInstance[];
   name: string;
-  network: string;
   secretName: string;
 }
 
@@ -40,7 +39,6 @@ export enum MeshNodeType {
   INFRA = 'infra'
 }
 
-// TODO
 export type MeshNodeHealthData = string;
 
 // Node data expected from server

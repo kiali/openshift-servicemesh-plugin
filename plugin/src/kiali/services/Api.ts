@@ -32,6 +32,7 @@ import {
   VirtualService,
   DestinationRuleC,
   K8sHTTPRoute,
+  K8sGRPCRoute,
   OutboundTrafficPolicy,
   CanaryUpgradeStatus,
   PodLogsQuery,
@@ -124,10 +125,13 @@ const newRequest = <P>(
   queryParams: unknown,
   data: unknown
 ): Promise<ApiResponse<P>> => {
+  // stringify request data that is not already stringified
+  const requestData = typeof data !== 'string' ? JSON.stringify(data) : data;
+
   return axios.request<P>({
     method: method,
     url: apiProxy ? `${apiProxy}/${url}` : url,
-    data: apiProxy ? JSON.stringify(data) : data,
+    data: requestData,
     headers: getHeaders() as AxiosHeaders,
     params: queryParams
   });
@@ -164,16 +168,6 @@ export const logout = (): Promise<ApiResponse<void>> => {
 
 export const getAuthInfo = async (): Promise<ApiResponse<AuthInfo>> => {
   return newRequest<AuthInfo>(HTTP_VERBS.GET, urls.authInfo, {}, {});
-};
-
-export const checkOpenshiftAuth = async (data: string): Promise<ApiResponse<LoginSession>> => {
-  return axios.request<LoginSession>({
-    method: HTTP_VERBS.POST,
-    url: urls.authenticate,
-    data: data,
-    headers: getHeaders(true) as AxiosHeaders,
-    params: {}
-  });
 };
 
 export const getStatus = (): Promise<ApiResponse<StatusState>> => {
@@ -223,12 +217,11 @@ export const getClustersMetrics = (
   return newRequest<MetricsPerNamespace>(HTTP_VERBS.GET, urls.clustersMetrics(), queryParams, {});
 };
 
-export const getMeshTls = (cluster?: string): Promise<ApiResponse<TLSStatus>> => {
-  const queryParams: ClusterParam = {};
-
-  if (cluster) {
-    queryParams.clusterName = cluster;
-  }
+export const getMeshTls = (cluster: string, revision: string): Promise<ApiResponse<TLSStatus>> => {
+  const queryParams = {
+    cluster,
+    revision
+  };
 
   return newRequest<TLSStatus>(HTTP_VERBS.GET, urls.meshTls(), queryParams, {});
 };
@@ -935,7 +928,7 @@ export const getServiceDetail = async (
       info.health = ServiceHealth.fromJson(namespace, service, info.health, {
         rateInterval: rateInterval ?? 600,
         hasSidecar: info.istioSidecar,
-        hasAmbient: info.istioAmbient
+        hasAmbient: info.isAmbient
       });
     }
 
@@ -1200,6 +1193,7 @@ export function deleteServiceTrafficRouting(
   virtualServices: VirtualService[],
   destinationRules: DestinationRuleC[],
   k8sHTTPRouteList: K8sHTTPRoute[],
+  k8sGRPCRouteList: K8sGRPCRoute[],
   cluster?: string
 ): Promise<ApiResponse<string>[]>;
 
@@ -1209,11 +1203,13 @@ export function deleteServiceTrafficRouting(
   vsOrSvc: VirtualService[] | ServiceDetailsInfo,
   destinationRules?: DestinationRuleC[],
   k8sHTTPRouteList?: K8sHTTPRoute[],
+  k8sGRPCRouteList?: K8sGRPCRoute[],
   cluster?: string
 ): Promise<ApiResponse<string>[]> {
   let vsList: VirtualService[];
   let drList: DestinationRuleC[];
-  let routeList: K8sHTTPRoute[];
+  let httpRouteList: K8sHTTPRoute[];
+  let grpcRouteList: K8sGRPCRoute[];
   const deletePromises: Promise<ApiResponse<string>>[] = [];
 
   if (isServiceDetailsInfo(vsOrSvc)) {
@@ -1225,11 +1221,13 @@ export function deleteServiceTrafficRouting(
   if ('virtualServices' in vsOrSvc) {
     vsList = vsOrSvc.virtualServices;
     drList = DestinationRuleC.fromDrArray(vsOrSvc.destinationRules);
-    routeList = vsOrSvc.k8sHTTPRoutes ?? [];
+    httpRouteList = vsOrSvc.k8sHTTPRoutes ?? [];
+    grpcRouteList = vsOrSvc.k8sGRPCRoutes ?? [];
   } else {
     vsList = vsOrSvc;
     drList = destinationRules ?? [];
-    routeList = k8sHTTPRouteList ?? [];
+    httpRouteList = k8sHTTPRouteList ?? [];
+    grpcRouteList = k8sGRPCRouteList ?? [];
   }
 
   vsList.forEach(vs => {
@@ -1238,12 +1236,17 @@ export function deleteServiceTrafficRouting(
     );
   });
 
-  routeList.forEach(k8sr => {
+  httpRouteList.forEach(k8sr => {
     deletePromises.push(
       deleteIstioConfigDetail(k8sr.metadata.namespace ?? '', 'k8shttproutes', k8sr.metadata.name, cluster)
     );
   });
 
+  grpcRouteList.forEach(k8sr => {
+    deletePromises.push(
+      deleteIstioConfigDetail(k8sr.metadata.namespace ?? '', 'k8sgrpcroutes', k8sr.metadata.name, cluster)
+    );
+  });
   drList.forEach(dr => {
     deletePromises.push(
       deleteIstioConfigDetail(dr.metadata.namespace ?? '', 'destinationrules', dr.metadata.name, cluster)

@@ -47,7 +47,7 @@ import { GraphToolbarActions } from '../../actions/GraphToolbarActions';
 import { PFColors } from 'components/Pf/PfColors';
 import { TourActions } from 'actions/TourActions';
 import { arrayEquals } from 'utils/Common';
-import { isKioskMode, getFocusSelector, getTraceId, getClusterName } from 'utils/SearchParamUtils';
+import { isKioskMode, getFocusSelector, getTraceId, getClusterName, unsetFocusSelector } from 'utils/SearchParamUtils';
 import { Badge, Chip } from '@patternfly/react-core';
 import { toRangeString } from 'components/Time/Utils';
 import { replayBorder } from 'components/Time/Replay';
@@ -293,7 +293,10 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
     this.controller = undefined;
     this.errorBoundaryRef = React.createRef();
     const focusNodeId = getFocusSelector();
-    this.focusNode = focusNodeId ? { id: focusNodeId, isSelected: true } : undefined;
+    if (focusNodeId) {
+      this.focusNode = { id: focusNodeId, isSelected: true } as FocusNode;
+      unsetFocusSelector();
+    }
     this.graphDataSource = new GraphDataSource();
 
     this.state = {
@@ -523,6 +526,7 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
           destinationRules={this.state.wizardsData.serviceDetails?.destinationRules || []}
           gateways={this.state.wizardsData.gateways || []}
           k8sGateways={this.state.wizardsData.k8sGateways || []}
+          k8sGRPCRoutes={this.state.wizardsData.serviceDetails?.k8sGRPCRoutes || []}
           k8sHTTPRoutes={this.state.wizardsData.serviceDetails?.k8sHTTPRoutes || []}
           peerAuthentications={this.state.wizardsData.peerAuthentications || []}
           tlsStatus={this.state.wizardsData.serviceDetails?.namespaceMTLS}
@@ -535,6 +539,7 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
             destinationRules={DestinationRuleC.fromDrArray(this.state.wizardsData.serviceDetails!.destinationRules)}
             virtualServices={this.state.wizardsData.serviceDetails!.virtualServices}
             k8sHTTPRoutes={this.state.wizardsData.serviceDetails!.k8sHTTPRoutes}
+            k8sGRPCRoutes={this.state.wizardsData.serviceDetails!.k8sGRPCRoutes}
             onCancel={() => this.setState({ showConfirmDeleteTrafficRouting: false })}
             onConfirm={this.handleConfirmDeleteServiceTrafficRouting}
           />
