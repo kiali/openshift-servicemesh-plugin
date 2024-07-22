@@ -29,6 +29,7 @@ import { ErrorPage, OSSMCError } from 'openshift/components/ErrorPage';
 import { ApiError } from 'types/Api';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import { OSSM_CONSOLE } from 'openshift/utils/KialiIntegration';
+import { serverConfig } from 'config';
 
 interface IstioConfigObject extends IstioObject {
   reconciledCondition?: StatusCondition;
@@ -176,7 +177,8 @@ const newIstioResourceList = {
   k8sReferenceGrant: 'K8sReferenceGrant',
   peerAuthentication: 'PeerAuthentication',
   requestAuthentication: 'RequestAuthentication',
-  serviceEntry: 'ServiceEntry'
+  serviceEntry: 'ServiceEntry',
+  sidecar: 'Sidecar'
 };
 
 const setKindApiVersion = (istioItems: IstioConfigItem[]): void => {
@@ -274,6 +276,19 @@ const IstioConfigListPage: React.FC<void> = () => {
       setLoaded(true);
     });
   }, [fetchIstioConfigs]);
+
+  let newIstioResourceItems = {};
+
+  // don't include gateway API objects if it is not enabled
+  for (const key in newIstioResourceList) {
+    if (key.startsWith('k8s')) {
+      if (serverConfig.gatewayAPIEnabled) {
+        newIstioResourceItems[key] = newIstioResourceList[key];
+      }
+    } else {
+      newIstioResourceItems[key] = newIstioResourceList[key];
+    }
+  }
 
   const [data, filteredData, onFilterChange] = useListPageFilter(listItems, filters);
 
