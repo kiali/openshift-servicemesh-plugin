@@ -77,8 +77,8 @@ jobs:
         echo ${{ github.ref_name }}
         if [[ "${{ github.ref_name }}" == "main" ]];
         then
-          DO_RELEASE=$(python minor.py)
-          if [[ $DO_RELEASE == "1" ]]
+          SPRINT_RELEASE=$(python minor.py)
+          if [[ $SPRINT_RELEASE == "1" ]] || [[ "${{github.event_name}}" != "schedule" ]]
           then
             echo "release_type=minor" >> $GITHUB_ENV
           else
