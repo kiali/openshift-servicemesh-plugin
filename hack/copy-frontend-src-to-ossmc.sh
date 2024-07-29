@@ -34,7 +34,7 @@ SOURCE_REPO_URL="${DEFAULT_SOURCE_REPO_URL}"
 # The git ref (branch or tag name) to checkout when cloning the source repo
 DEFAULT_SOURCE_REF="master"
 SOURCE_REF="${DEFAULT_SOURCE_REF}"
-GIT_REF="${SOURCE_REF}"
+PULL_REQUEST=""
 
 # This is to be the top-level directory of the local OSSM git repo.
 # This is where DEST_DIR should be located.
@@ -59,6 +59,13 @@ Valid options:
       The Kiali "${SOURCE_DIR}" content will be copied to this destination
       repo's "${DEST_DIR}" directory.
       Default: ${DEFAULT_DEST_REPO}
+
+  -pr|--pull-request <pull request number>
+      A git reference (pull request number) found in the remote source repo. This is the
+      Kiali pull request that will be checked out when cloning the remote source repo.
+      This option takes precedence over the --source-ref option
+      See also: --source-ref
+      Default: ""
 
   -sr|--source-ref <branch or tag name>
       A git reference (branch or tag name) found in the remote source repo. This is the
@@ -115,12 +122,14 @@ fi
 
 cd ${ABS_SOURCE_DIR}
 
-if [ -n ${PULL_REQUEST} ]; then
-  echo "Apply the changes from PR ${PULL_REQUEST} (https://github.com/kiali/kiali/pull/${PULL_REQUEST}) to the ${SOURCE_REF} branch"
+if [ -n "${PULL_REQUEST}" ]; then
+  echo "Applying changes from PR ${PULL_REQUEST} (https://github.com/kiali/kiali/pull/${PULL_REQUEST})"
   git fetch origin pull/${PULL_REQUEST}/head:pr-${PULL_REQUEST}
   git checkout pr-${PULL_REQUEST}
 
   GIT_REF="PR ${PULL_REQUEST}"
+else
+  GIT_REF="${SOURCE_REF}"
 fi
 
 COMMIT_HASH="$(git rev-parse HEAD)"
