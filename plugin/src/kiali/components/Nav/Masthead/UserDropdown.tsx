@@ -23,8 +23,9 @@ import {
   MenuToggle,
   MenuToggleElement
 } from '@patternfly/react-core';
+import { t } from 'utils/I18nUtils';
 
-type ReduxProps = {
+type ReduxStateProps = {
   clusters?: string[];
   session?: LoginSession;
 };
@@ -34,7 +35,7 @@ type ReduxDispatchProps = {
   logout: () => void;
 };
 
-type UserProps = ReduxProps & ReduxDispatchProps;
+type UserProps = ReduxStateProps & ReduxDispatchProps;
 
 type UserState = {
   checkSessionTimerId?: Timer;
@@ -130,13 +131,13 @@ class UserDropdownComponent extends React.Component<UserProps, UserState> {
     });
   };
 
-  onDropdownSelect = (_event: any): void => {
+  onDropdownSelect = (): void => {
     this.setState({
       isDropdownOpen: !this.state.isDropdownOpen
     });
   };
 
-  render(): JSX.Element {
+  render(): React.ReactNode {
     const { isDropdownOpen } = this.state;
 
     const clusterIsInSessionInfo = (cluster: string): boolean =>
@@ -206,6 +207,7 @@ class UserDropdownComponent extends React.Component<UserProps, UserState> {
                 <Divider component="li" />
               </>
             )}
+
             {isMultiCluster && loggedOutClusters.length > 0 && (
               <>
                 <DropdownGroup label="logged-out clusters" labelHeadingLevel="h3">
@@ -213,7 +215,7 @@ class UserDropdownComponent extends React.Component<UserProps, UserState> {
                     {loggedOutClusters.map(clusterInfo => {
                       return (
                         <DropdownItem key={clusterInfo.cluster} to={clusterInfo.endpoint}>
-                          Login to {clusterInfo.cluster}
+                          {t('Login to {{cluster}}', { cluster: clusterInfo.cluster })}
                         </DropdownItem>
                       );
                     })}
@@ -222,8 +224,9 @@ class UserDropdownComponent extends React.Component<UserProps, UserState> {
                 <Divider component="li" />
               </>
             )}
+
             <DropdownItem key={'user_logout_option'} onClick={this.handleLogout} isDisabled={!canLogout}>
-              Logout
+              {t('Logout')}
             </DropdownItem>
           </Dropdown>
         )}
@@ -242,7 +245,7 @@ class UserDropdownComponent extends React.Component<UserProps, UserState> {
   };
 }
 
-const mapStateToProps = (state: KialiAppState): ReduxProps => ({
+const mapStateToProps = (state: KialiAppState): ReduxStateProps => ({
   clusters: Array.from(namespacesPerClusterSelector(state).keys()),
   session: state.authentication.session
 });
