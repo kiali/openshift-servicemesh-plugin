@@ -153,12 +153,12 @@ jobs:
 
     - name: Determine Kiali Source Code Version To Copy
       env:
-        RELEASE_VERSION: ${{ env.release_version }}
+        BRANCH_VERSION: ${{ env.branch_version }}
       id: determine_kiali_src_code_version
       run: |
         if [ -z "${{ github.event.inputs.kiali_source_code_version }}" ];
         then
-          KIALI_SRC_CODE_VERSION="$RELEASE_VERSION"
+          KIALI_SRC_CODE_VERSION="$BRANCH_VERSION"
         else
           KIALI_SRC_CODE_VERSION="${{ github.event.inputs.kiali_source_code_version }}"
         fi
