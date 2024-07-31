@@ -1,7 +1,8 @@
+import * as React from 'react';
 import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
-import { setHistory } from 'app/History';
+import { setRouter } from 'app/History';
 
 export const OSSM_CONSOLE = 'ossmconsole';
 
@@ -33,7 +34,7 @@ export const setRouterBasename = (pathname: string): void => {
   const ossmConsoleIndex = pathname.indexOf(`/${OSSM_CONSOLE}`);
   const basename = pathname.substring(0, ossmConsoleIndex);
 
-  setHistory(basename);
+  setRouter([{ element: <></> }], basename);
 };
 
 // Navigates to the proper OpenShift Console page

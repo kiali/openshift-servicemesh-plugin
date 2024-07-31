@@ -28,15 +28,16 @@
       "config": ["./kiali/config"],
       "config/*": ["./kiali/config/*"],
       "hooks/*": ["./kiali/hooks/*"],
+      "i18n": ["./openshift/i18n.ts"],
       "pages/*": ["./kiali/pages/*"],
       "reducers/*": ["./kiali/reducers/*"],
+      "routes": ["./kiali/routes.tsx"],
       "routes/*": ["./kiali/routes/*"],
       "services/*": ["./kiali/services/*"],
       "store/*": ["./kiali/store/*"],
       "styles/*": ["./kiali/styles/*"],
       "types/*": ["./kiali/types/*"],
-      "utils/*": ["./kiali/utils/*"],
-      "i18n": ["./openshift/i18n.ts"]
+      "utils/*": ["./kiali/utils/*"]
     }
   },
   "exclude": [
