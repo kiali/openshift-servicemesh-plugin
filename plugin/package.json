@@ -135,6 +135,9 @@
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.0.2"
   },
+  "resolutions": {
+    "micromatch": "^4.0.7"
+  },
   "engines": {
     "node": ">=18.0.0",
     "yarn": ">=1.0.0"
