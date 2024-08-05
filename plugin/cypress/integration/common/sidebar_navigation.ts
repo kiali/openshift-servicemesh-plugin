@@ -1,6 +1,4 @@
 import { Before, Then, When } from '@badeball/cypress-cucumber-preprocessor';
-import { Controller, Edge, Node, isEdge, isNode } from '@patternfly/react-topology';
-import { getApiProxy } from '../support/utils';
 
 Before(() => {
   // This prevents cypress from stopping on errors unrelated to the tests.
@@ -28,7 +26,7 @@ When('user clicks on the Service Mesh icon in the left navigation bar', () => {
 });
 
 When('cypress intercept hooks for sidebar are registered', () => {
-  const apiProxy = getApiProxy();
+  const apiProxy = Cypress.env('API_PROXY');
   cy.intercept(`${apiProxy}/api/istio/status?*`).as('overviewRequest');
   cy.intercept(`${apiProxy}/api/namespaces`).as('istioConfigRequest');
   cy.intercept(`${apiProxy}/api/namespaces/graph*`).as('graphNamespaces');
@@ -43,7 +41,7 @@ Then('buttons for Overview, Graph and Istio Config are displayed', () => {
   cy.get('a[data-test="nav"][class$="c-nav__link"]').contains('Istio Config');
 });
 
-Then('user is redirected to the OSSMC {string} page', (hrefName: string) => {
+Then('user navigates to the OSSMC {string} page', (hrefName: string) => {
   switch (hrefName) {
     case 'Overview':
       cy.get('a[href*="/ossmconsole/overview"]')
@@ -82,7 +80,7 @@ Then('user sees istio-system overview card', () => {
   });
 });
 
-When('user selects {string} namespace in the graph', (ns: string) => {
+When('user selects the {string} namespace in the graph', (ns: string) => {
   cy.get('button#namespace-selector').click();
   cy.get('div[class$="c-menu"]').contains('span', ns).parent('div').find('input').check();
 
@@ -105,12 +103,16 @@ Then(`user sees the {string} graph summary`, (ns: string) => {
 });
 
 Then('user sees the mesh side panel', () => {
-  cy.wait('@meshRequest').then(() => {
+  cy.wait('@meshRequest').then(interception => {
     cy.get('#loading_kiali_spinner').should('not.exist');
     cy.get('#target-panel-mesh')
       .should('be.visible')
       .within(div => {
-        cy.contains('Mesh Name: Istio Mesh');
+        const resp = interception.response;
+        expect(resp?.statusCode).to.eq(200);
+        expect(resp?.body.meshName).to.not.equal(undefined);
+        expect(resp?.body.meshName).to.not.equal('');
+        cy.contains(`Mesh Name: ${resp?.body.meshName}`);
       });
   });
 });
