@@ -32,6 +32,7 @@ SOURCE_REPO_URL="${DEFAULT_SOURCE_REPO_URL}"
 # The git ref (branch or tag name) to checkout when cloning the source repo
 DEFAULT_SOURCE_REF="master"
 SOURCE_REF="${DEFAULT_SOURCE_REF}"
+PULL_REQUEST=""
 
 # This is to be the top-level directory of the local OSSM git repo.
 # This is where DEST_DIR should be located.
@@ -42,6 +43,7 @@ while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
     -dr|--dest-repo)     DEST_REPO="$2"         ;shift;shift ;;
+    -pr|--pull-request)  PULL_REQUEST="$2"      ;shift;shift ;;
     -sr|--source-ref)    SOURCE_REF="$2"        ;shift;shift ;;
     -su|--source-url)    SOURCE_REPO_URL="$2"   ;shift;shift ;;
     -h|--help)
@@ -55,6 +57,13 @@ Valid options:
       The Kiali "${SOURCE_DIR}" content will be copied to this destination
       repo's "${DEST_DIR}" directory.
       Default: ${DEFAULT_DEST_REPO}
+
+  -pr|--pull-request <pull request number>
+      A git reference (pull request number) found in the remote source repo. This is the
+      Kiali pull request that will be checked out when cloning the remote source repo.
+      This option takes precedence over the --source-ref option
+      See also: --source-ref
+      Default: ""
 
   -sr|--source-ref <branch or tag name>
       A git reference (branch or tag name) found in the remote source repo. This is the
@@ -108,7 +117,19 @@ if [ ! -d "${ABS_SOURCE_DIR}" ]; then
   exit 1
 fi
 
-COMMIT_HASH="$(cd ${ABS_SOURCE_DIR} && git rev-parse HEAD)"
+cd ${ABS_SOURCE_DIR}
+
+if [ -n "${PULL_REQUEST}" ]; then
+  echo "Applying changes from PR ${PULL_REQUEST} (https://github.com/kiali/kiali/pull/${PULL_REQUEST})"
+  git fetch origin pull/${PULL_REQUEST}/head:pr-${PULL_REQUEST}
+  git checkout pr-${PULL_REQUEST}
+
+  GIT_REF="PR ${PULL_REQUEST}"
+else
+  GIT_REF="${SOURCE_REF}"
+fi
+
+COMMIT_HASH="$(git rev-parse HEAD)"
 GITHUB_COMMIT_URL="https://github.com/kiali/kiali/tree/${COMMIT_HASH}/${SOURCE_DIR}"
 
 if ! curl --silent --show-error --fail "${GITHUB_COMMIT_URL}" > /dev/null; then
@@ -125,7 +146,7 @@ DEST_BRANCH="kiali-frontend-update-${DATETIME_NOW}"
 COMMIT_MESSAGE=$(cat <<EOM
 Copy of Kiali frontend source code
 Kiali frontend source originated from:
-* git ref:    ${SOURCE_REF}
+* git ref:    ${GIT_REF}
 * git commit: ${COMMIT_HASH}
 * GitHub URL: ${GITHUB_COMMIT_URL}
 EOM
@@ -161,17 +182,22 @@ ${COMMIT_MESSAGE}
 EOM
 
 git add ${ABS_DEST_DIR}
-git commit --quiet --signoff -m "${COMMIT_MESSAGE}"
+if git diff-index --quiet HEAD --; then
+  echo "There are no changes that need to be committed."
+else
+  echo "Committing changes now."
+  git commit --quiet --signoff -m "${COMMIT_MESSAGE}"
 
-# Completed!
-# Tell the user what needs to be done next.
-# This script does not automatically push the branch to the remote repo.
-# This script will only ever touch local files so as to avoid any possibility
-# of corrupting the remote repo.
+  # Completed!
+  # Tell the user what needs to be done next.
+  # This script does not automatically push the branch to the remote repo.
+  # This script will only ever touch local files so as to avoid any possibility
+  # of corrupting the remote repo.
 
-GIT_REMOTE="$(cd ${ABS_DEST_DIR} && for r in $(git remote 2>/dev/null); do if [ "$r" != "origin" ]; then echo ${r}; break; fi; done)"
-echo
-echo "=========="
-echo "Kiali frontend code has been copied to a new branch in the OSSMC git repo."
-echo "Create a PR based on that branch:"
-echo "cd ${ABS_DEST_DIR} && git push ${GIT_REMOTE:-<the git remote name>} ${DEST_BRANCH}"
+  GIT_REMOTE="$(cd ${ABS_DEST_DIR} && for r in $(git remote 2>/dev/null); do if [ "$r" != "origin" ]; then echo ${r}; break; fi; done)"
+  echo
+  echo "=========="
+  echo "Kiali frontend code has been copied to a new branch in the OSSMC git repo."
+  echo "Create a PR based on that branch:"
+  echo "cd ${ABS_DEST_DIR} && git push ${GIT_REMOTE:-<the git remote name>} ${DEST_BRANCH}"
+fi
