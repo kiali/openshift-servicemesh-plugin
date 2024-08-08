@@ -11,6 +11,10 @@ on:
         type: string
         default: quay.io/kiali/ossmconsole
         required: true
+      kiali_source_code_version:
+        description: The version of the Kiali source code to build with OSSMC. This is either a branch or tag name. The default is the version of the OSSMC release being built. This means by default the versions of the Kiali source and OSSMC will be the same.
+        type: string
+        required: false
 
 jobs:
   initialize:
@@ -23,6 +27,7 @@ jobs:
       branch_version: ${{ env.branch_version }}
       next_version: ${{ env.next_version }}
       plugin_quay_tag: ${{ env.plugin_quay_tag }}
+      kiali_src_code_version: ${{ env.kiali_src_code_version }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -146,6 +151,20 @@ jobs:
 
         echo "plugin_quay_tag=$PLUGIN_QUAY_TAG" >> $GITHUB_ENV
 
+    - name: Determine Kiali Source Code Version To Copy
+      env:
+        BRANCH_VERSION: ${{ env.branch_version }}
+      id: determine_kiali_src_code_version
+      run: |
+        if [ -z "${{ github.event.inputs.kiali_source_code_version }}" ];
+        then
+          KIALI_SRC_CODE_VERSION="$BRANCH_VERSION"
+        else
+          KIALI_SRC_CODE_VERSION="${{ github.event.inputs.kiali_source_code_version }}"
+        fi
+
+        echo "kiali_src_code_version=$KIALI_SRC_CODE_VERSION" >> $GITHUB_ENV
+
     - name: Cleanup
       run: rm bump.py minor.py
 
@@ -172,11 +191,30 @@ jobs:
       NEXT_VERSION: ${{ needs.initialize.outputs.next_version }}
       RELEASE_BRANCH: ${{ github.ref_name }}
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
+      KIALI_SRC_CODE_VERSION: ${{ needs.initialize.outputs.kiali_src_code_version }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         ref: ${{ github.ref_name }}
+
+    # /opt/hostedtoolcache directory is large and has tools we do not need so delete it to free up space
+    - name: Print disk space before
+      run: df -h
+    - name: Free up space
+      run: rm -rf /opt/hostedtoolcache
+    - name: Print disk space after
+      run: df -h
+
+    - name: Configure git
+      run: |
+        git config user.email 'kiali-dev@googlegroups.com'
+
+        git config user.name 'kiali-bot'
+
+    - name: Copy Kiali source code
+      run: |
+        hack/copy-frontend-src-to-ossmc.sh --source-ref "$KIALI_SRC_CODE_VERSION"
 
     - name: Set version to release
       run: |
@@ -187,25 +225,11 @@ jobs:
         jq -r ".version |= \"${RELEASE_VERSION:1}\" | .consolePlugin.version |= \"${RELEASE_VERSION:1}\"" plugin/package.json > plugin/package.json.tmp
         mv plugin/package.json.tmp plugin/package.json
 
-    # /opt/hostedtoolcache directory is large and has tools we do not need so delete it to free up space
-    - name: Print disk space before
-      run: df -h
-    - name: Free up space
-      run: rm -rf /opt/hostedtoolcache
-    - name: Print disk space after
-      run: df -h
-
     - name: Build and push images
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
         make build-push-plugin-multi-arch
-
-    - name: Configure git
-      run: |
-        git config user.email 'kiali-dev@googlegroups.com'
-
-        git config user.name 'kiali-bot'
 
     - name: Create tag
       run: |
