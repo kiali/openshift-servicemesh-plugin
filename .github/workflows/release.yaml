@@ -27,6 +27,7 @@ jobs:
       branch_version: ${{ env.branch_version }}
       next_version: ${{ env.next_version }}
       plugin_quay_tag: ${{ env.plugin_quay_tag }}
+      kiali_src_code_version: ${{ env.kiali_src_code_version }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
