@@ -2,8 +2,8 @@ name: Release
 
 on:
   schedule:
-    # Every Monday at 01:00 (UTC) - this action takes several hours to complete
-    - cron: "00 1 * * MON"
+  # Every Monday at 01:00 (UTC) - this action takes several hours to complete
+  - cron: "00 1 * * MON"
   workflow_dispatch:
     inputs:
       plugin_quay_repository:
@@ -29,156 +29,156 @@ jobs:
       plugin_quay_tag: ${{ env.plugin_quay_tag }}
       kiali_src_code_version: ${{ env.kiali_src_code_version }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref_name }}
 
-      - name: Prepare scripts
-        run: |
-          cat <<-EOF > bump.py
-          import sys
-          release_type = sys.argv[1]
-          version = sys.argv[2]
-          parts = version.split('.')
-          major = int(parts[0][1:])
-          minor = int(parts[1])
-          patch = int(parts[2])
-          if release_type == 'major':
-              major = major + 1
-              minor = 0
-              patch = 0
-          elif release_type == 'minor':
-              minor = minor + 1
-              patch = 0
-          elif release_type == 'patch':
-              patch = patch + 1
-          print('.'.join(['v' + str(major), str(minor), str(patch)]))
-          EOF
+    - name: Prepare scripts
+      run: |
+        cat <<-EOF > bump.py
+        import sys
+        release_type = sys.argv[1]
+        version = sys.argv[2]
+        parts = version.split('.')
+        major = int(parts[0][1:])
+        minor = int(parts[1])
+        patch = int(parts[2])
+        if release_type == 'major':
+            major = major + 1
+            minor = 0
+            patch = 0
+        elif release_type == 'minor':
+            minor = minor + 1
+            patch = 0
+        elif release_type == 'patch':
+            patch = patch + 1
+        print('.'.join(['v' + str(major), str(minor), str(patch)]))
+        EOF
 
-          cat <<-EOF > minor.py
-          import datetime
+        cat <<-EOF > minor.py
+        import datetime
 
-          base = int(datetime.datetime.strptime("24/04/2022", "%d/%m/%Y").timestamp())
-          now = int(datetime.datetime.now().timestamp())
+        base = int(datetime.datetime.strptime("24/04/2022", "%d/%m/%Y").timestamp())
+        now = int(datetime.datetime.now().timestamp())
 
-          diff = now - base
+        diff = now - base
 
-          days_elapsed = int(diff / (24*60*60))
-          weeks_elapsed = int(days_elapsed / 7)
-          weeks_mod3 = int(weeks_elapsed % 3)
+        days_elapsed = int(diff / (24*60*60))
+        weeks_elapsed = int(days_elapsed / 7)
+        weeks_mod3 = int(weeks_elapsed % 3)
 
-          print(weeks_mod3)
-          EOF
+        print(weeks_mod3)
+        EOF
 
-      - name: Determine release type
-        id: release_type
-        run: |
-          echo ${{ github.ref_name }}
-          if [[ "${{ github.ref_name }}" == "main" ]];
+    - name: Determine release type
+      id: release_type
+      run: |
+        echo ${{ github.ref_name }}
+        if [[ "${{ github.ref_name }}" == "main" ]];
+        then
+          DO_RELEASE=$(python minor.py)
+          if [[ $DO_RELEASE == "1" ]]
           then
-            DO_RELEASE=$(python minor.py)
-            if [[ $DO_RELEASE == "1" ]]
-            then
-              echo "release_type=minor" >> $GITHUB_ENV
-            else
-              echo "release_type=skip" >> $GITHUB_ENV
-            fi
+            echo "release_type=minor" >> $GITHUB_ENV
           else
-            echo "release_type=patch" >> $GITHUB_ENV
+            echo "release_type=skip" >> $GITHUB_ENV
           fi
+        else
+          echo "release_type=patch" >> $GITHUB_ENV
+        fi
 
-      - name: Determine release version
-        if: ${{ env.release_type != 'skip' }}
-        env:
-          RELEASE_TYPE: ${{ env.release_type }}
-        id: release_version
-        run: |
-          RAW_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile)
+    - name: Determine release version
+      if: ${{ env.release_type != 'skip' }}
+      env:
+        RELEASE_TYPE: ${{ env.release_type }}
+      id: release_version
+      run: |
+        RAW_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile)
 
-          # Remove any pre release identifier (ie: "-SNAPSHOT")
-          RELEASE_VERSION=${RAW_VERSION%-*}
+        # Remove any pre release identifier (ie: "-SNAPSHOT")
+        RELEASE_VERSION=${RAW_VERSION%-*}
 
-          if [[ $RELEASE_TYPE == "patch" ]]
-          then
-            RELEASE_VERSION=$(python bump.py $RELEASE_TYPE $RELEASE_VERSION)
-          elif [[ $RELEASE_TYPE == "minor" ]]
-          then
-            RELEASE_VERSION=$RELEASE_VERSION
-          fi
+        if [[ $RELEASE_TYPE == "patch" ]]
+        then
+          RELEASE_VERSION=$(python bump.py $RELEASE_TYPE $RELEASE_VERSION)
+        elif [[ $RELEASE_TYPE == "minor" ]]
+        then
+          RELEASE_VERSION=$RELEASE_VERSION
+        fi
 
-          echo "release_version=$RELEASE_VERSION" >> $GITHUB_ENV
+        echo "release_version=$RELEASE_VERSION" >> $GITHUB_ENV
 
-      - name: Determine next version
-        env:
-          RELEASE_TYPE: ${{ env.release_type }}
-          RELEASE_VERSION: ${{ env.release_version }}
-        id: next_version
-        if: ${{ env.release_type != 'skip' }}
-        run: |
-          if [[ $RELEASE_TYPE == "patch" ]]
-          then
-              NEXT_VERSION=$(python bump.py $RELEASE_TYPE $RELEASE_VERSION)
-          elif [[ $RELEASE_TYPE == "minor" ]]
-          then
-              NEXT_VERSION=$(python bump.py $RELEASE_TYPE $RELEASE_VERSION)
-          fi
+    - name: Determine next version
+      env:
+        RELEASE_TYPE: ${{ env.release_type }}
+        RELEASE_VERSION: ${{ env.release_version }}
+      id: next_version
+      if: ${{ env.release_type != 'skip' }}
+      run: |
+        if [[ $RELEASE_TYPE == "patch" ]]
+        then
+            NEXT_VERSION=$(python bump.py $RELEASE_TYPE $RELEASE_VERSION)
+        elif [[ $RELEASE_TYPE == "minor" ]]
+        then
+            NEXT_VERSION=$(python bump.py $RELEASE_TYPE $RELEASE_VERSION)
+        fi
 
-          echo "next_version=$NEXT_VERSION" >> $GITHUB_ENV
+        echo "next_version=$NEXT_VERSION" >> $GITHUB_ENV
 
-      - name: Determine branch version
-        if: ${{ env.release_type != 'skip' }}
-        env:
-          RELEASE_VERSION: ${{ env.release_version }}
-        id: branch_version
-        run: echo "branch_version=$(echo $RELEASE_VERSION | sed 's/\.[0-9]*\+$//')" >> $GITHUB_ENV
+    - name: Determine branch version
+      if: ${{ env.release_type != 'skip' }}
+      env:
+        RELEASE_VERSION: ${{ env.release_version }}
+      id: branch_version
+      run: echo "branch_version=$(echo $RELEASE_VERSION | sed 's/\.[0-9]*\+$//')" >> $GITHUB_ENV
 
-      - name: Determine Quay tag
-        if: ${{ env.release_type != 'skip' }}
-        env:
-          RELEASE_VERSION: ${{ env.release_version }}
-          BRANCH_VERSION: ${{ env.branch_version }}
-        id: quay_tag
-        run: |
-          if [ -z "${{ github.event.inputs.plugin_quay_repository }}" ];
-          then
-            PLUGIN_QUAY_REPO="quay.io/kiali/ossmconsole"
-          else
-            PLUGIN_QUAY_REPO="${{ github.event.inputs.plugin_quay_repository }}"
-          fi
+    - name: Determine Quay tag
+      if: ${{ env.release_type != 'skip' }}
+      env:
+        RELEASE_VERSION: ${{ env.release_version }}
+        BRANCH_VERSION: ${{ env.branch_version }}
+      id: quay_tag
+      run: |
+        if [ -z "${{ github.event.inputs.plugin_quay_repository }}" ];
+        then
+          PLUGIN_QUAY_REPO="quay.io/kiali/ossmconsole"
+        else
+          PLUGIN_QUAY_REPO="${{ github.event.inputs.plugin_quay_repository }}"
+        fi
 
-          PLUGIN_QUAY_TAG="$PLUGIN_QUAY_REPO:$RELEASE_VERSION $PLUGIN_QUAY_REPO:$BRANCH_VERSION"
+        PLUGIN_QUAY_TAG="$PLUGIN_QUAY_REPO:$RELEASE_VERSION $PLUGIN_QUAY_REPO:$BRANCH_VERSION"
 
-          echo "plugin_quay_tag=$PLUGIN_QUAY_TAG" >> $GITHUB_ENV
+        echo "plugin_quay_tag=$PLUGIN_QUAY_TAG" >> $GITHUB_ENV
 
-      - name: Determine Kiali Source Code Version To Copy
-        env:
-          BRANCH_VERSION: ${{ env.branch_version }}
-        id: determine_kiali_src_code_version
-        run: |
-          if [ -z "${{ github.event.inputs.kiali_source_code_version }}" ];
-          then
-            KIALI_SRC_CODE_VERSION="$BRANCH_VERSION"
-          else
-            KIALI_SRC_CODE_VERSION="${{ github.event.inputs.kiali_source_code_version }}"
-          fi
+    - name: Determine Kiali Source Code Version To Copy
+      env:
+        BRANCH_VERSION: ${{ env.branch_version }}
+      id: determine_kiali_src_code_version
+      run: |
+        if [ -z "${{ github.event.inputs.kiali_source_code_version }}" ];
+        then
+          KIALI_SRC_CODE_VERSION="$BRANCH_VERSION"
+        else
+          KIALI_SRC_CODE_VERSION="${{ github.event.inputs.kiali_source_code_version }}"
+        fi
 
-          echo "kiali_src_code_version=$KIALI_SRC_CODE_VERSION" >> $GITHUB_ENV
+        echo "kiali_src_code_version=$KIALI_SRC_CODE_VERSION" >> $GITHUB_ENV
 
-      - name: Cleanup
-        run: rm bump.py minor.py
+    - name: Cleanup
+      run: rm bump.py minor.py
 
-      - name: Log information
-        run: |
-          echo "Release type: ${{ env.release_type }}"
+    - name: Log information
+      run: |
+        echo "Release type: ${{ env.release_type }}"
 
-          echo "Release version: ${{ env.release_version }}"
+        echo "Release version: ${{ env.release_version }}"
 
-          echo "Next version: ${{ env.next_version }}"
+        echo "Next version: ${{ env.next_version }}"
 
-          echo "Branch version: ${{ env.branch_version }}"
+        echo "Branch version: ${{ env.branch_version }}"
 
-          echo "Plugin Quay tag: ${{ env.plugin_quay_tag }}"
+        echo "Plugin Quay tag: ${{ env.plugin_quay_tag }}"
 
   release:
     name: Release
@@ -193,68 +193,68 @@ jobs:
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
       KIALI_SRC_CODE_VERSION: ${{ needs.initialize.outputs.kiali_src_code_version }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref_name }}
 
-      # /opt/hostedtoolcache directory is large and has tools we do not need so delete it to free up space
-      - name: Print disk space before
-        run: df -h
-      - name: Free up space
-        run: rm -rf /opt/hostedtoolcache
-      - name: Print disk space after
-        run: df -h
+    # /opt/hostedtoolcache directory is large and has tools we do not need so delete it to free up space
+    - name: Print disk space before
+      run: df -h
+    - name: Free up space
+      run: rm -rf /opt/hostedtoolcache
+    - name: Print disk space after
+      run: df -h
 
-      - name: Configure git
-        run: |
-          git config user.email 'kiali-dev@googlegroups.com'
+    - name: Configure git
+      run: |
+        git config user.email 'kiali-dev@googlegroups.com'
 
-          git config user.name 'kiali-bot'
+        git config user.name 'kiali-bot'
 
-      - name: Copy Kiali source code
-        run: |
-          hack/copy-frontend-src-to-ossmc.sh --source-ref "$KIALI_SRC_CODE_VERSION"
+    - name: Copy Kiali source code
+      run: |
+        hack/copy-frontend-src-to-ossmc.sh --source-ref "$KIALI_SRC_CODE_VERSION"
 
-      - name: Set version to release
-        run: |
-          hack/update-version-string.sh "$RELEASE_VERSION"
+    - name: Set version to release
+      run: |
+        hack/update-version-string.sh "$RELEASE_VERSION"
 
-      - name: Build and push images
-        run: |
-          docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
+    - name: Build and push images
+      run: |
+        docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
-          make build-push-plugin-multi-arch
+        make build-push-plugin-multi-arch
 
-      - name: Create tag
-        run: |
-          git add Makefile plugin/package.json
+    - name: Create tag
+      run: |
+        git add Makefile plugin/package.json
 
-          git commit -m "Release $RELEASE_VERSION"
+        git commit -m "Release $RELEASE_VERSION"
 
-          git push origin $(git rev-parse HEAD):refs/tags/$RELEASE_VERSION
+        git push origin $(git rev-parse HEAD):refs/tags/$RELEASE_VERSION
 
-      - name: Create release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create $RELEASE_VERSION -t "OpenShift Service Mesh Console $RELEASE_VERSION"
+    - name: Create release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create $RELEASE_VERSION -t "OpenShift Service Mesh Console $RELEASE_VERSION"
 
-      - name: Create or update version branch
-        run: git push origin $(git rev-parse HEAD):refs/heads/$BRANCH_VERSION
+    - name: Create or update version branch
+      run: git push origin $(git rev-parse HEAD):refs/heads/$BRANCH_VERSION
 
-      - name: Create a PR to prepare for next version
-        env:
-          BUILD_TAG: kiali-release-${{ github.run_number }}-main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ needs.initialize.outputs.release_type == 'minor' }}
-        run: |
-          hack/update-version-string.sh "${NEXT_VERSION}-SNAPSHOT"
+    - name: Create a PR to prepare for next version
+      env:
+        BUILD_TAG: kiali-release-${{ github.run_number }}-main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: ${{ needs.initialize.outputs.release_type == 'minor' }}
+      run: |
+        hack/update-version-string.sh "${NEXT_VERSION}-SNAPSHOT"
+        
+        git add Makefile plugin/package.json
 
-          git add Makefile plugin/package.json
+        git commit -m "Prepare for next version"
 
-          git commit -m "Prepare for next version"
+        git push origin $(git rev-parse HEAD):refs/heads/$BUILD_TAG
 
-          git push origin $(git rev-parse HEAD):refs/heads/$BUILD_TAG
-
-          gh pr create -t "Prepare for next version" -b "Please, merge to update version numbers and prepare for release $NEXT_VERSION." -H $BUILD_TAG -B $RELEASE_BRANCH
+        gh pr create -t "Prepare for next version" -b "Please, merge to update version numbers and prepare for release $NEXT_VERSION." -H $BUILD_TAG -B $RELEASE_BRANCH
