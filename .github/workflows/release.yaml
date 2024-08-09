@@ -218,12 +218,7 @@ jobs:
 
     - name: Set version to release
       run: |
-        # Backend version
-        sed -i -r "s/^VERSION \?= (.*)/VERSION \?= $RELEASE_VERSION/" Makefile
-
-        # UI version
-        jq -r ".version |= \"${RELEASE_VERSION:1}\" | .consolePlugin.version |= \"${RELEASE_VERSION:1}\"" plugin/package.json > plugin/package.json.tmp
-        mv plugin/package.json.tmp plugin/package.json
+        hack/update-version-string.sh "$RELEASE_VERSION"
 
     - name: Build and push images
       run: |
@@ -254,11 +249,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       if: ${{ needs.initialize.outputs.release_type == 'minor' }}
       run: |
-        sed -i -r "s/^VERSION \?= (.*)/VERSION \?= $NEXT_VERSION-SNAPSHOT/" Makefile
-
-        jq -r ".version |= \"${NEXT_VERSION:1}\" | .consolePlugin.version |= \"${NEXT_VERSION:1}\"" plugin/package.json > plugin/package.json.tmp
-        mv plugin/package.json.tmp plugin/package.json
-
+        hack/update-version-string.sh "${NEXT_VERSION}-SNAPSHOT"
+        
         git add Makefile plugin/package.json
 
         git commit -m "Prepare for next version"
