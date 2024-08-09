@@ -43,7 +43,7 @@ jobs:
       matrix:
         branch: ${{fromJson(needs.initialize.outputs.branches)}}
     steps:
-    - name: Checkout Backend
+    - name: Checkout branch
       uses: actions/checkout@v4
       with:
         ref: ${{matrix.branch}}
@@ -70,7 +70,7 @@ jobs:
         print('.'.join(['v' + str(major), str(minor), str(patch)]))
         EOF
 
-    - name: Configure git backend
+    - name: Configure git
       run: |
         git config user.email 'kiali-dev@googlegroups.com'
 
