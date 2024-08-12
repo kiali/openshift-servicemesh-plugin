@@ -16,10 +16,7 @@ metadata:
   namespace: openshift-operators
   name: ossmconsole
 spec:
-  kiali:
-    serviceName: ''
-    serviceNamespace: ''
-  version: default
+  version: v1.73
 EOM
 }
 
