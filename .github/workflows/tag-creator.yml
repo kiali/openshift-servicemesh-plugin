@@ -91,6 +91,11 @@ jobs:
 
         hack/update-version-string.sh "$RELEASE_VERSION"
 
-        git add Makefile plugin/package.json plugin/plugin-metadata.ts
+        git add Makefile plugin/package.json
+
+        if [[ $BRANCH != "v1.73"]]; then
+          git add plugin/plugin-metadata.ts
+        fi
+
         git commit -m "Release $RELEASE_VERSION"
         git push origin $(git rev-parse HEAD):refs/tags/$RELEASE_VERSION
