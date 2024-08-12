@@ -93,7 +93,7 @@ jobs:
 
         git add Makefile plugin/package.json
 
-        if [[ $BRANCH != "v1.73"]]; then
+        if [[ $BRANCH != "v1.73" ]]; then
           git add plugin/plugin-metadata.ts
         fi
 
