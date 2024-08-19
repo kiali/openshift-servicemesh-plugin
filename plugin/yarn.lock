@@ -2169,6 +2169,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/cypress-cucumber-preprocessor@^4.0.5":
+  version "4.0.5"
+  resolved "https://registry.yarnpkg.com/@types/cypress-cucumber-preprocessor/-/cypress-cucumber-preprocessor-4.0.5.tgz#5c4d791e9b1f5928bcf179a496538193cb4298b4"
+  integrity sha512-5+eM+RWNOW7X9JMQ4auux/HxTWxBK+Mz2wStEnnbuJr0HRLqCNJDUDvkeLtob8X74uA3L0bCFNyC2WotfJtM6Q==
+
 "@types/cytoscape@3.14.0":
   version "3.14.0"
   resolved "https://registry.yarnpkg.com/@types/cytoscape/-/cytoscape-3.14.0.tgz#346b5430a7a1533784bcf44fcbe6c5255b948d36"

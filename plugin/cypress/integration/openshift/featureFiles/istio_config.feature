@@ -21,41 +21,32 @@ Feature: Kiali Istio Config page
     And user sees Type information for Istio objects
     And user sees Configuration information for Istio objects
 
-  @bookinfo-app
   Scenario: Filter Istio Config objects by Istio Name
     When the user filters for "bookinfo-gateway"
     Then user only sees "bookinfo-gateway"
 
-  @bookinfo-app
   Scenario: Ability to create an AuthorizationPolicy object
     Then the user can create a "authorizationPolicy" Istio object
 
-  @bookinfo-app
   Scenario: Ability to create a Gateway object
     Then the user can create a "gateway" Istio object
 
   @gateway-api
-  @bookinfo-app
   Scenario: Ability to create a K8sGateway object
     Then the user can create a "k8sGateway" K8s Istio object
 
   @gateway-api
-  @bookinfo-app
   Scenario: Ability to create a K8sReferenceGrant object
     Then the user can create a "k8sReferenceGrant" K8s Istio object
 
-  @bookinfo-app
   Scenario: Ability to create a PeerAuthentication object
     Then the user can create a "peerAuthentication" Istio object
 
-  @bookinfo-app
   Scenario: Ability to create a RequestAuthentication object
     Then the user can create a "requestAuthentication" Istio object
 
-  @bookinfo-app
   Scenario: Ability to create a ServiceEntry object
     Then the user can create a "serviceEntry" Istio object
 
-  @bookinfo-app
   Scenario: Ability to create a Sidecar object
     Then the user can create a "sidecar" Istio object

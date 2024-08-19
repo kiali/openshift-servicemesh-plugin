@@ -1,4 +1,4 @@
-import { Before, Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
+import { Before, Then } from '@badeball/cypress-cucumber-preprocessor';
 import { getColWithRowText } from './table';
 import { istioResources, referenceFor } from './istio_resources';
 import { K8sGroupVersionKind } from '@openshift-console/dynamic-plugin-sdk';
@@ -17,11 +17,6 @@ Before(() => {
     // we still want to ensure there are no other unexpected
     // errors, so we let them fail the test
   });
-});
-
-Given('user selects the {string} namespace', (namespace: string) => {
-  cy.get('span[class$="c-menu-toggle__text"]').contains('Project:').parent('button').click();
-  cy.get('button[class$="c-menu__item"]').contains('span', namespace).click();
 });
 
 Then('user sees all the Istio Config objects in the bookinfo namespace', () => {

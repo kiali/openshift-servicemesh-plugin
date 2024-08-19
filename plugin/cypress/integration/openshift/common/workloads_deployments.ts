@@ -1,4 +1,5 @@
 import { Before, Then, When } from '@badeball/cypress-cucumber-preprocessor';
+import { selectNamespace } from './namespace';
 
 Before(() => {
   // This prevents cypress from stopping on errors unrelated to the tests.
@@ -21,7 +22,11 @@ When('cypress intercept hooks for workloads are registered', () => {
 });
 
 When(
+<<<<<<< HEAD:plugin/cypress/integration/common/workloads_deployments.ts
   'user navigates to the {string} deployment details page in the namespace {string}',
+=======
+  'user navigates to the {string} deployment details page in the {string} namespace',
+>>>>>>> 1fa41e4 (Run Kiali tests in OSSMC):plugin/cypress/integration/openshift/common/workloads_deployments.ts
   (deployment: string, namespace: string) => {
     cy.get('button[class$="c-nav__link"]')
       .contains('Workloads')
@@ -31,8 +36,13 @@ When(
           .contains('Deployments')
           .click()
           .then(() => {
+<<<<<<< HEAD:plugin/cypress/integration/common/workloads_deployments.ts
             cy.contains('span[class$="c-menu-toggle__text"]', 'Project:').click();
             cy.contains('span[class$="c-menu__item-text"]', namespace).click();
+=======
+            selectNamespace(namespace);
+
+>>>>>>> 1fa41e4 (Run Kiali tests in OSSMC):plugin/cypress/integration/openshift/common/workloads_deployments.ts
             cy.get('input[data-test-id="item-filter"]').type(deployment);
             cy.get(`[data-test-id="${deployment}"]`).click();
           });

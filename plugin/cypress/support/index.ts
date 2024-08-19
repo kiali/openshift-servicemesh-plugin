@@ -25,7 +25,7 @@ beforeEach(() => {
     'admin',
     () => {
       // additional check to make sure we are logged in can be here TODO
-      cy.login();
+      // cy.login();
     },
     {
       cacheAcrossSpecs: true

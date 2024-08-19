@@ -36,6 +36,7 @@ const install_demoapp = (demoapp: string): void => {
 
               cy.exec(`${kialiHacksPath}/install-${demoapp}-demo.sh ${deletion} true`).then(() => {
                 cy.log(`Installing new ${demoapp} app on ${arch} architecture.`);
+                cy.log(`${kialiHacksPath}/install-${demoapp}-demo.sh ${tg} ${istio} -a ${arch}`);
                 cy.exec(`${kialiHacksPath}/install-${demoapp}-demo.sh ${tg} ${istio} -a ${arch}`, {
                   timeout: 300000
                 }).then(() => {
@@ -58,4 +59,12 @@ const install_demoapp = (demoapp: string): void => {
 
 Before({ tags: '@bookinfo-app' }, () => {
   install_demoapp('bookinfo');
+});
+
+Before({ tags: '@error-rates-app' }, () => {
+  install_demoapp('error-rates');
+});
+
+Before({ tags: '@sleep-app' }, () => {
+  install_demoapp('sleep');
 });

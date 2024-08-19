@@ -18,17 +18,25 @@ export default defineConfig({
   videosFolder: 'cypress/videos',
 
   env: {
-    OC_CLUSTER_USER: 'jenkins', // default value for jenkins
-    OC_IDP: 'my_htpasswd_provider', // default value for jenkins, can vary based on cluster setup
+    USERNAME: 'kiali', // default value for jenkins
+    AUTH_PROVIDER: 'my_htpasswd_provider', // default value for jenkins, can vary based on cluster setup
+    BASE_PATH: 'ossmconsole', // default value for jenkins, can vary based on cluster setup
+    API_PROXY: '/api/proxy/plugin/ossmconsole/kiali',
     'cypress-react-selector': {
-      root: '#root'
+      root: '#app'
     },
+    cookie: false,
     omitFiltered: true,
-    filterSpecs: true
+    filterSpecs: true,
+    tags: 'not @multi-cluster and \
+           not @ambient and (\
+           @overview or \
+           @workload-details \
+           )'
   },
 
   e2e: {
-    baseUrl: 'http://localhost:9000',
+    baseUrl: 'https://console-openshift-console.apps-crc.testing',
     async setupNodeEvents(
       on: Cypress.PluginEvents,
       config: Cypress.PluginConfigOptions
@@ -42,10 +50,6 @@ export default defineConfig({
           plugins: [createEsbuildPlugin(config)]
         })
       );
-
-      config.env.cookie = false;
-      config.env.API_PROXY = '/api/proxy/plugin/ossmconsole/kiali';
-      // config.env.AUTH_STRATEGY = await getAuthStrategy(config.baseUrl!); // TODO we are not using kiali api, rewrite this to use openshift API
 
       return config;
     },
