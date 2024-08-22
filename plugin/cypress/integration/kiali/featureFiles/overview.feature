@@ -1,4 +1,5 @@
 @overview
+@ossmc
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
 
 Feature: Kiali Overview page
@@ -81,8 +82,9 @@ Feature: Kiali Overview page
     And the "healthy" application indicator should list the application
 
   @sleep-app
+  @sleep-app-scaleup-after
   Scenario: The idle status of a logical mesh application is reported in the overview of a namespace
-    Given an idle application in the cluster
+    Given an idle sleep application in the cluster
     When I fetch the overview of the cluster
     Then there should be a "idle" application indicator in the namespace
     And the "idle" application indicator should list the application
@@ -160,11 +162,10 @@ Feature: Kiali Overview page
   #this scenario refers to a bug (https://github.com/kiali/kiali/issues/6504) which is not resolved at the time of writing the scenario
   # this scenario refers to a bug (https://github.com/kiali/kiali/issues/6504)
   @multi-cluster
-  @skip
   Scenario: The new Cluster column should be visible and sortable when changing to list view
     When user clicks in the "LIST" view
     Then the "Cluster" column "appears"
-    And user sorts by "Cluster" desc
+    And user sorts by column "Cluster" desc
     Then the list is sorted by "Cluster" desc
 
   @multi-cluster

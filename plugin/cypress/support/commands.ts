@@ -63,7 +63,7 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
     const password = clusterPassword || Cypress.env('OC_CLUSTER_PASS');
     const idp = identityProvider || Cypress.env('OC_IDP');
 
-    cy.visit('/').then(() => {
+    cy.visit({ url: '/' }).then(() => {
       cy.log('OC_IDP: ', typeof idp, JSON.stringify(idp));
       if (idp != undefined) {
         cy.get('.pf-c-button').contains(idp).click();
@@ -119,7 +119,24 @@ Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cs
   });
 });
 
-Cypress.Commands.overwrite('visit', (originalFn, url) => {
-  cy.log('Navigate overwrite');
-  originalFn(url);
+Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
+  cy.log(`Navigate overwrite: ${visitUrl.url}`);
+
+  if (visitUrl.url.includes('/workloads')) {
+    // OpenShift Console doesn't have a "generic" workloads page
+    // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
+    // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
+    const url = visitUrl.url.replace(Cypress.config('baseUrl'), '').split('/');
+    visitUrl.url = `/k8s/ns/${url[3]}/deployments/${url[5]}/ossmconsole`;
+  } else {
+    visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
+  }
+
+  cy.log(`Navigate overwrite: ${visitUrl.url}`);
+  originalFn(visitUrl);
+});
+
+Cypress.Commands.overwrite('request', (originalFn, request) => {
+  cy.log(`Request overwrite: ${request.url}`);
+  originalFn(request);
 });

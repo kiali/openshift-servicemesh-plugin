@@ -23,16 +23,12 @@ export default defineConfig({
     BASE_PATH: 'ossmconsole', // default value for jenkins, can vary based on cluster setup
     API_PROXY: '/api/proxy/plugin/ossmconsole/kiali',
     'cypress-react-selector': {
-      root: '#app'
+      root: '#root'
     },
     cookie: false,
     omitFiltered: true,
     filterSpecs: true,
-    tags: 'not @multi-cluster and \
-           not @ambient and (\
-           @overview or \
-           @workload-details \
-           )'
+    tags: '@ossmc and not @skip-ossmc and not @multi-cluster and not @ambient'
   },
 
   e2e: {

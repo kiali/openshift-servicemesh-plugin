@@ -33,7 +33,8 @@ Given('a healthy application in the remote cluster', function () {
   this.targetApp = 'ratings';
 });
 
-Given('an idle application in the cluster', function () {
+//When you use this, you need to annotate test by @sleep-app-scaleup-after to revert this change after the test
+Given('an idle sleep application in the cluster', function () {
   this.targetNamespace = 'sleep';
   this.targetApp = 'sleep';
 
@@ -89,6 +90,26 @@ When(`user sorts by name desc`, () => {
   cy.get('button[data-sort-asc="true"]').click().get('#loading_kiali_spinner').should('not.exist');
 });
 
+When(`user sorts by column {string} desc`, (column: string) => {
+  cy.get(`th[data-label=${column}]`).click().get('#loading_kiali_spinner').should('not.exist');
+});
+
+When(`the list is sorted by {string} desc`, (column: string) => {
+  // This checks that every row is sorted by checking the column text and
+  // comparing it with the next row.
+  cy.get('tbody').within(() => {
+    cy.get('tr').then($rows => {
+      $rows.each((index, $row) => {
+        if (index < $rows.length - 1) {
+          const currentRow = $row.querySelector(`td[data-label="${column}"]`).textContent;
+          const nextRow = $rows[index + 1].querySelector(`td[data-label="${column}"]`).textContent;
+          expect(currentRow.localeCompare(nextRow)).to.be.at.most(0);
+        }
+      });
+    });
+  });
+});
+
 When(`user selects {string} time range`, (interval: string) => {
   cy.get('button#time_range_duration-toggle').click().get('#loading_kiali_spinner').should('not.exist');
   cy.contains('div#time_range_duration button', interval).click().get('#loading_kiali_spinner').should('not.exist');
@@ -100,7 +121,7 @@ When(`user selects {string} traffic direction`, (direction: string) => {
 });
 
 When('I fetch the overview of the cluster', () => {
-  cy.visit(`/${Cypress.env('BASE_PATH')}/overview?refresh=0`);
+  cy.visit('/console/overview?refresh=0');
 });
 
 Then(`user sees the {string} namespace card`, (ns: string) => {
@@ -167,15 +188,15 @@ Then('there should be a {string} application indicator in the namespace', functi
     .should('exist');
 });
 
-Then(
-  'there should be a {string} application indicator in the namespace in the {string} cluster',
-  function (healthStatus: string, cluster: string) {
-    cy.get(`[data-test=CardItem_${this.targetNamespace}_${cluster}] [data-test=overview-app-health]`)
-      .find('span')
-      .filter(`.icon-${healthStatus}`)
-      .should('exist');
-  }
-);
+Then('there should be a {string} application indicator in the namespace in the {string} cluster', function (
+  healthStatus: string,
+  cluster: string
+) {
+  cy.get(`[data-test=CardItem_${this.targetNamespace}_${cluster}] [data-test=overview-app-health]`)
+    .find('span')
+    .filter(`.icon-${healthStatus}`)
+    .should('exist');
+});
 
 Then('the {string} application indicator should list the application', function (healthStatus: string) {
   let healthIndicatorStatusKey = healthStatus;
@@ -201,32 +222,32 @@ Then('the {string} application indicator should list the application', function 
   ).should('contain.text', this.targetApp);
 });
 
-Then(
-  'the {string} application indicator for the {string} cluster should list the application',
-  function (healthStatus: string, cluster: string) {
-    let healthIndicatorStatusKey = healthStatus;
+Then('the {string} application indicator for the {string} cluster should list the application', function (
+  healthStatus: string,
+  cluster: string
+) {
+  let healthIndicatorStatusKey = healthStatus;
 
-    if (healthStatus === 'idle') {
-      healthIndicatorStatusKey = 'not-ready';
-    }
-
-    cy.get(`[data-test=CardItem_${this.targetNamespace}_${cluster}] [data-test=overview-app-health]`)
-      .find('span')
-      .filter(`.icon-${healthStatus}`)
-      .trigger('mouseenter');
-
-    cy.get(
-      `[aria-label='Overview status'] [data-test=${this.targetNamespace}-${healthIndicatorStatusKey}-${this.targetApp}]`
-    )
-      .find('span')
-      .filter(`.icon-${healthStatus}`)
-      .should('exist');
-
-    cy.get(
-      `[aria-label='Overview status'] [data-test=${this.targetNamespace}-${healthIndicatorStatusKey}-${this.targetApp}]`
-    ).should('contain.text', this.targetApp);
+  if (healthStatus === 'idle') {
+    healthIndicatorStatusKey = 'not-ready';
   }
-);
+
+  cy.get(`[data-test=CardItem_${this.targetNamespace}_${cluster}] [data-test=overview-app-health]`)
+    .find('span')
+    .filter(`.icon-${healthStatus}`)
+    .trigger('mouseenter');
+
+  cy.get(
+    `[aria-label='Overview status'] [data-test=${this.targetNamespace}-${healthIndicatorStatusKey}-${this.targetApp}]`
+  )
+    .find('span')
+    .filter(`.icon-${healthStatus}`)
+    .should('exist');
+
+  cy.get(
+    `[aria-label='Overview status'] [data-test=${this.targetNamespace}-${healthIndicatorStatusKey}-${this.targetApp}]`
+  ).should('contain.text', this.targetApp);
+});
 
 // New CP Card validations
 When('user hovers over the MinTLS locker', () => {

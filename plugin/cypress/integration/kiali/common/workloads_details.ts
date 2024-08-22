@@ -2,8 +2,6 @@ import { When, Then } from '@badeball/cypress-cucumber-preprocessor';
 import { getCellsForCol } from './table';
 import { clusterParameterExists } from './navigation';
 
-const apiProxy = Cypress.env('API_PROXY');
-
 const openTab = (tab: string): void => {
   cy.get('#basic-tabs').should('be.visible').contains(tab).click();
 };
@@ -54,7 +52,7 @@ Then('user sees workload outbound metrics information', () => {
 
   openTab('Outbound Metrics');
   cy.wait('@fetchMetrics');
-  cy.waitForReact(1000, '#app');
+  cy.waitForReact(1000, '#root');
 
   cy.getReact('IstioMetricsComponent', { props: { 'data-test': 'outbound-metrics-component' } })
     // HOCs can match the component name. This filters the HOCs for just the bare component.
@@ -91,7 +89,7 @@ When(
     openTab('Envoy');
     openEnvoyTab(tab);
 
-    cy.waitForReact(1000);
+    cy.waitForReact(1000, '#root');
 
     cy.get('button#filter_select_type-toggle').click();
     cy.contains('div#filter_select_type button', filter).click();
@@ -146,7 +144,7 @@ Then('the user sees the metrics tab', () => {
   openEnvoyTab('Metrics');
 
   cy.wait('@fetchEnvoyMetrics');
-  cy.waitForReact(1000);
+  cy.waitForReact(1000, '#root');
 
   cy.contains('Loading metrics').should('not.exist');
 
