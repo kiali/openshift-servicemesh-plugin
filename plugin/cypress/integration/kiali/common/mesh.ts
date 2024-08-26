@@ -1,5 +1,6 @@
 import { Before, Then, When } from '@badeball/cypress-cucumber-preprocessor';
-import { Controller, Edge, Node, NodeModel, Visualization, isEdge, isNode } from '@patternfly/react-topology';
+import { Controller, Edge, Node, Visualization, isEdge, isNode } from '@patternfly/react-topology';
+import { MeshInfraType, MeshNodeData } from 'types/Mesh';
 
 Before(() => {
   // Copied from overview.ts.  This prevents cypress from stopping on errors unrelated to the tests.
@@ -36,7 +37,7 @@ When('user selects cluster mesh node', () => {
       const controller = state.meshRefs.getController() as Visualization;
       assert.isTrue(controller.hasGraph());
       const { nodes } = elems(controller);
-      const node = nodes.find(n => n.getData().infraType === 'cluster') as Node<NodeModel, any>;
+      const node = nodes.find(n => (n.getData() as MeshNodeData).infraType === MeshInfraType.CLUSTER);
       assert.exists(node);
       const setSelectedIds = state.meshRefs.setSelectedIds as (values: string[]) => void;
       setSelectedIds([node.getId()]);
@@ -52,7 +53,7 @@ When('user selects mesh node with label {string}', (label: string) => {
       const controller = state.meshRefs.getController() as Visualization;
       assert.isTrue(controller.hasGraph());
       const { nodes } = elems(controller);
-      const node = nodes.find(n => n.getLabel() === label) as Node<NodeModel, any>;
+      const node = nodes.find(n => n.getLabel() === label);
       assert.exists(node);
       const setSelectedIds = state.meshRefs.setSelectedIds as (values: string[]) => void;
       setSelectedIds([node.getId()]);
@@ -66,7 +67,7 @@ When('user sees mesh side panel', () => {
     .should('be.visible')
     .within(div => {
       // Get the name of the mesh from the API.
-      cy.request('api/mesh/graph').then(resp => {
+      cy.request({ url: 'api/mesh/graph' }).then(resp => {
         expect(resp.status).to.eq(200);
         expect(resp.body.meshName).to.not.equal(undefined);
         expect(resp.body.meshName).to.not.equal('');

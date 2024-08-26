@@ -88,9 +88,7 @@ Then('the user can create a {string} Istio object', (object: string) => {
 });
 
 Then('the user can create a {string} K8s Istio object', (object: string) => {
-  const apiProxy = Cypress.env('API_PROXY');
-
-  cy.request('GET', `${apiProxy}/api/config`).then(response => {
+  cy.request({ method: 'GET', url: `/api/config` }).then(response => {
     expect(response.status).to.equal(200);
     const gatewayAPIEnabled = response.body.gatewayAPIEnabled;
 

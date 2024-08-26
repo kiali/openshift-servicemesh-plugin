@@ -18,7 +18,6 @@ Feature: Kiali Workload Details page
     But no cluster badge for the "workload" should be visible
 
   @bookinfo-app
-  @skip-ossmc
   Scenario: See minigraph for workload.
     Then user sees a minigraph
 

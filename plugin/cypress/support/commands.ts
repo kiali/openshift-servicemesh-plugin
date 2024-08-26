@@ -1,7 +1,5 @@
 /// <reference types="cypress" />
 
-import { isLocalhost } from './utils';
-
 // ***********************************************
 // This example commands.ts shows you how to
 // create various custom commands and overwrite
@@ -56,23 +54,33 @@ declare global {
   }
 }
 
-Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
-  // Openshift Console from localhost does not have login page
-  if (!isLocalhost()) {
-    const user = clusterUser || Cypress.env('OC_CLUSTER_USER');
-    const password = clusterPassword || Cypress.env('OC_CLUSTER_PASS');
-    const idp = identityProvider || Cypress.env('OC_IDP');
+let csrfToken = '';
 
-    cy.visit({ url: '/' }).then(() => {
-      cy.log('OC_IDP: ', typeof idp, JSON.stringify(idp));
-      if (idp != undefined) {
-        cy.get('.pf-c-button').contains(idp).click();
-      }
-      cy.get('#inputUsername').clear().type(user);
-      cy.get('#inputPassword').clear().type(password);
-      cy.get('button[type="submit"]').click();
-    });
-  }
+Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
+  const user = clusterUser || Cypress.env('USERNAME');
+  const password = clusterPassword || Cypress.env('PASSWD');
+  const idp = identityProvider || Cypress.env('AUTH_PROVIDER');
+
+  cy.session(
+    user,
+    () => {
+      cy.visit({ url: '/' }).then(() => {
+        cy.log('AUTH_PROVIDER: ', typeof idp, JSON.stringify(idp));
+        if (idp != undefined) {
+          cy.get('.pf-c-button').contains(idp).click();
+        }
+        cy.get('#inputUsername').clear().type(user);
+        cy.get('#inputPassword').clear().type(password);
+        cy.get('button[type="submit"]').click();
+      });
+    },
+    {
+      cacheAcrossSpecs: true
+    }
+  );
+
+  // Store csrf-token value for non-GET request headers
+  cy.getCookie('csrf-token').then(cookie => (csrfToken = cookie?.value!));
 });
 
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
@@ -120,23 +128,46 @@ Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cs
 });
 
 Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
-  cy.log(`Navigate overwrite: ${visitUrl.url}`);
+  const webParamsIndex = visitUrl.url.indexOf('?');
+  const webParams = webParamsIndex > -1 ? visitUrl.url.substring(webParamsIndex) : '';
 
-  if (visitUrl.url.includes('/workloads')) {
+  const url = visitUrl.url.replace(Cypress.config('baseUrl'), '').split('?')[0].split('/');
+
+  if (visitUrl.url.includes('/graph')) {
+    visitUrl.url = visitUrl.url
+      .replace('/console/graph/namespaces', '/ossmconsole/graph')
+      .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns');
+  } else if (visitUrl.url.includes('/workloads')) {
     // OpenShift Console doesn't have a "generic" workloads page
     // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
     // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
-    const url = visitUrl.url.replace(Cypress.config('baseUrl'), '').split('/');
-    visitUrl.url = `/k8s/ns/${url[3]}/deployments/${url[5]}/ossmconsole`;
+    visitUrl.url = `/k8s/ns/${url[3]}/deployments/${url[5]}/ossmconsole${webParams}`;
+  } else if (visitUrl.url.includes('/services')) {
+    visitUrl.url = `/k8s/ns/${url[3]}/services/${url[5]}/ossmconsole${webParams}`;
   } else {
     visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
   }
 
-  cy.log(`Navigate overwrite: ${visitUrl.url}`);
-  originalFn(visitUrl);
+  // if (detail.startsWith('/istio')) {
+  //   const istioUrl = refForKialiIstio(detail);
+
+  //   if (istioUrl.length === 0) {
+  //     consoleUrl = '/k8s/all-namespaces/istio';
+  //   } else {
+  //     consoleUrl = `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
+  //   }
+  // }
+
+  // cy.log(`Navigate overwrite: ${visitUrl.url}`);
+  return originalFn(visitUrl);
 });
 
 Cypress.Commands.overwrite('request', (originalFn, request) => {
-  cy.log(`Request overwrite: ${request.url}`);
-  originalFn(request);
+  request.url = request.url?.replace('api/', 'api/proxy/plugin/ossmconsole/kiali/api/');
+
+  if (request.method !== 'GET') {
+    request.headers = { 'X-CSRFToken': csrfToken };
+  }
+
+  return originalFn(request);
 });

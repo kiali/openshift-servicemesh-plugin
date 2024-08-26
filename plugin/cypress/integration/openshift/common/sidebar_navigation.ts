@@ -26,11 +26,10 @@ When('user clicks on the Service Mesh icon in the left navigation bar', () => {
 });
 
 When('cypress intercept hooks for sidebar are registered', () => {
-  const apiProxy = Cypress.env('API_PROXY');
-  cy.intercept(`${apiProxy}/api/istio/status?*`).as('overviewRequest');
-  cy.intercept(`${apiProxy}/api/namespaces`).as('istioConfigRequest');
-  cy.intercept(`${apiProxy}/api/namespaces/graph*`).as('graphNamespaces');
-  cy.intercept(`${apiProxy}/api/mesh/graph?*`).as('meshRequest');
+  cy.intercept(`**/api/istio/status?*`).as('overviewRequest');
+  cy.intercept(`**/api/namespaces`).as('istioConfigRequest');
+  cy.intercept(`**/api/namespaces/graph*`).as('graphNamespaces');
+  cy.intercept(`**/api/mesh/graph?*`).as('meshRequest');
 });
 
 Then('buttons for Overview, Graph and Istio Config are displayed', () => {

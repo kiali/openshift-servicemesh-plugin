@@ -70,11 +70,11 @@ Then('user sees span details', () => {
 });
 
 When('I fetch the list of applications', () => {
-  cy.visit(`/${Cypress.env('BASE_PATH')}/applications?refresh=0`);
+  cy.visit({ url: '/console/applications?refresh=0' });
 });
 
 When('user opens the namespace dropdown', () => {
-  cy.intercept(`${Cypress.config('baseUrl')}/api/namespaces/`).as('getNamespaces');
+  cy.intercept(`**/api/namespaces/`).as('getNamespaces');
   cy.get('[data-test="namespace-dropdown"]').click();
 });
 
@@ -117,7 +117,7 @@ Then('user sees Details information for Apps', () => {
 Then('user only sees the apps with the {string} name', (name: string) => {
   let count: number;
 
-  cy.request('GET', `/api/clusters/apps`).should(response => {
+  cy.request({ method: 'GET', url: `/api/clusters/apps` }).should(response => {
     count = response.body.applications.filter(item => item.name.includes(name)).length;
   });
 
@@ -191,7 +191,7 @@ Then('user should see no duplicate namespaces', () => {
 Given(
   'the {string} {string} from the {string} cluster is visible in the minigraph',
   (name: string, type: string, cluster: string) => {
-    // Step(this, 'user sees a minigraph');
+    Step(this, 'user sees a minigraph');
     cy.waitForReact();
     cy.getReact('CytoscapeGraph')
       .should('have.length', '1')

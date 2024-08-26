@@ -1,6 +1,5 @@
 import { Before, Then, When } from '@badeball/cypress-cucumber-preprocessor';
-
-const url = `/${Cypress.env('BASE_PATH')}`;
+import { CytoscapeGlobalScratchData, CytoscapeGlobalScratchNamespace } from 'types/Graph';
 
 Before(() => {
   // Copied from overview.ts.  This prevents cypress from stopping on errors unrelated to the tests.
@@ -21,7 +20,7 @@ Before(() => {
 When(
   'user graphs {string} namespaces with refresh {string} and duration {string}',
   (namespaces: string, refresh: string, duration: string) => {
-    cy.visit(`${url}/graph/namespaces?refresh=${refresh}&duration=${duration}&namespaces=${namespaces}`);
+    cy.visit({ url: `/console/graph/namespaces?refresh=${refresh}&duration=${duration}&namespaces=${namespaces}` });
   }
 );
 
@@ -142,7 +141,7 @@ Then('user sees graph duration menu', () => {
   cy.get('button#time_range_duration-toggle').invoke('attr', 'aria-expanded').should('eq', 'true');
 
   cy.get('div#time_range_duration').within(() => {
-    cy.request('GET', '/api/config').then(response => {
+    cy.request({ method: 'GET', url: '/api/config' }).then(response => {
       expect(response.status).to.equal(200);
 
       const scrapeInterval = response.body.prometheus.globalScrapeInterval;
@@ -225,7 +224,7 @@ Then('user sees a {string} graph', graphType => {
         .should('have.length', '1')
         .getCurrentState()
         .then(state => {
-          const globalScratch = state.cy.scratch('_global');
+          const globalScratch: CytoscapeGlobalScratchData = state.cy.scratch(CytoscapeGlobalScratchNamespace);
           assert.equal(globalScratch.graphType, graphType);
         });
     });

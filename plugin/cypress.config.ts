@@ -20,8 +20,6 @@ export default defineConfig({
   env: {
     USERNAME: 'kiali', // default value for jenkins
     AUTH_PROVIDER: 'my_htpasswd_provider', // default value for jenkins, can vary based on cluster setup
-    BASE_PATH: 'ossmconsole', // default value for jenkins, can vary based on cluster setup
-    API_PROXY: '/api/proxy/plugin/ossmconsole/kiali',
     'cypress-react-selector': {
       root: '#root'
     },
@@ -32,7 +30,7 @@ export default defineConfig({
   },
 
   e2e: {
-    baseUrl: 'https://console-openshift-console.apps-crc.testing',
+    baseUrl: 'http://localhost:9000',
     async setupNodeEvents(
       on: Cypress.PluginEvents,
       config: Cypress.PluginConfigOptions
@@ -50,6 +48,7 @@ export default defineConfig({
       return config;
     },
     specPattern: '**/*.feature',
-    supportFile: 'cypress/support/index.ts'
+    supportFile: 'cypress/support/index.ts',
+    testIsolation: false
   }
 });

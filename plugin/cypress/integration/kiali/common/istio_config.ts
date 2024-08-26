@@ -224,26 +224,25 @@ Given('a {string} AuthorizationPolicy in the {string} namespace', function (name
   this.targetAuthorizationPolicy = name;
 });
 
-Given('a {string} AuthorizationPolicy in the {string} namespace in the {string} cluster', function (
-  name: string,
-  namespace: string,
-  cluster: string
-) {
-  let cluster_context;
-  if (cluster === 'west') {
-    cluster_context = CLUSTER2_CONTEXT;
-  } else {
-    cluster_context = CLUSTER1_CONTEXT;
+Given(
+  'a {string} AuthorizationPolicy in the {string} namespace in the {string} cluster',
+  function (name: string, namespace: string, cluster: string) {
+    let cluster_context;
+    if (cluster === 'west') {
+      cluster_context = CLUSTER2_CONTEXT;
+    } else {
+      cluster_context = CLUSTER1_CONTEXT;
+    }
+
+    cy.exec(`kubectl delete AuthorizationPolicy ${name} -n ${namespace} --context ${cluster_context}`, {
+      failOnNonZeroExit: false
+    });
+    cy.exec(`echo '${minimalAuthorizationPolicy(name, namespace)}' | kubectl apply --context ${cluster_context} -f  -`);
+
+    this.targetNamespace = namespace;
+    this.targetAuthorizationPolicy = name;
   }
-
-  cy.exec(`kubectl delete AuthorizationPolicy ${name} -n ${namespace} --context ${cluster_context}`, {
-    failOnNonZeroExit: false
-  });
-  cy.exec(`echo '${minimalAuthorizationPolicy(name, namespace)}' | kubectl apply --context ${cluster_context} -f  -`);
-
-  this.targetNamespace = namespace;
-  this.targetAuthorizationPolicy = name;
-});
+);
 
 Given('the AuthorizationPolicy has a from-source rule for {string} namespace', function (namespace: string) {
   cy.exec(
@@ -269,17 +268,16 @@ Given('the AuthorizationPolicy has a to-operation rule with {string} host', func
   );
 });
 
-Given('a {string} DestinationRule in the {string} namespace for {string} host', function (
-  name: string,
-  namespace: string,
-  host: string
-) {
-  cy.exec(`kubectl delete DestinationRule ${name} -n ${namespace}`, { failOnNonZeroExit: false });
-  cy.exec(`echo '${minimalDestinationRule(name, namespace, host)}' | kubectl apply -f -`);
+Given(
+  'a {string} DestinationRule in the {string} namespace for {string} host',
+  function (name: string, namespace: string, host: string) {
+    cy.exec(`kubectl delete DestinationRule ${name} -n ${namespace}`, { failOnNonZeroExit: false });
+    cy.exec(`echo '${minimalDestinationRule(name, namespace, host)}' | kubectl apply -f -`);
 
-  this.targetNamespace = namespace;
-  this.targetDestinationRule = name;
-});
+    this.targetNamespace = namespace;
+    this.targetDestinationRule = name;
+  }
+);
 
 Given('the DestinationRule has a {string} subset for {string} labels', function (subset: string, labels: string) {
   cy.exec(
@@ -562,9 +560,11 @@ Then('only {string} are visible in the {string} namespace', (sees: string, ns: s
   let lowercaseSees: string = sees.charAt(0).toLowerCase() + sees.slice(1);
   let count: number;
 
-  cy.request('GET', `/api/namespaces/${ns}/istio?objects=${lowercaseSees}&validate=true`).then(response => {
-    count = response.body[lowercaseSees].length;
-  });
+  cy.request({ method: 'GET', url: `/api/namespaces/${ns}/istio?objects=${lowercaseSees}&validate=true` }).then(
+    response => {
+      count = response.body[lowercaseSees].length;
+    }
+  );
 
   cy.get('tbody').contains('tr', singularize(sees));
   cy.get('tbody').within(() => {
@@ -588,7 +588,7 @@ Then('the user can create a {string} Istio object', (object: string) => {
 });
 
 Then('the user can create a {string} K8s Istio object', (object: string) => {
-  cy.request('GET', '/api/config').then(response => {
+  cy.request({ method: 'GET', url: '/api/config' }).then(response => {
     expect(response.status).to.equal(200);
     const gatewayAPIEnabled = response.body.gatewayAPIEnabled;
 
@@ -621,7 +621,7 @@ function waitUntilConfigIsVisible(attempt: number, crdInstanceName: string, crdN
   if (attempt === 0) {
     return;
   }
-  cy.request('GET', `${Cypress.config('baseUrl')}/api/istio/config?refresh=0`);
+  cy.request({ method: 'GET', url: `${Cypress.config('baseUrl')}/api/istio/config?refresh=0` });
   cy.get('[data-test="refresh-button"]').click();
   ensureKialiFinishedLoading();
   let found = false;
