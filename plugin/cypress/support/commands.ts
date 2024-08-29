@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+import { refForKialiIstio } from '../integration/openshift/common/istio_resources';
+
 // ***********************************************
 // This example commands.ts shows you how to
 // create various custom commands and overwrite
@@ -20,6 +22,8 @@ declare global {
        * @example cy.getBySel('greeting')
        */
       getBySel(selector: string, ...args: any): Chainable<JQuery<HTMLElement>>;
+
+      getColWithRowText(rowSearchText: string, colName: string): Chainable<JQuery<HTMLElement>>;
 
       /**
        * Custom command to check if a DOM element has specific CSS variable
@@ -54,7 +58,7 @@ declare global {
   }
 }
 
-let csrfToken = '';
+let csrfToken: string | undefined;
 
 Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
   const user = clusterUser || Cypress.env('USERNAME');
@@ -79,11 +83,19 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
     }
   );
 
-  // Store csrf-token value for non-GET request headers
-  cy.getCookie('csrf-token').then(cookie => (csrfToken = cookie?.value!));
+  if (!csrfToken) {
+    // Store csrf-token value for non-GET request headers
+    cy.getCookie('csrf-token').then(cookie => {
+      csrfToken = cookie?.value;
+    });
+  }
 });
 
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
+
+Cypress.Commands.add('getColWithRowText', (rowSearchText: string, colName: string) =>
+  cy.get('tbody').contains('tr', rowSearchText).find(`td#${colName.toLowerCase()}`)
+);
 
 Cypress.Commands.add('inputValidation', (id: string, text: string, valid = true) => {
   cy.get(`input[id="${id}"]`).type(text);
@@ -133,32 +145,37 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
 
   const url = visitUrl.url.replace(Cypress.config('baseUrl'), '').split('?')[0].split('/');
 
-  if (visitUrl.url.includes('/graph')) {
-    visitUrl.url = visitUrl.url
-      .replace('/console/graph/namespaces', '/ossmconsole/graph')
-      .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns');
-  } else if (visitUrl.url.includes('/workloads')) {
-    // OpenShift Console doesn't have a "generic" workloads page
-    // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
-    // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
-    visitUrl.url = `/k8s/ns/${url[3]}/deployments/${url[5]}/ossmconsole${webParams}`;
-  } else if (visitUrl.url.includes('/services')) {
-    visitUrl.url = `/k8s/ns/${url[3]}/services/${url[5]}/ossmconsole${webParams}`;
+  const targetPage = url[2];
+
+  if (targetPage === 'namespaces') {
+    const namespace = url[3];
+    const type = url[4];
+    const details = url[5];
+
+    if (type === 'workloads') {
+      // OpenShift Console doesn't have a "generic" workloads page
+      // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
+      // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
+      visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
+    } else if (type === 'services') {
+      visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
+    } else if (type === 'istio') {
+      const istioUrl = refForKialiIstio(targetPage, details);
+
+      visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
+    }
   } else {
-    visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
+    if (targetPage === 'graph') {
+      visitUrl.url = visitUrl.url
+        .replace('/console/graph/namespaces', '/ossmconsole/graph')
+        .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns');
+    } else if (targetPage === 'istio') {
+      visitUrl.url = '/k8s/all-namespaces/istio';
+    } else {
+      visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
+    }
   }
 
-  // if (detail.startsWith('/istio')) {
-  //   const istioUrl = refForKialiIstio(detail);
-
-  //   if (istioUrl.length === 0) {
-  //     consoleUrl = '/k8s/all-namespaces/istio';
-  //   } else {
-  //     consoleUrl = `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
-  //   }
-  // }
-
-  // cy.log(`Navigate overwrite: ${visitUrl.url}`);
   return originalFn(visitUrl);
 });
 

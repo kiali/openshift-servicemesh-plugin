@@ -29,8 +29,6 @@ Given('a namespace which has override configuration for automatic sidecar inject
   this.targetNamespace = 'sleep';
   this.istioInjection = 'enabled';
 
-  // cy.getCookie('csrf-token').then(cookie => cy.log(cookie?.value!));
-
   // Make sure that the target namespace has some override configuration
   cy.request({
     method: 'PATCH',
@@ -400,29 +398,28 @@ When('I remove override configuration for sidecar injection in the workload', fu
   switchWorkloadSidecarInjection.apply(this, ['remove']);
 });
 
-Then(
-  'I should see the override annotation for sidecar injection in the namespace as {string}',
-  function (enabled: string) {
-    cy.request({ method: 'GET', url: '/api/status' }).then(response => {
-      expect(response.status).to.equal(200);
+Then('I should see the override annotation for sidecar injection in the namespace as {string}', function (
+  enabled: string
+) {
+  cy.request({ method: 'GET', url: '/api/status' }).then(response => {
+    expect(response.status).to.equal(200);
 
-      const expectation = 'exist';
+    const expectation = 'exist';
 
-      cy.request({ url: '/api/config' }).then(response => {
-        cy.wrap(response.isOkStatusCode).should('be.true');
+    cy.request({ url: '/api/config' }).then(response => {
+      cy.wrap(response.isOkStatusCode).should('be.true');
 
-        const clusters: { [key: string]: MeshCluster } = response.body.clusters;
-        const clusterNames = Object.keys(clusters);
-        cy.wrap(clusterNames).should('have.length', 1);
-        const cluster = clusterNames[0];
+      const clusters: { [key: string]: MeshCluster } = response.body.clusters;
+      const clusterNames = Object.keys(clusters);
+      cy.wrap(clusterNames).should('have.length', 1);
+      const cluster = clusterNames[0];
 
-        cy.getBySel(`VirtualItem_Cluster${cluster}_${this.targetNamespace}`)
-          .contains(`istio-injection=${enabled}`)
-          .should(expectation);
-      });
+      cy.getBySel(`VirtualItem_Cluster${cluster}_${this.targetNamespace}`)
+        .contains(`istio-injection=${enabled}`)
+        .should(expectation);
     });
-  }
-);
+  });
+});
 
 Then('I should see no override annotation for sidecar injection in the namespace', function () {
   cy.request({ method: 'GET', url: '/api/status' }).then(response => {

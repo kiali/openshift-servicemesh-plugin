@@ -1,4 +1,4 @@
-import { Before, Then } from '@badeball/cypress-cucumber-preprocessor';
+import { Before, Then, When } from '@badeball/cypress-cucumber-preprocessor';
 import { getColWithRowText } from './table';
 import { istioResources, referenceFor } from './istio_resources';
 import { K8sGroupVersionKind } from '@openshift-console/dynamic-plugin-sdk';
@@ -19,19 +19,12 @@ Before(() => {
   });
 });
 
-Then('user sees all the Istio Config objects in the bookinfo namespace', () => {
-  // There should be two Istio Config objects in the bookinfo namespace
-  // represented by two rows in the table.
-  cy.get('tbody').within(() => {
-    // Bookinfo VS
-    cy.get('tr').contains('bookinfo');
-
-    // Bookinfo Gateway
-    cy.get('tr').contains('bookinfo-gateway');
-  });
+When('user selects the {string} project', (namespace: string) => {
+  cy.contains('span[class$="c-menu-toggle__text"]', 'Project:').click();
+  -cy.contains('span[class$="c-menu__item-text"]', namespace).click();
 });
 
-Then('user sees Name information for Istio objects', () => {
+Then('user sees Name information for Istio objects in ossmc', () => {
   const object = 'bookinfo-gateway';
 
   // There should be a table with a heading for each piece of information.
@@ -40,19 +33,19 @@ Then('user sees Name information for Istio objects', () => {
   });
 });
 
-Then('user sees Namespace information for Istio objects', () => {
+Then('user sees Namespace information for Istio objects in ossmc', () => {
   const object = 'bookinfo-gateway';
 
   getColWithRowText(object, 'namespace').contains('bookinfo');
 });
 
-Then('user sees Type information for Istio objects', () => {
+Then('user sees Type information for Istio objects in ossmc', () => {
   const object = 'bookinfo-gateway';
 
   getColWithRowText(object, 'kind').contains('Gateway');
 });
 
-Then('user sees Configuration information for Istio objects', () => {
+Then('user sees Configuration information for Istio objects in ossmc', () => {
   const object = 'bookinfo-gateway';
 
   // There should be a table with a heading for each piece of information.
@@ -68,15 +61,7 @@ Then('the user filters for {string}', (filterValue: string) => {
   cy.get('input[data-test-id="item-filter"]').type(`${filterValue}{enter}`);
 });
 
-Then('user only sees {string}', (sees: string) => {
-  cy.get('tbody').contains('tr', sees);
-
-  cy.get('tbody').within(() => {
-    cy.get('tr').should('have.length', 1);
-  });
-});
-
-Then('the user can create a {string} Istio object', (object: string) => {
+Then('the user can create a {string} Istio object in ossmc', (object: string) => {
   cy.getBySel('item-create').find('button').click();
 
   const istioResource = istioResources.find(item => item.id.toLowerCase() === object.toLowerCase());
@@ -87,7 +72,7 @@ Then('the user can create a {string} Istio object', (object: string) => {
   cy.url().should('include', page);
 });
 
-Then('the user can create a {string} K8s Istio object', (object: string) => {
+Then('the user can create a {string} K8s Istio object in ossmc', (object: string) => {
   cy.request({ method: 'GET', url: `/api/config` }).then(response => {
     expect(response.status).to.equal(200);
     const gatewayAPIEnabled = response.body.gatewayAPIEnabled;

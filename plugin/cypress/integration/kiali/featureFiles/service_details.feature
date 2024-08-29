@@ -27,6 +27,7 @@ Feature: Kiali Service Details page
     But no cluster badge for the "service" should be visible
 
   @bookinfo-app
+  @skip-ossmc
   Scenario: See service minigraph for details app.
     Then sd::user sees a minigraph
 

@@ -48,6 +48,7 @@ Feature: Controlling sidecar injection
 		Then I should see no override annotation for sidecar injection in the namespace
 
 	@sleep-app
+	@skip-ossmc
 	Scenario: Override the default policy for automatic sidecar injection by enabling it in a workload
 		Given a workload without a sidecar
 		And the workload does not have override configuration for automatic sidecar injection
@@ -56,6 +57,7 @@ Feature: Controlling sidecar injection
 		Then the workload should get a sidecar
 
 	@sleep-app
+	@skip-ossmc
 	Scenario: Override the default policy for automatic sidecar injection by disabling it in a workload
 		Given a workload with a sidecar
 		And the workload does not have override configuration for automatic sidecar injection
@@ -64,6 +66,7 @@ Feature: Controlling sidecar injection
 		Then the sidecar of the workload should vanish
 
 	@sleep-app
+	@skip-ossmc
 	Scenario: Switch the override configuration for automatic sidecar injection in a workload to disabled
 		Given a workload with a sidecar
 		And the workload has override configuration for automatic sidecar injection
@@ -72,6 +75,7 @@ Feature: Controlling sidecar injection
 		Then the sidecar of the workload should vanish
 
 	@sleep-app
+	@skip-ossmc
 	Scenario: Switch the override configuration for automatic sidecar injection in a workload to enabled
 		Given a workload without a sidecar
 		And the workload has override configuration for automatic sidecar injection
@@ -80,6 +84,7 @@ Feature: Controlling sidecar injection
 		Then the workload should get a sidecar
 
 	@sleep-app
+	@skip-ossmc
 	Scenario: Remove override configuration for automatic sidecar injection in a workload
 		Given a workload with override configuration for automatic sidecar injection
 		When I remove override configuration for sidecar injection in the workload

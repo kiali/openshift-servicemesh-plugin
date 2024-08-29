@@ -1,4 +1,5 @@
 @smoke
+@ossmc
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
 
 Feature: Kiali sidebar integration with OCP Console
@@ -6,7 +7,8 @@ Feature: Kiali sidebar integration with OCP Console
   Verify that the Kiali plugin is loaded and working in OCP Console
 
   Background:
-    Given user is logged as administrator in OCP Console
+    Given user is at administrator perspective
+    And user is at the dashboard page
     And user clicks on the Service Mesh icon in the left navigation bar
     And cypress intercept hooks for sidebar are registered
 

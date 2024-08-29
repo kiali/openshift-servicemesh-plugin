@@ -1,5 +1,3 @@
-import { Then, When } from '@badeball/cypress-cucumber-preprocessor';
-
 // getColWithRowText will find the column matching the unique row text and column header name.
 // This func makes a couple assumptions:
 //

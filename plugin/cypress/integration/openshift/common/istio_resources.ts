@@ -130,3 +130,13 @@ export const istioResources: IstioResourceType[] = [
 export const referenceFor = (groupVersionKind: K8sGroupVersionKind): string => {
   return `${groupVersionKind.group}~${groupVersionKind.version}~${groupVersionKind.kind}`;
 };
+
+export const refForKialiIstio = (objectType: string, details: string): string => {
+  const kialiIstioResource = istioResources.find(item => objectType === item.objectType);
+
+  if (kialiIstioResource) {
+    return `/${referenceFor(kialiIstioResource)}${details}`;
+  }
+
+  return '';
+};

@@ -16,6 +16,10 @@ Before(() => {
   });
 });
 
+When('user is at the dashboard page', () => {
+  cy.visit({ url: `/` });
+});
+
 When('user clicks on the Service Mesh icon in the left navigation bar', () => {
   cy.get('button[class$="c-nav__link"]')
     .contains('Service Mesh')
@@ -106,7 +110,7 @@ Then('user sees the mesh side panel', () => {
     cy.get('#loading_kiali_spinner').should('not.exist');
     cy.get('#target-panel-mesh')
       .should('be.visible')
-      .within(div => {
+      .within(() => {
         const resp = interception.response;
         expect(resp?.statusCode).to.eq(200);
         expect(resp?.body.meshName).to.not.equal(undefined);
