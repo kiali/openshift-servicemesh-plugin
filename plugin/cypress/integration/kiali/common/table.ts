@@ -120,7 +120,7 @@ export const hasAtLeastOneClass = (expectedClasses: string[]): (($el: HTMLElemen
 //
 // Be aware of these assumptions when using this func.
 export const getColWithRowText = (rowSearchText: string, colName: string): Cypress.Chainable => {
-  return cy.get('thead').contains('tr', rowSearchText).find(`th[data-label="${colName}"]`);
+  return cy.get('tbody').contains('tr', rowSearchText).find(`td[data-label="${colName}"]`);
 };
 
 // getCellsForCol returns every cell matching the table header name or
