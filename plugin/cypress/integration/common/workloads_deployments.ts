@@ -57,5 +57,5 @@ When('{string} container is selected', (container: string) => {
 });
 
 Then('user sees {string} dropdown', (dropdownText: string) => {
-  cy.get('span[class$="c-dropdown__toggle-text"]').contains(dropdownText).should('be.visible');
+  cy.get('span[class$="c-menu-toggle__text"]').contains(dropdownText).should('be.visible');
 });
