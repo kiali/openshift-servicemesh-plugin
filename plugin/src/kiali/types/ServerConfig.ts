@@ -110,11 +110,6 @@ export interface KialiCrippledFeatures {
   responseTimePercentiles: boolean;
 }
 
-interface IstioCanaryRevision {
-  current: string;
-  upgrade: string;
-}
-
 /*
  Health Config
 */
@@ -145,17 +140,16 @@ export interface ToleranceConfig {
 */
 
 export interface ServerConfig {
-  accessibleNamespaces: Array<string>;
   ambientEnabled: boolean;
   authStrategy: string;
   clusters: { [key: string]: MeshCluster };
+  clusterWideAccess: boolean;
   deployment: DeploymentConfig;
   gatewayAPIClasses: GatewayAPIClass[];
   gatewayAPIEnabled: boolean;
   healthConfig: HealthConfig;
   installationTag?: string;
   istioAnnotations: IstioAnnotations;
-  istioCanaryRevision: IstioCanaryRevision;
   istioIdentityDomain: string;
   istioLabels: { [key in IstioLabelKey]: string };
   istioNamespace: string;
