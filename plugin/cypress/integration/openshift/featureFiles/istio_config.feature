@@ -10,7 +10,7 @@ Feature: Kiali Istio Config page
 
   Background:
     Given user is at administrator perspective
-    And user is at the "istio" list page
+    And user is at the istio config list page
     And user selects the "bookinfo" project
 
   @bookinfo-app

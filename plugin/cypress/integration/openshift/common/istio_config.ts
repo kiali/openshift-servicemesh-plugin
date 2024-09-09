@@ -1,4 +1,4 @@
-import { Before, Then, When } from '@badeball/cypress-cucumber-preprocessor';
+import { Before, Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
 import { getColWithRowText } from './table';
 import { istioResources, referenceFor } from './istio_resources';
 import { K8sGroupVersionKind } from '@openshift-console/dynamic-plugin-sdk';
@@ -17,6 +17,11 @@ Before(() => {
     // we still want to ensure there are no other unexpected
     // errors, so we let them fail the test
   });
+});
+
+Given('user is at the istio config list page', () => {
+  // Forcing "Pause" to not cause unhandled promises from the browser when cypress is testing
+  cy.visit({ url: `${Cypress.config('baseUrl')}/k8s/all-namespaces/istio?refresh=0` });
 });
 
 When('user selects the {string} project', (namespace: string) => {
