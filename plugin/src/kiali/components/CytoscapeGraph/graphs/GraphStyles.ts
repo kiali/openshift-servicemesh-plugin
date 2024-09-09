@@ -302,6 +302,7 @@ export class GraphStyles {
         if (node.isGateway?.egressInfo?.hostnames?.length !== undefined) {
           badges = `<span class="${NodeIconGateway} ${badgeMargin(badges)}"></span> ${badges}`;
         }
+        // A Waypoint should be mutually exclusive with being a traffic source
         if (isWaypoint) {
           badges = `<span class="${NodeIconWaypoint} ${badgeMargin(badges)}"></span> ${badges}`;
         }
@@ -938,6 +939,9 @@ export class GraphStyles {
             return getEdgeColor(ele);
           },
           'line-style': 'solid',
+          'source-arrow-color': (ele: Cy.EdgeSingular) => {
+            return getEdgeColor(ele);
+          },
           'target-arrow-shape': 'vee',
           'target-arrow-color': (ele: Cy.EdgeSingular) => {
             return getEdgeColor(ele);
@@ -997,6 +1001,20 @@ export class GraphStyles {
           'overlay-color': PFColorVals.Purple200,
           'overlay-padding': '7px',
           'overlay-opacity': OpacityOverlay
+        }
+      },
+      {
+        selector: `edge[display="reverse"]`,
+        style: {
+          'target-arrow-shape': 'triangle-cross',
+          'source-arrow-shape': 'triangle-cross',
+          'line-style': 'solid'
+        }
+      },
+      {
+        selector: `edge[display="hide"]`,
+        style: {
+          display: 'none'
         }
       }
     ];

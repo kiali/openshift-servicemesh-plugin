@@ -2,10 +2,10 @@ import { ServerConfig } from 'types/ServerConfig';
 import { getExpr } from '../../config/HealthConfig';
 
 export const healthConfig = {
-  accessibleNamespaces: [],
   authStrategy: '',
   ambientEnabled: false,
   clusters: {},
+  clusterWideAccess: true,
   controlPlaneClusters: [],
   gatewayAPIClasses: [],
   gatewayAPIEnabled: false,
@@ -84,10 +84,6 @@ export const healthConfig = {
     ambientAnnotation: 'ambient.istio.io/redirection',
     ambientAnnotationEnabled: 'enabled',
     istioInjectionAnnotation: ''
-  },
-  istioCanaryRevision: {
-    current: '',
-    upgrade: ''
   },
   istioIdentityDomain: 'svc.cluster.local',
   istioNamespace: 'istio-system',

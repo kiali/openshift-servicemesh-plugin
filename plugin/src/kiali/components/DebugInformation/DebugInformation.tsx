@@ -57,13 +57,12 @@ type DebugInformationData = {
 
 // Will be shown in Kiali Config and hidden in Additional state
 const propsToShow = [
-  'accessibleNamespaces',
   'authStrategy',
   'clusters',
+  'clusterWideAccess',
   'gatewayAPIClasses',
   'gatewayAPIEnabled',
   'istioAnnotationsAction',
-  'istioCanaryRevision',
   'istioConfigMap',
   'istioIdentityDomain',
   'istioInjectionAction',

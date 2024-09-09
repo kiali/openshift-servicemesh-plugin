@@ -55,10 +55,10 @@ const computeValidDurations = (cfg: ComputedServerConfig): void => {
 // Set some reasonable defaults. Initial values should be valid for fields
 // than may not be providedby/set on the server.
 const defaultServerConfig: ComputedServerConfig = {
-  accessibleNamespaces: [],
   ambientEnabled: false,
   authStrategy: '',
   clusters: {},
+  clusterWideAccess: true,
   durations: {},
   gatewayAPIClasses: [],
   gatewayAPIEnabled: false,
@@ -74,10 +74,6 @@ const defaultServerConfig: ComputedServerConfig = {
     ambientAnnotation: 'ambient.istio.io/redirection',
     ambientAnnotationEnabled: 'enabled',
     istioInjectionAnnotation: 'sidecar.istio.io/inject'
-  },
-  istioCanaryRevision: {
-    current: '',
-    upgrade: ''
   },
   istioIdentityDomain: 'svc.cluster.local',
   istioNamespace: 'istio-system',
