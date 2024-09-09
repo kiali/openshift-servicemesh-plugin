@@ -20,20 +20,25 @@ When('cypress intercept hooks for workloads are registered', () => {
   // placeholder for future implementation (intercepting API calls for graphs etc)
 });
 
-When('user navigates to the {string} deployment details page', (deployment: string) => {
-  cy.get('button[class$="c-nav__link"]')
-    .contains('Workloads')
-    .click()
-    .then(() => {
-      cy.get('a[class$="c-nav__link"]')
-        .contains('Deployments')
-        .click()
-        .then(() => {
-          cy.get('input[data-test-id="item-filter"]').type(deployment);
-          cy.get(`[data-test-id="${deployment}"]`).click();
-        });
-    });
-});
+When(
+  'user navigates to the {string} deployment details page in the namespace {string}',
+  (deployment: string, namespace: string) => {
+    cy.get('button[class$="c-nav__link"]')
+      .contains('Workloads')
+      .click()
+      .then(() => {
+        cy.get('a[class$="c-nav__link"]')
+          .contains('Deployments')
+          .click()
+          .then(() => {
+            cy.contains('span[class$="c-menu-toggle__text"]', 'Project:').click();
+            cy.contains('span[class$="c-menu__item-text"]', namespace).click();
+            cy.get('input[data-test-id="item-filter"]').type(deployment);
+            cy.get(`[data-test-id="${deployment}"]`).click();
+          });
+      });
+  }
+);
 
 When('user clicks tab with {string} button', (tabName: string) => {
   cy.get('button').contains(tabName).click();
@@ -52,5 +57,5 @@ When('{string} container is selected', (container: string) => {
 });
 
 Then('user sees {string} dropdown', (dropdownText: string) => {
-  cy.get('span[class$="c-dropdown__toggle-text"]').contains(dropdownText).should('be.visible');
+  cy.get('span[class$="c-menu-toggle__text"]').contains(dropdownText).should('be.visible');
 });
