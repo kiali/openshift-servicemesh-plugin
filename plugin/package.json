@@ -134,8 +134,6 @@
     "webpack-dev-server": "^5.0.4"
   },
   "resolutions": {
-    "@openshift-console/dynamic-plugin-sdk/react-router/path-to-regexp": "^8.0.0",
-    "express/path-to-regexp": "^0.1.10",
     "webpack": "^5.94.0"
   },
   "engines": {
