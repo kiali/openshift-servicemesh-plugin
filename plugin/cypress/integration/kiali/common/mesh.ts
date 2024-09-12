@@ -65,7 +65,7 @@ When('user sees mesh side panel', () => {
   cy.get('#loading_kiali_spinner').should('not.exist');
   cy.get('#target-panel-mesh')
     .should('be.visible')
-    .within(div => {
+    .within(() => {
       // Get the name of the mesh from the API.
       cy.request({ url: 'api/mesh/graph' }).then(resp => {
         expect(resp.status).to.eq(200);
@@ -87,7 +87,7 @@ Then('user sees control plane side panel', () => {
   cy.get('#loading_kiali_spinner').should('not.exist');
   cy.get('#target-panel-control-plane')
     .should('be.visible')
-    .within(div => {
+    .within(() => {
       cy.contains('istiod');
       cy.contains('Control plane').should('be.visible');
       cy.contains('Outbound policy').should('be.visible');
@@ -96,7 +96,8 @@ Then('user sees control plane side panel', () => {
       cy.get('[data-test="label-TLS"]').contains('N/A');
       cy.get('[data-test="lockerCA"]').should('exist');
     });
-  cy.get('[data-test="lockerCA"]').trigger('mouseenter').get('[role="tooltip"]').contains('Valid From');
+  cy.get('[data-test="lockerCA"]').trigger('mouseenter');
+  cy.get('[role="tooltip"]').contains('Valid From');
 });
 
 Then('user sees data plane side panel', () => {
@@ -104,7 +105,7 @@ Then('user sees data plane side panel', () => {
   cy.get('#loading_kiali_spinner').should('not.exist');
   cy.get('#target-panel-data-plane')
     .should('be.visible')
-    .within(div => {
+    .within(() => {
       cy.contains('Data Plane');
     });
 });
@@ -131,12 +132,51 @@ Then('user sees expected mesh infra', () => {
     });
 });
 
+Then(
+  'user sees {int} {string} nodes on the {string} cluster',
+  (numberOfDataplaneNodes: number, infraNodeType: MeshInfraType, cluster: string) => {
+    cy.waitForReact();
+    cy.getReact('MeshPageComponent', { state: { meshData: { isLoading: false } } })
+      .should('have.length', 1)
+      .getCurrentState()
+      .then(state => {
+        const controller = state.meshRefs.getController() as Visualization;
+        assert.isTrue(controller.hasGraph());
+        const { nodes } = elems(controller);
+        const dataplaneNodes = nodes.filter(
+          n => n.getData().infraType === infraNodeType && n.getData().cluster === cluster
+        );
+        expect(dataplaneNodes).to.have.lengthOf(numberOfDataplaneNodes);
+      });
+  }
+);
+
+Then('user sees the istiod node connected to the dataplane nodes', () => {
+  cy.waitForReact();
+  cy.getReact('MeshPageComponent', { state: { meshData: { isLoading: false } } })
+    .should('have.length', 1)
+    .getCurrentState()
+    .then(state => {
+      const controller = state.meshRefs.getController() as Visualization;
+      assert.isTrue(controller.hasGraph());
+      const { nodes } = elems(controller);
+      const istiodNode = nodes.find(n => n.getData().infraType === MeshInfraType.ISTIOD);
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      expect(istiodNode).to.exist;
+      expect(istiodNode.getSourceEdges()).to.have.lengthOf(2);
+      istiodNode.getSourceEdges().every(e => {
+        const targetNodeData = e.getTarget().getData();
+        return targetNodeData.infraType === MeshInfraType.DATAPLANE && targetNodeData.cluster === 'cluster';
+      });
+    });
+});
+
 Then('user {string} mesh tour', (action: string) => {
   cy.waitForReact();
   if (action === 'sees') {
-    cy.get('div[role="dialog"]').find('span').contains('Shortcuts').should('exist');
+    cy.get('div[class*="pf-v5-c-popover"]').find('span').contains('Shortcuts').should('exist');
   } else {
-    cy.get('div[role="dialog"]').should('not.exist');
+    cy.get('div[class*="pf-v5-c-popover"]').should('not.exist');
   }
 });
 
@@ -145,7 +185,7 @@ Then('user sees {string} namespace side panel', (name: string) => {
   cy.get('#loading_kiali_spinner').should('not.exist');
   cy.get('#target-panel-namespace')
     .should('be.visible')
-    .within(div => {
+    .within(() => {
       cy.contains(name);
     });
 });
@@ -155,7 +195,7 @@ Then('user sees {string} node side panel', (name: string) => {
   cy.get('#loading_kiali_spinner').should('not.exist');
   cy.get('#target-panel-node')
     .should('be.visible')
-    .within(div => {
+    .within(() => {
       cy.contains(name);
     });
 });

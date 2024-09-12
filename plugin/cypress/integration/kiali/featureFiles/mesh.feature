@@ -53,10 +53,27 @@ Feature: Kiali Mesh page
     When user selects mesh node with label "istio-system"
     Then user sees "istio-system" namespace side panel
 
+  @skip-ossmc
   Scenario: See the Mesh menu link
     Then user see the "mesh" menu
 
+  @skip-ossmc
   Scenario: See the Mesh link in the about
     And user clicks on Help Button
     And user clicks on About Button
     Then user see the "mesh" link
+
+  @multi-cluster
+  Scenario: Primary-remote: see one dataplane for each cluster and one controlplane on primary attached to both.
+    Then user sees 1 "dataplane" nodes on the "east" cluster
+    And user sees 1 "dataplane" nodes on the "west" cluster
+    And user sees 1 "istiod" nodes on the "east" cluster
+    And user sees the istiod node connected to the dataplane nodes
+  
+  @multi-cluster
+  @multi-primary
+  Scenario: Multi-primary: see one dataplane and one controlplane for each cluster and an edge between each.
+    Then user sees 1 "dataplane" nodes on the "east" cluster
+    And user sees 1 "dataplane" nodes on the "west" cluster
+    And user sees 1 "istiod" nodes on the "east" cluster
+    And user sees 1 "istiod" nodes on the "west" cluster
