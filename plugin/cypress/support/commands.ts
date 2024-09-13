@@ -15,20 +15,20 @@ import { isLocalhost } from './utils';
 declare global {
   namespace Cypress {
     interface Chainable {
-      login(OC_CLUSTER_USER: string, OC_CLUSTER_PASS: string, OC_IDP: string): Chainable<void>;
+      login(USERNAME: string, PASSWD: string, AUTH_PROVIDER: string): Chainable<void>;
     }
   }
 }
 
-Cypress.Commands.add('login', (OC_CLUSTER_USER, OC_CLUSTER_PASS, OC_IDP) => {
+Cypress.Commands.add('login', (USERNAME, PASSWD, AUTH_PROVIDER) => {
   // Openshift Console from localhost does not have login page
   if (!isLocalhost()) {
-    const user = OC_CLUSTER_USER || Cypress.env('OC_CLUSTER_USER');
-    const password = OC_CLUSTER_PASS || Cypress.env('OC_CLUSTER_PASS');
-    const idp = OC_IDP || Cypress.env('OC_IDP');
+    const user = USERNAME || Cypress.env('USERNAME');
+    const password = PASSWD || Cypress.env('PASSWD');
+    const idp = AUTH_PROVIDER || Cypress.env('AUTH_PROVIDER');
 
     cy.visit('/').then(() => {
-      cy.log('OC_IDP: ', typeof idp, JSON.stringify(idp));
+      cy.log('AUTH_PROVIDER: ', typeof idp, JSON.stringify(idp));
       if (idp != undefined) {
         cy.get('.pf-c-button').contains(idp).click();
       }
