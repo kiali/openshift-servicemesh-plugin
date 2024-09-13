@@ -22,7 +22,7 @@ import { LoginActions } from 'actions/LoginActions';
 import { GraphToolbarActions } from 'actions/GraphToolbarActions';
 import { HelpDropdownActions } from 'actions/HelpDropdownActions';
 import { GlobalActions } from 'actions/GlobalActions';
-import { getPluginConfig } from 'openshift/utils/KialiIntegration';
+import { getPluginConfig, PluginConfig } from 'openshift/utils/KialiIntegration';
 import { MeshTlsActions } from 'actions/MeshTlsActions';
 import { TLSStatus } from 'types/TLSStatus';
 import { IstioCertsInfoActions } from 'actions/IstioCertsInfoActions';
@@ -70,8 +70,15 @@ type KialiControllerProps = KialiControllerReduxProps & {
   children: React.ReactNode;
 };
 
+const defaultPluginConfig: PluginConfig = {
+  graph: {
+    impl: 'pf'
+  }
+};
+
 class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
+  private pluginConfig = defaultPluginConfig;
 
   state = {
     loaded: false
@@ -144,12 +151,20 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           AlertUtils.addError('Error fetching Istio certificates info.', error, 'default', MessageType.WARNING);
         });
 
+      const getPluginPromise = this.promises
+        .register('getPluginPromise', getPluginConfig())
+        .then(response => (this.pluginConfig = response))
+        .catch(error => {
+          AlertUtils.addError('Error fetching plugin configuration.', error, 'default', MessageType.WARNING);
+        });
+
       await Promise.all([
         getNamespacesPromise,
         getServerConfigPromise,
         getStatusPromise,
         getTracingInfoPromise,
-        getIstioCertsInfoPromise
+        getIstioCertsInfoPromise,
+        getPluginPromise
       ]);
     } catch (err) {
       console.error('Error loading kiali config', err);
@@ -222,9 +237,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
       // Set graph implementation from plugin config
       if (uiDefaults.graph) {
-        getPluginConfig()
-          .then(config => (uiDefaults.graph.impl = config.graph.impl))
-          .catch(e => console.error(e));
+        uiDefaults.graph.impl = this.pluginConfig.graph.impl;
       }
 
       // Graph Traffic
