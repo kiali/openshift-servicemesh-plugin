@@ -372,7 +372,18 @@ When('I remove override configuration for sidecar injection in the namespace', f
 function switchWorkloadSidecarInjection(enableOrDisable: string): void {
   cy.visit({ url: `/console/namespaces/${this.targetNamespace}/workloads/${this.targetWorkload}?refresh=0` });
 
-  cy.get('button[data-test="workload-actions-toggle"]').should('be.visible').click();
+  // In OSSMC, the workload actions toggle does not exist. Workload actions are integrated in the minigraph menu
+  if (Cypress.env('OSSMC')) {
+    cy.intercept(`**/api/**/workloads/**/graph*`).as('workloadMinigraph');
+    cy.wait('@workloadMinigraph');
+
+    cy.waitForReact();
+
+    cy.get('button#minigraph-toggle').should('be.visible').click();
+  } else {
+    cy.get('button[data-test="workload-actions-toggle"]').should('be.visible').click();
+  }
+
   cy.get(`li[data-test=${enableOrDisable}_auto_injection]`).find('button').should('be.visible').click();
 
   // Restart the workload to ensure the changes are applied.
@@ -401,28 +412,29 @@ When('I remove override configuration for sidecar injection in the workload', fu
   switchWorkloadSidecarInjection.apply(this, ['remove']);
 });
 
-Then('I should see the override annotation for sidecar injection in the namespace as {string}', function (
-  enabled: string
-) {
-  cy.request({ method: 'GET', url: '/api/status' }).then(response => {
-    expect(response.status).to.equal(200);
+Then(
+  'I should see the override annotation for sidecar injection in the namespace as {string}',
+  function (enabled: string) {
+    cy.request({ method: 'GET', url: '/api/status' }).then(response => {
+      expect(response.status).to.equal(200);
 
-    const expectation = 'exist';
+      const expectation = 'exist';
 
-    cy.request({ url: '/api/config' }).then(response => {
-      cy.wrap(response.isOkStatusCode).should('be.true');
+      cy.request({ url: '/api/config' }).then(response => {
+        cy.wrap(response.isOkStatusCode).should('be.true');
 
-      const clusters: { [key: string]: MeshCluster } = response.body.clusters;
-      const clusterNames = Object.keys(clusters);
-      cy.wrap(clusterNames).should('have.length', 1);
-      const cluster = clusterNames[0];
+        const clusters: { [key: string]: MeshCluster } = response.body.clusters;
+        const clusterNames = Object.keys(clusters);
+        cy.wrap(clusterNames).should('have.length', 1);
+        const cluster = clusterNames[0];
 
-      cy.getBySel(`VirtualItem_Cluster${cluster}_${this.targetNamespace}`)
-        .contains(`istio-injection=${enabled}`)
-        .should(expectation);
+        cy.getBySel(`VirtualItem_Cluster${cluster}_${this.targetNamespace}`)
+          .contains(`istio-injection=${enabled}`)
+          .should(expectation);
+      });
     });
-  });
-});
+  }
+);
 
 Then('I should see no override annotation for sidecar injection in the namespace', function () {
   cy.request({ method: 'GET', url: '/api/status' }).then(response => {

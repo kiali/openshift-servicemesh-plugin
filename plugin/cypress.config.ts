@@ -18,11 +18,10 @@ export default defineConfig({
   videosFolder: 'cypress/videos',
 
   env: {
-    USERNAME: 'jenkins', // default value for jenkins
-    AUTH_PROVIDER: 'my_htpasswd_provider', // default value for jenkins, can vary based on cluster setup
     'cypress-react-selector': {
       root: '#root'
     },
+    OSSMC: true,
     cookie: false,
     omitFiltered: true,
     filterSpecs: true,
