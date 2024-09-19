@@ -22,10 +22,14 @@ SOURCE_REPO="${TMP_DIR}/kiali-source"
 
 # SOURCE_DIR = Relative directory inside the local Kiali repo whose content will be copied.
 # SOURCE_LOCALES_DIR = Relative directory inside the local Kiali repo whose locales will be copied.
-# DEST_DIR = Relative directory inside the local OSSM repo where the new files will be copied.
+# SOURCE_TESTS_DIR = Relative directory inside the local Kiali repo whose cypress tests will be copied.
+# DEST_DIR = Relative directory inside the local OSSM repo where the Kiali files will be copied.
+# DEST_TESTS_DIR = Relative directory inside the local OSSM repo where the Kiali cypress tests will be copied.
 SOURCE_DIR="frontend/src"
 SOURCE_LOCALES_DIR="frontend/public/locales"
+SOURCE_TESTS_DIR="frontend/cypress/integration"
 DEST_DIR="plugin/src/kiali"
+DEST_TESTS_DIR="plugin/cypress/integration/kiali"
 
 # The URL of the remote git repo to clone
 DEFAULT_SOURCE_REPO_URL="https://github.com/kiali/kiali.git"
@@ -94,7 +98,9 @@ done
 
 ABS_SOURCE_DIR="${SOURCE_REPO}/${SOURCE_DIR}"
 ABS_SOURCE_LOCALES_DIR="${SOURCE_REPO}/${SOURCE_LOCALES_DIR}"
+ABS_SOURCE_TESTS_DIR="${SOURCE_REPO}/${SOURCE_TESTS_DIR}"
 ABS_DEST_DIR="${DEST_REPO}/${DEST_DIR}"
+ABS_DEST_TESTS_DIR="${DEST_REPO}/${DEST_TESTS_DIR}"
 
 # Validate the dest directories exist
 
@@ -176,9 +182,16 @@ EOM
 
 cd ${ABS_DEST_DIR}
 git checkout -b ${DEST_BRANCH}
+
 rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
 cp -R ${ABS_SOURCE_DIR}/* ${ABS_DEST_DIR}
 cp -R ${ABS_SOURCE_LOCALES_DIR} ${ABS_DEST_DIR}
+
+rm -rf ${ABS_DEST_TESTS_DIR}/{*,.[!.]*}
+cp -R ${ABS_SOURCE_TESTS_DIR}/* ${ABS_DEST_TESTS_DIR}
+# OSSMC has its own hooks.ts file, so we remove the Kiali one
+rm ${ABS_DEST_TESTS_DIR}/common/hooks.ts
+
 cat > ${ABS_DEST_DIR}/README.md <<EOM
 **WARNING**: The code in this directory comes from the kiali/kiali repository and should never be modified here.
 
