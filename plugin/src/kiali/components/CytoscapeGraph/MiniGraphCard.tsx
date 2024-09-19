@@ -133,6 +133,7 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
                   <Dropdown
                     toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
                       <MenuToggle
+                        id="minigraph-toggle"
                         ref={toggleRef}
                         className={kebabToggleStyle}
                         aria-label="Actions"

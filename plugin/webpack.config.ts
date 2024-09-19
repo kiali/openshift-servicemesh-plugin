@@ -6,9 +6,9 @@ import * as path from 'path';
 import { ConsoleRemotePlugin } from '@openshift-console/dynamic-plugin-sdk-webpack';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
-
 import MergeJsonWebpackPlugin from 'merge-jsons-webpack-plugin';
 import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
+import TerserPlugin from 'terser-webpack-plugin';
 
 import pluginMetadata from './plugin-metadata';
 import extensions from './console-extensions';
@@ -145,6 +145,14 @@ if (process.env.NODE_ENV === 'production') {
   if (config.optimization) {
     config.optimization.chunkIds = 'deterministic';
     config.optimization.minimize = true;
+    config.optimization.minimizer = [
+      new TerserPlugin({
+        terserOptions: {
+            keep_classnames: true,
+            keep_fnames: true,
+        }
+      })
+    ]
   }
 }
 

@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { isLocalhost } from './utils';
+import { refForKialiIstio } from '../integration/openshift/common/istio_resources';
 
 // ***********************************************
 // This example commands.ts shows you how to
@@ -21,7 +21,26 @@ declare global {
        * @param args the rest of DOM element args
        * @example cy.getBySel('greeting')
        */
-      getBySel(selector: string, ...args: any): Chainable<Subject>;
+      getBySel(selector: string, ...args: any): Chainable<JQuery<HTMLElement>>;
+
+      getColWithRowText(rowSearchText: string, colName: string): Chainable<JQuery<HTMLElement>>;
+
+      /**
+       * Custom command to check if a DOM element has specific CSS variable
+       * @param styleName the style name (e.g., color, margin, padding)
+       * @param cssVarName the css variable name
+       * @example cy.get(...).hasCssVar('color','--my-color')
+       */
+      hasCssVar(styleName: string, cssVarName: string): void;
+
+      /**
+       * Custom command to check text validation for inputs.
+       * @param id the input identifier
+       * @param text the text to validate
+       * @param valid check if the text must be valid or invalid
+       * @example cy.inputValidation('hostname','host',false)
+       */
+      inputValidation(id: string, text: string, valid: boolean): Chainable<Subject>;
 
       /**
        * Login to OCP with the given cluster username, password and identity provider
@@ -30,27 +49,142 @@ declare global {
        * @param identityProvider the identity provider
        */
       login(clusterUser?: string, clusterPassword?: string, identityProvider?: string): Chainable<void>;
+
+      /**
+       * Logout from Kiali
+       */
+      logout(): Chainable<Subject>;
     }
   }
 }
 
-Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
+let csrfToken: string | undefined;
 
 Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
-  // Openshift Console from localhost does not have login page
-  if (!isLocalhost()) {
-    const user = clusterUser || Cypress.env('OC_CLUSTER_USER');
-    const password = clusterPassword || Cypress.env('OC_CLUSTER_PASS');
-    const idp = identityProvider || Cypress.env('OC_IDP');
+  const user = clusterUser || Cypress.env('USERNAME');
+  const password = clusterPassword || Cypress.env('PASSWD');
+  const idp = identityProvider || Cypress.env('AUTH_PROVIDER');
 
-    cy.visit('/').then(() => {
-      cy.log('OC_IDP: ', typeof idp, JSON.stringify(idp));
-      if (idp != undefined) {
-        cy.get('.pf-c-button').contains(idp).click();
-      }
-      cy.get('#inputUsername').clear().type(user);
-      cy.get('#inputPassword').clear().type(password);
-      cy.get('button[type="submit"]').click();
+  cy.session(
+    user,
+    () => {
+      cy.visit({ url: '/' }).then(() => {
+        cy.log('AUTH_PROVIDER: ', typeof idp, JSON.stringify(idp));
+        if (idp != undefined) {
+          cy.get('.pf-c-button').contains(idp).click();
+        }
+        cy.get('#inputUsername').clear().type(user);
+        cy.get('#inputPassword').clear().type(password);
+        cy.get('button[type="submit"]').click();
+      });
+    },
+    {
+      cacheAcrossSpecs: true
+    }
+  );
+
+  if (!csrfToken) {
+    // Store csrf-token value for non-GET request headers
+    cy.getCookie('csrf-token').then(cookie => {
+      csrfToken = cookie?.value;
     });
   }
+});
+
+Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
+
+Cypress.Commands.add('getColWithRowText', (rowSearchText: string, colName: string) =>
+  cy.get('tbody').contains('tr', rowSearchText).find(`td#${colName.toLowerCase()}`)
+);
+
+Cypress.Commands.add('inputValidation', (id: string, text: string, valid = true) => {
+  cy.get(`input[id="${id}"]`).type(text);
+  cy.get(`input[id="${id}"]`).should('have.attr', 'aria-invalid', `${!valid}`);
+  cy.get(`input[id="${id}"]`).clear();
+});
+
+Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cssVarName) => {
+  cy.document().then(doc => {
+    const dummy = doc.createElement('span');
+    dummy.style.setProperty(styleName, `var(${cssVarName})`);
+    doc.body.appendChild(dummy);
+
+    const evaluatedStyle = window.getComputedStyle(dummy).getPropertyValue(styleName).trim();
+    dummy.remove();
+
+    cy.wrap(subject)
+      .then($el => window.getComputedStyle($el[0]).getPropertyValue(styleName).trim())
+      .should('eq', evaluatedStyle);
+  });
+});
+
+Cypress.Commands.add('inputValidation', (id: string, text: string, valid = true) => {
+  cy.get(`input[id="${id}"]`).type(text);
+  cy.get(`input[id="${id}"]`).should('have.attr', 'aria-invalid', `${!valid}`);
+  cy.get(`input[id="${id}"]`).clear();
+});
+
+Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cssVarName) => {
+  cy.document().then(doc => {
+    const dummy = doc.createElement('span');
+    dummy.style.setProperty(styleName, `var(${cssVarName})`);
+    doc.body.appendChild(dummy);
+
+    const evaluatedStyle = window.getComputedStyle(dummy).getPropertyValue(styleName).trim();
+    dummy.remove();
+
+    cy.wrap(subject)
+      .then($el => window.getComputedStyle($el[0]).getPropertyValue(styleName).trim())
+      .should('eq', evaluatedStyle);
+  });
+});
+
+Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
+  const webParamsIndex = visitUrl.url.indexOf('?');
+  const webParams = webParamsIndex > -1 ? visitUrl.url.substring(webParamsIndex) : '';
+
+  const url = visitUrl.url.replace(Cypress.config('baseUrl'), '').split('?')[0].split('/');
+
+  const targetPage = url[2];
+
+  if (targetPage === 'namespaces') {
+    const namespace = url[3];
+    const type = url[4];
+    const details = url[5];
+
+    if (type === 'workloads') {
+      // OpenShift Console doesn't have a "generic" workloads page
+      // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
+      // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
+      visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
+    } else if (type === 'services') {
+      visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
+    } else if (type === 'istio') {
+      const istioUrl = refForKialiIstio(targetPage, details);
+
+      visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
+    }
+  } else {
+    if (targetPage === 'graph') {
+      visitUrl.url = visitUrl.url
+        .replace('/console/graph/namespaces', '/ossmconsole/graph')
+        .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns');
+    } else if (targetPage === 'istio') {
+      visitUrl.url = '/k8s/all-namespaces/istio';
+    } else {
+      visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
+    }
+  }
+
+  return originalFn(visitUrl);
+});
+
+Cypress.Commands.overwrite('request', (originalFn, request) => {
+  request.url = request.url?.replace('api/', 'api/proxy/plugin/ossmconsole/kiali/api/');
+
+  if (request.method !== 'GET') {
+    request.headers = { 'X-CSRFToken': csrfToken };
+  }
+
+  return originalFn(request);
 });

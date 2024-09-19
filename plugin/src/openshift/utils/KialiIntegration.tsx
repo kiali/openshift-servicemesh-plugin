@@ -71,7 +71,7 @@ export const useInitKialiListeners = (): void => {
       let consoleUrl = '';
 
       // Transform Kiali domain messages into Plugin info that helps to navigate
-      if (kialiAction.startsWith('/graph') || kialiAction.startsWith('/graphpf')) {
+      if (kialiAction.startsWith('/graph')) {
         consoleUrl = kialiAction
           .replace('graph/namespaces', `${OSSM_CONSOLE}/graph`)
           .replace('graphpf/namespaces', `${OSSM_CONSOLE}/graph`)
