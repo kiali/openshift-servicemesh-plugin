@@ -28,11 +28,11 @@ rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
 KIALI_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 case "${KIALI_BRANCH}" in
-    v1.*)
+    v*.*)
         echo "OSSMC release branch ${KIALI_BRANCH}";;
     *)
-        echo "This branch is not an OSSMC release branch (v1.*)"
-        KIALI_BRANCH="v1.73";;
+        echo "This branch is not an OSSMC release branch (v*.*)"
+        KIALI_BRANCH="master";;
 esac
 
 # Clone kiali repo into kiali folder (no-checkout option to avoid download whole repository)

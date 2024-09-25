@@ -199,6 +199,8 @@ ${COMMIT_MESSAGE}
 EOM
 
 git add ${ABS_DEST_DIR}
+git add ${ABS_DEST_TESTS_DIR}
+
 if git diff-index --quiet HEAD --; then
   echo "There are no changes that need to be committed."
 else
