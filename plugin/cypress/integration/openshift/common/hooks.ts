@@ -1,4 +1,4 @@
-import { Before } from '@badeball/cypress-cucumber-preprocessor';
+import { After, Before } from '@badeball/cypress-cucumber-preprocessor';
 
 const install_demoapp = (demoapp: string): void => {
   let namespaces = 'bookinfo';
@@ -67,4 +67,14 @@ Before({ tags: '@error-rates-app' }, () => {
 
 Before({ tags: '@sleep-app' }, () => {
   install_demoapp('sleep');
+});
+
+After({ tags: '@sleep-app-scaleup-after' }, () => {
+  cy.exec('kubectl scale -n sleep --replicas=1 deployment/sleep');
+});
+
+// remove resources created in the istio-system namespace to not influence istio instance after the test
+After({ tags: '@clean-istio-namespace-resources-after' }, function () {
+  cy.exec('kubectl -n istio-system delete PeerAuthentication default', { failOnNonZeroExit: false });
+  cy.exec('kubectl -n istio-system delete Sidecar default', { failOnNonZeroExit: false });
 });
