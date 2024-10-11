@@ -144,13 +144,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           );
         });
 
-      const getIstioCertsInfoPromise = this.promises
-        .register('getIstioCertsInfo', API.getIstioCertsInfo())
-        .then(response => this.props.setIstioCertsInfo(response.data))
-        .catch(error => {
-          AlertUtils.addError('Error fetching Istio certificates info.', error, 'default', MessageType.WARNING);
-        });
-
       const getPluginPromise = this.promises
         .register('getPluginPromise', getPluginConfig())
         .then(response => (this.pluginConfig = response))
@@ -163,7 +156,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         getServerConfigPromise,
         getStatusPromise,
         getTracingInfoPromise,
-        getIstioCertsInfoPromise,
         getPluginPromise
       ]);
     } catch (err) {

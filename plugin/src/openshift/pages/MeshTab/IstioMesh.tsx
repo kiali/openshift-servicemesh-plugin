@@ -28,11 +28,13 @@ const IstioConfigMeshTab: React.FC<void> = () => {
       item => item.group === group && item.version === version && item.kind === kind
     );
 
-    if (istioResource?.objectType) {
+    if (istioResource) {
       const istioConfigId: IstioConfigId = {
         namespace: ns,
-        objectType: istioResource?.objectType,
-        object: name
+        objectGroup: group,
+        objectKind: kind,
+        objectName: name,
+        objectVersion: version
       };
 
       return (
