@@ -91,9 +91,6 @@ const defaultServerConfig: ComputedServerConfig = {
     versionLabelName: 'version'
   },
   kialiFeatureFlags: {
-    certificatesInformationIndicators: {
-      enabled: true
-    },
     disabledFeatures: [],
     istioInjectionAction: true,
     istioAnnotationAction: true,
@@ -102,13 +99,14 @@ const defaultServerConfig: ComputedServerConfig = {
       graph: {
         findOptions: [],
         hideOptions: [],
-        impl: 'cy',
+        impl: 'pf',
         settings: {
           fontLabel: 13,
           minFontBadge: 7,
           minFontLabel: 10
         },
         traffic: {
+          ambient: 'total',
           grpc: 'requests',
           http: 'requests',
           tcp: 'sent'
@@ -126,8 +124,7 @@ const defaultServerConfig: ComputedServerConfig = {
       },
       mesh: {
         findOptions: [],
-        hideOptions: [],
-        impl: 'classic'
+        hideOptions: []
       }
     }
   },

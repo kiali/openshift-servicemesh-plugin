@@ -68,11 +68,12 @@ import { tcpTimerConfig, timerConfig } from 'components/CytoscapeGraph/TrafficAn
 import { TourStop } from 'components/Tour/TourStop';
 import { GraphTourStops } from 'pages/Graph/GraphHelpTour';
 import { supportsGroups } from 'utils/GraphUtils';
+import { GraphRefs } from './GraphPagePF';
 
 let initialLayout = false;
 let requestFit = false;
 
-const DEFAULT_NODE_SIZE = 50;
+const DEFAULT_NODE_SIZE = 40;
 const ZOOM_IN = 4 / 3;
 const ZOOM_OUT = 3 / 4;
 
@@ -104,7 +105,7 @@ export interface FocusNode {
   isSelected?: boolean;
 }
 
-// The is the main graph rendering component
+// This is the main graph rendering component
 const TopologyContent: React.FC<{
   controller: Controller;
   edgeLabels: EdgeLabelMode[];
@@ -116,7 +117,7 @@ const TopologyContent: React.FC<{
   layoutName: LayoutName;
   onEdgeTap?: (edge: Edge<EdgeModel>) => void;
   onNodeTap?: (node: Node<NodeModel>) => void;
-  onReady: (controller: any) => void;
+  onReady: (refs: GraphRefs) => void;
   setEdgeMode: (edgeMode: EdgeMode) => void;
   setLayout: (val: LayoutName) => void;
   setUpdateTime: (val: TimeInMilliseconds) => void;
@@ -280,7 +281,14 @@ const TopologyContent: React.FC<{
       requestFit = false;
       fitView();
     }
-  }, [fitView]);
+
+    // we need to finish the initial layout before we advertise to the outside
+    // world that the graph is ready for external processing (like find/hide)
+    if (initialLayout) {
+      initialLayout = false;
+      onReady({ getController: () => controller, setSelectedIds: setSelectedIds });
+    }
+  }, [controller, fitView, onReady, setSelectedIds]);
 
   //
   // Set detail levels for graph (control zoom-sensitive labels)
@@ -440,7 +448,7 @@ const TopologyContent: React.FC<{
 
       const model = generateDataModel();
       const modelMap = new Map<string, GraphModel>();
-      model.nodes.forEach(e => modelMap.set(e.id, e));
+      model.nodes.forEach(n => modelMap.set(n.id, n));
       model.edges.forEach(e => modelMap.set(e.id, e));
 
       controller.getElements().forEach(e => {
@@ -471,9 +479,9 @@ const TopologyContent: React.FC<{
       // set decorators
       nodes.forEach(n => setNodeAttachments(n, graphSettings));
 
-      // pre-select node if provided
+      // pre-select node-graph node, only when elems have changed (like on first render, or a structural change)
       const graphNode = graphData.fetchParams.node;
-      if (graphNode) {
+      if (graphNode && graphData.elementsChanged) {
         let selector: SelectAnd = [
           { prop: NodeAttr.namespace, val: graphNode.namespace.name },
           { prop: NodeAttr.nodeType, val: graphNode.nodeType }
@@ -519,13 +527,8 @@ const TopologyContent: React.FC<{
       }
     };
 
-    const initialGraph = !controller.hasGraph();
-    console.debug(`updateModel`);
+    console.debug(`PFT updateModel`);
     updateModel(controller);
-    if (initialGraph) {
-      console.debug('onReady');
-      onReady(controller);
-    }
 
     // notify that the graph has been updated
     const updateModelTime = Date.now();
@@ -570,32 +573,32 @@ const TopologyContent: React.FC<{
   //TODO REMOVE THESE DEBUGGING MESSAGES...
   // Leave them for now, they are just good for understanding state changes while we develop this PFT graph.
   React.useEffect(() => {
-    console.debug(`controller changed`);
+    console.debug(`PFT: controller changed`);
+    initialLayout = true;
   }, [controller]);
 
   React.useEffect(() => {
-    console.debug(`graphData changed`);
+    console.debug(`PFT: graphData changed, elementsChanged=${graphData.elementsChanged}`);
   }, [graphData]);
 
   React.useEffect(() => {
-    console.debug(`graphSettings changed`);
+    console.debug(`PFT: graphSettings changed`);
   }, [graphSettings]);
 
   React.useEffect(() => {
-    console.debug(`highlighter changed`);
+    console.debug(`PFT: highlighter changed`);
   }, [highlighter]);
 
   React.useEffect(() => {
-    console.debug(`isMiniGraph changed`);
+    console.debug(`PFT: isMiniGraph changed`);
   }, [isMiniGraph]);
 
   React.useEffect(() => {
-    console.debug(`onReady changed`);
-    initialLayout = true;
+    console.debug(`PFT: onReady changed`);
   }, [onReady]);
 
   React.useEffect(() => {
-    console.debug(`setDetails changed`);
+    console.debug(`PFT: setDetails changed`);
   }, [setDetailsLevel]);
 
   React.useEffect(() => {
@@ -647,7 +650,8 @@ const TopologyContent: React.FC<{
   }, [controller, showTrafficAnimation, updateModelTime]);
 
   React.useEffect(() => {
-    console.debug(`layout changed`);
+    console.debug(`PFT: layout changed`);
+
     if (!controller.hasGraph()) {
       return;
     }
@@ -656,7 +660,6 @@ const TopologyContent: React.FC<{
 
     // When the initial layoutName property is set it is premature to perform a layout
     if (initialLayout) {
-      initialLayout = false;
       return;
     }
 
@@ -681,7 +684,7 @@ const TopologyContent: React.FC<{
 
   useEventListener(GRAPH_LAYOUT_END_EVENT, onLayoutEnd);
 
-  console.debug(`Render Topology hasGraph=${controller.hasGraph()}`);
+  console.debug(`PFT: Render Topology hasGraph=${controller.hasGraph()}`);
 
   return isMiniGraph ? (
     <TopologyView data-test="topology-view-pf">
@@ -821,7 +824,7 @@ export const GraphPF: React.FC<{
   layout: Layout;
   onEdgeTap?: (edge: Edge<EdgeModel>) => void;
   onNodeTap?: (node: Node<NodeModel>) => void;
-  onReady: (controller: any) => void;
+  onReady: (refs: GraphRefs) => void;
   setEdgeMode: (edgeMode: EdgeMode) => void;
   setLayout: (layout: Layout) => void;
   setUpdateTime: (val: TimeInMilliseconds) => void;
@@ -859,7 +862,8 @@ export const GraphPF: React.FC<{
 
   // Set up the controller one time
   React.useEffect(() => {
-    console.debug('New Controller!');
+    console.debug('PFT: New Controller!');
+
     const c = new Visualization();
     c.registerElementFactory(elementFactory);
     c.registerLayoutFactory(layoutFactory);
@@ -897,7 +901,7 @@ export const GraphPF: React.FC<{
     );
   }
 
-  console.debug(`Render GraphPF! hasGraph=${controller?.hasGraph()}`);
+  console.debug(`PFT: Render, hasGraph=${controller?.hasGraph()}`);
   return (
     <VisualizationProvider data-test="visualization-provider" controller={controller}>
       <TopologyContent

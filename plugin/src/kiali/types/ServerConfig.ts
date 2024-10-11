@@ -32,6 +32,7 @@ interface GraphFindOption {
 }
 
 interface GraphTraffic {
+  ambient: string;
   grpc: string;
   http: string;
   tcp: string;
@@ -66,7 +67,6 @@ interface ListUIDefaults {
 interface MeshUIDefaults {
   findOptions: GraphFindOption[];
   hideOptions: GraphFindOption[];
-  impl: string; // classic | topo | topo-no-overview
 }
 
 interface UIDefaults {
@@ -79,12 +79,7 @@ interface UIDefaults {
   refreshInterval?: string;
 }
 
-interface CertificatesInformationIndicators {
-  enabled: boolean;
-}
-
 interface KialiFeatureFlags {
-  certificatesInformationIndicators: CertificatesInformationIndicators;
   disabledFeatures: string[];
   istioAnnotationAction: boolean;
   istioInjectionAction: boolean;

@@ -11,9 +11,6 @@ export const healthConfig = {
   gatewayAPIEnabled: false,
   logLevel: '',
   kialiFeatureFlags: {
-    certificatesInformationIndicators: {
-      enabled: true
-    },
     disabledFeatures: [],
     istioInjectionAction: true,
     istioAnnotationAction: true,
@@ -22,13 +19,14 @@ export const healthConfig = {
       graph: {
         findOptions: [],
         hideOptions: [],
-        impl: 'cy',
+        impl: 'pf',
         settings: {
           fontLabel: 13,
           minFontBadge: 7,
           minFontLabel: 10
         },
         traffic: {
+          ambient: 'total',
           grpc: 'requests',
           http: 'requests',
           tcp: 'sent'
@@ -46,8 +44,7 @@ export const healthConfig = {
       },
       mesh: {
         findOptions: [],
-        hideOptions: [],
-        impl: 'classic'
+        hideOptions: []
       },
       metricsPerRefresh: '1m',
       namespaces: [],

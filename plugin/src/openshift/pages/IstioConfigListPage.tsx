@@ -181,18 +181,6 @@ const newIstioResourceList = {
   sidecar: 'Sidecar'
 };
 
-const setKindApiVersion = (istioItems: IstioConfigItem[]): void => {
-  // Fulfill kind and apiVersion values until https://github.com/kiali/kiali/issues/7452 is fixed
-  istioItems.forEach(istioItem => {
-    const istioResource = istioResources.find(item => item.id.toLowerCase() === istioItem.type.toLowerCase());
-
-    if (istioResource) {
-      istioItem[istioResource.id].kind = istioResource.kind;
-      istioItem[istioResource.id].apiVersion = `${istioResource.group}/${istioResource.version}`;
-    }
-  });
-};
-
 const IstioConfigListPage: React.FC<void> = () => {
   const { t } = useKialiTranslation();
   const { ns } = useParams<{ ns: string }>();
@@ -220,8 +208,6 @@ const IstioConfigListPage: React.FC<void> = () => {
         .then(response => {
           const istioItems = toIstioItems(response.data);
 
-          setKindApiVersion(istioItems);
-
           return istioItems;
         })
         .catch((error: ApiError) => {
@@ -239,8 +225,6 @@ const IstioConfigListPage: React.FC<void> = () => {
           const namespaces = response[0].data.map(item => item.name);
 
           const istioItems = toIstioItems(filterByNamespaces(filterByName(response[1].data, []), namespaces));
-
-          setKindApiVersion(istioItems);
 
           return istioItems;
         })

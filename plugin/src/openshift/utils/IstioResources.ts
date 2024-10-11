@@ -6,7 +6,6 @@ import {
 
 export type IstioResourceType = K8sGroupVersionKind & {
   id: string;
-  objectType: string;
   title?: string;
 };
 
@@ -16,147 +15,127 @@ export const istioResources: IstioResourceType[] = [
     id: 'authorizationPolicy',
     group: 'security.istio.io',
     version: 'v1',
-    kind: 'AuthorizationPolicy',
-    objectType: 'authorizationpolicies'
+    kind: 'AuthorizationPolicy'
   },
   {
     id: 'destinationRule',
     group: 'networking.istio.io',
     version: 'v1',
-    kind: 'DestinationRule',
-    objectType: 'destinationrules'
+    kind: 'DestinationRule'
   },
   {
     id: 'envoyFilter',
     group: 'networking.istio.io',
     version: 'v1alpha3',
-    kind: 'EnvoyFilter',
-    objectType: 'envoyfilters'
+    kind: 'EnvoyFilter'
   },
   {
     id: 'gateway',
     group: 'networking.istio.io',
     version: 'v1',
-    kind: 'Gateway',
-    objectType: 'gateways'
+    kind: 'Gateway'
   },
   {
     id: 'k8sGateway',
     group: 'gateway.networking.k8s.io',
     version: 'v1',
     kind: 'Gateway',
-    title: 'Gateway (K8s)',
-    objectType: 'k8sgateways'
+    title: 'Gateway (K8s)'
   },
   {
     id: 'k8sGRPCRoute',
     group: 'gateway.networking.k8s.io',
     version: 'v1',
     kind: 'GRPCRoute',
-    title: 'GRPCRoute (K8s)',
-    objectType: 'k8sgrpcroutes'
+    title: 'GRPCRoute (K8s)'
   },
   {
     id: 'k8sHTTPRoute',
     group: 'gateway.networking.k8s.io',
     version: 'v1',
     kind: 'HTTPRoute',
-    title: 'HTTPRoute (K8s)',
-    objectType: 'k8shttproutes'
+    title: 'HTTPRoute (K8s)'
   },
   {
     id: 'k8sReferenceGrant',
     group: 'gateway.networking.k8s.io',
     version: 'v1beta1',
     kind: 'ReferenceGrant',
-    title: 'ReferenceGrant (K8s)',
-    objectType: 'k8sreferencegrants'
+    title: 'ReferenceGrant (K8s)'
   },
   {
     id: 'k8sTCProute',
     group: 'gateway.networking.k8s.io',
     version: 'v1alpha2',
     kind: 'TCPRoute',
-    title: 'TCPRoute (K8s)',
-    objectType: 'k8stcproutes'
+    title: 'TCPRoute (K8s)'
   },
   {
     id: 'k8sTLSroute',
     group: 'gateway.networking.k8s.io',
     version: 'v1alpha2',
     kind: 'TLSRoute',
-    title: 'TLSRoute (K8s)',
-    objectType: 'k8stlsroutes'
+    title: 'TLSRoute (K8s)'
   },
   {
     id: 'peerAuthentication',
     group: 'security.istio.io',
     version: 'v1',
-    kind: 'PeerAuthentication',
-    objectType: 'peerauthentications'
+    kind: 'PeerAuthentication'
   },
   {
     id: 'proxyConfig',
     group: 'networking.istio.io',
     version: 'v1beta1',
-    kind: 'ProxyConfig',
-    objectType: 'proxyconfigs'
+    kind: 'ProxyConfig'
   },
   {
     id: 'requestAuthentication',
     group: 'security.istio.io',
     version: 'v1',
-    kind: 'RequestAuthentication',
-    objectType: 'requestauthentications'
+    kind: 'RequestAuthentication'
   },
   {
     id: 'serviceEntry',
     group: 'networking.istio.io',
     version: 'v1',
-    kind: 'ServiceEntry',
-    objectType: 'serviceentries'
+    kind: 'ServiceEntry'
   },
   {
     id: 'sidecar',
     group: 'networking.istio.io',
     version: 'v1',
-    kind: 'Sidecar',
-    objectType: 'sidecars'
+    kind: 'Sidecar'
   },
   {
     id: 'telemetry',
     group: 'telemetry.istio.io',
     version: 'v1',
-    kind: 'Telemetry',
-    objectType: 'telemetries'
+    kind: 'Telemetry'
   },
   {
     id: 'virtualService',
     group: 'networking.istio.io',
     version: 'v1',
-    kind: 'VirtualService',
-    objectType: 'virtualservices'
+    kind: 'VirtualService'
   },
   {
     id: 'workloadEntry',
     group: 'networking.istio.io',
     version: 'v1',
-    kind: 'WorkloadEntry',
-    objectType: 'workloadentries'
+    kind: 'WorkloadEntry'
   },
   {
     id: 'workloadGroup',
     group: 'networking.istio.io',
     version: 'v1',
-    kind: 'WorkloadGroup',
-    objectType: 'workloadgroups'
+    kind: 'WorkloadGroup'
   },
   {
     id: 'wasmPlugin',
     group: 'extensions.istio.io',
     version: 'v1alpha1',
-    kind: 'WasmPlugin',
-    objectType: 'wasmplugins'
+    kind: 'WasmPlugin'
   }
 ];
 
@@ -176,17 +155,17 @@ export const referenceForObj = (obj: K8sResourceCommon): string => {
 };
 
 // This helper would translate Istio Kiali format
-// i.e. /istio/destinationrules/reviews
+// i.e. /istio/networking.istio.io/v1/DestinationRule/reviews
 // Into the regular format used for resources in OpenShift
-// i.e. /networking.istio.io~v1beta1~DestinationRule/reviews
+// i.e. /networking.istio.io~v1~DestinationRule/reviews
 export const refForKialiIstio = (kialiIstioUrl: string): string => {
-  const kialiIstioResource = istioResources.find(item => kialiIstioUrl.startsWith(`/istio/${item.objectType}`));
+  const kialiIstioResource = kialiIstioUrl.split('/');
 
-  if (kialiIstioResource) {
-    const url = `/istio/${kialiIstioResource.objectType}`;
+  const groupVersionKind = {
+    group: kialiIstioResource[2],
+    version: kialiIstioResource[3],
+    kind: kialiIstioResource[4]
+  };
 
-    return `/${referenceFor(kialiIstioResource)}${kialiIstioUrl.substring(url.length)}`;
-  }
-
-  return '';
+  return `/${referenceFor(groupVersionKind)}/${kialiIstioResource[5]}`;
 };
