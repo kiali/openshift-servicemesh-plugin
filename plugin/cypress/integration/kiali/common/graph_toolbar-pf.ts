@@ -18,9 +18,11 @@ Before(() => {
 });
 
 When(
-  'user graphs {string} namespaces with refresh {string} and duration {string}',
+  'user graphs {string} namespaces with refresh {string} and duration {string} in the patternfly graph',
   (namespaces: string, refresh: string, duration: string) => {
-    cy.visit({ url: `/console/graph/namespaces?refresh=${refresh}&duration=${duration}&namespaces=${namespaces}` });
+    cy.visit({
+      url: `/console/graphpf/namespaces?refresh=${refresh}&duration=${duration}&namespaces=${namespaces}`
+    });
   }
 );
 
@@ -91,11 +93,19 @@ Then('user {string} graph tour', (action: string) => {
   }
 });
 
-Then('user sees default graph traffic menu', () => {
+Then('user sees {string} graph traffic menu', (menu: string) => {
   cy.get('button#graph-traffic-dropdown').invoke('attr', 'aria-expanded').should('eq', 'true');
 
   cy.get('div#graph-traffic-menu').within(() => {
-    cy.get('input').should('have.length', 11);
+    if (menu === 'ambient') {
+      cy.get('input').should('have.length', 15);
+      cy.get('input#ambient').should('exist').should('be.checked');
+      cy.get('input#ambientWaypoint').should('exist').should('not.be.checked');
+      cy.get('input#ambientZtunnel').should('exist').should('not.be.checked');
+      cy.get('input#ambientTotal').should('exist').should('be.checked');
+    } else {
+      cy.get('input').should('have.length', 11);
+    }
     cy.get('input#grpc').should('exist').should('be.checked');
     cy.get('input#grpcReceived').should('exist').should('not.be.checked');
     cy.get('input#grpcRequest').should('exist').should('be.checked');
@@ -116,7 +126,7 @@ Then('user does not see graph traffic menu', () => {
 
 Then('user {string} {string} traffic', (action: string, protocol: string) => {
   cy.waitForReact();
-  cy.getReact('GraphPageComponent', { state: { graphData: { isLoading: false } } })
+  cy.getReact('GraphPageComponent', { state: { isReady: true } })
     .should('have.length', '1')
     .then(() => {
       cy.getReact('CytoscapeGraph')
@@ -216,9 +226,9 @@ Then('user sees selected graph refresh {string}', (refresh: string) => {
     .should('exist');
 });
 
-Then('user sees a {string} graph', graphType => {
+Then('user sees a {string} patternfly graph', graphType => {
   cy.waitForReact();
-  cy.getReact('GraphPageComponent', { state: { graphData: { isLoading: false } } })
+  cy.getReact('GraphPageComponent', { state: { isReady: true } })
     .should('have.length', '1')
     .then(() => {
       cy.getReact('CytoscapeGraph')
