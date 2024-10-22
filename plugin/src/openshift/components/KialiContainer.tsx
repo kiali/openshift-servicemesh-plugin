@@ -8,6 +8,10 @@ import { globalStyle as ossmcStyle } from '../styles/GlobalStyle';
 import kialiCSSVariables from 'styles/variables.module.scss';
 import ossmcCSSVariables from '../styles/variables.module.scss';
 
+// Load the pf-icons
+import '@patternfly/patternfly/patternfly-base.css';
+
+// Load the tooltip style
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/dist/themes/light-border.css';
 
