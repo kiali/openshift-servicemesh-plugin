@@ -473,7 +473,7 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
                 </Chip>
               )}
               {(!this.props.replayActive || isReplayReady) && (
-                <div id="cytoscape-graph" className={graphContainerStyle}>
+                <div id="pft-graph" className={graphContainerStyle}>
                   <EmptyGraphLayout
                     action={this.handleEmptyGraphAction}
                     elements={this.state.graphData.elements}
@@ -490,6 +490,8 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
                       focusNode={this.focusNode}
                       graphData={this.state.graphData}
                       isMiniGraph={false}
+                      onDeleteTrafficRouting={this.handleDeleteTrafficRouting}
+                      onLaunchWizard={this.handleLaunchWizard}
                       onReady={this.handleReady}
                     />
                   </EmptyGraphLayout>
@@ -504,9 +506,9 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
                 injectServiceNodes={this.props.showServiceNodes}
                 isPageVisible={this.props.isPageVisible}
                 namespaces={this.props.activeNamespaces}
+                onDeleteTrafficRouting={this.handleDeleteTrafficRouting}
                 onFocus={this.onFocus}
                 onLaunchWizard={this.handleLaunchWizard}
-                onDeleteTrafficRouting={this.handleDeleteTrafficRouting}
                 queryTime={this.state.graphData.timestamp / 1000}
                 trafficRates={this.props.trafficRates}
                 {...computePrometheusRateParams(this.props.duration, NUMBER_OF_DATAPOINTS)}
@@ -573,10 +575,11 @@ class GraphPagePFComponent extends React.Component<GraphPagePropsPF, GraphPageSt
     fetchParams: FetchParams
   ): void => {
     const prevElements = this.state.graphData.elements;
+    const elementsChanged = CytoscapeGraphUtils.elementsChanged(prevElements, elements);
     this.setState({
       graphData: {
         elements: elements,
-        elementsChanged: CytoscapeGraphUtils.elementsChanged(prevElements, elements),
+        elementsChanged: elementsChanged,
         isLoading: false,
         fetchParams: fetchParams,
         timestamp: graphTimestamp * 1000
