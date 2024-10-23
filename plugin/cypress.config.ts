@@ -13,10 +13,6 @@ export default defineConfig({
   requestTimeout: 15000,
   responseTimeout: 15000,
   fixturesFolder: 'cypress/fixtures',
-  chromeWebSecurity: true, // needs to disabled for cross origin requests
-  screenshotsFolder: 'cypress/screenshots',
-  videosFolder: 'cypress/videos',
-
   env: {
     'cypress-react-selector': {
       root: '#root'
