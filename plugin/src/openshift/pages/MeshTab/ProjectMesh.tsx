@@ -10,16 +10,14 @@ import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 import { paddingContainer } from 'openshift/styles/GlobalStyle';
 
 const ProjectMeshTab: React.FC<void> = () => {
-  useInitKialiListeners();
+  const { pathname } = useLocation();
+  const { name: namespace } = useParams<ResourceURLPathProps>();
 
   const [pluginConfig, setPluginConfig] = React.useState({
     graph: {
       impl: 'pf'
     }
   });
-
-  const { pathname } = useLocation();
-  const { name: namespace } = useParams<ResourceURLPathProps>();
 
   React.useEffect(() => {
     getPluginConfig()
@@ -28,6 +26,8 @@ const ProjectMeshTab: React.FC<void> = () => {
   }, []);
 
   setRouterBasename(pathname);
+
+  useInitKialiListeners();
 
   // Set namespace of the project as active namespace in redux store
   store.dispatch({ type: ActionKeys.SET_ACTIVE_NAMESPACES, payload: [{ name: namespace! }] });

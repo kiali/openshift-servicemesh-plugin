@@ -10,13 +10,13 @@ import { ErrorPage } from 'openshift/components/ErrorPage';
 import { useKialiTranslation } from 'utils/I18nUtils';
 
 const WorkloadMeshTab: React.FC<void> = () => {
-  useInitKialiListeners();
-
   const { t } = useKialiTranslation();
   const { pathname } = useLocation();
   const { ns, name, plural } = useParams<ResourceURLPathProps>();
 
   setRouterBasename(pathname);
+
+  useInitKialiListeners();
 
   const errorPage = (
     <ErrorPage title={t('Workload detail error')} message={t('Workload is not defined correctly')}></ErrorPage>

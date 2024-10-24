@@ -7,16 +7,14 @@ import { KialiContainer } from 'openshift/components/KialiContainer';
 import { paddingContainer } from 'openshift/styles/GlobalStyle';
 
 const GraphPageOSSMC: React.FC<void> = () => {
-  useInitKialiListeners();
+  const { pathname } = useLocation();
+  const { aggregate, aggregateValue, app, namespace, service, version, workload } = useParams<GraphURLPathProps>();
 
   const [pluginConfig, setPluginConfig] = React.useState({
     graph: {
       impl: 'pf'
     }
   });
-
-  const { pathname } = useLocation();
-  const { aggregate, aggregateValue, app, namespace, service, version, workload } = useParams<GraphURLPathProps>();
 
   React.useEffect(() => {
     getPluginConfig()
@@ -25,6 +23,8 @@ const GraphPageOSSMC: React.FC<void> = () => {
   }, []);
 
   setRouterBasename(pathname);
+
+  useInitKialiListeners();
 
   return (
     <KialiContainer>
