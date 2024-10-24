@@ -10,13 +10,13 @@ import { useKialiTranslation } from 'utils/I18nUtils';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 
 const ServiceMeshTab: React.FC<void> = () => {
-  useInitKialiListeners();
-
   const { t } = useKialiTranslation();
   const { pathname } = useLocation();
   const { ns, name } = useParams<ResourceURLPathProps>();
 
   setRouterBasename(pathname);
+
+  useInitKialiListeners();
 
   const errorPage = (
     <ErrorPage title={t('Service detail error')} message={t('Service is not defined correctly')}></ErrorPage>

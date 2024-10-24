@@ -6,11 +6,11 @@ import { MeshPage } from 'pages/Mesh/MeshPage';
 import { paddingContainer } from 'openshift/styles/GlobalStyle';
 
 const MeshPageOSSMC: React.FC<void> = () => {
-  useInitKialiListeners();
-
   const { pathname } = useLocation();
 
   setRouterBasename(pathname);
+
+  useInitKialiListeners();
 
   return (
     <KialiContainer>

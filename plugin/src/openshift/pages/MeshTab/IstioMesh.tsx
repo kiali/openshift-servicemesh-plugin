@@ -9,13 +9,13 @@ import { ErrorPage } from 'openshift/components/ErrorPage';
 import { useKialiTranslation } from 'utils/I18nUtils';
 
 const IstioConfigMeshTab: React.FC<void> = () => {
-  useInitKialiListeners();
-
   const { t } = useKialiTranslation();
   const { pathname } = useLocation();
   const { name, ns, plural } = useParams<ResourceURLPathProps>();
 
   setRouterBasename(pathname);
+
+  useInitKialiListeners();
 
   const errorPage = (
     <ErrorPage title={t('Istio detail error')} message={t('Istio object is not defined correctly')}></ErrorPage>

@@ -5,11 +5,11 @@ import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegrat
 import { KialiContainer } from 'openshift/components/KialiContainer';
 
 const OverviewPageOSSMC: React.FC<void> = () => {
-  useInitKialiListeners();
-
   const { pathname } = useLocation();
 
   setRouterBasename(pathname);
+
+  useInitKialiListeners();
 
   return (
     <KialiContainer>
