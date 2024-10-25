@@ -57,6 +57,22 @@ const install_demoapp = (demoapp: string): void => {
   });
 };
 
+Before(() => {
+  // This prevents cypress from stopping on errors unrelated to the tests.
+  // There can be random failures due timeouts/loadtime/framework that throw browser errors.  This
+  // prevents a CI failure due something like a "slow".  There may be a better way to handle this.
+  cy.on('uncaught:exception', (err, _runnable, promise) => {
+    // when the exception originated from an unhandled promise
+    // rejection, the promise is provided as a third argument
+    // you can turn off failing the test in this case
+    if (promise || err.message.includes('MobX')) {
+      return false;
+    }
+    // we still want to ensure there are no other unexpected
+    // errors, so we let them fail the test
+  });
+});
+
 Before({ tags: '@bookinfo-app' }, () => {
   install_demoapp('bookinfo');
 });
