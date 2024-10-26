@@ -79,7 +79,13 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
       });
     },
     {
-      cacheAcrossSpecs: true
+      cacheAcrossSpecs: true,
+      validate: () => {
+        cy.request({
+          url: `api/plugins/ossmconsole/plugin-manifest.json`,
+          method: 'GET'
+        });
+      }
     }
   );
 
@@ -180,7 +186,10 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
 });
 
 Cypress.Commands.overwrite('request', (originalFn, request) => {
-  request.url = request.url?.replace('api/', 'api/proxy/plugin/ossmconsole/kiali/api/');
+  // don't overwrite specific requests to OSSMC plugin
+  if (!request.url?.includes('ossmconsole')) {
+    request.url = request.url?.replace('api/', 'api/proxy/plugin/ossmconsole/kiali/api/');
+  }
 
   if (request.method !== 'GET') {
     request.headers = { 'X-CSRFToken': csrfToken };
