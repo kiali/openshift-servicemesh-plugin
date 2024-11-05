@@ -34,7 +34,8 @@ import { KialiDispatch } from 'types/Redux';
 import { bindActionCreators } from 'redux';
 import { GraphActions } from 'actions/GraphActions';
 import { GraphSelectorBuilder } from 'pages/Graph/GraphSelector';
-import { NodeData, elems, selectAnd } from './GraphPFElems';
+import { NodeData } from './GraphPFElems';
+import { elems, selectAnd } from 'helpers/GraphHelpers';
 import { KialiIcon } from 'config/KialiIcon';
 import { kebabToggleStyle } from 'styles/DropdownStyles';
 import { WorkloadWizardActionsDropdownGroup } from 'components/IstioWizards/WorkloadWizardActionsDropdownGroup';
@@ -131,6 +132,15 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
       }
     }
 
+    // The parent component supplies the datasource and the target element. Here we protect against a lifecycle issue where the two
+    // can be out of sync. If so, just assume the parent is currently loading until it things get synchronized.
+    const isLoading =
+      (this.props.workload && this.props.workload?.name !== this.props.dataSource.fetchParameters.node?.workload) ||
+      (this.props.serviceDetails &&
+        this.props.serviceDetails?.service.name !== this.props.dataSource.fetchParameters.node?.service)
+        ? true
+        : this.props.dataSource.isLoading;
+
     const rangeEnd: TimeInMilliseconds = this.props.dataSource.graphTimestamp * 1000;
     const rangeStart: TimeInMilliseconds = rangeEnd - this.props.dataSource.graphDuration * 1000;
 
@@ -179,10 +189,10 @@ class MiniGraphCardPFComponent extends React.Component<MiniGraphCardPropsPF, Min
           </CardHeader>
 
           <CardBody>
-            <div style={{ height: '100%' }}>
+            <div id="pft-graph" style={{ height: '100%' }}>
               <EmptyGraphLayout
                 elements={this.state.graphData}
-                isLoading={this.props.dataSource.isLoading}
+                isLoading={isLoading}
                 isError={this.props.dataSource.isError}
                 isMiniGraph={true}
               >

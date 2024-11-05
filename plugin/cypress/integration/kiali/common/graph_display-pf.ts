@@ -1,24 +1,8 @@
-import { Before, Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
+import { Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
 import { ensureKialiFinishedLoading } from './transition';
 import { Visualization } from '@patternfly/react-topology';
 import { elems, select, selectAnd, selectOr } from './graph-pf';
 import { EdgeAttr, NodeAttr } from 'types/Graph';
-
-Before(() => {
-  // Copied from overview.ts.  This prevents cypress from stopping on errors unrelated to the tests.
-  // There can be random failures due timeouts/loadtime/framework that throw browser errors.  This
-  // prevents a CI failure due something like a "slow".  There may be a better way to handle this.
-  cy.on('uncaught:exception', (err, runnable, promise) => {
-    // when the exception originated from an unhandled promise
-    // rejection, the promise is provided as a third argument
-    // you can turn off failing the test in this case
-    if (promise) {
-      return false;
-    }
-    // we still want to ensure there are no other unexpected
-    // errors, so we let them fail the test
-  });
-});
 
 When('user graphs {string} namespaces', (namespaces: string) => {
   // Forcing "Pause" to not cause unhandled promises from the browser when cypress is testing
@@ -449,10 +433,9 @@ Given(
       .as(`istioConfigRequest-${cluster}`)
       .then(response => {
         expect(response.status).to.eq(200);
-        expect(response.body).to.have.property('gateways');
-        expect(response.body).to.have.property('virtualServices');
-        expect(response.body.gateways).to.have.length.gte(1);
-        expect(response.body.virtualServices).to.have.length.gte(1);
+        expect(response.body).to.have.property('resources');
+        expect(response.body.resources['networking.istio.io/v1, Kind=Gateway'].length).greaterThan(0);
+        expect(response.body.resources['networking.istio.io/v1, Kind=VirtualService'].length).greaterThan(0);
       });
   }
 );
@@ -470,12 +453,15 @@ Then(
       });
 
     cy.get('@istioConfigRequest-east').then(resp => {
-      // Not going to check all the objects. Just the ones that probably exist while testing.
-      const totalObjectsEast =
-        resp.body.gateways.length + resp.body.virtualServices.length + resp.body.destinationRules.length;
+      let totalObjectsEast = 0;
+      Object.keys(resp.body.resources).forEach(resourceKey => {
+        totalObjectsEast += resp.body.resources[resourceKey].length;
+      });
       cy.get('@istioConfigRequest-west').then(resp => {
-        const totalObjectsWest =
-          resp.body.gateways.length + resp.body.virtualServices.length + resp.body.destinationRules.length;
+        let totalObjectsWest = 0;
+        Object.keys(resp.body.resources).forEach(resourceKey => {
+          totalObjectsEast += resp.body.resources[resourceKey].length;
+        });
         const totalObjects = totalObjectsEast + totalObjectsWest;
         cy.get('[aria-label="Validations list"]').contains(`Istio config objects analyzed: ${totalObjects}`);
       });
@@ -497,6 +483,8 @@ When('user {string} {string} traffic option', (action: string, option: string) =
 
 Then('{int} edges appear in the graph', (graphEdges: number) => {
   cy.waitForReact();
+  ensureKialiFinishedLoading();
+
   cy.getReact('GraphPagePFComponent', { state: { isReady: true } })
     .should('have.length', '1')
     .then($graph => {
@@ -526,7 +514,7 @@ Then('the {string} node {string} exists', (nodeName: string, action: string) => 
       const foundNode = nodes.filter(node => node.getData().workload === nodeName);
 
       if (action === 'does') {
-        assert.isAtLeast(foundNode.length, 1);
+        assert.equal(foundNode.length, 1);
       } else {
         assert.equal(foundNode.length, 0);
       }
