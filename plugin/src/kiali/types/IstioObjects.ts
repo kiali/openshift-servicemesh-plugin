@@ -47,6 +47,10 @@ export interface K8sMetadata {
   uid?: string;
 }
 
+export interface K8sResource extends TypeMeta {
+  metadata: K8sMetadata;
+}
+
 export interface IstioObject extends TypeMeta {
   metadata: K8sMetadata;
   status?: IstioStatus;
@@ -1425,10 +1429,6 @@ export interface APIKey {
   cookie?: string;
   header?: string;
   query?: string;
-}
-
-export interface CanaryUpgradeStatus {
-  namespacesPerRevision: { [key: string]: string[] };
 }
 
 export const MAX_PORT = 65535;

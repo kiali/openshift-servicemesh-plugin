@@ -22,7 +22,8 @@
 
 import { Edge, Node } from '@patternfly/react-topology';
 import { Controller, GraphElement } from '@patternfly/react-topology';
-import { NodeData, ancestors, predecessors, successors } from './MeshElems';
+import { NodeData } from './MeshElems';
+import { ancestors, predecessors, setObserved, successors } from 'helpers/GraphHelpers';
 
 export class MeshHighlighter {
   controller: Controller;
@@ -67,12 +68,14 @@ export class MeshHighlighter {
   };
 
   clearHighlighting = (): void => {
-    this.controller.getElements().forEach(e => {
-      const data = e.getData() as NodeData;
+    setObserved(() => {
+      this.controller.getElements().forEach(e => {
+        const data = e.getData() as NodeData;
 
-      if (data.isHighlighted || data.isUnhighlighted) {
-        e.setData({ ...data, isHighlighted: false, isUnhighlighted: false });
-      }
+        if (data.isHighlighted || data.isUnhighlighted) {
+          e.setData({ ...data, isHighlighted: false, isUnhighlighted: false });
+        }
+      });
     });
   };
 
@@ -82,18 +85,20 @@ export class MeshHighlighter {
       return;
     }
 
-    highlighted.toHighlight.forEach(e => {
-      e.setData({ ...e.getData(), isHighlighted: true });
-    });
-
-    if (highlighted.unhighlightOthers) {
-      this.controller.getElements().forEach(e => {
-        const data = e.getData() as NodeData;
-        if (!data.isHighlighted) {
-          e.setData({ ...data, isUnhighlighted: true });
-        }
+    setObserved(() => {
+      highlighted.toHighlight.forEach(e => {
+        e.setData({ ...e.getData(), isHighlighted: true });
       });
-    }
+
+      if (highlighted.unhighlightOthers) {
+        this.controller.getElements().forEach(e => {
+          const data = e.getData() as NodeData;
+          if (!data.isHighlighted) {
+            e.setData({ ...data, isUnhighlighted: true });
+          }
+        });
+      }
+    });
   };
 
   // Returns the nodes to highlight. Highlighting for a hovered or selected element
@@ -108,9 +113,9 @@ export class MeshHighlighter {
           if ((element as Node).isGroup()) {
             return this.getBoxHighlight(element as Node);
           }
-          return { toHighlight: this.getNodeHighlight(element as Node), unhighlightOthers: true };
+          return { toHighlight: this.getNodeHighlight(element as Node), unhighlightOthers: false };
         case 'edge':
-          return { toHighlight: this.getEdgeHighlight(element as Edge), unhighlightOthers: true };
+          return { toHighlight: this.getEdgeHighlight(element as Edge), unhighlightOthers: false };
 
         default:
         // fall through
@@ -134,7 +139,7 @@ export class MeshHighlighter {
   };
 
   getNodeHighlight = (node: Node): GraphElement[] => {
-    const elems = predecessors(node).concat(successors(node));
+    const elems = predecessors(node, []).concat(successors(node, []));
     elems.push(node);
 
     return this.includeAncestorNodes(elems);
@@ -144,7 +149,7 @@ export class MeshHighlighter {
     const source = edge.getSource();
     const target = edge.getTarget();
 
-    let elems = [edge, source, target, ...predecessors(source), ...successors(target)];
+    let elems = [edge, source, target, ...predecessors(source, []), ...successors(target, [])];
     elems = this.includeAncestorNodes(elems);
 
     return elems;

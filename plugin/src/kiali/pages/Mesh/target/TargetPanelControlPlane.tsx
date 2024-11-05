@@ -10,7 +10,6 @@ import {
 } from './TargetPanelCommon';
 import { Title, TitleSizes } from '@patternfly/react-core';
 import { serverConfig } from 'config';
-import { CanaryUpgradeStatus } from 'types/IstioObjects';
 import { NamespaceInfo, NamespaceStatus } from 'types/NamespaceInfo';
 import { DirectionType } from 'pages/Overview/OverviewToolbar';
 import { PromisesRegistry } from 'utils/CancelablePromises';
@@ -20,11 +19,8 @@ import { IstioMetricsOptions } from 'types/MetricsOptions';
 import { computePrometheusRateParams } from 'services/Prometheus';
 import { ApiError } from 'types/Api';
 import { DEGRADED, FAILURE, HEALTHY, Health, NOT_READY } from 'types/Health';
-import * as AlertUtils from '../../../utils/AlertUtils';
-import { MessageType } from 'types/MessageCenter';
 import { TLSStatus, nsWideMTLSStatus } from 'types/TLSStatus';
 import * as FilterHelper from '../../../components/FilterList/FilterHelper';
-import { NodeData } from '../MeshElems';
 import { ControlPlaneMetricsMap } from 'types/Metrics';
 import { classes } from 'typestyle';
 import { panelBodyStyle, panelHeadingStyle, panelStyle } from 'pages/Graph/SummaryPanelStyle';
@@ -38,17 +34,18 @@ import { CertsInfo } from 'types/CertsInfo';
 import { IstioCertsInfo } from 'components/IstioCertsInfo/IstioCertsInfo';
 import { TargetPanelControlPlaneMetrics } from './TargetPanelControlPlaneMetrics';
 import { TargetPanelControlPlaneStatus } from './TargetPanelControlPlaneStatus';
+import { ControlPlane, IstiodNodeData, NodeTarget } from 'types/Mesh';
 
 type TargetPanelControlPlaneProps = TargetPanelCommonProps & {
   meshStatus: string;
   minTLS: string;
+  target: NodeTarget<IstiodNodeData>;
 };
 
 type TargetPanelControlPlaneState = {
-  canaryUpgradeStatus?: CanaryUpgradeStatus;
   certificates?: CertsInfo[];
   controlPlaneMetrics?: ControlPlaneMetricsMap;
-  controlPlaneNode?: Node<NodeModel, any>;
+  controlPlaneNode?: Node<NodeModel, IstiodNodeData>;
   loading: boolean;
   nsInfo?: NamespaceInfo;
   status?: NamespaceStatus;
@@ -56,7 +53,6 @@ type TargetPanelControlPlaneState = {
 };
 
 const defaultState: TargetPanelControlPlaneState = {
-  canaryUpgradeStatus: undefined,
   certificates: undefined,
   controlPlaneMetrics: undefined,
   controlPlaneNode: undefined,
@@ -87,7 +83,7 @@ export class TargetPanelControlPlane extends React.Component<
   constructor(props: TargetPanelControlPlaneProps) {
     super(props);
 
-    const namespaceNode = this.props.target.elem as Node<NodeModel, any>;
+    const namespaceNode = this.props.target.elem;
     this.state = {
       ...defaultState,
       controlPlaneNode: namespaceNode
@@ -95,14 +91,12 @@ export class TargetPanelControlPlane extends React.Component<
   }
 
   static getDerivedStateFromProps: React.GetDerivedStateFromProps<
-    TargetPanelCommonProps,
+    TargetPanelControlPlaneProps,
     TargetPanelControlPlaneState
   > = (props, state) => {
     // if the target (e.g. namespaceBox) has changed, then init the state and set to loading. The loading
     // will actually be kicked off after the render (in componentDidMount/Update).
-    return props.target.elem !== state.controlPlaneNode
-      ? { controlPlaneNode: props.target.elem as Node<NodeModel, any>, loading: true }
-      : null;
+    return props.target.elem !== state.controlPlaneNode ? { controlPlaneNode: props.target.elem, loading: true } : null;
   };
 
   componentDidMount(): void {
@@ -141,11 +135,10 @@ export class TargetPanelControlPlane extends React.Component<
     }
 
     const nsInfo = this.state.nsInfo;
-    const data = this.state.controlPlaneNode?.getData() as NodeData;
+    const data = this.state.controlPlaneNode?.getData()!;
 
-    // Controlplane infradata is structured: {config: configuration, revision: string}
-    const { config, revision } = data.infraData;
-    const parsedCm = config.ConfigMap ? this.getParsedYaml(config.ConfigMap) : '';
+    const controlPlane: ControlPlane = data.infraData;
+    const parsedCm = controlPlane.config.configMap ? this.getParsedYaml(controlPlane.config.configMap) : '';
 
     return (
       <div
@@ -156,13 +149,15 @@ export class TargetPanelControlPlane extends React.Component<
         <div className={panelHeadingStyle}>{renderNodeHeader(data, {})}</div>
 
         <div className={panelBodyStyle}>
+          {controlPlane.tag && <div>{t('Tag: {{tag}}', { tag: controlPlane.tag.name })}</div>}
+
           <div>{t('Version: {{version}}', { version: data.version || t(UNKNOWN) })}</div>
 
-          <MeshMTLSStatus cluster={data.cluster} revision={revision} />
+          <MeshMTLSStatus cluster={data.cluster} revision={controlPlane.revision} />
 
           <TargetPanelControlPlaneStatus
             controlPlaneMetrics={this.state.controlPlaneMetrics}
-            outboundTrafficPolicy={config.OutboundTrafficPolicy}
+            outboundTrafficPolicy={controlPlane.config.outboundTrafficPolicy}
           />
 
           <TLSInfo version={this.props.minTLS} />
@@ -206,38 +201,17 @@ export class TargetPanelControlPlane extends React.Component<
   private load = (): void => {
     this.promises.cancelAll();
 
-    API.getNamespaces()
-      .then(result => {
-        const data = this.state.controlPlaneNode!.getData() as NodeData;
-        const cluster = data.cluster;
-        const namespace = data.namespace;
-        const nsInfo = result.data.find(ns => ns.cluster === cluster && ns.name === namespace);
+    const data = this.state.controlPlaneNode!.getData()!;
 
-        if (!nsInfo) {
-          AlertUtils.add(`Failed to find |${cluster}:${namespace}| in GetNamespaces() result`);
-          this.setState({ ...defaultState, loading: false });
-          return;
-        }
-
-        this.promises
-          .registerAll(`promises-${data.cluster}:${data.namespace}`, [
-            this.fetchCanariesStatus(),
-            this.fetchHealthStatus(),
-            this.fetchMetrics(),
-            this.fetchTLS()
-          ])
-          .then(_ => {
-            this.setState({ loading: false, nsInfo: nsInfo });
-          })
-          .catch(err => {
-            if (err.isCanceled) {
-              console.debug('TargetPanelNamespace: Ignore fetch error (canceled).');
-              return;
-            }
-
-            this.setState({ ...defaultState, loading: false });
-            this.handleApiError('Could not loading target namespace panel', err);
-          });
+    this.promises
+      .registerAll(`promises-${data.cluster}:${data.namespace}`, [
+        this.fetchHealthStatus(),
+        this.fetchMetrics(),
+        this.fetchTLS(),
+        this.fetchNamespaceInfo()
+      ])
+      .then(_ => {
+        this.setState({ loading: false });
       })
       .catch(err => {
         if (err.isCanceled) {
@@ -246,32 +220,26 @@ export class TargetPanelControlPlane extends React.Component<
         }
 
         this.setState({ ...defaultState, loading: false });
-        this.handleApiError('Could not fetch namespaces when loading target panel', err);
+        this.handleApiError('Could not loading target namespace panel', err);
       });
 
     this.setState({ loading: true });
   };
 
-  private fetchCanariesStatus = async (): Promise<void> => {
-    if (!this.isControlPlane()) {
-      return Promise.resolve();
-    }
+  private fetchNamespaceInfo = async (): Promise<void> => {
+    const data = this.state.controlPlaneNode!.getData()!;
 
-    return API.getCanaryUpgradeStatus()
+    return API.getNamespaceInfo(data.namespace, data.cluster)
       .then(response => {
         this.setState({
-          canaryUpgradeStatus: {
-            namespacesPerRevision: response.data.namespacesPerRevision
-          }
+          nsInfo: response.data
         });
       })
-      .catch(error => {
-        AlertUtils.addError('Error fetching namespace canary upgrade status.', error, 'default', MessageType.ERROR);
-      });
+      .catch(err => this.handleApiError('Could not fetch namespace info', err));
   };
 
   private fetchHealthStatus = async (): Promise<void> => {
-    const data = this.state.controlPlaneNode!.getData() as NodeData;
+    const data = this.state.controlPlaneNode!.getData()!;
 
     return API.getClustersAppHealth(data.namespace, this.props.duration, data.cluster)
       .then(results => {
@@ -318,7 +286,7 @@ export class TargetPanelControlPlane extends React.Component<
       step: rateParams.step
     };
 
-    const data = this.state.controlPlaneNode!.getData() as NodeData;
+    const data = this.state.controlPlaneNode!.getData()!;
 
     return API.getControlPlaneMetrics(data.namespace, data.infraName, options, data.cluster)
       .then(rs => {
@@ -342,7 +310,7 @@ export class TargetPanelControlPlane extends React.Component<
       return Promise.resolve();
     }
 
-    const data = this.state.controlPlaneNode!.getData() as NodeData;
+    const data = this.state.controlPlaneNode!.getData()!;
 
     return API.getNamespaceTls(data.namespace, data.cluster)
       .then(rs => {
@@ -358,7 +326,7 @@ export class TargetPanelControlPlane extends React.Component<
   };
 
   private isControlPlane = (): boolean => {
-    const data = this.state.controlPlaneNode!.getData() as NodeData;
+    const data = this.state.controlPlaneNode!.getData()!;
     return data.namespace === serverConfig.istioNamespace;
   };
 
@@ -368,7 +336,7 @@ export class TargetPanelControlPlane extends React.Component<
 
   private renderCharts = (): React.ReactNode => {
     if (this.state.status) {
-      const data = this.state.controlPlaneNode!.getData() as NodeData;
+      const data = this.state.controlPlaneNode!.getData()!;
       const { thresholds } = data.infraData;
 
       return (
