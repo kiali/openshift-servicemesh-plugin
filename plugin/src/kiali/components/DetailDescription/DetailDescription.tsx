@@ -12,10 +12,11 @@ import { KialiIcon, createIcon } from '../../config/KialiIcon';
 import { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
 import { isParentKiosk, kioskContextMenuAction } from '../Kiosk/KioskActions';
-import { isGateway, isWaypoint } from '../../helpers/LabelFilterHelper';
-import { isMultiCluster, serverConfig } from '../../config';
+import { isMultiCluster } from '../../config';
 import { Workload } from '../../types/Workload';
+import { hasMissingSidecar } from 'components/VirtualList/Config';
 import { healthIndicatorStyle } from 'styles/HealthStyle';
+import { infoStyle } from 'styles/IconStyle';
 
 type ReduxProps = {
   kiosk: string;
@@ -41,7 +42,6 @@ const resourceListStyle = kialiStyle({
   margin: '0 0 0.5rem 0',
   $nest: {
     '& > span': {
-      float: 'left',
       width: '125px',
       fontWeight: 700
     }
@@ -54,10 +54,6 @@ const containerStyle = kialiStyle({
 
 const itemStyle = kialiStyle({
   paddingBottom: '0.25rem'
-});
-
-const infoStyle = kialiStyle({
-  marginLeft: '0.5rem'
 });
 
 export const renderWaypoint = (bgsize?: string): React.ReactNode => {
@@ -203,19 +199,7 @@ const DetailDescriptionComponent: React.FC<Props> = (props: Props) => {
           <KialiIcon.Info className={infoStyle} />
         </Tooltip>
 
-        {((!workload.istioSidecar &&
-          !workload.isAmbient &&
-          !isWaypoint(workload.labels) &&
-          serverConfig.ambientEnabled) ||
-          (!workload.istioSidecar && !serverConfig.ambientEnabled)) && (
-          <MissingSidecar
-            namespace={props.namespace}
-            isGateway={isGateway(workload.labels)}
-            tooltip={true}
-            className={infoStyle}
-            text=""
-          />
-        )}
+        {hasMissingSidecar(workload) && <MissingSidecar tooltip={true} className={infoStyle} text="" />}
       </span>
     );
   };
@@ -275,16 +259,7 @@ const DetailDescriptionComponent: React.FC<Props> = (props: Props) => {
             <span style={{ marginLeft: '0.5rem' }}>{createIcon(sub.status)}</span>
           </Tooltip>
 
-          {((!workload.istioSidecar && !workload.isAmbient && serverConfig.ambientEnabled) ||
-            (!workload.istioSidecar && !serverConfig.ambientEnabled)) && (
-            <MissingSidecar
-              namespace={props.namespace}
-              isGateway={isGateway(workload.labels)}
-              tooltip={true}
-              className={infoStyle}
-              text=""
-            />
-          )}
+          {hasMissingSidecar(workload) && <MissingSidecar tooltip={true} className={infoStyle} text="" />}
         </span>
       );
     } else {
