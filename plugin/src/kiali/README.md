@@ -2,6 +2,6 @@
 
 Copy of Kiali frontend source code
 Kiali frontend source originated from:
-* git ref:    v2.1
-* git commit: db07c941bcec3312972cd9ce6bf6ad18bb65208a
-* GitHub URL: https://github.com/kiali/kiali/tree/db07c941bcec3312972cd9ce6bf6ad18bb65208a/frontend/src
+* git ref:    master
+* git commit: f9f04eef5bdaa9df626030a778d3ba53a40df75e
+* GitHub URL: https://github.com/kiali/kiali/tree/f9f04eef5bdaa9df626030a778d3ba53a40df75e/frontend/src

@@ -4,7 +4,7 @@ import { Tooltip, TooltipPosition } from '@patternfly/react-core';
 import * as FilterHelper from '../FilterList/FilterHelper';
 import { appLabelFilter, versionLabelFilter } from '../../pages/WorkloadList/FiltersAndSorts';
 import { MissingSidecar } from '../MissingSidecar/MissingSidecar';
-import { noAmbientLabels, hasMissingSidecar, Renderer, Resource, SortResource, TResource, GVKToBadge } from './Config';
+import { Renderer, Resource, SortResource, TResource, GVKToBadge } from './Config';
 import { HealthIndicator } from '../Health/HealthIndicator';
 import { ValidationObjectSummary } from '../Validations/ValidationObjectSummary';
 import { ValidationServiceSummary } from '../Validations/ValidationServiceSummary';
@@ -39,13 +39,19 @@ import { Label } from 'components/Label/Label';
 import { isMultiCluster, serverConfig } from 'config/ServerConfig';
 import { ControlPlaneBadge } from 'pages/Overview/ControlPlaneBadge';
 import { NamespaceStatuses } from 'pages/Overview/NamespaceStatuses';
-import { isGateway, isWaypoint } from '../../helpers/LabelFilterHelper';
+import { isWaypoint } from '../../helpers/LabelFilterHelper';
 import { KialiIcon } from '../../config/KialiIcon';
 import { Td } from '@patternfly/react-table';
 import { kialiStyle } from 'styles/StyleUtils';
+import { hasMissingSidecar } from './Config';
+import { InstanceType } from 'types/Common';
+import { infoStyle } from 'styles/IconStyle';
+import { classes } from 'typestyle';
 
-const infoStyle = kialiStyle({
-  margin: '0 0 -0.125rem 0.5rem'
+const rendererInfoStyle = kialiStyle({
+  marginBottom: '-0.125rem',
+  marginRight: '0',
+  marginTop: '0'
 });
 
 // Links
@@ -93,16 +99,13 @@ export const actionRenderer = (key: string, action: React.ReactNode): React.Reac
 export const details: Renderer<AppListItem | WorkloadListItem | ServiceListItem> = (
   item: AppListItem | WorkloadListItem | ServiceListItem
 ) => {
-  const hasMissingSC = hasMissingSidecar(item);
-  const hasMissingA = noAmbientLabels(item);
-  const isWorkload = 'appLabel' in item;
+  const isWorkload = item.instanceType === InstanceType.Workload;
   const isAmbientWaypoint = isWaypoint(item.labels);
   const hasMissingApp = isWorkload && !item['appLabel'] && !isWaypoint(item.labels);
   const hasMissingVersion = isWorkload && !item['versionLabel'] && !isWaypoint(item.labels);
   const additionalDetails = (item as WorkloadListItem | ServiceListItem).additionalDetailSample;
-  const spacer = hasMissingSC && additionalDetails && additionalDetails.icon;
+  const spacer = isWorkload && hasMissingSidecar(item) && additionalDetails && additionalDetails.icon;
   const hasMissingAP = isWorkload && (item as WorkloadListItem).notCoveredAuthPolicy;
-
   return (
     <Td
       role="gridcell"
@@ -117,10 +120,9 @@ export const details: Renderer<AppListItem | WorkloadListItem | ServiceListItem>
           </li>
         )}
 
-        {((hasMissingSC && hasMissingA && serverConfig.ambientEnabled) ||
-          (!serverConfig.ambientEnabled && hasMissingSC)) && (
+        {(isWorkload || item.instanceType === InstanceType.App) && hasMissingSidecar(item) && (
           <li>
-            <MissingSidecar namespace={item.namespace} isGateway={isGateway(item.labels)} />
+            <MissingSidecar />
           </li>
         )}
 
@@ -165,7 +167,7 @@ export const details: Renderer<AppListItem | WorkloadListItem | ServiceListItem>
               position={TooltipPosition.top}
               content="Layer 7 service Mesh capabilities in Istio Ambient"
             >
-              <KialiIcon.Info className={infoStyle} />
+              <KialiIcon.Info className={classes(infoStyle, rendererInfoStyle)} />
             </Tooltip>
           </li>
         )}
