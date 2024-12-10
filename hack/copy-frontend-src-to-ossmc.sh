@@ -191,6 +191,8 @@ rm -rf ${ABS_DEST_TESTS_DIR}/{*,.[!.]*}
 cp -R ${ABS_SOURCE_TESTS_DIR}/* ${ABS_DEST_TESTS_DIR}
 # OSSMC has its own hooks.ts file, so we remove the Kiali one
 rm ${ABS_DEST_TESTS_DIR}/common/hooks.ts
+# OSSMC has its own reporter-config.json file, so we remove the Kiali one
+rm ${ABS_DEST_DIR}/reporter-config.json
 
 cat > ${ABS_DEST_DIR}/README.md <<EOM
 **WARNING**: The code in this directory comes from the kiali/kiali repository and should never be modified here.
