@@ -1,4 +1,4 @@
-import { DEGRADED, FAILURE, HEALTHY, NA, ServiceHealth, Status } from './Health';
+import { DEGRADED, FAILURE, HEALTHY, INFO, NA, ServiceHealth, Status } from './Health';
 import {
   DestinationRule,
   getWizardUpdateLabel,
@@ -45,6 +45,7 @@ interface EndpointAddress {
 }
 
 export interface WorkloadOverview {
+  ambient?: string;
   createdAt: string;
   isAmbient: boolean;
   isGateway: boolean;
@@ -57,6 +58,7 @@ export interface WorkloadOverview {
   type: string;
 }
 
+export type IPFamily = 'IPv4' | 'IPv6';
 export interface Service {
   additionalDetails: AdditionalItem[];
   annotations: { [key: string]: string };
@@ -64,6 +66,8 @@ export interface Service {
   createdAt: string;
   externalName: string;
   ip: string;
+  ips?: string[]; // present in dual stack. ip === ips[0]
+  ipFamilies?: IPFamily[]; // ipFamilies[0] represents ip, ipFamilies[i] represents ips[i]
   labels?: { [key: string]: string };
   name: string;
   namespace: string;
@@ -188,6 +192,8 @@ export const validationToHealth = (severity: ValidationTypes): Status => {
 
   if (severity === ValidationTypes.Correct) {
     status = HEALTHY;
+  } else if (severity === ValidationTypes.Info) {
+    status = INFO;
   } else if (severity === ValidationTypes.Warning) {
     status = DEGRADED;
   } else if (severity === ValidationTypes.Error) {
