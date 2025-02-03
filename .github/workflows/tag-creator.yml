@@ -82,7 +82,7 @@ jobs:
       run: |
         hack/copy-frontend-src-to-ossmc.sh --source-ref "$BRANCH"
 
-        git switch main
+        git switch $BRANCH
 
     - name: Create Tag in kiali/openshift-servicemesh-plugin
       id: tag_ossmc
