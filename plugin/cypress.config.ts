@@ -21,7 +21,7 @@ export default defineConfig({
     cookie: false,
     omitFiltered: true,
     filterSpecs: true,
-    tags: '@ossmc and not @skip-ossmc and not @multi-cluster and not @ambient'
+    tags: '@ossmc and @selected and not @skip-ossmc and not @multi-cluster and not @ambient and not @waypoint-tracing'
   },
 
   e2e: {
