@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_branch:
-        description: Branch to tag, (Separate branches by commas. Ex v1.73,v1.86)
+        description: Branch to tag, (Separate branches by commas. Ex v2.4,v1.73)
         required: true
-        default: v1.73
+        default: v2.4
         type: string
 
 jobs:
@@ -81,6 +81,8 @@ jobs:
         BRANCH: ${{matrix.branch}}
       run: |
         hack/copy-frontend-src-to-ossmc.sh --source-ref "$BRANCH"
+
+        git switch main
 
     - name: Create Tag in kiali/openshift-servicemesh-plugin
       id: tag_ossmc
