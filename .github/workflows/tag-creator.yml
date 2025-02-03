@@ -76,6 +76,12 @@ jobs:
 
         git config user.name 'kiali-bot'
 
+    - name: Copy Kiali source code
+      env:
+        BRANCH: ${{matrix.branch}}
+      run: |
+        hack/copy-frontend-src-to-ossmc.sh --source-ref "$BRANCH"
+
     - name: Create Tag in kiali/openshift-servicemesh-plugin
       id: tag_ossmc
       env:
