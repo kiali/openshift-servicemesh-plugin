@@ -17,6 +17,7 @@ export enum HTTP_VERBS {
 }
 
 export const PF_THEME_DARK = 'pf-v5-theme-dark';
+export const KIALI_THEME = 'KIALI_THEME';
 
 export const enum Theme {
   DARK = 'Dark',
@@ -99,15 +100,13 @@ export const durationToBounds = (duration: DurationInSeconds): BoundsInMilliseco
 };
 
 export const isEqualTimeRange = (t1: TimeRange, t2: TimeRange): boolean => {
-  if (t1.from && t2.from && t1.from !== t2.from) {
-    return false;
-  }
-
-  if (t1.to && t2.to && t1.to !== t2.to) {
-    return false;
-  }
-
-  if (t1.rangeDuration && t2.rangeDuration && t1.rangeDuration !== t2.rangeDuration) {
+  if (
+    (!t1 && t2) ||
+    (t1 && !t2) ||
+    t1?.from !== t2?.from ||
+    t1?.to !== t2?.to ||
+    t1?.rangeDuration !== t2?.rangeDuration
+  ) {
     return false;
   }
 
