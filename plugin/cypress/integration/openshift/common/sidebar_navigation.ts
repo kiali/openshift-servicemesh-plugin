@@ -99,7 +99,7 @@ Then('user sees the mesh side panel', () => {
         expect(resp?.statusCode).to.eq(200);
         expect(resp?.body.meshName).to.not.equal(undefined);
         expect(resp?.body.meshName).to.not.equal('');
-        cy.contains(`Mesh Name: ${resp?.body.meshName}`);
+        cy.contains(`Mesh: ${resp?.body.meshName}`);
       });
   });
 });

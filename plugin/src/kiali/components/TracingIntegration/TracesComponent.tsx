@@ -55,7 +55,9 @@ type ReduxProps = {
 };
 
 type TracesProps = ReduxProps & {
+  app?: string;
   cluster?: string;
+  fromWaypoint: boolean;
   lastRefreshAt: TimeInMilliseconds;
   namespace: string;
   target: string;
@@ -287,6 +289,7 @@ class TracesComp extends React.Component<TracesProps, TracesState> {
                     <ToolbarItem style={{ width: '100%' }}>
                       <Alert
                         style={{ width: '100%' }}
+                        isInline={true}
                         variant={AlertVariant.info}
                         title={this.state.infoMessage}
                         actionClose={<AlertActionCloseButton onClose={() => this.setState({ visibleAlert: false })} />}
@@ -363,12 +366,14 @@ class TracesComp extends React.Component<TracesProps, TracesState> {
                 </Tab>
                 <Tab eventKey={spansDetailsTab} title="Span Details">
                   <SpanDetails
+                    app={this.props.app}
                     namespace={this.props.namespace}
                     target={this.props.target}
                     externalURLProvider={this.urlProvider}
                     items={this.props.selectedTrace.spans}
                     traceID={this.props.selectedTrace.traceID}
                     cluster={this.props.cluster ? this.props.cluster : ''}
+                    fromWaypoint={this.props.fromWaypoint}
                   />
                 </Tab>
               </Tabs>
