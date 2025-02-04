@@ -100,11 +100,37 @@ Then('the proxy status is {string}', (status: string) => {
   cy.get('[data-label=Status]').get(`.icon-${status}`).should('exist');
 });
 
+Then('the user can see the {string} istio config and badge {string}', (config: string, badge: string) => {
+  cy.get('#IstioConfigCard').should('be.visible').get(`[data-test="${config}"]`).should('exist');
+  cy.get('#IstioConfigCard').should('be.visible').get(`#${badge}`).should('exist');
+});
+
 Then('the proxy status is {string} with {string} details', (status: string, detail: string) => {
   cy.get('[test-data=proxy-status]').get(`.icon-${status}`).should('exist');
   cy.get('[test-data=proxy-status]').trigger('mouseenter');
   cy.get('[role="tooltip"]').should('be.visible').and('contain', detail);
   cy.get(`[data-test=pod-info]`).trigger('mouseleave');
+});
+
+Then('the user goes to the {string} tab', (tab: string) => {
+  openTab(tab);
+});
+
+Then('user goes to the waypoint {string} subtab', (subtab: string) => {
+  cy.get('#waypoint-details').should('be.visible').contains(subtab).click();
+});
+
+Then('validates Services data', () => {
+  cy.get('[data-test="enrolled-data-title"]').should('be.visible');
+  cy.get('[role="grid"]').should('be.visible').get('[data-label="Name"]').and('contain', 'productpage-v1');
+  cy.get('[role="grid"]').should('be.visible').get('#pfbadge-S').should('exist');
+  cy.get('[role="grid"]').should('be.visible').get('[data-label="Namespace"]').and('contain', 'bookinfo');
+  cy.get('[role="grid"]').should('be.visible').get('[data-label="Labeled by"]').and('contain', 'namespace');
+});
+
+Then('validates waypoint Info data', () => {
+  cy.get('[data-test=waypointfor-title]').should('exist').and('contain', 'service');
+  cy.get('[role="grid"]').should('be.visible').get('[data-label=RDS]').and('contain', 'IGNORED');
 });
 
 When('the user validates the Ztunnel tab', () => {
