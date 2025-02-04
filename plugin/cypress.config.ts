@@ -20,8 +20,7 @@ export default defineConfig({
     OSSMC: true,
     cookie: false,
     omitFiltered: true,
-    filterSpecs: true,
-    tags: '@ossmc and not @skip-ossmc and not @multi-cluster and not @ambient and not @waypoint-tracing'
+    filterSpecs: true
   },
 
   e2e: {
