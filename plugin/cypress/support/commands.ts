@@ -166,7 +166,7 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
     } else if (type === 'services') {
       visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
     } else if (type === 'istio') {
-      const istioUrl = refForKialiIstio(targetPage, details);
+      const istioUrl = refForKialiIstio(details);
 
       visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
     }
