@@ -2,6 +2,7 @@ import { Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
 import { getColWithRowText } from './table';
 import { istioResources, referenceFor } from './istio_resources';
 import { K8sGroupVersionKind } from '@openshift-console/dynamic-plugin-sdk';
+import { ensureOSSMCFinishedLoading } from './sidebar_navigation';
 
 Given('user is at the istio config list page', () => {
   // Forcing "Pause" to not cause unhandled promises from the browser when cypress is testing
@@ -80,3 +81,94 @@ Then('the user can create a {string} K8s Istio object in ossmc', (object: string
     }
   });
 });
+
+Then('the AuthorizationPolicy should have a {string} in ossmc', function (healthStatus: string) {
+  waitUntilConfigIsVisible(
+    3,
+    this.targetAuthorizationPolicy,
+    'AuthorizationPolicy',
+    this.targetNamespace,
+    healthStatus
+  );
+});
+
+const hexToRgb = (hex: string): string => {
+  const rValue = parseInt(hex.substring(0, 2), 16);
+  const gValue = parseInt(hex.substring(2, 4), 16);
+  const bValue = parseInt(hex.substring(4), 16);
+
+  return `rgb(${rValue}, ${gValue}, ${bValue})`;
+};
+
+function waitUntilConfigIsVisible(
+  attempt: number,
+  crdInstanceName: string,
+  crdName: string,
+  namespace: string,
+  healthStatus: string
+): void {
+  if (attempt === 0) {
+    throw new Error(`Condition not met after retries`);
+  }
+
+  cy.reload(true);
+  ensureOSSMCFinishedLoading();
+
+  let found = false;
+  // Get the link of the item name to distinguish each row
+  cy.get('td a')
+    .each($link => {
+      const hRefAttr = $link[0].attributes.getNamedItem('href');
+
+      // Get the row to check the configuration icon
+      cy.wrap($link)
+        .parent()
+        .parent()
+        .then($row => {
+          const hasNA = $row[0].innerText.includes('N/A');
+
+          if (hRefAttr !== null) {
+            const istioResource = istioResources.find(item => item.id.toLowerCase() === crdName.toLowerCase());
+
+            if (
+              istioResource &&
+              hRefAttr.value ===
+                `/k8s/ns/${namespace}/${referenceFor(
+                  istioResource as K8sGroupVersionKind
+                )}/${crdInstanceName}/ossmconsole` &&
+              !hasNA
+            ) {
+              cy.wrap($row)
+                .find('span.pf-v5-c-icon')
+                .should('be.visible')
+                .then(icon => {
+                  const colorVar = `--pf-v5-global--${healthStatus}-color--100`;
+                  const statusColor = getComputedStyle(icon[0]).getPropertyValue(colorVar).replace('#', '');
+
+                  cy.wrap(icon[0])
+                    .invoke('css', 'color')
+                    .then(iconColor => {
+                      // Convert the status color to RGB format to compare it with the icon color
+                      if (iconColor.toString() === hexToRgb(statusColor)) {
+                        found = true;
+                      }
+                    });
+                });
+            }
+          }
+        });
+    })
+    .then(() => {
+      if (!found) {
+        cy.wait(10000);
+        waitUntilConfigIsVisible(attempt - 1, crdInstanceName, crdName, namespace, healthStatus);
+      }
+    });
+}
+
+Then(
+  'the {string} {string} of the {string} namespace should have a {string} in ossmc',
+  (crdInstanceName: string, crdName: string, namespace: string, healthStatus: string) => {
+    waitUntilConfigIsVisible(3, crdInstanceName, crdName, namespace, healthStatus);
+  }
+);
