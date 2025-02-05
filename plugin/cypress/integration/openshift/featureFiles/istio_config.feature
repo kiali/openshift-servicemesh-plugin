@@ -328,7 +328,6 @@ Feature: Kiali Istio Config page
   Scenario: KIA1504 validation
     Given user deletes k8sgateway named "foo" and the resource is no longer available
     When there is a "foo" K8sGateway in the "bookinfo" namespace for "google.com" host using "HTTP" protocol on port "80" and "nonexistentname" gatewayClassName
-    And the user refreshes the page
     And user selects the "bookinfo" project
     Then the "foo" "K8sGateway" of the "bookinfo" namespace should have a "danger" in ossmc
 
@@ -338,7 +337,6 @@ Feature: Kiali Istio Config page
   Scenario: KIA1601 validation
     Given user deletes k8sreferencegrant named "foo" and the resource is no longer available
     When there is a "foo" K8sReferenceGrant in the "bookinfo" namespace pointing from "nonexistent" namespace
-    And the user refreshes the page
     And user selects the "bookinfo" project
     Then the "foo" "K8sReferenceGrant" of the "bookinfo" namespace should have a "danger" in ossmc
 
