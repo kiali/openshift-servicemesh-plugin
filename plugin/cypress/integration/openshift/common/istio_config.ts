@@ -120,43 +120,42 @@ function waitUntilConfigIsVisible(
     .each($link => {
       const hRefAttr = $link[0].attributes.getNamedItem('href');
 
-      // Get the row to check the configuration icon
-      cy.wrap($link)
-        .parent()
-        .parent()
-        .then($row => {
-          const hasNA = $row[0].innerText.includes('N/A');
+      if (hRefAttr !== null) {
+        const istioResource = istioResources.find(item => item.id.toLowerCase() === crdName.toLowerCase());
 
-          if (hRefAttr !== null) {
-            const istioResource = istioResources.find(item => item.id.toLowerCase() === crdName.toLowerCase());
+        if (
+          istioResource &&
+          hRefAttr.value ===
+            `/k8s/ns/${namespace}/${referenceFor(istioResource as K8sGroupVersionKind)}/${crdInstanceName}/ossmconsole`
+        ) {
+          // Get the row to check the configuration icon
+          cy.wrap($link)
+            .parent()
+            .parent()
+            .then($row => {
+              const hasNA = $row[0].innerText.includes('N/A');
 
-            if (
-              istioResource &&
-              hRefAttr.value ===
-                `/k8s/ns/${namespace}/${referenceFor(
-                  istioResource as K8sGroupVersionKind
-                )}/${crdInstanceName}/ossmconsole` &&
-              !hasNA
-            ) {
-              cy.wrap($row)
-                .find('span.pf-v5-c-icon')
-                .should('be.visible')
-                .then(icon => {
-                  const colorVar = `--pf-v5-global--${healthStatus}-color--100`;
-                  const statusColor = getComputedStyle(icon[0]).getPropertyValue(colorVar).replace('#', '');
+              if (!hasNA) {
+                cy.wrap($row)
+                  .find('span.pf-v5-c-icon')
+                  .should('be.visible')
+                  .then(icon => {
+                    const colorVar = `--pf-v5-global--${healthStatus}-color--100`;
+                    const statusColor = getComputedStyle(icon[0]).getPropertyValue(colorVar).replace('#', '');
 
-                  cy.wrap(icon[0])
-                    .invoke('css', 'color')
-                    .then(iconColor => {
-                      // Convert the status color to RGB format to compare it with the icon color
-                      if (iconColor.toString() === hexToRgb(statusColor)) {
-                        found = true;
-                      }
-                    });
-                });
-            }
-          }
-        });
+                    cy.wrap(icon[0])
+                      .invoke('css', 'color')
+                      .then(iconColor => {
+                        // Convert the status color to RGB format to compare it with the icon color
+                        if (iconColor.toString() === hexToRgb(statusColor)) {
+                          found = true;
+                        }
+                      });
+                  });
+              }
+            });
+        }
+      }
     })
     .then(() => {
       if (!found) {
