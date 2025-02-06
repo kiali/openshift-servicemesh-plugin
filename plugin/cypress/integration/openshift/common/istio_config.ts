@@ -116,7 +116,7 @@ function waitUntilConfigIsVisible(
 
   let found = false;
   // Get the link of the item name to distinguish each row
-  cy.get('td a')
+  cy.get('td#name a')
     .each($link => {
       const hRefAttr = $link[0].attributes.getNamedItem('href');
 
