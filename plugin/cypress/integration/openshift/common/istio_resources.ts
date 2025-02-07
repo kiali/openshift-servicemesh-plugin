@@ -131,12 +131,18 @@ export const referenceFor = (groupVersionKind: K8sGroupVersionKind): string => {
   return `${groupVersionKind.group}~${groupVersionKind.version}~${groupVersionKind.kind}`;
 };
 
-export const refForKialiIstio = (objectType: string, details: string): string => {
-  const kialiIstioResource = istioResources.find(item => objectType === item.objectType);
+// This helper would translate Istio Kiali format
+// i.e. /istio/networking.istio.io/v1/DestinationRule/reviews
+// Into the regular format used for resources in OpenShift
+// i.e. /networking.istio.io~v1~DestinationRule/reviews
+export const refForKialiIstio = (kialiIstioUrl: string): string => {
+  const kialiIstioResource = kialiIstioUrl.split('/');
 
-  if (kialiIstioResource) {
-    return `/${referenceFor(kialiIstioResource)}${details}`;
-  }
+  const groupVersionKind = {
+    group: kialiIstioResource[2],
+    version: kialiIstioResource[3],
+    kind: kialiIstioResource[4]
+  };
 
-  return '';
+  return `/${referenceFor(groupVersionKind)}/${kialiIstioResource[5]}`;
 };
