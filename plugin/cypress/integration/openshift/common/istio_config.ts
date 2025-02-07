@@ -143,7 +143,7 @@ function waitUntilConfigIsVisible(
                     const colorVar = `--pf-v5-global--${healthStatus}-color--100`;
                     const statusColor = getComputedStyle(icon[0]).getPropertyValue(colorVar).replace('#', '');
 
-                    cy.wrap(icon[0]).should('have.css', 'background-color', hexToRgb(statusColor));
+                    cy.wrap(icon[0]).should('have.css', 'color', hexToRgb(statusColor));
 
                     found = true;
                   });
