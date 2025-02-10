@@ -143,9 +143,14 @@ function waitUntilConfigIsVisible(
                     const colorVar = `--pf-v5-global--${healthStatus}-color--100`;
                     const statusColor = getComputedStyle(icon[0]).getPropertyValue(colorVar).replace('#', '');
 
-                    cy.wrap(icon[0]).should('have.css', 'color', hexToRgb(statusColor));
-
-                    found = true;
+                    cy.wrap(icon[0])
+                      .invoke('css', 'color')
+                      .then(iconColor => {
+                        // Convert the status color to RGB format to compare it with the icon color
+                        if (iconColor?.toString() === hexToRgb(statusColor)) {
+                          found = true;
+                        }
+                      });
                   });
               }
             });
