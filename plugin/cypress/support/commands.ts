@@ -81,10 +81,8 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
     {
       cacheAcrossSpecs: true,
       validate: () => {
-        cy.request({
-          url: `api/plugins/ossmconsole/plugin-manifest.json`,
-          method: 'GET'
-        });
+        // Make an API request that returns a 200 only when logged in
+        cy.request({ url: `/api/kubernetes/healthz` }).its('status').should('eq', 200);
       }
     }
   );
