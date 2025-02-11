@@ -2,7 +2,6 @@ import { Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
 import { getColWithRowText } from './table';
 import { istioResources, referenceFor } from './istio_resources';
 import { K8sGroupVersionKind } from '@openshift-console/dynamic-plugin-sdk';
-import { ensureOSSMCFinishedLoading } from './sidebar_navigation';
 
 Given('user is at the istio config list page', () => {
   // Forcing "Pause" to not cause unhandled promises from the browser when cypress is testing
@@ -108,7 +107,7 @@ function waitUntilConfigIsVisible(
   healthStatus: string
 ): void {
   cy.reload(true);
-  ensureOSSMCFinishedLoading();
+  cy.waitForReact();
 
   let found = false;
   // Get the link of the item name to distinguish each row

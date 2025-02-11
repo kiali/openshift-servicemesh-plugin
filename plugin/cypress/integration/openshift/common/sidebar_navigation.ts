@@ -1,9 +1,5 @@
 import { Then, When } from '@badeball/cypress-cucumber-preprocessor';
 
-export const ensureOSSMCFinishedLoading = () => {
-  cy.waitForReact(5000, '#app', 'node_modules/resq/dist/index.js'); // Manually passing in the resq module path
-};
-
 When('user is at the dashboard page', () => {
   cy.visit({ url: `/` });
 });
@@ -25,7 +21,7 @@ When('cypress intercept hooks for sidebar are registered', () => {
 });
 
 Then('buttons for Overview, Graph and Istio Config are displayed', () => {
-  ensureOSSMCFinishedLoading();
+  cy.waitForReact();
   cy.reload(true); // force reload to make sure OSSMC is loaded
   cy.get('a[data-test="nav"][class*="pf-v5-c-nav__link"]').contains('Overview');
   cy.get('a[data-test="nav"][class*="pf-v5-c-nav__link"]').contains('Graph');
@@ -95,7 +91,7 @@ Then(`user sees the {string} graph summary`, (ns: string) => {
 
 Then('user sees the mesh side panel', () => {
   cy.wait('@meshRequest').then(interception => {
-    ensureOSSMCFinishedLoading();
+    cy.waitForReact();
     cy.get('#target-panel-mesh')
       .should('be.visible')
       .within(() => {
