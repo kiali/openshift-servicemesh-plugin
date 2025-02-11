@@ -82,7 +82,7 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
       cacheAcrossSpecs: true,
       validate: () => {
         // Make an API request that returns a 200 only when logged in
-        cy.request({ url: '/api/status' }).its('status').should('eq', 200);
+        cy.request({ url: '/api/kubernetes/healthz' }).its('status').should('eq', 200);
       }
     }
   );
@@ -184,8 +184,8 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
 });
 
 Cypress.Commands.overwrite('request', (originalFn, request) => {
-  // don't overwrite specific requests to OSSMC plugin
-  if (!request.url?.includes('ossmconsole')) {
+  // don't overwrite specific requests to OSSMC plugin or kubernetes health (used for session validation)
+  if (!request.url?.includes('ossmconsole') && !request.url?.includes('kubernetes/healthz')) {
     request.url = request.url?.replace('api/', 'api/proxy/plugin/ossmconsole/kiali/api/');
   }
 
