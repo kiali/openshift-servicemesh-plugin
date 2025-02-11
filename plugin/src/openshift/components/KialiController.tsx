@@ -124,13 +124,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           AlertUtils.addError('Error fetching server config.', error, 'default', MessageType.WARNING);
         });
 
-      const getStatusPromise = this.promises
-        .register('getStatus', API.getStatus())
-        .then(response => this.processServerStatus(response.data))
-        .catch(error => {
-          AlertUtils.addError('Error fetching server status.', error, 'default', MessageType.WARNING);
-        });
-
       const getTracingInfoPromise = this.promises
         .register('getTracingInfo', API.getTracingInfo())
         .then(response => this.props.setTracingInfo(response.data))
@@ -151,10 +144,15 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           AlertUtils.addError('Error fetching plugin configuration.', error, 'default', MessageType.WARNING);
         });
 
+      API.getStatus()
+        .then(response => this.processServerStatus(response.data))
+        .catch(error => {
+          AlertUtils.addError('Error fetching server status.', error, 'default', MessageType.WARNING);
+        });
+
       await Promise.all([
         getNamespacesPromise,
         getServerConfigPromise,
-        getStatusPromise,
         getTracingInfoPromise,
         getPluginPromise
       ]);
