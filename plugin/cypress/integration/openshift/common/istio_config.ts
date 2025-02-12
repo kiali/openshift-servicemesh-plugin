@@ -83,7 +83,7 @@ Then('the user can create a {string} K8s Istio object in ossmc', (object: string
 
 Then('the AuthorizationPolicy should have a {string} in ossmc', function (healthStatus: string) {
   waitUntilConfigIsVisible(
-    3,
+    5,
     this.targetAuthorizationPolicy,
     'AuthorizationPolicy',
     this.targetNamespace,
@@ -157,7 +157,7 @@ function waitUntilConfigIsVisible(
         if (retries === 0) {
           throw new Error(`Condition not met after retries`);
         } else {
-          cy.wait(20000);
+          cy.wait(10000);
           waitUntilConfigIsVisible(retries - 1, crdInstanceName, crdName, namespace, healthStatus);
         }
       }
@@ -167,6 +167,6 @@ function waitUntilConfigIsVisible(
 Then(
   'the {string} {string} of the {string} namespace should have a {string} in ossmc',
   (crdInstanceName: string, crdName: string, namespace: string, healthStatus: string) => {
-    waitUntilConfigIsVisible(3, crdInstanceName, crdName, namespace, healthStatus);
+    waitUntilConfigIsVisible(5, crdInstanceName, crdName, namespace, healthStatus);
   }
 );
