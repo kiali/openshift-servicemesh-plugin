@@ -33,9 +33,9 @@ Feature: Kiali Mesh page
     When user selects mesh node with label "Grafana"
     Then user sees "Grafana" node side panel
 
-  Scenario: Jaeger Infra
-    When user selects mesh node with label "jaeger"
-    Then user sees "jaeger" node side panel
+  Scenario: Tracing Infra
+    When user selects tracing mesh node
+    Then user sees tracing node side panel
 
   Scenario: Prometheus Infra
     When user selects mesh node with label "Prometheus"
@@ -60,7 +60,7 @@ Feature: Kiali Mesh page
     And user selects mesh node with label "bookinfo-gateway"
     Then user sees "bookinfo-gateway" node side panel
 
-  @ambient
+  @waypoint-tracing
   @bookinfo-app
   Scenario: User enables waypoints
     When user opens display menu
@@ -84,7 +84,7 @@ Feature: Kiali Mesh page
     And user sees 1 "dataplane" nodes on the "west" cluster
     And user sees 1 "istiod" nodes on the "east" cluster
     And user sees the istiod node connected to the dataplane nodes
-  
+
   @multi-cluster
   @multi-primary
   Scenario: Multi-primary: see one dataplane and one controlplane for each cluster and an edge between each.

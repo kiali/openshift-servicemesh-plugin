@@ -80,3 +80,93 @@ Then('the user can create a {string} K8s Istio object in ossmc', (object: string
     }
   });
 });
+
+Then('the AuthorizationPolicy should have a {string} in ossmc', function (healthStatus: string) {
+  waitUntilConfigIsVisible(
+    5,
+    this.targetAuthorizationPolicy,
+    'AuthorizationPolicy',
+    this.targetNamespace,
+    healthStatus
+  );
+});
+
+const hexToRgb = (hex: string): string => {
+  const rValue = parseInt(hex.substring(0, 2), 16);
+  const gValue = parseInt(hex.substring(2, 4), 16);
+  const bValue = parseInt(hex.substring(4), 16);
+
+  return `rgb(${rValue}, ${gValue}, ${bValue})`;
+};
+
+function waitUntilConfigIsVisible(
+  retries: number,
+  crdInstanceName: string,
+  crdName: string,
+  namespace: string,
+  healthStatus: string
+): void {
+  cy.reload(true);
+  cy.waitForReact();
+
+  let found = false;
+  // Get the link of the item name to distinguish each row
+  cy.get('td#name a')
+    .each($link => {
+      const hRefAttr = $link[0].attributes.getNamedItem('href');
+
+      if (hRefAttr !== null) {
+        const istioResource = istioResources.find(item => item.id.toLowerCase() === crdName.toLowerCase());
+
+        if (
+          istioResource &&
+          hRefAttr.value ===
+            `/k8s/ns/${namespace}/${referenceFor(istioResource as K8sGroupVersionKind)}/${crdInstanceName}/ossmconsole`
+        ) {
+          // Get the row to check the configuration icon
+          cy.wrap($link)
+            .parent()
+            .parent()
+            .then($row => {
+              const hasNA = $row[0].innerText.includes('N/A');
+
+              if (!hasNA) {
+                cy.wrap($row)
+                  .find('span.pf-v5-c-icon')
+                  .should('be.visible')
+                  .then(icon => {
+                    const colorVar = `--pf-v5-global--${healthStatus}-color--100`;
+                    const statusColor = getComputedStyle(icon[0]).getPropertyValue(colorVar).replace('#', '');
+
+                    cy.wrap(icon[0])
+                      .invoke('css', 'color')
+                      .then(iconColor => {
+                        // Convert the status color to RGB format to compare it with the icon color
+                        if (iconColor?.toString() === hexToRgb(statusColor)) {
+                          found = true;
+                        }
+                      });
+                  });
+              }
+            });
+        }
+      }
+    })
+    .then(() => {
+      if (!found) {
+        if (retries === 0) {
+          throw new Error(`Condition not met after retries`);
+        } else {
+          cy.wait(10000);
+          waitUntilConfigIsVisible(retries - 1, crdInstanceName, crdName, namespace, healthStatus);
+        }
+      }
+    });
+}
+
+Then(
+  'the {string} {string} of the {string} namespace should have a {string} in ossmc',
+  (crdInstanceName: string, crdName: string, namespace: string, healthStatus: string) => {
+    waitUntilConfigIsVisible(5, crdInstanceName, crdName, namespace, healthStatus);
+  }
+);

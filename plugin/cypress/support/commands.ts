@@ -81,10 +81,8 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
     {
       cacheAcrossSpecs: true,
       validate: () => {
-        cy.request({
-          url: `api/plugins/ossmconsole/plugin-manifest.json`,
-          method: 'GET'
-        });
+        // Make an API request that returns a 200 only when logged in
+        cy.request({ url: '/api/status' }).its('status').should('eq', 200);
       }
     }
   );
@@ -166,7 +164,7 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
     } else if (type === 'services') {
       visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
     } else if (type === 'istio') {
-      const istioUrl = refForKialiIstio(targetPage, details);
+      const istioUrl = refForKialiIstio(details);
 
       visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
     }
