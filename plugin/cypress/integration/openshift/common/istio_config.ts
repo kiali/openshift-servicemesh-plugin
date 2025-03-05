@@ -51,7 +51,7 @@ Then('the user filters for {string}', (filterValue: string) => {
 });
 
 Then('the user can create a {string} Istio object in ossmc', (object: string) => {
-  cy.getBySel('item-create').find('button').click();
+  cy.getBySel('item-create').click();
 
   const istioResource = istioResources.find(item => item.id.toLowerCase() === object.toLowerCase());
 
@@ -66,7 +66,7 @@ Then('the user can create a {string} K8s Istio object in ossmc', (object: string
     expect(response.status).to.equal(200);
     const gatewayAPIEnabled = response.body.gatewayAPIEnabled;
 
-    cy.getBySel('item-create').find('button').click();
+    cy.getBySel('item-create').click();
 
     const istioResource = istioResources.find(item => item.id.toLowerCase() === object.toLowerCase());
 
