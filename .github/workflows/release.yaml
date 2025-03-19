@@ -45,7 +45,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.ref_name }}
+        ref: ${{ github.event.inputs.release_branch || github.ref_name }}
 
     - name: Prepare scripts
       run: |
@@ -87,18 +87,17 @@ jobs:
     - name: Determine release type
       id: release_type
       run: |
-        echo ${{ github.ref_name }}
-        if [[ "${{ github.ref_name }}" == "main" ]];
+        if [ -z ${{ github.event.inputs.release_type }} ];
         then
-          SPRINT_RELEASE=$(python minor.py)
-          if [[ $SPRINT_RELEASE == "1" ]] || [[ "${{github.event_name}}" != "schedule" ]]
+          DO_RELEASE=$(python minor.py)
+          if [[ $DO_RELEASE == "1" ]]
           then
             echo "release_type=minor" >> $GITHUB_ENV
           else
             echo "release_type=skip" >> $GITHUB_ENV
           fi
         else
-          echo "release_type=patch" >> $GITHUB_ENV
+          echo "release_type=${{ github.event.inputs.release_type }}" >> $GITHUB_ENV
         fi
 
     - name: Determine release version
@@ -210,14 +209,15 @@ jobs:
       RELEASE_VERSION: ${{ needs.initialize.outputs.release_version }}
       BRANCH_VERSION: ${{ needs.initialize.outputs.branch_version }}
       NEXT_VERSION: ${{ needs.initialize.outputs.next_version }}
-      RELEASE_BRANCH: ${{ github.ref_name }}
+      RELEASE_BRANCH: ${{ github.event.inputs.release_branch || github.ref_name }}
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
       KIALI_SRC_CODE_VERSION: ${{ needs.initialize.outputs.kiali_src_code_version }}
+      RELEASE_TYPE: ${{ needs.initialize.outputs.release_type }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.ref_name }}
+        ref: ${{ github.event.inputs.release_branch || github.ref_name }}
 
     # /opt/hostedtoolcache directory is large and has tools we do not need so delete it to free up space
     - name: Print disk space before
@@ -244,8 +244,6 @@ jobs:
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
-        make build-push-plugin-multi-arch
-
     - name: Create tag
       run: |
         git add Makefile plugin/package.json plugin/plugin-metadata.ts
@@ -260,21 +258,23 @@ jobs:
       run: |
         gh release create $RELEASE_VERSION -t "OpenShift Service Mesh Console $RELEASE_VERSION"
 
-    - name: Create or update version branch
+    - name: Create version branch
+      if: ${{ needs.initialize.outputs.release_type == 'minor' || needs.initialize.outputs.release_type == 'major' }}
       run: git push origin $(git rev-parse HEAD):refs/heads/$BRANCH_VERSION
 
     - name: Create a PR to prepare for next version
       env:
-        BUILD_TAG: kiali-release-${{ github.run_number }}-main
+        BUILD_TAG: kiali-release-${{ github.run_number }}-${{ needs.initialize.outputs.branch_version }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      if: ${{ needs.initialize.outputs.release_type == 'minor' || needs.initialize.outputs.release_type == 'major' }}
       run: |
-        hack/update-version-string.sh "${NEXT_VERSION}-SNAPSHOT"
-
-        git add Makefile plugin/package.json plugin/plugin-metadata.ts
-
-        git commit -m "Prepare for next version"
+        if [[ $RELEASE_TYPE == "major" || $RELEASE_TYPE == "minor" ]]; then
+          hack/update-version-string.sh "${NEXT_VERSION}-SNAPSHOT"
+          
+          git add Makefile plugin/package.json plugin/plugin-metadata.ts
+          
+          git commit -m "Prepare for next version"
+        fi
 
         git push origin $(git rev-parse HEAD):refs/heads/$BUILD_TAG
 
-        gh pr create -t "Prepare for next version" -b "Please, merge to update version numbers and prepare for release $NEXT_VERSION." -H $BUILD_TAG -B $RELEASE_BRANCH
+        gh pr create -t "Prepare for next version" -b "Please, merge to update version numbers." -H $BUILD_TAG -B $RELEASE_BRANCH
