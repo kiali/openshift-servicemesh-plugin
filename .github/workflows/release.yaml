@@ -209,7 +209,7 @@ jobs:
       RELEASE_VERSION: ${{ needs.initialize.outputs.release_version }}
       BRANCH_VERSION: ${{ needs.initialize.outputs.branch_version }}
       NEXT_VERSION: ${{ needs.initialize.outputs.next_version }}
-      RELEASE_BRANCH: ${{ github.ref_name }}
+      RELEASE_BRANCH: ${{ github.event.inputs.release_branch || github.ref_name }}
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
       KIALI_SRC_CODE_VERSION: ${{ needs.initialize.outputs.kiali_src_code_version }}
       RELEASE_TYPE: ${{ needs.initialize.outputs.release_type }}
@@ -264,7 +264,7 @@ jobs:
 
     - name: Create a PR to prepare for next version
       env:
-        BUILD_TAG: kiali-release-${{ github.run_number }}-$BRANCH_VERSION
+        BUILD_TAG: kiali-release-${{ github.run_number }}-${{ needs.initialize.outputs.branch_version }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         if [[ $RELEASE_TYPE == "major" || $RELEASE_TYPE == "minor" ]]; then
