@@ -267,18 +267,13 @@ jobs:
         BUILD_TAG: kiali-release-${{ github.run_number }}-$BRANCH_VERSION
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        if [[ $RELEASE_TYPE == "patch" ]]; then
-          REPLACE_VERSION=$RELEASE_VERSION
-          echo $REPLACE_VERSION
-          cat Makefile
-        elif [[ $RELEASE_TYPE == "major" || $RELEASE_TYPE == "minor" ]]; then
-          REPLACE_VERSION="${NEXT_VERSION}-SNAPSHOT"
+        if [[ $RELEASE_TYPE == "major" || $RELEASE_TYPE == "minor" ]]; then
+          hack/update-version-string.sh "${NEXT_VERSION}-SNAPSHOT"
+          
+          git add Makefile plugin/package.json plugin/plugin-metadata.ts
+          
+          git commit -m "Prepare for next version"
         fi
-
-        hack/update-version-string.sh "${REPLACE_VERSION}"
-        git add Makefile plugin/package.json plugin/plugin-metadata.ts
-
-        git commit -m "Prepare for next version"
 
         git push origin $(git rev-parse HEAD):refs/heads/$BUILD_TAG
 
