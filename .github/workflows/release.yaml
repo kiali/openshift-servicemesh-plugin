@@ -270,13 +270,12 @@ jobs:
         if [[ $RELEASE_TYPE == "patch" ]]; then
           REPLACE_VERSION=$RELEASE_VERSION
           echo $REPLACE_VERSION
+          cat Makefile
         elif [[ $RELEASE_TYPE == "major" || $RELEASE_TYPE == "minor" ]]; then
           REPLACE_VERSION="${NEXT_VERSION}-SNAPSHOT"
         fi
 
         hack/update-version-string.sh "${REPLACE_VERSION}"
-        git status
-        git diff
         git add Makefile plugin/package.json plugin/plugin-metadata.ts
 
         git commit -m "Prepare for next version"
