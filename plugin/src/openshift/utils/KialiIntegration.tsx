@@ -3,8 +3,8 @@ import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
 import { setRouter } from 'app/History';
-import {distributedTracingPluginConfig, OpenShiftPluginConfig} from "config/ServerConfig";
-import {pluginConfig} from "../components/KialiController";
+
+import {distributedTracingPluginConfig, pluginConfig} from "../components/KialiController";
 
 export const OSSM_CONSOLE = 'ossmconsole';
 
@@ -28,6 +28,20 @@ export type PluginConfig = {
     tenant: string;
   };
 };
+
+interface PluginExtension {
+  properties: Record<string, any>;
+  type: string;
+}
+
+export interface OpenShiftPluginConfig {
+  dependencies: Record<string, string>;
+  description: string;
+  displayName: string;
+  extensions: PluginExtension[];
+  name: string;
+  version: string;
+}
 
 // Get OSSMC plugin config from 'plugin-config.json' resource
 export const getPluginConfig = async (): Promise<PluginConfig> => {

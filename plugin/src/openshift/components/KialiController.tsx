@@ -10,7 +10,11 @@ import { StatusKey, StatusState } from 'types/StatusState';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import * as API from 'services/Api';
 import * as AlertUtils from 'utils/AlertUtils';
-import {humanDurations, serverConfig, setServerConfig, setTracingInfo} from 'config/ServerConfig';
+import {
+  humanDurations,
+  serverConfig,
+  setServerConfig
+} from 'config/ServerConfig';
 import { config } from 'config';
 import { KialiDispatch } from 'types/Redux';
 import { MessageCenterActions } from 'actions/MessageCenterActions';
@@ -22,7 +26,12 @@ import { LoginActions } from 'actions/LoginActions';
 import { GraphToolbarActions } from 'actions/GraphToolbarActions';
 import { HelpDropdownActions } from 'actions/HelpDropdownActions';
 import { GlobalActions } from 'actions/GlobalActions';
-import {getDistributedTracingPluginManifest, getPluginConfig, PluginConfig} from 'openshift/utils/KialiIntegration';
+import {
+  getDistributedTracingPluginManifest,
+  getPluginConfig,
+  OpenShiftPluginConfig,
+  PluginConfig
+} from 'openshift/utils/KialiIntegration';
 import { MeshTlsActions } from 'actions/MeshTlsActions';
 import { TLSStatus } from 'types/TLSStatus';
 import { IstioCertsInfoActions } from 'actions/IstioCertsInfoActions';
@@ -83,6 +92,9 @@ const defaultPluginConfig: PluginConfig = {
 
 let pluginConfig: PluginConfig = defaultPluginConfig;
 export {pluginConfig};
+
+let distributedTracingPluginConfig:OpenShiftPluginConfig;
+export {distributedTracingPluginConfig};
 
 class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
@@ -153,12 +165,12 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
       const getDistributedTracingPluginManifestPromise = this.promises
         .register('getDistributedTracingPluginManifestPromise', getDistributedTracingPluginManifest())
-        .then(response => (setTracingInfo(response)))
+        .then(response => (distributedTracingPluginConfig = (response)))
         .catch(error => {
           console.debug(`Error fetching Distributed Tracing plugin configuration. (Probably is not installed) ${error}`)
           // Enable this for testing locally
           /*
-          setTracingInfo({
+          distributedTracingPluginConfig = {
             "name": "distributed-tracing-console-plugin",
             "version": "0.0.1",
             "displayName": "Distributed Tracing Plugin",
@@ -188,7 +200,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
                 }
               }
             ]
-          })
+          }
            */
         });
       API.getStatus()
