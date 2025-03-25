@@ -3,6 +3,8 @@ import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
 import { setRouter } from 'app/History';
+import {distributedTracingPluginConfig, OpenShiftPluginConfig} from "config/ServerConfig";
+import {pluginConfig} from "../components/KialiController";
 
 export const OSSM_CONSOLE = 'ossmconsole';
 
@@ -10,13 +12,20 @@ export const properties = {
   // This API is hardcoded but:
   // 'ossmconsole' is the name of the plugin, it can be considered "fixed" in the project
   // 'plugin-config.json' is a resource mounted from a ConfigMap, so, the UI app can read config from that file
-  pluginConfig: `/api/plugins/${OSSM_CONSOLE}/plugin-config.json`
+  pluginConfig: `/api/plugins/${OSSM_CONSOLE}/plugin-config.json`,
+  // External
+  distributedTracingPluginConfig: `/api/plugins/distributed-tracing-console-plugin/plugin-manifest.json`
 };
 
 // This PluginConfig type should be mapped with the 'plugin-config.json' file
 export type PluginConfig = {
   graph: {
     impl: 'cy' | 'pf';
+  };
+  observability: {
+    instance: string;
+    namespace: string;
+    tenant: string;
   };
 };
 
@@ -25,6 +34,16 @@ export const getPluginConfig = async (): Promise<PluginConfig> => {
   return await new Promise((resolve, reject) => {
     consoleFetchJSON(properties.pluginConfig)
       .then(config => resolve(config))
+      .catch(error => reject(error));
+  });
+};
+
+
+
+export const getDistributedTracingPluginManifest = async (): Promise<OpenShiftPluginConfig> => {
+  return await new Promise((resolve, reject) => {
+    consoleFetchJSON(properties.distributedTracingPluginConfig)
+      .then(config => {resolve(config); })
       .catch(error => reject(error));
   });
 };
@@ -57,7 +76,6 @@ export const useInitKialiListeners = (): void => {
       const webParamsIndex = kialiAction.indexOf('?');
 
       let consoleUrl = '';
-
       // Transform Kiali domain messages into Plugin info that helps to navigate
       if (kialiAction.startsWith('/graph')) {
         consoleUrl = kialiAction
@@ -124,10 +142,32 @@ export const useInitKialiListeners = (): void => {
             consoleUrl = `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
           }
         }
-      }
+      } else if (kialiAction.startsWith('/tracing')) {
 
-      if (consoleUrl) {
-        setTimeout(() => navigate(consoleUrl), 0);
+        if (distributedTracingPluginConfig && distributedTracingPluginConfig.extensions.length > 0 && pluginConfig) {
+            const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
+            const namespace = pluginConfig.observability.namespace;
+            const instance = pluginConfig.observability.instance;
+            const trace = urlParams.get('trace');
+            const tenant = pluginConfig.observability.tenant ? pluginConfig.observability.tenant : "default"
+            if (trace && trace !== "undefined") {
+              consoleUrl = `/observe/traces/${trace}?namespace=${namespace}&name=${instance}&tenant=${tenant}`
+            } else {
+              consoleUrl = `/observe/traces?namespace=${namespace}&name=${instance}&tenant=${tenant}&q=%7B%7D&limit=20`
+            }
+            setTimeout(() => navigate(consoleUrl), 0);
+          }
+        else {
+            const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
+            const url = urlParams.get('url');
+            if (url) {
+              window.location.href = url;
+            }
+        }
+
+        if (consoleUrl) {
+          setTimeout(() => navigate(consoleUrl), 0);
+        }
       }
     };
 
