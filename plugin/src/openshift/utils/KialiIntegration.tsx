@@ -170,18 +170,17 @@ export const useInitKialiListeners = (): void => {
               consoleUrl = `/observe/traces?namespace=${namespace}&name=${instance}&tenant=${tenant}&q=%7B%7D&limit=20`
             }
             setTimeout(() => navigate(consoleUrl), 0);
-          }
-        else {
+        } else {
             const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
             const url = urlParams.get('url');
             if (url) {
               window.location.href = url;
             }
         }
+      }
 
-        if (consoleUrl) {
-          setTimeout(() => navigate(consoleUrl), 0);
-        }
+      if (consoleUrl) {
+        setTimeout(() => navigate(consoleUrl), 0);
       }
     };
 

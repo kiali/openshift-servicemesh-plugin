@@ -144,17 +144,17 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         });
 
       const getTracingInfoPromise = this.promises
-                .register('getTracingInfo', API.getTracingInfo())
-              .then(response => this.props.setTracingInfo(response.data))
-              .catch(error => {
-                  this.props.setTracingInfo(null);
-                  AlertUtils.addError(
-                      'Could not fetch Tracing info. Turning off Tracing integration.',
-                      error,
-                      'default',
-                      MessageType.INFO
-                    );
-                });
+        .register('getTracingInfo', API.getTracingInfo())
+        .then(response => this.props.setTracingInfo(response.data))
+        .catch(error => {
+          this.props.setTracingInfo(null);
+          AlertUtils.addError(
+            'Could not fetch Tracing info. Turning off Tracing integration.',
+            error,
+            'default',
+            MessageType.INFO
+          );
+        });
 
       const getPluginPromise = this.promises
         .register('getPluginPromise', getPluginConfig())
