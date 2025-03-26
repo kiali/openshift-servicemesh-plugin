@@ -88,6 +88,46 @@ yarn run start-console
 
 At this point, the OpenShift Console will start and be accessible at http://localhost:9000
 
+### Testing Locally Distributed Tracing integration
+
+For testing the distributed tracing integration locally, assign to distributedTracingPluginConfig in the getDistributedTracingPluginManifestPromise in the KialiController the following data: 
+
+```sh
+  distributedTracingPluginConfig = {
+    "name": "distributed-tracing-console-plugin",
+    "version": "0.0.1",
+    "displayName": "Distributed Tracing Plugin",
+    "description": "This plugin adds a distributed tracing UI to the Openshift console.",
+    "dependencies": {
+      "@console/pluginAPI": "*"
+    },
+    "extensions": [
+      {
+        "type": "console.page/route",
+        "properties": {
+          "exact": false,
+          "path": "/observe/traces",
+          "component": {
+            "$codeRef": "TracingUI"
+          }
+        }
+      },
+      {
+        "type": "console.navigation/href",
+        "properties": {
+          "id": "distributed-tracing",
+          "name": "Traces",
+          "href": "/observe/traces",
+          "perspective": "admin",
+          "section": "observe"
+        }
+      }
+    ]
+  }
+```
+
+That will help to validate if the logic and the URL are right, but in the localhost plugin it won't load the distributed tracing plugin page. 
+
 ## Operator
 
 The OpenShift Service Mesh Console will be installed by end users using the Kiali Operator.
