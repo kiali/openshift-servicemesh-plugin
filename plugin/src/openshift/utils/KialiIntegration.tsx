@@ -163,7 +163,8 @@ export const useInitKialiListeners = (): void => {
             const namespace = pluginConfig.observability.namespace;
             const instance = pluginConfig.observability.instance;
             const trace = urlParams.get('trace');
-            const tenant = pluginConfig.observability.tenant ? pluginConfig.observability.tenant : "default"
+            const tenant = pluginConfig.observability.tenant ?? "default";
+            
             if (trace && trace !== "undefined") {
               consoleUrl = `/observe/traces/${trace}?namespace=${namespace}&name=${instance}&tenant=${tenant}`
             } else {
