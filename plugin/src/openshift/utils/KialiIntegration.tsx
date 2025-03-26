@@ -163,7 +163,7 @@ export const useInitKialiListeners = (): void => {
 
         if (distributedTracingPluginConfig && distributedTracingPluginConfig.extensions.length > 0 && pluginConfig) {
           const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
-          let observabilityData: Observability|null;
+          let observabilityData: Observability|null = null;
           if (pluginConfig.observability) {
             observabilityData = {
                 instance: pluginConfig.observability.instance,
