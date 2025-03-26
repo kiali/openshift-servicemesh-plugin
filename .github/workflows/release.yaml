@@ -244,6 +244,8 @@ jobs:
       run: |
         docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
 
+        make build-push-plugin-multi-arch
+
     - name: Create tag
       run: |
         git add Makefile plugin/package.json plugin/plugin-metadata.ts
