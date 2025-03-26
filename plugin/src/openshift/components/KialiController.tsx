@@ -79,11 +79,7 @@ type KialiControllerProps = KialiControllerReduxProps & {
   children: React.ReactNode;
 };
 
-const defaultPluginConfig: PluginConfig = {
-  graph: {
-    impl: 'pf'
-  }
-};
+const defaultPluginConfig: PluginConfig = {};
 
 let pluginConfig: PluginConfig = defaultPluginConfig;
 export {pluginConfig};
@@ -245,11 +241,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           this.props.setActiveNamespaces(activeNamespaces);
           console.debug(`Setting UI Default: namespaces ${JSON.stringify(activeNamespaces.map(ns => ns.name))}`);
         }
-      }
-
-      // Set graph implementation from plugin config
-      if (uiDefaults.graph) {
-        uiDefaults.graph.impl = pluginConfig.graph.impl;
       }
 
       // Graph Traffic

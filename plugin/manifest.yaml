@@ -118,7 +118,6 @@ metadata:
 data:
   plugin-config.json: |
     {
-      "graph": "pf"
     }
 ---
 apiVersion: v1
