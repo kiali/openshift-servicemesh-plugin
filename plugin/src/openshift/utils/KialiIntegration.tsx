@@ -162,27 +162,29 @@ export const useInitKialiListeners = (): void => {
       } else if (kialiAction.startsWith('/tracing')) {
 
         if (distributedTracingPluginConfig && distributedTracingPluginConfig.extensions.length > 0 && pluginConfig) {
-            const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
-            let observabilityData: Observability|null;
-            if (pluginConfig.observability) {
-              observabilityData = {
+          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
+          let observabilityData: Observability|null;
+          if (pluginConfig.observability) {
+            observabilityData = {
                 instance: pluginConfig.observability.instance,
                 namespace: pluginConfig.observability.namespace,
                 tenant: pluginConfig.observability.tenant
-              };
-            } else {
-              const tracingInfo = store.getState().tracingState.info
+            };
+          } else {
+            const tracingInfo = store.getState().tracingState.info
+            if (tracingInfo) {
               observabilityData = parseTempoUrl(tracingInfo.internalURL)
             }
+          }
 
-           if (observabilityData) {
+          if (observabilityData) {
               const trace = urlParams.get('trace');
               if (trace && trace !== "undefined") {
                 consoleUrl = `/observe/traces/${trace}?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}`
               } else {
                 consoleUrl = `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`
               }
-            }
+          }
 
         } else {
             const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
