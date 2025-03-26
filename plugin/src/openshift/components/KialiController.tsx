@@ -82,11 +82,6 @@ type KialiControllerProps = KialiControllerReduxProps & {
 const defaultPluginConfig: PluginConfig = {
   graph: {
     impl: 'pf'
-  },
-  observability: {
-    instance: 'sample',
-    namespace: 'tempo',
-    tenant: 'default'
   }
 };
 
@@ -95,6 +90,9 @@ export {pluginConfig};
 
 let distributedTracingPluginConfig:OpenShiftPluginConfig;
 export {distributedTracingPluginConfig};
+
+let tracingInfo: TracingInfo;
+export {tracingInfo};
 
 class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
@@ -168,40 +166,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         .then(response => (distributedTracingPluginConfig = (response)))
         .catch(error => {
           console.debug(`Error fetching Distributed Tracing plugin configuration. (Probably is not installed) ${error}`)
-          // Enable this for testing locally
-          /*
-          distributedTracingPluginConfig = {
-            "name": "distributed-tracing-console-plugin",
-            "version": "0.0.1",
-            "displayName": "Distributed Tracing Plugin",
-            "description": "This plugin adds a distributed tracing UI to the Openshift console.",
-            "dependencies": {
-              "@console/pluginAPI": "*"
-            },
-            "extensions": [
-              {
-                "type": "console.page/route",
-                "properties": {
-                  "exact": false,
-                  "path": "/observe/traces",
-                  "component": {
-                    "$codeRef": "TracingUI"
-                  }
-                }
-              },
-              {
-                "type": "console.navigation/href",
-                "properties": {
-                  "id": "distributed-tracing",
-                  "name": "Traces",
-                  "href": "/observe/traces",
-                  "perspective": "admin",
-                  "section": "observe"
-                }
-              }
-            ]
-          }
-           */
+          // For testing the distributed tracing integration locally, assign distributedTracingPluginConfig = "plugin manifest json"
         });
       API.getStatus()
         .then(response => this.processServerStatus(response.data))

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
 import { setRouter } from 'app/History';
 
-import {distributedTracingPluginConfig, pluginConfig} from "../components/KialiController";
+import {distributedTracingPluginConfig, pluginConfig, tracingInfo} from "../components/KialiController";
 
 export const OSSM_CONSOLE = 'ossmconsole';
 
@@ -17,16 +17,18 @@ export const properties = {
   distributedTracingPluginConfig: `/api/plugins/distributed-tracing-console-plugin/plugin-manifest.json`
 };
 
+type Observability = {
+  instance: string;
+  namespace: string;
+  tenant: string;
+}
+
 // This PluginConfig type should be mapped with the 'plugin-config.json' file
 export type PluginConfig = {
   graph: {
     impl: 'cy' | 'pf';
   };
-  observability: {
-    instance: string;
-    namespace: string;
-    tenant: string;
-  };
+  observability?: Observability;
 };
 
 interface PluginExtension {
@@ -160,17 +162,26 @@ export const useInitKialiListeners = (): void => {
 
         if (distributedTracingPluginConfig && distributedTracingPluginConfig.extensions.length > 0 && pluginConfig) {
             const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
-            const namespace = pluginConfig.observability.namespace;
-            const instance = pluginConfig.observability.instance;
-            const trace = urlParams.get('trace');
-            const tenant = pluginConfig.observability.tenant ?? "default";
-            
-            if (trace && trace !== "undefined") {
-              consoleUrl = `/observe/traces/${trace}?namespace=${namespace}&name=${instance}&tenant=${tenant}`
+            let observabilityData: Observability|null;
+            if (pluginConfig.observability) {
+              observabilityData = {
+                instance: pluginConfig.observability.instance,
+                namespace: pluginConfig.observability.namespace,
+                tenant: pluginConfig.observability.tenant
+              };
             } else {
-              consoleUrl = `/observe/traces?namespace=${namespace}&name=${instance}&tenant=${tenant}&q=%7B%7D&limit=20`
+              observabilityData = parseTempoUrl(tracingInfo.internal_url)
             }
-            setTimeout(() => navigate(consoleUrl), 0);
+
+            if (observabilityData) {
+              const trace = urlParams.get('trace');
+              if (trace && trace !== "undefined") {
+                consoleUrl = `/observe/traces/${trace}?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}`
+              } else {
+                consoleUrl = `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`
+              }
+            }
+
         } else {
             const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
             const url = urlParams.get('url');
@@ -188,3 +199,16 @@ export const useInitKialiListeners = (): void => {
     window.addEventListener('message', kialiListener);
   }
 };
+
+function parseTempoUrl(url): Observability|null {
+  const regex = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-gateway)?\.([a-zA-Z0-9-]+)\..*\/api\/traces\/v1(?:\/([^\/]+))?/;
+  const match = url.match(regex);
+
+  if (!match) return null;
+
+  return {
+    instance: match[1],
+    namespace: match[2],
+    tenant: match[3] || null
+  };
+}
