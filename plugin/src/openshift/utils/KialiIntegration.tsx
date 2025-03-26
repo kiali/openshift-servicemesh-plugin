@@ -201,7 +201,7 @@ export const useInitKialiListeners = (): void => {
 };
 
 function parseTempoUrl(url): Observability|null {
-  const regex = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-gateway)?\.([a-zA-Z0-9-]+)\..*\/api\/traces\/v1(?:\/([^\/]+))?/;
+  const regex = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-gateway)?\.([a-zA-Z0-9-]+)\..*\/api\/traces\/v1(?:\/([^/]+))?/;
   const match = url.match(regex);
 
   if (!match) return null;
