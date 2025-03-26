@@ -91,9 +91,6 @@ export {pluginConfig};
 let distributedTracingPluginConfig:OpenShiftPluginConfig;
 export {distributedTracingPluginConfig};
 
-let tracingInfo: TracingInfo;
-export {tracingInfo};
-
 class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
 

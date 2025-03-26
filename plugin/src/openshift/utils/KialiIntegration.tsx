@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
 import { setRouter } from 'app/History';
 
-import {distributedTracingPluginConfig, pluginConfig, tracingInfo} from "../components/KialiController";
+import {distributedTracingPluginConfig, pluginConfig} from "../components/KialiController";
+import {store} from "store/ConfigStore";
 
 export const OSSM_CONSOLE = 'ossmconsole';
 
@@ -170,10 +171,11 @@ export const useInitKialiListeners = (): void => {
                 tenant: pluginConfig.observability.tenant
               };
             } else {
-              observabilityData = parseTempoUrl(tracingInfo.internal_url)
+              const tracingInfo = store.getState().tracingState.info
+              observabilityData = parseTempoUrl(tracingInfo.internalURL)
             }
 
-            if (observabilityData) {
+           if (observabilityData) {
               const trace = urlParams.get('trace');
               if (trace && trace !== "undefined") {
                 consoleUrl = `/observe/traces/${trace}?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}`
