@@ -169,10 +169,10 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
       visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
     }
   } else {
-    if (targetPage === 'graphpf') {
+    if (targetPage === 'graph') {
       visitUrl.url = visitUrl.url
-        .replace('/console/graphpf/namespaces', '/ossmconsole/graph')
-        .replace('/console/graphpf/node/namespaces', '/ossmconsole/graph/ns');
+        .replace('/console/graph/namespaces', '/ossmconsole/graph')
+        .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns');
     } else if (targetPage === 'istio') {
       visitUrl.url = '/k8s/all-namespaces/istio';
     } else {
