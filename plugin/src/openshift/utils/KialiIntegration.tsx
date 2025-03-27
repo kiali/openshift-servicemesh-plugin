@@ -21,7 +21,7 @@ export const properties = {
 type Observability = {
   instance: string;
   namespace: string;
-  tenant: string;
+  tenant?: string;
 }
 
 // This PluginConfig type should be mapped with the 'plugin-config.json' file
@@ -204,7 +204,7 @@ export const useInitKialiListeners = (): void => {
   }
 };
 
-function parseTempoUrl(url): Observability|null {
+export function parseTempoUrl(url: string): Observability|null {
   const regex = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-gateway)?\.([a-zA-Z0-9-]+)\..*\/api\/traces\/v1(?:\/([^/]+))?/;
   const match = url.match(regex);
 
@@ -213,6 +213,6 @@ function parseTempoUrl(url): Observability|null {
   return {
     instance: match[1],
     namespace: match[2],
-    tenant: match[3] || null
+    tenant: match[3]
   };
 }
