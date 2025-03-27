@@ -15,9 +15,7 @@ export const properties = {
 
 // This PluginConfig type should be mapped with the 'plugin-config.json' file
 export type PluginConfig = {
-  graph: {
-    impl: 'cy' | 'pf';
-  };
+  // currently, no default config necessary
 };
 
 // Get OSSMC plugin config from 'plugin-config.json' resource
@@ -62,9 +60,7 @@ export const useInitKialiListeners = (): void => {
       if (kialiAction.startsWith('/graph')) {
         consoleUrl = kialiAction
           .replace('graph/namespaces', `${OSSM_CONSOLE}/graph`)
-          .replace('graphpf/namespaces', `${OSSM_CONSOLE}/graph`)
           .replace('graph/node/namespaces', `${OSSM_CONSOLE}/graph/ns`)
-          .replace('graphpf/node/namespaces', `${OSSM_CONSOLE}/graph/ns`);
       } else if (kialiAction.startsWith('/istio')) {
         consoleUrl = '/k8s';
 
