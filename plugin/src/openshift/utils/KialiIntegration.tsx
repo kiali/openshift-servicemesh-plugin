@@ -208,7 +208,17 @@ export function parseTempoUrl(url: string): Observability|null {
   const regex = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-gateway)?\.([a-zA-Z0-9-]+)\..*\/api\/traces\/v1(?:\/([^/]+))?/;
   const match = url.match(regex);
 
-  if (!match) return null;
+  if (!match) {
+    // Try non tenants
+    const regexT = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-query-frontend)?\.([a-zA-Z0-9-]+)\..*(?:\/([^/]+))?/;
+    const matchT = url.match(regexT);
+
+    if (!matchT) return null
+    return {
+      instance: matchT[1],
+      namespace: matchT[2]
+    };
+  }
 
   return {
     instance: match[1],
