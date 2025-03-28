@@ -17,7 +17,7 @@ describe('parseTempoUrl', () => {
     expect(parsed?.instance).toEqual('sample');
   });
 
-  it('url for multi tenant url for should be correct', () => {
+  it('url for multi tenant url with no tenant should be correct', () => {
     const url = "https://tempo-sample-my-instance.tempo.svc.cluster.local:8080/api/traces/v1/"
     const parsed = parseTempoUrl(url)
     expect(parsed?.tenant).toBeUndefined();
