@@ -4,27 +4,63 @@ import { useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
 import { setRouter } from 'app/History';
 
+import {distributedTracingPluginConfig, pluginConfig} from "../components/KialiController";
+import {store} from "store/ConfigStore";
+
 export const OSSM_CONSOLE = 'ossmconsole';
 
 export const properties = {
   // This API is hardcoded but:
   // 'ossmconsole' is the name of the plugin, it can be considered "fixed" in the project
   // 'plugin-config.json' is a resource mounted from a ConfigMap, so, the UI app can read config from that file
-  pluginConfig: `/api/plugins/${OSSM_CONSOLE}/plugin-config.json`
+  pluginConfig: `/api/plugins/${OSSM_CONSOLE}/plugin-config.json`,
+  // External
+  distributedTracingPluginConfig: `/api/plugins/distributed-tracing-console-plugin/plugin-manifest.json`
 };
+
+type Observability = {
+  instance: string;
+  namespace: string;
+  tenant?: string;
+}
 
 // This PluginConfig type should be mapped with the 'plugin-config.json' file
 export type PluginConfig = {
   graph: {
     impl: 'cy' | 'pf';
   };
+  observability?: Observability;
 };
+
+interface PluginExtension {
+  properties: Record<string, any>;
+  type: string;
+}
+
+export interface OpenShiftPluginConfig {
+  dependencies: Record<string, string>;
+  description: string;
+  displayName: string;
+  extensions: PluginExtension[];
+  name: string;
+  version: string;
+}
 
 // Get OSSMC plugin config from 'plugin-config.json' resource
 export const getPluginConfig = async (): Promise<PluginConfig> => {
   return await new Promise((resolve, reject) => {
     consoleFetchJSON(properties.pluginConfig)
       .then(config => resolve(config))
+      .catch(error => reject(error));
+  });
+};
+
+
+
+export const getDistributedTracingPluginManifest = async (): Promise<OpenShiftPluginConfig> => {
+  return await new Promise((resolve, reject) => {
+    consoleFetchJSON(properties.distributedTracingPluginConfig)
+      .then(config => {resolve(config); })
       .catch(error => reject(error));
   });
 };
@@ -57,7 +93,6 @@ export const useInitKialiListeners = (): void => {
       const webParamsIndex = kialiAction.indexOf('?');
 
       let consoleUrl = '';
-
       // Transform Kiali domain messages into Plugin info that helps to navigate
       if (kialiAction.startsWith('/graph')) {
         consoleUrl = kialiAction
@@ -124,6 +159,40 @@ export const useInitKialiListeners = (): void => {
             consoleUrl = `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
           }
         }
+      } else if (kialiAction.startsWith('/tracing')) {
+
+        if (distributedTracingPluginConfig && distributedTracingPluginConfig.extensions.length > 0 && pluginConfig) {
+          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
+          let observabilityData: Observability|null = null;
+          if (pluginConfig.observability) {
+            observabilityData = {
+                instance: pluginConfig.observability.instance,
+                namespace: pluginConfig.observability.namespace,
+                tenant: pluginConfig.observability.tenant
+            };
+          } else {
+            const tracingInfo = store.getState().tracingState.info
+            if (tracingInfo) {
+              observabilityData = parseTempoUrl(tracingInfo.internalURL)
+            }
+          }
+
+          if (observabilityData) {
+              const trace = urlParams.get('trace');
+              if (trace && trace !== "undefined") {
+                consoleUrl = `/observe/traces/${trace}?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}`
+              } else {
+                consoleUrl = `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`
+              }
+          }
+
+        } else {
+            const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
+            const url = urlParams.get('url');
+            if (url) {
+              window.location.href = url;
+            }
+        }
       }
 
       if (consoleUrl) {
@@ -134,3 +203,26 @@ export const useInitKialiListeners = (): void => {
     window.addEventListener('message', kialiListener);
   }
 };
+
+export function parseTempoUrl(url: string): Observability|null {
+  const regex = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-gateway)?\.([a-zA-Z0-9-]+)\..*\/api\/traces\/v1(?:\/([^/]+))?/;
+  const match = url.match(regex);
+
+  if (!match) {
+    // Try non tenants
+    const regexT = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-query-frontend)?\.([a-zA-Z0-9-]+)\..*(?:\/([^/]+))?/;
+    const matchT = url.match(regexT);
+
+    if (!matchT) return null
+    return {
+      instance: matchT[1],
+      namespace: matchT[2]
+    };
+  }
+
+  return {
+    instance: match[1],
+    namespace: match[2],
+    tenant: match[3]
+  };
+}

@@ -5,6 +5,7 @@ const initialState: TracingState = {
   info: {
     enabled: false,
     integration: false,
+    internalURL: '',
     url: '',
     namespaceSelector: true,
     provider: 'jaeger',
@@ -28,6 +29,7 @@ describe('TracingState reducer', () => {
         initialState,
         TracingActions.setInfo({
           url: url,
+          internalURL: '',
           enabled: true,
           integration: true,
           namespaceSelector: true,
