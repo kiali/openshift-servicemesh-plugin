@@ -79,7 +79,13 @@ type KialiControllerProps = KialiControllerReduxProps & {
   children: React.ReactNode;
 };
 
-const defaultPluginConfig: PluginConfig = {};
+const defaultPluginConfig: PluginConfig = {
+  observability: {
+    instance: 'sample',
+    namespace: 'tempo',
+    tenant: 'default'
+  }
+};
 
 let pluginConfig: PluginConfig = defaultPluginConfig;
 export {pluginConfig};
