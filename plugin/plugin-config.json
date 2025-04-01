@@ -1,7 +1,4 @@
 {
-  "graph": {
-    "impl": "pf"
-  },
   "observability": {
     "instance": "sample",
     "namespace": "tempo",

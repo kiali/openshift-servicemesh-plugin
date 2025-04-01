@@ -118,7 +118,11 @@ metadata:
 data:
   plugin-config.json: |
     {
-      "graph": "pf"
+      observability: {
+        instance: sample,
+        namespace: tempo,
+        tenant: default
+      }
     }
 ---
 apiVersion: v1

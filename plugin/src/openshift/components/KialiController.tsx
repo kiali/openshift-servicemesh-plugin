@@ -80,8 +80,10 @@ type KialiControllerProps = KialiControllerReduxProps & {
 };
 
 const defaultPluginConfig: PluginConfig = {
-  graph: {
-    impl: 'pf'
+  observability: {
+    instance: 'sample',
+    namespace: 'tempo',
+    tenant: 'default'
   }
 };
 
@@ -245,11 +247,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           this.props.setActiveNamespaces(activeNamespaces);
           console.debug(`Setting UI Default: namespaces ${JSON.stringify(activeNamespaces.map(ns => ns.name))}`);
         }
-      }
-
-      // Set graph implementation from plugin config
-      if (uiDefaults.graph) {
-        uiDefaults.graph.impl = pluginConfig.graph.impl;
       }
 
       // Graph Traffic

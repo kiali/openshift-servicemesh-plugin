@@ -6,8 +6,8 @@ describe('JaegerActions', () => {
     const showAction = TracingActions.setInfo({
       enabled: true,
       integration: true,
-      internalURL: '',
       url: 'jaeger-query-istio-system.127.0.0.1.nip.io',
+      internalURL: '',
       namespaceSelector: true,
       provider: 'jaeger',
       whiteListIstioSystem: ['jaeger-query']

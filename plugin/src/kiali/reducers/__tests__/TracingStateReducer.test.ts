@@ -29,9 +29,9 @@ describe('TracingState reducer', () => {
         initialState,
         TracingActions.setInfo({
           url: url,
-          internalURL: '',
           enabled: true,
           integration: true,
+          internalURL: '',
           namespaceSelector: true,
           provider: 'jaeger',
           whiteListIstioSystem: []
