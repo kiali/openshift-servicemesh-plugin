@@ -30,7 +30,7 @@ Cypress.Commands.add('login', (USERNAME, PASSWD, AUTH_PROVIDER) => {
     cy.visit('/').then(() => {
       cy.log('AUTH_PROVIDER: ', typeof idp, JSON.stringify(idp));
       if (idp != undefined) {
-        cy.get('.pf-c-button').contains(idp).click();
+        cy.get('[class*="c-button"]').contains(idp).click();
       }
       cy.get('#inputUsername').clear().type(user);
       cy.get('#inputPassword').clear().type(password);
