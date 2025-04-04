@@ -14,7 +14,7 @@ When('user clicks on the Service Mesh icon in the left navigation bar', () => {
 });
 
 When('cypress intercept hooks for sidebar are registered', () => {
-  cy.intercept(`**/api/istio/validations`).as('overviewRequest');
+  cy.intercept(`**/api/mesh/controlplanes`).as('overviewRequest');
   cy.intercept(`**/api/namespaces`).as('istioConfigRequest');
   cy.intercept(`**/api/namespaces/graph*`).as('graphNamespaces');
   cy.intercept(`**/api/mesh/graph?*`).as('meshRequest');
