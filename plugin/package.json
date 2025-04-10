@@ -35,7 +35,7 @@
     "@patternfly/react-icons": "^5.4.0",
     "@patternfly/react-table": "^5.4.0",
     "@patternfly/react-topology": "^5.4.1",
-    "axios": "^1.7.4",
+    "axios": "^1.8.4",
     "bootstrap-slider-without-jquery": "10.0.0",
     "deep-freeze": "0.0.1",
     "eventemitter3": "4.0.7",
@@ -128,6 +128,7 @@
     "webpack-dev-server": "^5.0.4"
   },
   "resolutions": {
+    "esbuild": "^0.25.2",
     "webpack": "^5.94.0"
   },
   "engines": {
