@@ -14,6 +14,11 @@ const install_demoapp = (demoapp: string): void => {
     namespaces = 'sleep';
     tg = '';
     istio = '';
+  } else if (demoapp === 'loggers') {
+    namespaces = 'loggers';
+    tg = '';
+    istio = '';
+    deletion = '--delete';
   }
 
   const kialiHacksPath = '../_output/kiali/hack/istio';
@@ -83,6 +88,10 @@ Before({ tags: '@error-rates-app' }, () => {
 
 Before({ tags: '@sleep-app' }, () => {
   install_demoapp('sleep');
+});
+
+Before({ tags: '@loggers-app' }, () => {
+  install_demoapp('loggers');
 });
 
 After({ tags: '@sleep-app-scaleup-after' }, () => {
