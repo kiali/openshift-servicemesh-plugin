@@ -38,6 +38,7 @@ import { GraphReset } from './GraphReset';
 import { GraphFind } from './GraphFind';
 import { kialiStyle } from 'styles/StyleUtils';
 import { isParentKiosk, kioskContextMenuAction } from 'components/Kiosk/KioskActions';
+import { GraphElement } from '@patternfly/react-topology';
 
 type ReduxStateProps = {
   activeNamespaces: Namespace[];
@@ -268,11 +269,12 @@ class GraphToolbarComponent extends React.PureComponent<GraphToolbarProps> {
       return;
     }
 
-    const selector = this.props.summaryData!.summaryTarget.getId();
+    const elem = this.props.summaryData!.summaryTarget as GraphElement;
+    const selector = elem.getId();
 
     this.props.setNode(undefined);
 
-    const returnUrl = `/${route}/namespaces?focusSelector=${encodeURI(selector)}`;
+    const returnUrl = `/${route}/namespaces?${URLParam.FOCUS_SELECTOR}=${encodeURI(selector)}`;
 
     if (isParentKiosk(this.props.kiosk)) {
       kioskContextMenuAction(returnUrl);
