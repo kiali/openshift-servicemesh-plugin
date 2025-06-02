@@ -105,7 +105,7 @@ After({ tags: '@clean-istio-namespace-resources-after' }, function () {
 });
 
 Before({ tags: '@shared-mesh-config' }, () => {
-  cy.exec('kubectl apply -f cypress/integration/common/data/istio-shared-mesh-configmap.yaml');
+  cy.exec('kubectl apply -f cypress/integration/kiali/common/data/istio-shared-mesh-configmap.yaml');
   const patch = '{"spec": {"values": {"pilot": {"env": {"SHARED_MESH_CONFIG": "istio-user"}}}}}';
   cy.exec(`kubectl patch istio default --type='merge' -p '${patch}'`).then(() => {
     const maxTries = 10;
