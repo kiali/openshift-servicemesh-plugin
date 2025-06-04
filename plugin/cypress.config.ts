@@ -15,7 +15,7 @@ export default defineConfig({
   fixturesFolder: 'cypress/fixtures',
   env: {
     'cypress-react-selector': {
-      root: '#root'
+      root: '#app'
     },
     OSSMC: true,
     cookie: false,
