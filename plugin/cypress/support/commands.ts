@@ -76,6 +76,9 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
         cy.get('#inputUsername').clear().type(user);
         cy.get('#inputPassword').clear().type(password);
         cy.get('button[type="submit"]').click();
+        // wait till page loading after login
+        cy.get("[data-test='username']").should("be.visible");
+        guidedTour.close();
       });
     },
     {
@@ -94,6 +97,18 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
     });
   }
 });
+
+//in case guided tour appears (OCP 4.19+)
+export const guidedTour = {
+  close: () => {
+    cy.waitForReact();
+    cy.get("body").then(($body) => {
+      if ($body.find(`[data-test="guided-tour-modal"]`).length > 0) {
+        cy.get(`[data-test="tour-step-footer-secondary"]`).contains("Skip tour").click();
+      }
+    });
+  }
+};
 
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
 
