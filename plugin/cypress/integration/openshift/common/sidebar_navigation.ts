@@ -21,7 +21,7 @@ When('cypress intercept hooks for sidebar are registered', () => {
 });
 
 Then('buttons for Overview, Graph and Istio Config are displayed', () => {
-  cy.waitForReact(5000, '#app', 'node_modules/resq/dist/index.js'); // Manually passing in the resq module path
+  cy.waitForReact();
   cy.reload(true); // force reload to make sure OSSMC is loaded
   cy.get('a[data-test="nav"][class*="pf-v5-c-nav__link"]').contains('Overview');
   cy.get('a[data-test="nav"][class*="pf-v5-c-nav__link"]').contains('Graph');
@@ -91,7 +91,7 @@ Then(`user sees the {string} graph summary`, (ns: string) => {
 
 Then('user sees the mesh side panel', () => {
   cy.wait('@meshRequest').then(interception => {
-    cy.get('#loading_kiali_spinner').should('not.exist');
+    cy.waitForReact();
     cy.get('#target-panel-mesh')
       .should('be.visible')
       .within(() => {
