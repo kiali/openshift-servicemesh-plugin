@@ -168,8 +168,12 @@ export const setNodeAttachments = (node: Node<NodeModel>, settings: GraphSetting
   if (settings.showOutOfMesh && data.isOutOfMesh) {
     attachments.push(getDecorator(node, TopologyQuadrant.lowerRight, badgeMap.get('MS')!));
   }
+  // It is OK to use the same location for mutually exclusive options.
   if (data.hasWorkloadEntry) {
     attachments.push(getDecorator(node, TopologyQuadrant.upperRight, badgeMap.get('WE')!));
+  }
+  if (data.hasIngressWaypoint) {
+    attachments.push(getDecorator(node, TopologyQuadrant.upperRight, badgeMap.get('WA')!));
   }
   if (settings.showVirtualServices) {
     if (data.hasCB) {
@@ -273,7 +277,10 @@ export const setNodeLabel = (
       data.labelIcon = <span className={`${badgeMap.get('RO')?.className} ${rootIconStyle}`}></span>;
     }
   } else {
-    if (data.isGateway?.egressInfo?.hostnames?.length !== undefined) {
+    if (
+      data.isGateway?.egressInfo?.hostnames?.length !== undefined ||
+      data.isGateway?.gatewayAPIInfo?.hostnames?.length !== undefined
+    ) {
       data.labelIcon = <span className={`${badgeMap.get('GW')?.className} ${gatewayIconStyle}`}></span>;
     }
     // A Waypoint should be mutually exclusive with being a traffic source

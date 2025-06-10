@@ -2,8 +2,8 @@ import deepFreeze from 'deep-freeze';
 import { UNIT_TIME, MILLISECONDS } from '../types/Common';
 import { t } from 'utils/I18nUtils';
 
-// We assume this is always defined in the .env file
-const documentationUrl = process.env.REACT_APP_KIALI_DOC_URL!;
+// This gets set by the backend.
+const documentationUrl = (window as any).REACT_APP_KIALI_DOC_URL ?? 'https://www.kiali.io/documentation/';
 
 export const RefreshIntervalManual = 1;
 export const RefreshIntervalPause = 0;
@@ -185,6 +185,7 @@ const conf = {
       serviceTraces: (namespace: string, svc: string) => `api/namespaces/${namespace}/services/${svc}/traces`,
       status: 'api/status',
       tracing: 'api/tracing',
+      tracingDiagnose: 'api/tracing/diagnose',
       tracingErrorTraces: (namespace: string, app: string) => `api/namespaces/${namespace}/apps/${app}/errortraces`,
       tracingTrace: (idTrace: string) => `api/traces/${idTrace}`,
       workloadSpans: (namespace: string, workload: string) => `api/namespaces/${namespace}/workloads/${workload}/spans`,
