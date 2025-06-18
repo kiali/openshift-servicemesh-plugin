@@ -6,5 +6,7 @@
 //
 // Be aware of these assumptions when using this func.
 export const getColWithRowText = (rowSearchText: string, colName: string): Cypress.Chainable => {
-  return cy.get('tbody').contains('tr', rowSearchText).find(`td#${colName}`);
+  // Different selectors depending on Patternfly version
+  // id="${colName}" for PF5, data-label="${colName}" for PF6
+  return cy.get('tbody').contains('tr', rowSearchText).find(`td[id="${colName}"],td[data-label="${colName}"]`);
 };

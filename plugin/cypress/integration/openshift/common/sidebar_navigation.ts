@@ -5,11 +5,11 @@ When('user is at the dashboard page', () => {
 });
 
 When('user clicks on the Service Mesh icon in the left navigation bar', () => {
-  cy.get('button[class*="pf-v5-c-nav__link"]')
+  cy.get('button[class*="c-nav__link"]')
     .contains('Service Mesh')
     .click()
     .then(() => {
-      cy.get('ul[class="pf-v5-c-nav__list"]').should('be.visible');
+      cy.get('ul[class*="c-nav__list"]').should('be.visible');
     });
 });
 
@@ -23,9 +23,9 @@ When('cypress intercept hooks for sidebar are registered', () => {
 Then('buttons for Overview, Graph and Istio Config are displayed', () => {
   cy.waitForReact();
   cy.reload(true); // force reload to make sure OSSMC is loaded
-  cy.get('a[data-test="nav"][class*="pf-v5-c-nav__link"]').contains('Overview');
-  cy.get('a[data-test="nav"][class*="pf-v5-c-nav__link"]').contains('Graph');
-  cy.get('a[data-test="nav"][class*="pf-v5-c-nav__link"]').contains('Istio Config');
+  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Overview');
+  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Graph');
+  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Istio Config');
 });
 
 Then('user navigates to the OSSMC {string} page', (hrefName: string) => {
@@ -69,7 +69,7 @@ Then('user sees istio-system overview card', () => {
 
 When('user selects the {string} namespace in the graph', (ns: string) => {
   cy.get('button#namespace-selector').click();
-  cy.get('div[class="pf-v5-c-menu"]').contains('span', ns).parent('div').find('input').check();
+  cy.get('div[class*="c-menu"]').contains('span', ns).parent('div').find('input').check();
 
   // Click outside the namespace selector to load the namespace graph
   cy.get('div#global-namespace-selector').click();

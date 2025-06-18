@@ -77,7 +77,7 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
         cy.get('#inputPassword').clear().type(password);
         cy.get('button[type="submit"]').click();
         // wait till page loading after login
-        cy.get("[data-test='username']").should("be.visible");
+        cy.get("[data-test='username']").should('be.visible');
         guidedTour.close();
       });
     },
@@ -104,9 +104,9 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
 export const guidedTour = {
   close: () => {
     cy.waitForReact();
-    cy.get("body").then(($body) => {
+    cy.get('body').then($body => {
       if ($body.find(`[data-test="guided-tour-modal"]`).length > 0) {
-        cy.get(`[data-test="tour-step-footer-secondary"]`).contains("Skip tour").click();
+        cy.get(`[data-test="tour-step-footer-secondary"]`).contains('Skip tour').click();
       }
     });
   }
@@ -115,7 +115,12 @@ export const guidedTour = {
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
 
 Cypress.Commands.add('getColWithRowText', (rowSearchText: string, colName: string) =>
-  cy.get('tbody').contains('tr', rowSearchText).find(`td#${colName.toLowerCase()}`)
+  cy
+    .get('tbody')
+    .contains('tr', rowSearchText)
+    // Different selectors depending on Patternfly version
+    // id="${colName}" for PF5, data-label="${colName}" for PF6
+    .find(`td[id="${colName.toLowerCase()}"],td[data-label="${colName.toLowerCase()}"]`)
 );
 
 Cypress.Commands.add('inputValidation', (id: string, text: string, valid = true) => {
