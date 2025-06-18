@@ -9,8 +9,8 @@ Given('user is at the istio config list page', () => {
 });
 
 When('user selects the {string} project', (namespace: string) => {
-  cy.contains('span[class="pf-v5-c-menu-toggle__text"]', 'Project:').click();
-  cy.contains('span[class="pf-v5-c-menu__item-text"]', namespace).click();
+  cy.contains('span[class*="c-menu-toggle__text"]', 'Project:').click();
+  cy.contains('span[class*="c-menu__item-text"]', namespace).click();
 });
 
 Then('user sees Name information for Istio objects in ossmc', () => {
@@ -111,7 +111,9 @@ function waitUntilConfigIsVisible(
 
   let found = false;
   // Get the link of the item name to distinguish each row
-  cy.get('td#name a')
+  // Different selectors depending on Patternfly version
+  // id="name" for PF5, data-label="name" for PF6
+  cy.get('td[id="name"] a,td[data-label="name"] a')
     .each($link => {
       const hRefAttr = $link[0].attributes.getNamedItem('href');
 
