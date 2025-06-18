@@ -9,8 +9,8 @@ Given('user is at the istio config list page', () => {
 });
 
 When('user selects the {string} project', (namespace: string) => {
-  cy.contains('span[class="pf-v5-c-menu-toggle__text"]', 'Project:').click();
-  cy.contains('span[class="pf-v5-c-menu__item-text"]', namespace).click();
+  cy.contains('span[class*="c-menu-toggle__text"]', 'Project:').click();
+  cy.contains('span[class*="c-menu__item-text"]', namespace).click();
 });
 
 Then('user sees Name information for Istio objects in ossmc', () => {
