@@ -115,6 +115,31 @@ Then('user sees cluster side panel', () => {
 Then('user sees control plane side panel', () => {
   cy.waitForReact();
   cy.get('#loading_kiali_spinner').should('not.exist');
+
+  // Wait for metrics
+  const maxTries = 15;
+  let tries = 0;
+  const waitForMemoryMetrics = (): void => {
+    if (tries > maxTries) {
+      throw new Error('Timed out waiting for Kiali to see the Shared Mesh Config');
+    }
+    tries++;
+    cy.request({ method: 'GET', url: '/api/namespaces/istio-system/controlplanes/istiod/metrics' }).then(
+      metricsResponse => {
+        expect(metricsResponse.status).to.equal(200);
+        cy.log(metricsResponse.body);
+        if (metricsResponse.body.process_resident_memory_bytes == null) {
+          cy.log(`Istiod hasn't load the Memory metrics yet. Tries: ${tries}. Waiting 3s...`);
+          cy.wait(3000);
+          waitForMemoryMetrics();
+        }
+      }
+    );
+  };
+  waitForMemoryMetrics();
+  cy.get('#refresh_button').click();
+  cy.get('#loading_kiali_spinner').should('not.exist');
+
   cy.get('#target-panel-control-plane')
     .should('be.visible')
     .within(() => {
@@ -252,12 +277,16 @@ Then('user sees tracing node side panel', () => {
 
 Then('user sees {string} icon side panel', (iconType: string) => {
   cy.waitForReact();
-  cy.get('#target-panel-node').get(`[data-test="icon-${iconType}-validation"]`).should('be.visible');
+  it('icon should be visible', { retries: 3 }, () => {
+    cy.get('#target-panel-node').get(`[data-test="icon-${iconType}-validation"]`).should('be.visible');
+  });
 });
 
 Then('user does not see {string} icon side panel', (iconType: string) => {
   cy.waitForReact();
-  cy.get('#target-panel-node').get(`[data-test="icon-${iconType}-validation"]`).should('not.exist');
+  it('icon should be not visible', { retries: 3 }, () => {
+    cy.get('#target-panel-node').get(`[data-test="icon-${iconType}-validation"]`).should('not.exist');
+  });
 });
 
 Then('user sees {string} configuration tabs', (configTabs: string) => {
@@ -276,4 +305,91 @@ Then('user sees {string} in the {string} configuration tab', (configOpt: string,
 Then('user does not see {string} in the {string} configuration tab', (configOpt: string, tab: string) => {
   cy.getBySel(`config-tab-${tab}`).click();
   cy.getBySel(`${tab}-config-editor`).should('not.contain', configOpt);
+});
+
+When('user opens the Trace Configuration modal', () => {
+  cy.waitForReact();
+  cy.contains('Configuration Tester').click();
+});
+
+Then('user sees the Trace Configuration modal', () => {
+  cy.get('.pf-v5-c-modal-box').should('be.visible');
+  cy.contains('Configuration Tester').should('be.visible');
+});
+
+Then('user sees the Discovery and Tester tabs', () => {
+  cy.get('.pf-v5-c-tabs__item').contains('Discovery').should('exist');
+  cy.get('.pf-v5-c-tabs__item').contains('Tester').should('exist');
+});
+
+Then('user sees the action buttons fixed at the bottom', () => {
+  cy.get('.pf-v5-c-modal-box__footer').should('be.visible');
+  cy.get('.pf-v5-c-modal-box__footer').within(() => {
+    cy.contains('Close').should('exist');
+  });
+});
+
+// Note: This is not checking values to be valid in jaeger/tempo setups
+Then('user verifies the Discovery information is correct', () => {
+  cy.get('#discover-spinner').should('not.exist');
+  cy.get('#discovery-tab-content').contains('Possible configuration(s) found');
+  cy.get('#discovery-tab-content').get('#valid-configurations').contains('Provider:');
+  cy.get('#discovery-tab-content').contains('Logs');
+  cy.get('#discovery-tab-content').get('#configuration-logs').contains('Parsed url');
+  cy.get('#discovery-tab-content').get('#configuration-logs').contains('Checking open ports');
+});
+
+When('user clicks the Rediscover button in the Discovery tab', () => {
+  cy.get('.pf-v5-c-modal-box').within(() => {
+    cy.contains('button', 'Rediscover').click();
+  });
+});
+
+When('user switches to the Tester tab', () => {
+  cy.get('div[data-test="modal-configuration-tester"]').within(() => {
+    cy.contains('button', 'Tester').click();
+  });
+});
+
+When('user changes the provider in the Tester tab', () => {
+  cy.get('div[data-test="modal-configuration-tester"]').within(() => {
+    cy.window().then((win: any) => {
+      const editor = win.ace.edit('ace-editor-tester');
+      const session = editor.getSession();
+      const linesCount = session.getLength();
+      const searchText = 'provider';
+      let replacer = 'tempo';
+      let provider = 'jaeger';
+
+      for (let i = 0; i < linesCount; i++) {
+        const line = session.getLine(i);
+        if (line.toString().toLowerCase().includes(searchText)) {
+          if (line.includes('tempo')) {
+            replacer = 'jaeger';
+            provider = 'tempo';
+          }
+          break;
+        }
+      }
+      let val: string = editor.getValue();
+      val = val.replace(`Provider: ${provider}`, `Provider: ${replacer}`);
+      editor.setValue(val);
+    });
+  });
+});
+
+When('user clicks the Test Configuration button', () => {
+  cy.get('div[data-test="modal-configuration-tester"]').within(() => {
+    cy.contains('Test Configuration').click();
+  });
+});
+
+Then('user sees the Tester result {string}', (result: string) => {
+  cy.get('div[data-test="modal-configuration-tester"]').within(() => {
+    if (result === 'incorrect') {
+      cy.get('span[data-test="icon-error-validation"]').should('exist');
+    } else {
+      cy.get('span[data-test="icon-correct-validation"]').should('exist');
+    }
+  });
 });
