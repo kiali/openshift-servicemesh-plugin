@@ -103,6 +103,6 @@ jobs:
           git add plugin/plugin-metadata.ts
         fi
 
-        git commit -m "Release $RELEASE_VERSION"
+        git commit -m "Bump to version $RELEASE_VERSION"
         git push origin $(git rev-parse HEAD):refs/heads/$BRANCH
-        git push origin $(git rev-parse HEAD):refs/tags/$RELEASE_VERSION
+        git push origin $(git rev-parse HEAD):refs/tags/$RELEASE_VERSION-rc
