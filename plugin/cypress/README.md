@@ -28,3 +28,16 @@ or in headless mode:
 ```bash
 yarn cypress:run
 ```
+
+Running specific test groups:
+
+```bash
+export TEST_GROUP="@smoke"
+yarn cypress:run:test-group:junit
+```
+
+you can use complex expresions, like
+```bash
+export TEST_GROUP="not @crd-validation and not @multi-cluster and not @smoke"
+yarn cypress:run:test-group:junit
+```
