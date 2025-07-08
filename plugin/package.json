@@ -15,6 +15,7 @@
     "cypress": "cypress open",
     "cypress:run": "cypress run",
     "cypress:run:junit": "cypress run --reporter cypress-multi-reporters --reporter-options configFile=reporter-config.json",
+    "cypress:run:test-group:junit": "cypress run --reporter cypress-multi-reporters --reporter-options configFile=reporter-config.json -e TAGS=\"${TEST_GROUP}\"",
     "cypress:delete:reports": "rm cypress/results/* || true",
     "cypress:combine:reports": "jrm cypress/results/combined-report.xml \"cypress/results/*.xml\"",
     "i18n": "yarn i18n:kiali && yarn i18n:openshift",
