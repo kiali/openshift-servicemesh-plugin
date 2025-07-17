@@ -1,0 +1,63 @@
+name: Copy Kiali Frontend
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_branch:
+        description: Branch to copy Kiali frontend (Separate branches by commas. Ex v1.73,v2.4)
+        required: true
+        default: v1.73
+        type: string
+
+jobs:
+  initialize:
+    name: Initialize
+    runs-on: ubuntu-latest
+    outputs:
+      branches: ${{ env.branches }}
+    steps:
+    - name: Prepare script to var
+      id: script_convert
+      run: |
+        cat <<-EOF > conversor.py
+        import sys, json
+
+        branch_arg = sys.argv[1]
+        branches = branch_arg.split(',')
+
+        print(json.dumps(branches))
+        EOF
+
+    - name: Set Branch
+      id: branches
+      env:
+        TAG_BRANCHES: ${{ github.event.inputs.tag_branch }}
+      run: |
+        BRANCHES=$(python conversor.py $TAG_BRANCHES)
+        echo "branches=$BRANCHES" >> $GITHUB_ENV
+
+  copy_kiali:
+    needs: [initialize]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: ${{fromJson(needs.initialize.outputs.branches)}}
+    steps:
+    - name: Checkout branch
+      uses: actions/checkout@v4
+      with:
+        ref: ${{matrix.branch}}
+
+    - name: Configure git
+      run: |
+        git config user.email 'kiali-dev@googlegroups.com'
+        git config user.name 'kiali-bot'
+
+    - name: Copy Kiali source code
+      env:
+        BRANCH: ${{matrix.branch}}
+      run: |
+        hack/copy-frontend-src-to-ossmc.sh --source-ref "$BRANCH"
+
+        # Push the changes to the branch
+        git push origin $(git rev-parse HEAD):refs/heads/$BRANCH
