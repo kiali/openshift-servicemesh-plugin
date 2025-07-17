@@ -115,16 +115,43 @@ Then('user sees cluster side panel', () => {
 Then('user sees control plane side panel', () => {
   cy.waitForReact();
   cy.get('#loading_kiali_spinner').should('not.exist');
-  cy.get('#target-panel-control-plane')
-    .should('be.visible')
-    .within(() => {
-      cy.contains('istiod');
-      cy.contains('Outbound policy').should('be.visible');
-      cy.get('div[data-test="memory-chart"]').should('exist');
-      cy.get('div[data-test="cpu-chart"]').should('exist');
-      cy.get('div[data-test="control-plane-certificate"]').should('exist');
-      cy.get('[data-test="label-TLS"]').contains('TLSV1_2');
-    });
+
+  // Wait for metrics
+  const maxTries = 15;
+  let tries = 0;
+  const waitForMemoryMetrics = (): void => {
+    if (tries > maxTries) {
+      throw new Error('Timed out waiting for Kiali to see the Shared Mesh Config');
+    }
+    tries++;
+    cy.request({ method: 'GET', url: '/api/namespaces/istio-system/controlplanes/istiod/metrics' }).then(
+      metricsResponse => {
+        expect(metricsResponse.status).to.equal(200);
+        cy.log(metricsResponse.body);
+        if (metricsResponse.body.process_resident_memory_bytes == null) {
+          cy.log(`Istiod hasn't load the Memory metrics yet. Tries: ${tries}. Waiting 3s...`);
+          cy.wait(3000);
+          waitForMemoryMetrics();
+        }
+      }
+    );
+  };
+  waitForMemoryMetrics();
+  it('control pannel should be visible', { retries: 3 }, () => {
+    cy.get('#refresh_button').click();
+    cy.get('#loading_kiali_spinner').should('not.exist');
+
+    cy.get('#target-panel-control-plane')
+      .should('be.visible')
+      .within(() => {
+        cy.contains('istiod');
+        cy.contains('Outbound policy').should('be.visible');
+        cy.get('div[data-test="memory-chart"]').should('exist');
+        cy.get('div[data-test="cpu-chart"]').should('exist');
+        cy.get('div[data-test="control-plane-certificate"]').should('exist');
+        cy.get('[data-test="label-TLS"]').contains('TLSV1_2');
+      });
+  });
 });
 
 Then('user sees data plane side panel', () => {
@@ -252,12 +279,16 @@ Then('user sees tracing node side panel', () => {
 
 Then('user sees {string} icon side panel', (iconType: string) => {
   cy.waitForReact();
-  cy.get('#target-panel-node').get(`[data-test="icon-${iconType}-validation"]`).should('be.visible');
+  it('icon should be visible', { retries: 3 }, () => {
+    cy.get('#target-panel-node').get(`[data-test="icon-${iconType}-validation"]`).should('be.visible');
+  });
 });
 
 Then('user does not see {string} icon side panel', (iconType: string) => {
   cy.waitForReact();
-  cy.get('#target-panel-node').get(`[data-test="icon-${iconType}-validation"]`).should('not.exist');
+  it('icon should be not visible', { retries: 3 }, () => {
+    cy.get('#target-panel-node').get(`[data-test="icon-${iconType}-validation"]`).should('not.exist');
+  });
 });
 
 Then('user sees {string} configuration tabs', (configTabs: string) => {
