@@ -11,7 +11,8 @@ import {
   VirtualService,
   IstioObject,
   GroupVersionKind,
-  K8sResource
+  K8sResource,
+  K8sInferencePool
 } from './IstioObjects';
 import { ResourcePermissions } from './Permissions';
 import { getGVKTypeString, getIstioObjectGVK, kindToStringIncludeK8s } from '../utils/IstioConfigUtils';
@@ -67,6 +68,7 @@ export enum gvkType {
   K8sGatewayClass = 'K8sGatewayClass',
   K8sGRPCRoute = 'K8sGRPCRoute',
   K8sHTTPRoute = 'K8sHTTPRoute',
+  K8sInferencePool = 'K8sInferencePool',
   K8sReferenceGrant = 'K8sReferenceGrant',
   K8sTCPRoute = 'K8sTCPRoute',
   K8sTLSRoute = 'K8sTLSRoute',
@@ -103,6 +105,7 @@ export const dicTypeToGVK: { [key in gvkType]: GroupVersionKind } = {
   [gvkType.K8sGatewayClass]: { Group: 'gateway.networking.k8s.io', Version: 'v1', Kind: 'GatewayClass' },
   [gvkType.K8sGRPCRoute]: { Group: 'gateway.networking.k8s.io', Version: 'v1', Kind: 'GRPCRoute' },
   [gvkType.K8sHTTPRoute]: { Group: 'gateway.networking.k8s.io', Version: 'v1', Kind: 'HTTPRoute' },
+  [gvkType.K8sInferencePool]: { Group: 'inference.networking.x-k8s.io', Version: 'v1alpha2', Kind: 'InferencePool' },
   [gvkType.K8sReferenceGrant]: { Group: 'gateway.networking.k8s.io', Version: 'v1beta1', Kind: 'ReferenceGrant' },
   [gvkType.K8sTCPRoute]: { Group: 'gateway.networking.k8s.io', Version: 'v1alpha2', Kind: 'TCPRoute' },
   [gvkType.K8sTLSRoute]: { Group: 'gateway.networking.k8s.io', Version: 'v1alpha2', Kind: 'TLSRoute' },
@@ -520,6 +523,30 @@ export const k8sGRPCRouteToIstioItems = (
       resource: route,
       resourceVersion: route.metadata.resourceVersion,
       validation: hasValidations(vKey) ? validations[objectGVK][vKey] : undefined
+    };
+
+    istioItems.push(item);
+  });
+
+  return istioItems;
+};
+
+export const k8sInferencePoolToIstioItems = (
+  inferencePools: K8sInferencePool[],
+  cluster?: string
+): IstioConfigItem[] => {
+  const istioItems: IstioConfigItem[] = [];
+
+  inferencePools.forEach(pool => {
+    const item = {
+      cluster: cluster,
+      namespace: pool.metadata.namespace ?? '',
+      kind: pool.kind,
+      apiVersion: pool.apiVersion,
+      name: pool.metadata.name,
+      creationTimestamp: pool.metadata.creationTimestamp,
+      resource: pool,
+      resourceVersion: pool.metadata.resourceVersion
     };
 
     istioItems.push(item);
