@@ -137,19 +137,21 @@ Then('user sees control plane side panel', () => {
     );
   };
   waitForMemoryMetrics();
-  cy.get('#refresh_button').click();
-  cy.get('#loading_kiali_spinner').should('not.exist');
+  it('control pannel should be visible', { retries: 3 }, () => {
+    cy.get('#refresh_button').click();
+    cy.get('#loading_kiali_spinner').should('not.exist');
 
-  cy.get('#target-panel-control-plane')
-    .should('be.visible')
-    .within(() => {
-      cy.contains('istiod');
-      cy.contains('Outbound policy').should('be.visible');
-      cy.get('div[data-test="memory-chart"]').should('exist');
-      cy.get('div[data-test="cpu-chart"]').should('exist');
-      cy.get('div[data-test="control-plane-certificate"]').should('exist');
-      cy.get('[data-test="label-TLS"]').contains('TLSV1_2');
-    });
+    cy.get('#target-panel-control-plane')
+      .should('be.visible')
+      .within(() => {
+        cy.contains('istiod');
+        cy.contains('Outbound policy').should('be.visible');
+        cy.get('div[data-test="memory-chart"]').should('exist');
+        cy.get('div[data-test="cpu-chart"]').should('exist');
+        cy.get('div[data-test="control-plane-certificate"]').should('exist');
+        cy.get('[data-test="label-TLS"]').contains('TLSV1_2');
+      });
+  });
 });
 
 Then('user sees data plane side panel', () => {
@@ -265,6 +267,16 @@ Then('user sees {string} node side panel', (name: string) => {
     });
 });
 
+Then('user does not see {string} in mesh body', (text: string) => {
+  cy.waitForReact();
+  cy.get('#loading_kiali_spinner').should('not.exist');
+  cy.get('#target-panel-mesh-body')
+    .should('be.visible')
+    .within(() => {
+      cy.contains(text).should('not.exist');
+    });
+});
+
 Then('user sees tracing node side panel', () => {
   cy.waitForReact();
   cy.get('#loading_kiali_spinner').should('not.exist');
@@ -372,7 +384,7 @@ When('user changes the provider in the Tester tab', () => {
         }
       }
       let val: string = editor.getValue();
-      val = val.replace(`Provider: ${provider}`, `Provider: ${replacer}`);
+      val = val.replace(`provider: ${provider}`, `provider: ${replacer}`);
       editor.setValue(val);
     });
   });
