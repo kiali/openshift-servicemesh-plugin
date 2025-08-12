@@ -75,6 +75,7 @@ import { getGVKTypeString } from '../../utils/IstioConfigUtils';
 import { RefreshIntervalManual, RefreshIntervalPause } from 'config/Config';
 import { EmptyOverview } from './EmptyOverview';
 import { connectRefresh } from 'components/Refresh/connectRefresh';
+import { isIstioControlPlane } from 'config/ServerConfig';
 
 const gridStyleCompact = kialiStyle({
   backgroundColor: PFColors.BackgroundColor200,
@@ -443,7 +444,7 @@ export class OverviewPageComponent extends React.Component<OverviewProps, State>
             nsInfo.errorMetrics = rs.request_error_count;
 
             /*
-            if (nsInfo.name === serverConfig.istioNamespace) {
+            if (isIstioNamespace(nsInfo.name)) {
               nsInfo.controlPlaneMetrics = {
                 istiod_proxy_time: rs.pilot_proxy_convergence_time,
                 istiod_container_cpu: rs.container_cpu_usage_seconds_total,
@@ -775,7 +776,7 @@ export class OverviewPageComponent extends React.Component<OverviewProps, State>
     // then it can use the Istio Injection Actions.
     // RBAC allow more fine granularity but Kiali won't check that in detail.
 
-    if (serverConfig.istioNamespace !== nsInfo.name) {
+    if (!isIstioControlPlane(nsInfo.cluster!, nsInfo.name)) {
       if (
         !(
           serverConfig.ambientEnabled &&
@@ -853,6 +854,71 @@ export class OverviewPageComponent extends React.Component<OverviewProps, State>
           namespaceActions.push(removeAction);
         } else {
           namespaceActions.push(enableAction);
+        }
+      }
+
+      // Ambient actions
+      if (serverConfig.ambientEnabled) {
+        const addAmbientAction = {
+          'data-test': `add-${nsInfo.name}-namespace-ambient`,
+          isGroup: false,
+          isSeparator: false,
+          title: 'Add to Ambient',
+          action: (ns: string) =>
+            this.setState({
+              showTrafficPoliciesModal: true,
+              nsTarget: ns,
+              opTarget: 'enable',
+              kind: 'ambient',
+              clusterTarget: nsInfo.cluster
+            })
+        };
+
+        const disableAmbientAction = {
+          'data-test': `disable-${nsInfo.name}-namespace-ambient`,
+          isGroup: false,
+          isSeparator: false,
+          title: 'Disable Ambient',
+          action: (ns: string) =>
+            this.setState({
+              showTrafficPoliciesModal: true,
+              nsTarget: ns,
+              opTarget: 'disable',
+              kind: 'ambient',
+              clusterTarget: nsInfo.cluster
+            })
+        };
+
+        const removeAmbientAction = {
+          'data-test': `remove-${nsInfo.name}-namespace-ambient`,
+          isGroup: false,
+          isSeparator: false,
+          title: 'Remove Ambient',
+          action: (ns: string) =>
+            this.setState({
+              showTrafficPoliciesModal: true,
+              nsTarget: ns,
+              opTarget: 'remove',
+              kind: 'ambient',
+              clusterTarget: nsInfo.cluster
+            })
+        };
+
+        if (
+          nsInfo.labels &&
+          !nsInfo.labels[serverConfig.istioLabels.injectionLabelName] &&
+          !nsInfo.labels[serverConfig.istioLabels.injectionLabelRev]
+        ) {
+          if (nsInfo.isAmbient) {
+            namespaceActions.push({
+              isGroup: false,
+              isSeparator: true
+            });
+            namespaceActions.push(disableAmbientAction);
+            namespaceActions.push(removeAmbientAction);
+          } else {
+            namespaceActions.push(addAmbientAction);
+          }
         }
       }
 
@@ -1319,20 +1385,21 @@ export class OverviewPageComponent extends React.Component<OverviewProps, State>
   };
 
   renderNamespaceBadges = (ns: NamespaceInfo, tooltip: boolean): React.ReactNode => {
+    const isControlPlane = isIstioControlPlane(ns.cluster!, ns.name);
     return (
       <>
-        {ns.name === serverConfig.istioNamespace && <ControlPlaneBadge />}
+        {isControlPlane && <ControlPlaneBadge />}
 
-        {ns.name !== serverConfig.istioNamespace && ns.revision && <ControlPlaneVersionBadge version={ns.revision} />}
+        {!isControlPlane && ns.revision && <ControlPlaneVersionBadge version={ns.revision} />}
 
-        {ns.name === serverConfig.istioNamespace && !this.props.istioAPIEnabled && (
-          <Label style={{ marginLeft: '0.5rem' }} color="orange" isCompact>
+        {isControlPlane && !this.props.istioAPIEnabled && (
+          <Label style={{ marginLeft: '0.5rem' }} color="orange" isCompact data-test="istio-disabled-badge">
             Istio API disabled
           </Label>
         )}
-
-        {serverConfig.ambientEnabled && ns.name !== serverConfig.istioNamespace && ns.labels && ns.isAmbient && (
-          <AmbientBadge tooltip={tooltip ? 'labeled as part of Ambient Mesh' : undefined}></AmbientBadge>
+        
+        {serverConfig.ambientEnabled && !isControlPlane && ns.labels && ns.isAmbient && (
+          <AmbientBadge tooltip={tooltip ? 'labeled as part of Ambient Mesh' : undefined} data-test="ambient-badge"></AmbientBadge>
         )}
       </>
     );
