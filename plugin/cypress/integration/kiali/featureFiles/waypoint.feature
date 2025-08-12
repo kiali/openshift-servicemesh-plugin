@@ -53,7 +53,7 @@ Feature: Kiali Waypoint related features
     And validates waypoint Info data for "service"
 
   Scenario: [Workload details - ztunnel] The workload details for a ztunnel are valid
-    Given user is at the details page for the "workload" "istio-system/ztunnel" located in the "" cluster
+    Given user is at the details page for the "workload" "ztunnel/ztunnel" located in the "" cluster
     Then the user cannot see the "missing-sidecar" badge for "ztunnel" workload in "istio-system" namespace
     And the proxy status is "healthy"
     And the user validates the Ztunnel tab for the "bookinfo" namespace
@@ -382,6 +382,11 @@ Feature: Kiali Waypoint related features
     Then user goes to the waypoint "Info" subtab
     And validates waypoint Info data for "service"
 
+  Scenario: [Waypoint details] The waypoint workload log level os updated
+    Given user is at the details page for the "workload" "bookinfo/waypoint" located in the "" cluster
+    When the user goes to the "Logs" tab
+    Then the user updates the log level to "Debug"
+
   @skip-istio-1-23
   Scenario: [Traffic] Sidecar Ambient traffic
     Given user is at the "graph" page
@@ -405,3 +410,21 @@ Feature: Kiali Waypoint related features
     Then user "disables" "tcp" traffic option
     Then 4 edges appear in the graph
     Then user "closes" traffic menu
+
+  @selected
+  Scenario: [Overview] Add to Ambient in the test-sidecar namespace
+    Given user is at administrator perspective
+    Given user is at the "overview" page
+    And user filters "test-sidecar" namespace
+    And user opens the menu
+    And the option "Add to Ambient" does not exist for "test-sidecar" namespace
+    And the user clicks on "removes auto injection" for "test-sidecar" namespace
+    Then "default" badge "not exist"
+    And user opens the menu
+    And the user clicks on "Add to Ambient" for "test-sidecar" namespace
+    Then "Ambient" badge "exist"
+    And user opens the menu
+    And the user clicks on "remove Ambient" for "test-sidecar" namespace
+    And user opens the menu
+    And the user clicks on "enable sidecar" for "test-sidecar" namespace
+    Then "default" badge "exist"

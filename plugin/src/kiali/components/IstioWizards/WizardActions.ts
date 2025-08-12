@@ -70,7 +70,7 @@ import { ANYTHING, PRESENCE } from './RequestRouting/MatchBuilder';
 import { t } from 'utils/I18nUtils';
 import { defaultGatewayLabel, defaultGatewayLabelValue } from 'config/Constants';
 import { dicTypeToGVK, gvkType } from '../../types/IstioConfigList';
-import { getAppLabelName, getVersionLabelName } from 'config/ServerConfig';
+import { getAppLabelName, getVersionLabelName, istioNamespaces } from 'config/ServerConfig';
 
 export const WIZARD_TRAFFIC_SHIFTING = 'traffic_shifting';
 export const WIZARD_TCP_TRAFFIC_SHIFTING = 'tcp_traffic_shifting';
@@ -1956,7 +1956,7 @@ export const buildGraphSidecars = (namespace: string, graph: GraphDefinition): S
             },
             egress: [
               {
-                hosts: [`${serverConfig.istioNamespace}/*`]
+                hosts: istioNamespaces().map(ns => `${ns}/*`)
               }
             ]
           }
@@ -2371,6 +2371,29 @@ export const buildNamespaceInjectionPatch = (enable: boolean, remove: boolean, r
       labels: labels
     }
   };
+  return JSON.stringify(patch);
+};
+
+export const buildNamespaceAmbientPatch = (opTarget: string): string => {
+  const labels = {};
+  switch (opTarget) {
+    case 'enable':
+      labels[serverConfig.istioLabels.ambientNamespaceLabel] = serverConfig.istioLabels.ambientNamespaceLabelValue;
+      break;
+    case 'remove':
+      labels[serverConfig.istioLabels.ambientNamespaceLabel] = null;
+      break;
+    case 'disable':
+      labels[serverConfig.istioLabels.ambientNamespaceLabel] = 'none';
+      break;
+  }
+
+  const patch = {
+    metadata: {
+      labels: labels
+    }
+  };
+
   return JSON.stringify(patch);
 };
 
