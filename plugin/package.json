@@ -14,7 +14,7 @@
     "start-console": "./start-console.sh",
     "cypress": "cypress open -e TAGS=\"@ossmc and @core and not @skip-ossmc\"",
     "cypress:run": "cypress run -e TAGS=\"@ossmc and @smoke\" && cypress run -e TAGS=\"@ossmc and @core and not @smoke and not @skip-ossmc\" && cypress run -e TAGS=\"@ossmc and @crd-validation\"",
-    "cypress:run:junit": "cypress run --reporter cypress-multi-reporters --reporter-options configFile=reporter-config.json -e TAGS=\"not @crd-validation and @ossmc and not @skip-ossmc and not @multi-cluster and not @multi-primary and not @external-kiali and not @ambient and not @waypoint and (not @waypoint-tracing or @tracing)\" && cypress run --reporter cypress-multi-reporters --reporter-options configFile=reporter-config.json -e TAGS=\"@ossmc and @crd-validation\"",
+    "cypress:run:junit": "cypress run --reporter cypress-multi-reporters --reporter-options configFile=reporter-config.json -e TAGS=\"@ossmc and @core and not @skip-ossmc\" && cypress run --reporter cypress-multi-reporters --reporter-options configFile=reporter-config.json -e TAGS=\"@ossmc and @crd-validation\"",
     "cypress:run:test-group:junit": "cypress run --reporter cypress-multi-reporters --reporter-options configFile=reporter-config.json -e TAGS=\"${TEST_GROUP}\"",
     "cypress:delete:reports": "rm cypress/results/* || true",
     "cypress:combine:reports": "jrm cypress/results/combined-report.xml \"cypress/results/*.xml\"",
