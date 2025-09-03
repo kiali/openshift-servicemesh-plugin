@@ -28,7 +28,6 @@ import { ValidationSummaryLink } from '../Link/ValidationSummaryLink';
 import { ValidationStatus } from '../../types/IstioObjects';
 import { PFBadgeType, PFBadge, PFBadges } from 'components/Pf/PfBadges';
 import { MissingLabel } from '../MissingLabel/MissingLabel';
-import { MissingAuthPolicy } from 'components/MissingAuthPolicy/MissingAuthPolicy';
 import {
   getGVKTypeString,
   getIstioObjectGVK,
@@ -36,7 +35,7 @@ import {
   kindToStringIncludeK8s
 } from 'utils/IstioConfigUtils';
 import { Label } from 'components/Label/Label';
-import { isIstioNamespace, isMultiCluster } from 'config/ServerConfig';
+import { isMultiCluster } from 'config/ServerConfig';
 import { ControlPlaneBadge } from 'pages/Overview/ControlPlaneBadge';
 import { NamespaceStatuses } from 'pages/Overview/NamespaceStatuses';
 import { KialiIcon } from '../../config/KialiIcon';
@@ -46,13 +45,16 @@ import { hasMissingSidecar } from './Config';
 import { InstanceType } from 'types/Common';
 import { infoStyle } from 'styles/IconStyle';
 import { classes } from 'typestyle';
+import { WorkloadConfigValidation } from '../Validations/WorkloadConfigValidation';
 
 const rendererInfoStyle = kialiStyle({
   marginBottom: '-0.125rem',
   marginRight: '0',
   marginTop: '0'
 });
-
+const workloadInfoStyle = kialiStyle({
+  verticalAlign: '-0.125rem'
+});
 // Links
 
 const getLink = (item: TResource, config: Resource, query?: string): string => {
@@ -104,7 +106,7 @@ export const details: Renderer<AppListItem | WorkloadListItem | ServiceListItem>
   const hasMissingVersion = isWorkload && !item['versionLabel'] && !item.isWaypoint;
   const additionalDetails = (item as WorkloadListItem | ServiceListItem).additionalDetailSample;
   const spacer = isWorkload && hasMissingSidecar(item) && additionalDetails && additionalDetails.icon;
-  const hasMissingAP = isWorkload && (item as WorkloadListItem).notCoveredAuthPolicy;
+
   return (
     <Td
       role="gridcell"
@@ -113,9 +115,13 @@ export const details: Renderer<AppListItem | WorkloadListItem | ServiceListItem>
       style={{ verticalAlign: 'middle', whiteSpace: 'nowrap' }}
     >
       <ul>
-        {hasMissingAP && (
+        {isWorkload && (
           <li>
-            <MissingAuthPolicy namespace={item.namespace} />
+            <WorkloadConfigValidation
+              namespace={item.namespace}
+              validations={item.validations}
+              className={classes(workloadInfoStyle)}
+            />
           </li>
         )}
 
@@ -260,7 +266,7 @@ export const nsItem: Renderer<NamespaceInfo> = (ns: NamespaceInfo, _config: Reso
     >
       <PFBadge badge={badge} />
       {ns.name}
-      {isIstioNamespace(ns.name) && <ControlPlaneBadge />}
+      {ns.isControlPlane && <ControlPlaneBadge />}
     </Td>
   );
 };
