@@ -187,6 +187,8 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
       const istioUrl = refForKialiIstio(details);
 
       visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
+    } else if (type === 'pods') {
+      visitUrl.url = `/k8s/ns/${namespace}/pods/${details}/ossmconsole${webParams}`;
     }
   } else {
     if (targetPage === 'graph') {
