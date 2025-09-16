@@ -75,7 +75,7 @@ export type SummaryPanelNodeProps = Omit<SummaryPanelPropType, 'kiosk'> & {
 export type SummaryPanelNodeComponentProps = ReduxProps &
   SummaryPanelNodeProps & {
     gateways: string[] | null;
-    netObs?:url?: string;
+    netObsurl?: string;
     onKebabToggled?: (isOpen: boolean) => void;
     peerAuthentications: PeerAuthentication[] | null;
     serviceDetails: ServiceDetailsInfo | null | undefined;
@@ -237,8 +237,8 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
               {secondBadge}
                             <div className={nodeInfoStyle}>
                 <NetworkTrafficBadge namespace={nodeData.namespace} />
-                {this.props.netObsUrl ? (
-                  <a href={this.props.netObsUrl} target="_blank" rel="noopener noreferrer">
+                {this.props.netObsurl ? (
+                  <a href={this.props.netObsurl} target="_blank" rel="noopener noreferrer">
                     Network Traffic <KialiIcon.ExternalLink />
                   </a>
                 ) : (
@@ -655,7 +655,7 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
       serviceDetails={isServiceDetailsLoading ? undefined : serviceDetails}
       gateways={gateways}
       peerAuthentications={peerAuthentications}
-      netObsUrl={netObsUrl}
+      netObsurl={netObsUrl}
       onKebabToggled={handleKebabToggled}
       {...props}
     />
