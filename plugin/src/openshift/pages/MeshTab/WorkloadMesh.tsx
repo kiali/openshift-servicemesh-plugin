@@ -24,7 +24,6 @@ const WorkloadMeshTab: React.FC<void> = () => {
 
   if (ns && name && plural) {
     let workload = name;
-
     if (plural === 'pods') {
       let count = 0;
       let index = 0;
@@ -41,6 +40,11 @@ const WorkloadMeshTab: React.FC<void> = () => {
       }
 
       if (index > 0) {
+        // This is really a guess, but there are pods, like istio, which is like:
+        // istiod-866fd6ccd7-7v8p5 and not details-v1-77b775f46-c7vjb
+        if (count === 2) {
+          index = workload.indexOf(`-`);
+        }
         workload = workload.substring(0, index);
       }
     }
