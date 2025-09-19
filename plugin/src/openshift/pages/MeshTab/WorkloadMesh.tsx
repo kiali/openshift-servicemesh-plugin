@@ -25,28 +25,21 @@ const WorkloadMeshTab: React.FC<void> = () => {
   if (ns && name && plural) {
     let workload = name;
     if (plural === 'pods') {
-      let count = 0;
-      let index = 0;
+      const parts = workload.split('-');
 
-      // Get the parent workload (app-version) from pod identifier
-      for (let i = 0; i < workload.length; i++) {
-        if (workload[i] === '-') {
-          count++;
-
-          if (count === 2) {
-            index = i;
-          }
-        }
+      if (parts.length >= 3) {
+        // More than 2 segments -> likely Deployment / ReplicaSet
+        // e.g. details-v1-77b775f46-c7vjb -> details-v1
+        // e.g. istiod-866fd6ccd7-7v8p5 -> istiod
+        workload = parts.slice(0, -2).join('-');
       }
-
-      if (index > 0) {
-        // This is really a guess, but there are pods, like istio, which is like:
-        // istiod-866fd6ccd7-7v8p5 and not details-v1-77b775f46-c7vjb
-        if (count === 2) {
-          index = workload.indexOf(`-`);
-        }
-        workload = workload.substring(0, index);
+      if (parts.length === 2) {
+        // Two segments only -> likely DaemonSet or normal name
+        // e.g. ztunnel-f94gp -> ztunnel
+        workload = parts.slice(0, -1).join('-');
       }
+      // TODO: with hyphen in name (Still an issue)
+      // e.g. kiali-traffic-generator-t9mlw, curl-client
     }
 
     const workloadId: WorkloadId = {
