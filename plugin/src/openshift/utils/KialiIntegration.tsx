@@ -15,7 +15,8 @@ export const properties = {
   // 'plugin-config.json' is a resource mounted from a ConfigMap, so, the UI app can read config from that file
   pluginConfig: `/api/plugins/${OSSM_CONSOLE}/plugin-config.json`,
   // External
-  distributedTracingPluginConfig: `/api/plugins/distributed-tracing-console-plugin/plugin-manifest.json`
+  distributedTracingPluginConfig: `/api/plugins/distributed-tracing-console-plugin/plugin-manifest.json`,
+  networkTrafficPluginConfig: `/api/plugins/network-traffic-console-plugin/plugin-manifest.json`
 };
 
 type Observability = {
@@ -55,6 +56,16 @@ export const getPluginConfig = async (): Promise<PluginConfig> => {
 export const getDistributedTracingPluginManifest = async (): Promise<OpenShiftPluginConfig> => {
   return await new Promise((resolve, reject) => {
     consoleFetchJSON(properties.distributedTracingPluginConfig)
+      .then(config => {
+        resolve(config);
+      })
+      .catch(error => reject(error));
+  });
+};
+
+export const getNetworkObservabilityPluginManifest = async (): Promise<OpenShiftPluginConfig> => {
+  return await new Promise((resolve, reject) => {
+    consoleFetchJSON(properties.networkTrafficPluginConfig)
       .then(config => {
         resolve(config);
       })

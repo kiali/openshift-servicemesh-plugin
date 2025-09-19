@@ -86,8 +86,11 @@ const defaultPluginConfig: PluginConfig = {
 let pluginConfig: PluginConfig = defaultPluginConfig;
 export {pluginConfig};
 
-let distributedTracingPluginConfig:OpenShiftPluginConfig;
+let distributedTracingPluginConfig: OpenShiftPluginConfig;
 export {distributedTracingPluginConfig};
+
+let networkTrafficPluginConfig: any;
+export {networkTrafficPluginConfig};
 
 class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
@@ -163,6 +166,12 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           console.debug(`Error fetching Distributed Tracing plugin configuration. (Probably is not installed) ${error}`)
           // For testing the distributed tracing integration locally, assign distributedTracingPluginConfig = "plugin manifest json"
         });
+      const getNetworkObservabilityPluginManifestPromise = this.promises
+        .register('getNetworkObservabilityPluginManifestPromise', getNetworkObservabilityPlugin())
+        .then(response => (networkTrafficPluginConfig = (response)))
+        .catch(error => {
+          console.debug(`Error fetching Network Observability plugin configuration. (Probably is not installed) ${error}`)
+        });
       API.getStatus()
         .then(response => this.processServerStatus(response.data))
         .catch(error => {
@@ -174,7 +183,8 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         getServerConfigPromise,
         getTracingInfoPromise,
         getPluginPromise,
-        getDistributedTracingPluginManifestPromise
+        getDistributedTracingPluginManifestPromise,
+        getNetworkObservabilityPluginManifestPromise
       ]);
     } catch (err) {
       console.error('Error loading kiali config', err);
@@ -312,3 +322,7 @@ const mapDispatchToProps = (dispatch: KialiDispatch): KialiControllerReduxProps 
 });
 
 export const KialiController = connect(null, mapDispatchToProps)(KialiControllerComponent);
+function getNetworkObservabilityPlugin(): Promise<unknown> {
+  throw new Error('Function not implemented.');
+}
+
