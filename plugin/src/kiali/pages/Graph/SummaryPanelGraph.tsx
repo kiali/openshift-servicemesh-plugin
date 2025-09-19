@@ -43,7 +43,6 @@ import { store } from '../../store/ConfigStore';
 import { namespacesForCluster } from '../../utils/Common';
 
 type SummaryPanelGraphMetricsState = {
-  externalServices: Datapoint[];
   grpcReceivedIn: Datapoint[];
   grpcReceivedOut: Datapoint[];
   grpcRequestErrIn: Datapoint[];
