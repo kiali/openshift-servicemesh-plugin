@@ -3,10 +3,10 @@ name: Copy Kiali Frontend
 on:
   workflow_dispatch:
     inputs:
-      tag_branch:
-        description: Branch to copy Kiali frontend (Separate branches by commas. Ex v1.73,v2.4)
+      tag_branches:
+        description: Branches to bump version (Separate branches by commas)
         required: true
-        default: v1.73
+        default: v1.73,v2.4,v2.11
         type: string
 
 jobs:

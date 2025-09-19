@@ -1,12 +1,19 @@
-name: Tag Bump Version
+name: Bump Release Version
 
 on:
   workflow_dispatch:
     inputs:
-      tag_branch:
-        description: Branch to bump version (Separate branches by commas. Ex v1.73,v2.4)
+      tag_branches:
+        description: Branches to bump version (Separate branches by commas)
         required: true
-        default: v1.73
+        default: v1.73,v2.4,v2.11
+        type: string
+  workflow_call:
+    inputs:
+      tag_branches:
+        description: Branches to bump version (Separate branches by commas)
+        required: true
+        default: v1.73,v2.4,v2.11
         type: string
 
 jobs:
@@ -31,7 +38,7 @@ jobs:
     - name: Set Branch
       id: branches
       env:
-        TAG_BRANCHES: ${{ github.event.inputs.tag_branch }}
+        TAG_BRANCHES: ${{ github.event.inputs.tag_branches }}
       run: |
         BRANCHES=$(python conversor.py $TAG_BRANCHES)
         echo "branches=$BRANCHES" >> $GITHUB_ENV
@@ -40,13 +47,17 @@ jobs:
     needs: [initialize]
     runs-on: ubuntu-latest
     strategy:
+      # Allow other branches to continue even if one of the branches failed
+      fail-fast: false
       matrix:
         branch: ${{fromJson(needs.initialize.outputs.branches)}}
     steps:
     - name: Checkout branch
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{matrix.branch}}
+        # We need to fetch the full history to determine the latest tag
+        fetch-depth: 0
 
     - name: Prepare scripts
       run: |
@@ -75,31 +86,40 @@ jobs:
         git config user.email 'kiali-dev@googlegroups.com'
         git config user.name 'kiali-bot'
 
-    - name: Copy Kiali source code
+    - name: Copy Kiali frontend code
       env:
         BRANCH: ${{matrix.branch}}
       run: |
         hack/copy-frontend-src-to-ossmc.sh --source-ref "$BRANCH"
 
-    - name: Create Bump Version Tag in kiali/openshift-servicemesh-plugin
+    - name: Bump to next version
       env:
         BRANCH: ${{matrix.branch}}
       run: |
         RAW_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile)
 
-        RELEASE_VERSION=$(python bump.py patch $RAW_VERSION)
+        LATEST_TAG=$(git describe --tags --abbrev=0)
 
-        hack/update-version-string.sh "$RELEASE_VERSION"
+        # Check if the latest tag is the current release version tag
+        if [[ "$LATEST_TAG" == "$RAW_VERSION" ]]; then
+          RELEASE_VERSION=$(python bump.py patch $RAW_VERSION)
 
-        git add Makefile plugin/package.json
+          # Update the version in OSSMC repository
+          hack/update-version-string.sh "$RELEASE_VERSION"
 
-        if [[ $BRANCH != "v1.73" ]]; then
-          git add plugin/plugin-metadata.ts
+          # Commit the changes
+          git add Makefile plugin/package.json
+
+          if [[ $BRANCH != "v1.73" ]]; then
+            git add plugin/plugin-metadata.ts
+          fi
+
+          git commit -m "Bump to version $RELEASE_VERSION"
+          git push origin $(git rev-parse HEAD):refs/heads/$BRANCH
+
+          # Create the ossm version tag
+          git push origin $(git rev-parse HEAD):refs/tags/$RELEASE_VERSION-ossm
+        else
+          echo "Error: Latest tag $LATEST_TAG does not match expected $RAW_VERSION tag"
+          exit 1
         fi
-
-        # Commit the changes
-        git commit -m "Bump to version $RELEASE_VERSION"
-        git push origin $(git rev-parse HEAD):refs/heads/$BRANCH
-
-        # Create the bump version tag
-        git push origin $(git rev-parse HEAD):refs/tags/$RELEASE_VERSION-ossm
