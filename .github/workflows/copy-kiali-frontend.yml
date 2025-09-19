@@ -3,10 +3,10 @@ name: Copy Kiali Frontend
 on:
   workflow_dispatch:
     inputs:
-      tag_branch:
-        description: Branch to copy Kiali frontend (Separate branches by commas. Ex v1.73,v2.4)
+      branches:
+        description: Branches to copy Kiali frontend (Separate branches by commas)
         required: true
-        default: v1.73
+        default: v1.73,v2.4,v2.11
         type: string
 
 jobs:
@@ -31,9 +31,9 @@ jobs:
     - name: Set Branch
       id: branches
       env:
-        TAG_BRANCHES: ${{ github.event.inputs.tag_branch }}
+        BRANCHES: ${{ github.event.inputs.branches }}
       run: |
-        BRANCHES=$(python conversor.py $TAG_BRANCHES)
+        BRANCHES=$(python conversor.py $BRANCHES)
         echo "branches=$BRANCHES" >> $GITHUB_ENV
 
   copy_kiali:
@@ -44,7 +44,7 @@ jobs:
         branch: ${{fromJson(needs.initialize.outputs.branches)}}
     steps:
     - name: Checkout branch
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{matrix.branch}}
 
