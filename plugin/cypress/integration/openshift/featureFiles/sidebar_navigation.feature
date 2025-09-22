@@ -20,18 +20,18 @@ Feature: Kiali sidebar integration with OCP Console
     Then user sees istio-system overview card
 
   @bookinfo-app
-  @core
+  @core1
   Scenario: Graph page is displayed correctly
     When user navigates to the OSSMC "Graph" page
     And user selects the "bookinfo" namespace in the graph
     Then user sees the "bookinfo" graph summary
 
-  @core
+  @core1
   Scenario: Istio Config page is displayed correctly
     When user navigates to the OSSMC "Istio Config" page
     Then user sees Istio Config page elements from Kiali
 
-  @core
+  @core1
   Scenario: Mesh page is displayed correctly
     When user navigates to the OSSMC "Mesh" page
     Then user sees the mesh side panel
