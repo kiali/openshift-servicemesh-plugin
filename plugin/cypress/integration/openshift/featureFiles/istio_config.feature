@@ -14,7 +14,7 @@ Feature: Kiali Istio Config page
     And user selects the "bookinfo" project
 
   @bookinfo-app
-  @core2
+  @core-2
   Scenario: See all Istio Config objects in the bookinfo namespace.
     Then user sees all the Istio Config objects in the bookinfo namespace
     And user sees Name information for Istio objects in ossmc
@@ -22,42 +22,42 @@ Feature: Kiali Istio Config page
     And user sees Type information for Istio objects in ossmc
     And user sees Configuration information for Istio objects in ossmc
 
-  @core2
+  @core-2
   Scenario: Filter Istio Config objects by Istio Name
     When the user filters for "bookinfo-gateway"
     Then user only sees "bookinfo-gateway"
 
-  @core2
+  @core-2
   Scenario: Ability to create an AuthorizationPolicy object
     Then the user can create a "authorizationPolicy" Istio object in ossmc
 
-  @core2
+  @core-2
   Scenario: Ability to create a Gateway object
     Then the user can create a "gateway" Istio object in ossmc
 
   @gateway-api
-  @core2
+  @core-2
   Scenario: Ability to create a K8sGateway object
     Then the user can create a "k8sGateway" K8s Istio object in ossmc
 
   @gateway-api
-  @core2
+  @core-2
   Scenario: Ability to create a K8sReferenceGrant object
     Then the user can create a "k8sReferenceGrant" K8s Istio object in ossmc
 
-  @core2
+  @core-2
   Scenario: Ability to create a PeerAuthentication object
     Then the user can create a "peerAuthentication" Istio object in ossmc
 
-  @core2
+  @core-2
   Scenario: Ability to create a RequestAuthentication object
     Then the user can create a "requestAuthentication" Istio object in ossmc
 
-  @core2
+  @core-2
   Scenario: Ability to create a ServiceEntry object
     Then the user can create a "serviceEntry" Istio object in ossmc
 
-  @core2
+  @core-2
   Scenario: Ability to create a Sidecar object
     Then the user can create a "sidecar" Istio object in ossmc
 
