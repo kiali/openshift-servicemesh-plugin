@@ -24,9 +24,16 @@ type Observability = {
   namespace: string;
   tenant?: string;
 };
+type NetworkTraffic = {
+  instance: string;
+  namespace: string;
+  tenant?: string;
+};
+
 
 // This PluginConfig type should be mapped with the 'plugin-config.json' file
 export type PluginConfig = {
+  networkTraffic?: NetworkTraffic;
   observability?: Observability;
 };
 

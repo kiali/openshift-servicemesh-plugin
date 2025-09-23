@@ -24,6 +24,7 @@ import {HelpDropdownActions} from 'actions/HelpDropdownActions';
 import {GlobalActions} from 'actions/GlobalActions';
 import {
   getDistributedTracingPluginManifest,
+  getNetworkObservabilityPluginManifest,
   getPluginConfig,
   OpenShiftPluginConfig,
   PluginConfig
@@ -80,7 +81,13 @@ const defaultPluginConfig: PluginConfig = {
     instance: 'sample',
     namespace: 'tempo',
     tenant: 'default'
-  }
+  },
+  networkTraffic: {
+    instance: 'sample',
+    namespace: 'network-traffic',
+    tenant: 'default'
+    
+}
 };
 
 let pluginConfig: PluginConfig = defaultPluginConfig;
@@ -167,7 +174,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           // For testing the distributed tracing integration locally, assign distributedTracingPluginConfig = "plugin manifest json"
         });
       const getNetworkObservabilityPluginManifestPromise = this.promises
-        .register('getNetworkObservabilityPluginManifestPromise', getNetworkObservabilityPlugin())
+        .register('getNetworkObservabilityPluginManifestPromise', getNetworkObservabilityPluginManifest())
         .then(response => (networkTrafficPluginConfig = (response)))
         .catch(error => {
           console.debug(`Error fetching Network Observability plugin configuration. (Probably is not installed) ${error}`)
