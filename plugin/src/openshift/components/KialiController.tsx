@@ -328,8 +328,7 @@ const mapDispatchToProps = (dispatch: KialiDispatch): KialiControllerReduxProps 
   statusRefresh: bindActionCreators(HelpDropdownActions.statusRefresh, dispatch)
 });
 
-export const KialiController = connect(null, mapDispatchToProps)(KialiControllerComponent);
-function getNetworkObservabilityPlugin(): Promise<unknown> {
-  throw new Error('Function not implemented.');
-}
-
+export const KialiController = connect(
+  null,
+  mapDispatchToProps
+)(KialiControllerComponent);

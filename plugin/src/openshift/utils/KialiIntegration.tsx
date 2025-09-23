@@ -71,9 +71,11 @@ export const getDistributedTracingPluginManifest = async (): Promise<OpenShiftPl
 };
 
 export const getNetworkObservabilityPluginManifest = async (): Promise<OpenShiftPluginConfig> => {
+  console.log('Fetching network observability plugin manifest');
   return await new Promise((resolve, reject) => {
     consoleFetchJSON(properties.networkTrafficPluginConfig)
       .then(config => {
+        console.log('Fetched network observability plugin manifest', config);
         resolve(config);
       })
       .catch(error => reject(error));
