@@ -49,7 +49,7 @@ Date.prototype.toLocaleStringWithConditionalDate = function () {
   return nowDate === thisDate ? this.toLocaleTimeString() : this.toLocaleString();
 };
 
-const centerVerticalHorizontalStyle = kialiStyle({
+export const centerVerticalHorizontalStyle = kialiStyle({
   height: '100%',
   display: 'flex',
   alignItems: 'center',
