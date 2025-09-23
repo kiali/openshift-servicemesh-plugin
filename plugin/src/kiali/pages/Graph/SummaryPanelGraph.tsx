@@ -85,7 +85,6 @@ type SummaryPanelGraphTraffic = {
 };
 
 const defaultMetricsState: SummaryPanelGraphMetricsState = {
-  externalServices: [],
   grpcRequestIn: [],
   grpcRequestOut: [],
   grpcRequestErrIn: [],
