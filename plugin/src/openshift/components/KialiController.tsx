@@ -170,7 +170,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         .register('getDistributedTracingPluginManifestPromise', getDistributedTracingPluginManifest())
         .then(response => (distributedTracingPluginConfig = (response)))
         .catch(error => {
-          console.debug(`Error fetching Distributed Tracing plugin configuration... hello . (Probably is not installed) ${error}`)
+          console.debug(`Error fetching Distributed Tracing plugin configuration. (Probably is not installed) ${error}`)
           // For testing the distributed tracing integration locally, assign distributedTracingPluginConfig = "plugin manifest json"
         });
       const getNetworkObservabilityPluginManifestPromise = this.promises
@@ -178,6 +178,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         .then(response => (networkTrafficPluginConfig = (response)))
         .catch(error => {
           console.debug(`Error fetching Network Observability plugin configuration. (Probably is not installed) ${error}`)
+          // For testing the network observability integration locally, assign networkTrafficPluginConfig = "plugin manifest json"
         });
       API.getStatus()
         .then(response => this.processServerStatus(response.data))

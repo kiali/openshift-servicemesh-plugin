@@ -101,7 +101,7 @@ const expandableSectionStyle = kialiStyle({
 const nodeInfoStyle = kialiStyle({
   display: 'flex',
   alignItems: 'center',
-  marginTop: '0.25rem'
+  // marginTop: '0.25rem'
 });
 
 const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyle({ display: 'inline' }));
@@ -230,11 +230,11 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
               )}
 
               {secondBadge}
-                            <div className={nodeInfoStyle}>
+              <div className={nodeInfoStyle}>
                 <NetworkTrafficBadge namespace={nodeData.namespace} />
                 {this.props.netObsurl ? (
-                  <a href={this.props.netObsurl} target="_blank" rel="noopener noreferrer">
-                    Network Traffic <KialiIcon.ExternalLink />
+                  <a href={this.props.netObsurl}>
+                    Network Traffic
                   </a>
                 ) : (
                   <KialiPageLink
@@ -612,9 +612,28 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
 
   const netObs = externalServices?.find(s => s.name && s.url && s.name.toLowerCase().includes('observ'));
   const netObsBase = netObs?.url ? netObs.url.replace(/\/$/, '') : undefined;
-  const netObsUrl = netObsBase
-    ? `${netObsBase}#/?view=topology&namespace=${encodeURIComponent(nodeData.namespace)}`
-    : undefined;
+  
+  // For local development, fall back to console base URL if no external service is configured
+  let netObsUrl: string | undefined;
+  const namespace = nodeData.namespace || 'default';
+  
+  if (netObsBase) {
+    netObsUrl = `${netObsBase}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
+  } else {
+    // For local development, construct URL relative to current host
+    const currentHost = window.location.origin;
+    netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
+  }
+  
+  console.log('🔗 Network Observability URL construction:', { 
+    nodeNamespace: nodeData.namespace,
+    namespace,
+    externalServices, 
+    netObs, 
+    netObsBase, 
+    netObsUrl,
+    currentHost: window.location.origin
+  });
 
   return (
     <SummaryPanelNodeComponent

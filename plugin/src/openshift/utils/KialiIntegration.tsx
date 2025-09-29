@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
 import { setRouter } from 'app/History';
 
-import { distributedTracingPluginConfig, pluginConfig } from '../components/KialiController';
+import { distributedTracingPluginConfig, networkTrafficPluginConfig, pluginConfig } from '../components/KialiController';
 import { store } from 'store/ConfigStore';
 
 export const OSSM_CONSOLE = 'ossmconsole';
@@ -16,7 +16,7 @@ export const properties = {
   pluginConfig: `/api/plugins/${OSSM_CONSOLE}/plugin-config.json`,
   // External
   distributedTracingPluginConfig: `/api/plugins/distributed-tracing-console-plugin/plugin-manifest.json`,
-  networkTrafficPluginConfig: `/api/plugins/network-traffic-console-plugin/plugin-manifest.json`
+  networkTrafficPluginConfig: `/api/plugins/network-observability-console-plugin/plugin-manifest.json`
 };
 
 type Observability = {
@@ -197,6 +197,33 @@ export const useInitKialiListeners = (): void => {
               consoleUrl = `/observe/traces/${trace}?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}`;
             } else {
               consoleUrl = `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`;
+            }
+          }
+        } else {
+          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
+          const url = urlParams.get('url');
+          if (url) {
+            window.location.href = url;
+          }
+        }
+      } else if (kialiAction.startsWith('/network-traffic') || kialiAction.startsWith('/netflow')) {
+        if (networkTrafficPluginConfig && networkTrafficPluginConfig.extensions.length > 0 && pluginConfig) {
+          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
+          let networkTrafficData: NetworkTraffic | null = null;
+          if (pluginConfig.networkTraffic) {
+            networkTrafficData = {
+              instance: pluginConfig.networkTraffic.instance,
+              namespace: pluginConfig.networkTraffic.namespace,
+              tenant: pluginConfig.networkTraffic.tenant
+            };
+          }
+
+          if (networkTrafficData) {
+            const sourceNamespace = urlParams.get('namespace') || urlParams.get('src_namespace');
+            if (sourceNamespace && sourceNamespace !== 'undefined') {
+              consoleUrl = `/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(sourceNamespace)}&bnf=false&function=last&type=Bytes`;
+            } else {
+              consoleUrl = `/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&bnf=false&function=last&type=Bytes`;
             }
           }
         } else {
