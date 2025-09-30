@@ -235,21 +235,23 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
               )}
 
               {secondBadge}
-              <div className={nodeInfoStyle}>
-                <NetworkTrafficBadge namespace={nodeData.namespace} />
-                {this.props.netObsurl ? (
-                  <a href={this.props.netObsurl}>
-                    Network Traffic
-                  </a>
-                ) : (
-                  <KialiPageLink
-                    href={`/graph/namespaces?namespaces=${encodeURIComponent(nodeData.namespace)}`}
-                    cluster={nodeData.cluster}
-                  >
-                    Network Traffic
-                  </KialiPageLink>
-                )}
-              </div>
+              {networkTrafficPluginConfig && (
+                <div className={nodeInfoStyle}>
+                  <NetworkTrafficBadge namespace={nodeData.namespace} />
+                  {this.props.netObsurl ? (
+                    <a href={this.props.netObsurl}>
+                      network traffic
+                    </a>
+                  ) : (
+                    <KialiPageLink
+                      href={`/graph/namespaces?namespaces=${encodeURIComponent(nodeData.namespace)}`}
+                      cluster={nodeData.cluster}
+                    >
+                      network traffic
+                    </KialiPageLink>
+                  )}
+                </div>
+              )}
               {!nodeData.isWaypoint && (
                 <div className={nodeInfoStyle}>
                   {renderBadgedLink(nodeData)}
