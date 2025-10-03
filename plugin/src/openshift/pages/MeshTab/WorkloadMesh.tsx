@@ -82,7 +82,20 @@ const WorkloadMeshTab: React.FC<void> = () => {
       // Only validate if the parsed name is different from the original
       if (parsedWorkload !== name) {
         const isValid = await validateWorkload(ns, parsedWorkload);
-        setFinalWorkload(isValid ? parsedWorkload : name);
+        if (!isValid) {
+          // If validation fails, try with just removing the last part
+          // e.g. kiali-traffic-generator-n2d9n -> kiali-traffic-generator
+          const parts = name.split('-');
+          if (parts.length >= 3) {
+            const fallbackWorkload = parts.slice(0, -1).join('-');
+            const isFallbackValid = await validateWorkload(ns, fallbackWorkload);
+            setFinalWorkload(isFallbackValid ? fallbackWorkload : name);
+          } else {
+            setFinalWorkload(name);
+          }
+        } else {
+          setFinalWorkload(parsedWorkload);
+        }
       } else {
         setFinalWorkload(name);
       }
