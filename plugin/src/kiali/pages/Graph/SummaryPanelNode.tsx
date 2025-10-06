@@ -231,7 +231,7 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
               )}
 
               {secondBadge}
-              {networkTrafficPluginConfig && (
+              {networkTrafficPluginConfig && networkTrafficPluginConfig.extensions && networkTrafficPluginConfig.extensions.length > 0 && (
                 <div className={nodeInfoStyle}>
                   <NetworkTrafficBadge namespace={nodeData.namespace} />
                   {this.props.netObsurl ? (
