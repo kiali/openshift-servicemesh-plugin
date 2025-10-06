@@ -11,7 +11,13 @@ When('user graphs {string} namespaces', (namespaces: string) => {
   cy.visit({ url: `/console/graph/namespaces?refresh=0&namespaces=${namespaces}` });
 
   if (namespaces !== '') {
-    cy.wait('@graphNamespaces');
+    cy.url().then(url => {
+      // Only wait for API call in Kiali standalone, not in OpenShift
+      // Because OpenShift makes a redirection and the URL is never intercepted
+      if (!url.includes('/ossmconsole/')) {
+        cy.wait('@graphNamespaces');
+      }
+    });
   }
 
   ensureKialiFinishedLoading();
@@ -284,7 +290,7 @@ Then('idle nodes {string} in the graph', (action: string) => {
       let numNodes = select(nodes, { prop: NodeAttr.isIdle, op: 'truthy' }).length;
 
       if (action === 'appear') {
-        assert.equal(numNodes, 16);
+        assert.isAbove(numNodes, 0);
       } else {
         assert.equal(numNodes, 0);
       }

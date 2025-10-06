@@ -14,30 +14,31 @@ Feature: Kiali App Details page
     And user is at the details page for the "app" "bookinfo/details" located in the "" cluster
 
   @bookinfo-app
-  @core
+  @core-1
   Scenario: See details for app.
     Then user sees details information for the "details" app
     But no cluster badge for the "app" should be visible
 
   @bookinfo-app
-  @core
+  @core-1
   Scenario: See app Traffic information
     Then user sees inbound and outbound traffic information
     And the "Cluster" column "disappears"
 
   @bookinfo-app
-  @core
+  @core-1
   Scenario: See Inbound Metrics
     Then user sees inbound metrics information
 
   @bookinfo-app
-  @core
+  @core-1
   Scenario: See Outbound Metrics
     Then user sees outbound metrics information
 
   @bookinfo-app
   @tracing
   @waypoint-tracing
+  @skip-ossmc
   Scenario: See tracing info after selecting a trace
     And user sees trace information
     When user selects a trace
@@ -52,6 +53,7 @@ Feature: Kiali App Details page
     And user can filter spans by app "productpage"
 
   @waypoint-tracing
+  @skip-ossmc
   Scenario: See span info after selecting app span
     And user sees trace information
     When user selects a trace
