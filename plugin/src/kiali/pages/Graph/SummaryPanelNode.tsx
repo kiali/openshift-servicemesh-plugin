@@ -107,6 +107,19 @@ const nodeInfoStyle = kialiStyle({
 
 const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyle({ display: 'inline' }));
 
+// Helper function to check if Network Observability plugin is available and functional
+const isNetworkObservabilityAvailable = (): boolean => {
+  return !!(
+    networkTrafficPluginConfig && 
+    networkTrafficPluginConfig.extensions && 
+    networkTrafficPluginConfig.extensions.length > 0 &&
+    networkTrafficPluginConfig.extensions.some(ext => 
+      ext.type === 'console.page/route' && 
+      ext.properties?.path?.includes('netflow')
+    )
+  );
+};
+
 export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeComponentProps, SummaryPanelNodeState> {
   private readonly mainDivRef: React.RefObject<HTMLDivElement>;
 
@@ -231,7 +244,7 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
               )}
 
               {secondBadge}
-              {networkTrafficPluginConfig && networkTrafficPluginConfig.extensions && networkTrafficPluginConfig.extensions.length > 0 && (
+              {isNetworkObservabilityAvailable() && (
                 <div className={nodeInfoStyle}>
                   <NetworkTrafficBadge namespace={nodeData.namespace} />
                   {this.props.netObsurl ? (
@@ -616,21 +629,24 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
   const netObs = externalServices?.find(s => s.name && s.url && s.name.toLowerCase().includes('observ'));
   const netObsBase = netObs?.url ? netObs.url.replace(/\/$/, '') : undefined;
   
-  // For local development, fall back to console base URL if no external service is configured
+  // Only construct netflow URL if Network Observability plugin is available and we have valid namespace data
   let netObsUrl: string | undefined;
-  const namespace = nodeData.namespace || 'default';
+  const namespace = nodeData.namespace;
   
-  if (netObsBase) {
-    netObsUrl = `${netObsBase}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
-  } else {
-    // For local development, construct URL relative to current host
-    const currentHost = window.location.origin;
-    netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
+  if (isNetworkObservabilityAvailable() && namespace) {
+    if (netObsBase) {
+      netObsUrl = `${netObsBase}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
+    } else {
+      // For local development, construct URL relative to current host
+      const currentHost = window.location.origin;
+      netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
+    }
   }
   
-  console.log('🔗 Network Observability URL construction:', { 
+  console.log('Network Observability URL construction:', { 
     nodeNamespace: nodeData.namespace,
     namespace,
+    pluginAvailable: isNetworkObservabilityAvailable(),
     externalServices, 
     netObs, 
     netObsBase, 
