@@ -41,6 +41,9 @@ import { panelBodyStyle, panelHeadingStyle, panelStyle } from './SummaryPanelSty
 import { dicTypeToGVK, gvkType } from '../../types/IstioConfigList';
 import { renderWaypointLabel } from '../../components/Ambient/WaypointLabel';
 import { Node } from '@patternfly/react-topology';
+import {KialiPageLink} from 'components/Link/KialiPageLink';
+import {NetworkTrafficBadge} from './NetworkTrafficBadge';
+import { networkTrafficPluginConfig } from '../../../openshift/components/KialiController';
 
 type SummaryPanelNodeState = {
   isActionOpen: boolean;
@@ -72,6 +75,7 @@ export type SummaryPanelNodeProps = Omit<SummaryPanelPropType, 'kiosk'> & {
 export type SummaryPanelNodeComponentProps = ReduxProps &
   SummaryPanelNodeProps & {
     gateways: string[] | null;
+    netObsurl?: string;
     onKebabToggled?: (isOpen: boolean) => void;
     peerAuthentications: PeerAuthentication[] | null;
     serviceDetails: ServiceDetailsInfo | null | undefined;
@@ -98,10 +102,23 @@ const expandableSectionStyle = kialiStyle({
 const nodeInfoStyle = kialiStyle({
   display: 'flex',
   alignItems: 'center',
-  marginTop: '0.25rem'
+  // marginTop: '0.25rem'
 });
 
 const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyle({ display: 'inline' }));
+
+// Helper function to check if Network Observability plugin is available and functional
+const isNetworkObservabilityAvailable = (): boolean => {
+  return !!(
+    networkTrafficPluginConfig && 
+    networkTrafficPluginConfig.extensions && 
+    networkTrafficPluginConfig.extensions.length > 0 &&
+    networkTrafficPluginConfig.extensions.some(ext => 
+      ext.type === 'console.page/route' && 
+      ext.properties?.path?.includes('netflow')
+    )
+  );
+};
 
 export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeComponentProps, SummaryPanelNodeState> {
   private readonly mainDivRef: React.RefObject<HTMLDivElement>;
@@ -227,6 +244,23 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
               )}
 
               {secondBadge}
+              {isNetworkObservabilityAvailable() && (
+                <div className={nodeInfoStyle}>
+                  <NetworkTrafficBadge namespace={nodeData.namespace} />
+                  {this.props.netObsurl ? (
+                    <a href={this.props.netObsurl}>
+                      network traffic
+                    </a>
+                  ) : (
+                    <KialiPageLink
+                      href={`/graph/namespaces?namespaces=${encodeURIComponent(nodeData.namespace)}`}
+                      cluster={nodeData.cluster}
+                    >
+                      network traffic
+                    </KialiPageLink>
+                  )}
+                </div>
+              )}
               {!nodeData.isWaypoint && (
                 <div className={nodeInfoStyle}>
                   {renderBadgedLink(nodeData)}
@@ -574,6 +608,7 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
   const rankResult = useKialiSelector(state => state.graph.rankResult);
   const showRank = useKialiSelector(state => state.graph.toolbarState.showRank);
   const updateTime = useKialiSelector(state => state.graph.updateTime);
+  const externalServices = useKialiSelector(state => state.statusState.externalServices);
 
   const [isKebabOpen, setIsKebabOpen] = React.useState<boolean>(false);
 
@@ -591,6 +626,34 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
     setIsKebabOpen(isOpen);
   };
 
+  const netObs = externalServices?.find(s => s.name && s.url && s.name.toLowerCase().includes('observ'));
+  const netObsBase = netObs?.url ? netObs.url.replace(/\/$/, '') : undefined;
+  
+  // Only construct netflow URL if Network Observability plugin is available and we have valid namespace data
+  let netObsUrl: string | undefined;
+  const namespace = nodeData.namespace;
+  
+  if (isNetworkObservabilityAvailable() && namespace) {
+    if (netObsBase) {
+      netObsUrl = `${netObsBase}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
+    } else {
+      // For local development, construct URL relative to current host
+      const currentHost = window.location.origin;
+      netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
+    }
+  }
+  
+  console.log('Network Observability URL construction:', { 
+    nodeNamespace: nodeData.namespace,
+    namespace,
+    pluginAvailable: isNetworkObservabilityAvailable(),
+    externalServices, 
+    netObs, 
+    netObsBase, 
+    netObsUrl,
+    currentHost: window.location.origin
+  });
+
   return (
     <SummaryPanelNodeComponent
       tracingState={tracingState}
@@ -600,6 +663,7 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
       serviceDetails={isServiceDetailsLoading ? undefined : serviceDetails}
       gateways={gateways}
       peerAuthentications={peerAuthentications}
+      netObsurl={netObsUrl}
       onKebabToggled={handleKebabToggled}
       {...props}
     />

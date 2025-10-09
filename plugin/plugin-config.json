@@ -3,5 +3,11 @@
     "instance": "sample",
     "namespace": "tempo",
     "tenant": "default"
+  },
+
+  "networkTraffic": {
+    "instance": "sample",
+    "namespace": "network-traffic",
+    "tenant": "default"
   }
 }
