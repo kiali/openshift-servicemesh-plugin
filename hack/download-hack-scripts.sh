@@ -7,6 +7,29 @@
 # exit immediately on error
 set -eu
 
+# process command line args
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -kb|--kiali-branch)    KIALI_BRANCH="$2"        ;shift;shift ;;
+    -h|--help)
+      cat <<HELPMSG
+$0 [option...]
+
+Valid options:
+  -kb|--kiali-branch <branch or tag name>
+      A git reference (branch or tag name) found in the kiali source repo. This is the
+      branch or tag that will be checked out for hack script
+HELPMSG
+      exit 1
+      ;;
+    *)
+      echo "Unknown argument [$key].  Aborting."
+      exit 1
+      ;;
+  esac
+done
+
 # Where this script is located.
 # It is assumed this directory is inside the same plugin dest repo where the files are to be copied.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
@@ -24,16 +47,20 @@ ABS_DEST_DIR="${DEST_REPO}/${DEST_DIR}"
 # Delete existing kiali folder before download hack scripts
 rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
 
-# Get current OSSMC git branch to clone corresponding branch of Kiali (both applications should have the same version)
-KIALI_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-case "${KIALI_BRANCH}" in
-    v1.*)
+# Set KIALI_BRANCH to v1.73, OSSMC release branch or the set value via parameter
+if [ -z "${KIALI_BRANCH:-}" ]; then
+    echo "KIALI_BRANCH was not set, checking if it is an OSSMC release branch"
+    KIALI_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    case "${KIALI_BRANCH}" in
+    v*.*)
         echo "OSSMC release branch ${KIALI_BRANCH}";;
     *)
-        echo "This branch is not an OSSMC release branch (v1.*)"
+        echo "This branch is not an OSSMC release branch (v*.*)! Using v1.73"
         KIALI_BRANCH="v1.73";;
-esac
+    esac
+else
+    echo "KIALI_BRANCH was set via parameter to: ${KIALI_BRANCH}"
+fi
 
 # Clone kiali repo into kiali folder (no-checkout option to avoid download whole repository)
 echo "Downloading hack scripts from Kiali branch ${KIALI_BRANCH}"
