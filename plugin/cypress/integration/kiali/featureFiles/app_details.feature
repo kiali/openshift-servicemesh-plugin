@@ -15,6 +15,7 @@ Feature: Kiali App Details page
 
   @bookinfo-app
   @core-1
+  @offline
   Scenario: See details for app.
     Then user sees details information for the "details" app
     But no cluster badge for the "app" should be visible
@@ -27,11 +28,13 @@ Feature: Kiali App Details page
 
   @bookinfo-app
   @core-1
+  @offline
   Scenario: See Inbound Metrics
     Then user sees inbound metrics information
 
   @bookinfo-app
   @core-1
+  @offline
   Scenario: See Outbound Metrics
     Then user sees outbound metrics information
 
@@ -56,6 +59,6 @@ Feature: Kiali App Details page
   @skip-ossmc
   Scenario: See span info after selecting app span
     And user sees trace information
-    When user selects a trace
+    When user selects a trace with at least 4 spans
     Then user sees span details
     And user can filter spans by app "waypoint"

@@ -36,7 +36,7 @@ Given('user is at the {string} page for the {string} namespace', (page: string, 
 Given('user is at the {string} page with manual refresh', (page: string) => {
   // Forcing "Manual" to prevent any page load
   if (page === 'graph') {
-    cy.visit({ url: `${Cypress.config('baseUrl')}/console/graph/namespaces?namespaces=default&refresh=1` });
+    cy.visit({ url: `${Cypress.config('baseUrl')}/console/graph/namespaces?namespaces=bookinfo&refresh=1` });
   } else {
     cy.visit({ url: `${Cypress.config('baseUrl')}/console/${page}?refresh=1` });
   }
@@ -116,6 +116,63 @@ const getPageDetail = (detail: detailType): string => {
   }
   return pageDetail;
 };
+
+Given(
+  'user is at the details page for the daemonset {string} located in the {string} cluster',
+  (namespacedNamed: string, cluster: string) => {
+    // Check if we're in OSSMC environment
+    const isOSSMC = Cypress.env('OSSMC');
+    if (isOSSMC) {
+      // In OSSMC, we need to get the pod name from the DaemonSet
+      const namespaceAndName = namespacedNamed.split('/');
+      const namespace = namespaceAndName[0];
+      const daemonsetName = namespaceAndName[1];
+
+      // Get the pod name from the DaemonSet
+      cy.exec(`kubectl get pods -n ${namespace} -l app=${daemonsetName} -o jsonpath='{.items[0].metadata.name}'`, {
+        failOnNonZeroExit: false
+      }).then(result => {
+        if (result.code === 0 && result.stdout) {
+          const podName = result.stdout.trim();
+
+          // Use the existing function for workload details
+          const qs = {
+            refresh: '0'
+          };
+          if (cluster !== '') {
+            qs['clusterName'] = cluster;
+          }
+
+          cy.visit({
+            url: `${Cypress.config('baseUrl')}/console/namespaces/${namespace}/pods/${podName}`,
+            qs
+          });
+          ensureKialiFinishedLoading();
+        } else {
+          throw new Error(`Failed to get pod name for DaemonSet ${daemonsetName} in namespace ${namespace}`);
+        }
+      });
+    } else {
+      // For non-OSSMC environments, treat DaemonSet as a regular workload
+      const qs = {
+        refresh: '0'
+      };
+      if (cluster !== '') {
+        qs['clusterName'] = cluster;
+      }
+
+      const namespaceAndName = namespacedNamed.split('/');
+      const namespace = namespaceAndName[0];
+      const name = namespaceAndName[1];
+
+      cy.visit({
+        url: `${Cypress.config('baseUrl')}/console/namespaces/${namespace}/workloads/${name}`,
+        qs
+      });
+      ensureKialiFinishedLoading();
+    }
+  }
+);
 
 // Then the browser is at the details page for the "<type>" "bookinfo/<name>" located in the "west" cluster
 Given(
