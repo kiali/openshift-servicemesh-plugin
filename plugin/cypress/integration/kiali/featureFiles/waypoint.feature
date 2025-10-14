@@ -1,6 +1,6 @@
 @waypoint
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
-
+# TODO: offline - ambient support.
 Feature: Kiali Waypoint related features
 
   The user should be able to see all the Waypoint features across
@@ -9,6 +9,7 @@ Feature: Kiali Waypoint related features
 
   Background:
     Given user is at administrator perspective
+    And all waypoints are healthy
 
   Scenario: [Setup] namespace is labeled with waypoint label
     Then "bookinfo" namespace is labeled with the waypoint label
@@ -37,7 +38,7 @@ Feature: Kiali Waypoint related features
     And the link for the waypoint "waypoint" should redirect to a valid workload details
 
   Scenario: [Workload details - waypoint] The workload details for a waypoint are valid
-    Given user is at the details page for the "workload" "bookinfo/waypoint" located in the "" cluster
+    And user is at the details page for the "workload" "bookinfo/waypoint" located in the "" cluster
     Then the user sees the "L7" badge
     Then the user cannot see the "missing-sidecar" badge for "waypoint" workload in "bookinfo" namespace
     And the proxy status is "info" with "RDS: IGNORED" details
@@ -54,7 +55,7 @@ Feature: Kiali Waypoint related features
     And validates waypoint Info data for "service"
 
   Scenario: [Workload details - ztunnel] The workload details for a ztunnel are valid
-    Given user is at the details page for the "workload" "ztunnel/ztunnel" located in the "" cluster
+    Given user is at the details page for the daemonset "ztunnel/ztunnel" located in the "" cluster
     Then the user cannot see the "missing-sidecar" badge for "ztunnel" workload in "istio-system" namespace
     And the proxy status is "healthy"
     And the user validates the Ztunnel tab for the "bookinfo" namespace
@@ -314,7 +315,7 @@ Feature: Kiali Waypoint related features
     Then 2 edges appear in the graph
 
   Scenario: [Waypoint details] The waypoint details for a waypoint for none are valid
-    Given user is at the details page for the "pods" "waypoint-fornone/curl-client" located in the "" cluster
+    Given user is at the details page for the "workload" "waypoint-fornone/curl-client" located in the "" cluster
     And the user doesn't see a L7 link
     And user is at the details page for the "workload" "waypoint-fornone/waypoint" located in the "" cluster
     When the user goes to the "Waypoint" tab
@@ -324,7 +325,7 @@ Feature: Kiali Waypoint related features
     And validates waypoint Info data for "none"
 
   Scenario: [Waypoint details] The waypoint details for a waypoint for service are valid
-    Given user is at the details page for the "pods" "waypoint-forservice/curl-client" located in the "" cluster
+    Given user is at the details page for the "workload" "waypoint-forservice/curl-client" located in the "" cluster
     And the user sees the L7 "waypoint" link
     And the link for the waypoint "waypoint" should redirect to a valid workload details
     When the user goes to the "Waypoint" tab
@@ -334,7 +335,7 @@ Feature: Kiali Waypoint related features
     And validates waypoint Info data for "service"
 
   Scenario: [Waypoint details] The waypoint details for a waypoint in different ns are valid
-    Given user is at the details page for the "pods" "waypoint-differentns/curl-client" located in the "" cluster
+    Given user is at the details page for the "workload" "waypoint-differentns/curl-client" located in the "" cluster
     And the user sees the L7 "egress-gateway" link
     And the link for the waypoint "egress-gateway" should redirect to a valid workload details
     When the user goes to the "Waypoint" tab
@@ -344,7 +345,7 @@ Feature: Kiali Waypoint related features
     And validates waypoint Info data for "service"
 
   Scenario: [Waypoint details] The waypoint details for a waypoint for all are valid
-    Given user is at the details page for the "pods" "waypoint-forall/curl-client" located in the "" cluster
+    Given user is at the details page for the "workload" "waypoint-forall/curl-client" located in the "" cluster
     And the user sees the L7 "cgw" link
     And the link for the waypoint "cgw" should redirect to a valid workload details
     When the user goes to the "Waypoint" tab
@@ -356,7 +357,7 @@ Feature: Kiali Waypoint related features
     And validates waypoint Info data for "all"
 
   Scenario: [Waypoint details] The waypoint details for a waypoint for workload are valid
-    Given user is at the details page for the "pods" "waypoint-forworkload/echo-server" located in the "" cluster
+    Given user is at the details page for the "workload" "waypoint-forworkload/echo-server" located in the "" cluster
     And the user sees the L7 "bwaypoint" link
     And the link for the waypoint "waypoint" should redirect to a valid workload details
     When the user goes to the "Waypoint" tab
@@ -367,7 +368,7 @@ Feature: Kiali Waypoint related features
 
   Scenario: [Waypoint details] The waypoint details for a waypoint override are valid
   # TODO: This shouldn't be right
-    Given user is at the details page for the "pods" "waypoint-override/curl-client" located in the "" cluster
+    Given user is at the details page for the "workload" "waypoint-override/curl-client" located in the "" cluster
     And the user sees the L7 "waypoint" link
     And the link for the waypoint "waypoint" should redirect to a valid workload details
     When the user goes to the "Waypoint" tab
@@ -376,7 +377,7 @@ Feature: Kiali Waypoint related features
     Then user goes to the waypoint "Info" subtab
     And validates waypoint Info data for "service"
   # TODO: End-Todo
-    Then user is at the details page for the "pods" "waypoint-override/echo-server" located in the "" cluster
+    Then user is at the details page for the "workload" "waypoint-override/echo-server" located in the "" cluster
     And the user sees the L7 "use-this" link
     And the link for the waypoint "use-this" should redirect to a valid workload details
     When the user goes to the "Waypoint" tab
