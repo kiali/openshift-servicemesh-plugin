@@ -24,7 +24,7 @@ import {HelpDropdownActions} from 'actions/HelpDropdownActions';
 import {GlobalActions} from 'actions/GlobalActions';
 import {
   getDistributedTracingPluginManifest,
-  getNetworkObservabilityPluginManifest,
+  getNetobservPluginManifest,
   getPluginConfig,
   OpenShiftPluginConfig,
   PluginConfig
@@ -81,13 +81,7 @@ const defaultPluginConfig: PluginConfig = {
     instance: 'sample',
     namespace: 'tempo',
     tenant: 'default'
-  },
-  networkTraffic: {
-    instance: 'sample',
-    namespace: 'network-traffic',
-    tenant: 'default'
-    
-}
+  }
 };
 
 let pluginConfig: PluginConfig = defaultPluginConfig;
@@ -96,8 +90,8 @@ export {pluginConfig};
 let distributedTracingPluginConfig: OpenShiftPluginConfig;
 export {distributedTracingPluginConfig};
 
-let networkTrafficPluginConfig: any;
-export {networkTrafficPluginConfig};
+let netobservPluginConfig: any;
+export {netobservPluginConfig};
 
 class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
@@ -173,12 +167,12 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           console.debug(`Error fetching Distributed Tracing plugin configuration. (Probably is not installed) ${error}`)
           // For testing the distributed tracing integration locally, assign distributedTracingPluginConfig = "plugin manifest json"
         });
-      const getNetworkObservabilityPluginManifestPromise = this.promises
-        .register('getNetworkObservabilityPluginManifestPromise', getNetworkObservabilityPluginManifest())
-        .then(response => (networkTrafficPluginConfig = (response)))
+      const getNetobservPluginManifestPromise = this.promises
+        .register('getNetobservPluginManifestPromise', getNetobservPluginManifest())
+        .then(response => (netobservPluginConfig = (response)))
         .catch(error => {
           console.debug(`Error fetching Network Observability plugin configuration. (Probably is not installed) ${error}`)
-          // For testing the network observability integration locally, assign networkTrafficPluginConfig = "plugin manifest json"
+          // For testing the netobserv integration locally, assign netobservPluginConfig = "plugin manifest json"
         });
       API.getStatus()
         .then(response => this.processServerStatus(response.data))
@@ -192,7 +186,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         getTracingInfoPromise,
         getPluginPromise,
         getDistributedTracingPluginManifestPromise,
-        getNetworkObservabilityPluginManifestPromise
+        getNetobservPluginManifestPromise
       ]);
     } catch (err) {
       console.error('Error loading kiali config', err);

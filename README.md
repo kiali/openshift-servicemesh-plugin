@@ -128,12 +128,12 @@ For testing the distributed tracing integration locally, assign to distributedTr
 
 That will help to validate if the logic and the URL are right, but in the localhost plugin it won't load the distributed tracing plugin page. 
 
-### Testing Locally Network Observability integration
+### Testing Locally Netobserv integration
 
-For testing the Network Observavility integration locally, assign to networkTrafficPluginConfig in the getNetworkTrafficPluginManifestPromise in the KialiController the following data: 
+For testing the Netobser integration locally, assign to netobservPluginConfig in the getNetobservPluginManifestPromise in the KialiController.go, the following data: 
 
 ```sh
-  networkTrafficPluginConfig = {
+  netobservPluginConfig = {
     "name": "network-observability-console-plugin",
     "version": "0.0.1",
     "displayName": "Network Observability Plugin",
