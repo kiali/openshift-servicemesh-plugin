@@ -78,7 +78,8 @@ When('user selects the {string} namespace in the graph', (ns: string) => {
 Then('user sees Istio Config page elements from Kiali', () => {
   cy.wait('@istioConfigRequest').then(() => {
     cy.get('[data-test-id="filter-dropdown-toggle"]').should('be.visible');
-    cy.get('[data-test-id="dropdown-button"]').should('be.visible');
+      // OCP 4.19 and earlier use the dropdown-button (and data-test-id="dropdown-button"), OCP 4.20 and later use the console-select-menu-toggle (and data-test)
+    cy.get('[data-test-id="dropdown-button"], [data-test="console-select-menu-toggle"]').should('be.visible').click();
     cy.get('[data-test-id="item-filter"]').should('be.visible');
   });
 });

@@ -44,8 +44,9 @@ Then('user sees Configuration information for Istio objects in ossmc', () => {
 });
 
 Then('the user filters for {string}', (filterValue: string) => {
-  cy.get('button[data-test-id="dropdown-button"]').click();
-  cy.contains('button[data-test-id="dropdown-menu"]', 'Name').click();
+  // OCP 4.19 and earlier use the dropdown-button (and data-test-id="dropdown-button"), OCP 4.20 and later use the console-select-menu-toggle (and data-test)
+  cy.get('[data-test-id="dropdown-button"], [data-test="console-select-menu-toggle"]').should('be.visible').click();
+  cy.get('[id="NAME-link"]').click();
 
   cy.get('input[data-test-id="item-filter"]').type(`${filterValue}{enter}`);
 });
