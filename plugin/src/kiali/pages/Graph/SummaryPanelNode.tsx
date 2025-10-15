@@ -631,7 +631,7 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
   let netObsUrl: string | undefined;
   const namespace = nodeData.namespace;
   
-  if (isNetworkObservabilityAvailable() && namespace) {
+  if (isNetobservAvailable() && namespace) {
     if (netObsBase) {
       netObsUrl = `${netObsBase}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
     } else {
