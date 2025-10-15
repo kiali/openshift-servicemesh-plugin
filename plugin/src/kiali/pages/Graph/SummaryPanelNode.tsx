@@ -239,23 +239,6 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
               )}
 
               {secondBadge}
-              {isNetworkObservabilityAvailable() && (
-                <div className={nodeInfoStyle}>
-                  <NetworkTrafficBadge namespace={nodeData.namespace} />
-                  {this.props.netObsurl ? (
-                    <a href={this.props.netObsurl}>
-                      network traffic
-                    </a>
-                  ) : (
-                    <KialiPageLink
-                      href={`/graph/namespaces?namespaces=${encodeURIComponent(nodeData.namespace)}`}
-                      cluster={nodeData.cluster}
-                    >
-                      network traffic
-                    </KialiPageLink>
-                  )}
-                </div>
-              )}
               {!nodeData.isWaypoint && (
                 <div className={nodeInfoStyle}>
                   {renderBadgedLink(nodeData)}
@@ -657,17 +640,6 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
       netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
     }
   }
-  
-  console.log('Network Observability URL construction:', { 
-    nodeNamespace: nodeData.namespace,
-    namespace,
-    pluginAvailable: isNetworkObservabilityAvailable(),
-    externalServices, 
-    netObs, 
-    netObsBase, 
-    netObsUrl,
-    currentHost: window.location.origin
-  });
 
   return (
     <SummaryPanelNodeComponent
