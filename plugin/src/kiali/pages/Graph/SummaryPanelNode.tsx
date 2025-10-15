@@ -43,6 +43,7 @@ import { renderWaypointLabel } from '../../components/Ambient/WaypointLabel';
 import { Node } from '@patternfly/react-topology';
 import {KialiPageLink} from 'components/Link/KialiPageLink';
 import {NetworkTrafficBadge} from './NetworkTrafficBadge';
+import { netobservPluginConfig } from '../../../openshift/components/KialiController';
 
 type SummaryPanelNodeState = {
   isActionOpen: boolean;
@@ -107,7 +108,7 @@ const nodeInfoStyle = kialiStyle({
 const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyle({ display: 'inline' }));
 
 // Helper function to check if Network Observability plugin is available and functional
-const isNetworkObservabilityAvailable = (): boolean => {
+const isNetobservAvailable = (): boolean => {
   return !!(
     netobservPluginConfig && 
     netobservPluginConfig.extensions && 
@@ -260,7 +261,7 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
             {shouldRenderService && <div>{renderBadgedLink(nodeData, NodeType.SERVICE)}</div>}
             {shouldRenderApp && <div>{renderBadgedLink(nodeData, NodeType.APP)}</div>}
             {shouldRenderWorkload && this.renderWorkloadSection(nodeData)}
-            {isNetworkObservabilityAvailable() && (
+            {isNetobservAvailable() && (
               <div className={nodeInfoStyle}>
                 <NetworkTrafficBadge namespace={nodeData.namespace} />
                 {this.props.netObsurl ? (
@@ -632,7 +633,7 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
   let netObsUrl: string | undefined;
   const namespace = nodeData.namespace;
   
-  if (isNetworkObservabilityAvailable() && namespace) {
+  if (isNetobservAvailable() && namespace) {
     if (netObsBase) {
       netObsUrl = `${netObsBase}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
     } else {
