@@ -122,15 +122,26 @@ const networkTrafficLinkStyle = kialiStyle({
 
 // Helper function to check if Network Observability plugin is available and functional
 const isNetobservAvailable = (): boolean => {
-  return (
-    netobservPluginConfig && 
-    netobservPluginConfig.extensions && 
-    netobservPluginConfig.extensions.length > 0 &&
-    netobservPluginConfig.extensions.some(ext => 
-      ext.type === 'console.page/route' && 
-      ext.properties?.path?.includes('netflow')
-    )
+  console.log('Checking netobserv availability:', {
+    hasConfig: !!netobservPluginConfig,
+    config: netobservPluginConfig
+  });
+  
+  if (!netobservPluginConfig) {
+    return false;
+  }
+  
+  if (!netobservPluginConfig.extensions || netobservPluginConfig.extensions.length === 0) {
+    return false;
+  }
+  
+  const result = netobservPluginConfig.extensions.some(ext => 
+    ext.type === 'console.page/route' && 
+    ext.properties?.path?.includes('netflow')
   );
+  
+  console.log('Netobserv available:', result);
+  return result;
 };
 
 export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeComponentProps, SummaryPanelNodeState> {
