@@ -102,7 +102,7 @@ const expandableSectionStyle = kialiStyle({
 const nodeInfoStyle = kialiStyle({
   display: 'flex',
   alignItems: 'center',
-  // marginTop: '0.25rem'
+  marginTop: '0.25rem'
 });
 
 const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyle({ display: 'inline' }));
@@ -606,7 +606,6 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
   const rankResult = useKialiSelector(state => state.graph.rankResult);
   const showRank = useKialiSelector(state => state.graph.toolbarState.showRank);
   const updateTime = useKialiSelector(state => state.graph.updateTime);
-  const externalServices = useKialiSelector(state => state.statusState.externalServices);
 
   const [isKebabOpen, setIsKebabOpen] = React.useState<boolean>(false);
 
@@ -624,21 +623,14 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
     setIsKebabOpen(isOpen);
   };
 
-  const netObs = externalServices?.find(s => s.name && s.url && s.name.toLowerCase().includes('observ'));
-  const netObsBase = netObs?.url ? netObs.url.replace(/\/$/, '') : undefined;
-  
   // Only construct netflow URL if Network Observability plugin is available and we have valid namespace data
   let netObsUrl: string | undefined;
   const namespace = nodeData.namespace;
   
   if (isNetobservAvailable() && namespace) {
-    if (netObsBase) {
-      netObsUrl = `${netObsBase}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
-    } else {
-      // For local development, construct URL relative to current host
-      const currentHost = window.location.origin;
-      netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
-    }
+    // For local development, construct URL relative to current host
+    const currentHost = window.location.origin;
+    netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
   }
 
   return (
