@@ -42,7 +42,6 @@ import { dicTypeToGVK, gvkType } from '../../types/IstioConfigList';
 import { renderWaypointLabel } from '../../components/Ambient/WaypointLabel';
 import { Node } from '@patternfly/react-topology';
 import {KialiPageLink} from 'components/Link/KialiPageLink';
-import {NetworkTrafficBadge} from './NetworkTrafficBadge';
 import { netobservPluginConfig } from '../../../openshift/components/KialiController';
 import { PFColors } from 'components/Pf/PfColors';
 
@@ -287,7 +286,7 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
             {shouldRenderWorkload && this.renderWorkloadSection(nodeData)}
             {isNetobservAvailable() && (
               <div className={nodeInfoStyle}>
-                <NetworkTrafficBadge namespace={nodeData.namespace} />
+                <PFBadge badge={PFBadges.NetworkTraffic} size="sm" />
                 {this.props.netObsurl ? (
                   <a href={this.props.netObsurl} className={networkTrafficLinkStyle}>
                     network traffic
