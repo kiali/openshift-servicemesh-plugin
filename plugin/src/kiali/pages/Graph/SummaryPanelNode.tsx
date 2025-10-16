@@ -44,6 +44,7 @@ import { Node } from '@patternfly/react-topology';
 import {KialiPageLink} from 'components/Link/KialiPageLink';
 import {NetworkTrafficBadge} from './NetworkTrafficBadge';
 import { netobservPluginConfig } from '../../../openshift/components/KialiController';
+import { PFColors } from 'components/Pf/PfColors';
 
 type SummaryPanelNodeState = {
   isActionOpen: boolean;
@@ -109,11 +110,11 @@ const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyl
 
 const networkTrafficLinkStyle = kialiStyle({
   fontSize: 'var(--graph-side-panel--font-size)',
-  color: 'var(--pf-global--link--Color)',
+  color: PFColors.Link,
   textDecoration: 'none',
   $nest: {
     '&:hover': {
-      color: 'var(--pf-global--link--Color--hover)',
+      color: PFColors.Link,
       textDecoration: 'underline'
     }
   }
@@ -121,36 +122,15 @@ const networkTrafficLinkStyle = kialiStyle({
 
 // Helper function to check if Network Observability plugin is available and functional
 const isNetobservAvailable = (): boolean => {
-  console.log('🔍 Debug netobserv detection:', {
-    netobservPluginConfig,
-    hasConfig: !!netobservPluginConfig,
-    hasExtensions: !!(netobservPluginConfig && netobservPluginConfig.extensions),
-    extensionsLength: netobservPluginConfig?.extensions?.length,
-    extensions: netobservPluginConfig?.extensions
-  });
-  
-  if (!netobservPluginConfig) {
-    console.log('❌ No netobservPluginConfig found');
-    return false;
-  }
-  
-  if (!netobservPluginConfig.extensions) {
-    console.log('❌ No extensions in netobservPluginConfig');
-    return false;
-  }
-  
-  if (netobservPluginConfig.extensions.length === 0) {
-    console.log('❌ Empty extensions array');
-    return false;
-  }
-  
-  const hasNetflowExtension = netobservPluginConfig.extensions.some(ext => {
-    console.log('🔍 Checking extension:', { type: ext.type, path: ext.properties?.path });
-    return ext.type === 'console.page/route' && ext.properties?.path?.includes('netflow');
-  });
-  
-  console.log('✅ Final result:', hasNetflowExtension);
-  return hasNetflowExtension;
+  return (
+    netobservPluginConfig && 
+    netobservPluginConfig.extensions && 
+    netobservPluginConfig.extensions.length > 0 &&
+    netobservPluginConfig.extensions.some(ext => 
+      ext.type === 'console.page/route' && 
+      ext.properties?.path?.includes('netflow')
+    )
+  );
 };
 
 export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeComponentProps, SummaryPanelNodeState> {
