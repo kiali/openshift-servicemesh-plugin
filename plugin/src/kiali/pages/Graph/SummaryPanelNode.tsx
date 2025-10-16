@@ -41,6 +41,9 @@ import { panelBodyStyle, panelHeadingStyle, panelStyle } from './SummaryPanelSty
 import { dicTypeToGVK, gvkType } from '../../types/IstioConfigList';
 import { renderWaypointLabel } from '../../components/Ambient/WaypointLabel';
 import { Node } from '@patternfly/react-topology';
+import {KialiPageLink} from 'components/Link/KialiPageLink';
+import { netobservPluginConfig } from '../../../openshift/components/KialiController';
+import { PFColors } from 'components/Pf/PfColors';
 
 type SummaryPanelNodeState = {
   isActionOpen: boolean;
@@ -72,6 +75,7 @@ export type SummaryPanelNodeProps = Omit<SummaryPanelPropType, 'kiosk'> & {
 export type SummaryPanelNodeComponentProps = ReduxProps &
   SummaryPanelNodeProps & {
     gateways: string[] | null;
+    netObsurl?: string;
     onKebabToggled?: (isOpen: boolean) => void;
     peerAuthentications: PeerAuthentication[] | null;
     serviceDetails: ServiceDetailsInfo | null | undefined;
@@ -102,6 +106,42 @@ const nodeInfoStyle = kialiStyle({
 });
 
 const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyle({ display: 'inline' }));
+
+const networkTrafficLinkStyle = kialiStyle({
+  fontSize: 'var(--graph-side-panel--font-size)',
+  color: PFColors.Link,
+  textDecoration: 'none',
+  $nest: {
+    '&:hover': {
+      color: PFColors.Link,
+      textDecoration: 'underline'
+    }
+  }
+});
+
+// Helper function to check if Network Observability plugin is available and functional
+const isNetobservAvailable = (): boolean => {
+  console.log('Checking netobserv availability:', {
+    hasConfig: !!netobservPluginConfig,
+    config: netobservPluginConfig
+  });
+  
+  if (!netobservPluginConfig) {
+    return false;
+  }
+  
+  if (!netobservPluginConfig.extensions || netobservPluginConfig.extensions.length === 0) {
+    return false;
+  }
+  
+  const result = netobservPluginConfig.extensions.some(ext => 
+    ext.type === 'console.page/route' && 
+    ext.properties?.path?.includes('netflow')
+  );
+  
+  console.log('Netobserv available:', result);
+  return result;
+};
 
 export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeComponentProps, SummaryPanelNodeState> {
   private readonly mainDivRef: React.RefObject<HTMLDivElement>;
@@ -244,6 +284,23 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
             {shouldRenderService && <div>{renderBadgedLink(nodeData, NodeType.SERVICE)}</div>}
             {shouldRenderApp && <div>{renderBadgedLink(nodeData, NodeType.APP)}</div>}
             {shouldRenderWorkload && this.renderWorkloadSection(nodeData)}
+            {isNetobservAvailable() && (
+              <div className={nodeInfoStyle}>
+                <PFBadge badge={PFBadges.NetworkTraffic} size="sm" />
+                {this.props.netObsurl ? (
+                  <a href={this.props.netObsurl} className={networkTrafficLinkStyle}>
+                    network traffic
+                  </a>
+                ) : (
+                  <KialiPageLink
+                    href={`/graph/namespaces?namespaces=${encodeURIComponent(nodeData.namespace)}`}
+                    cluster={nodeData.cluster}
+                  >
+                    network traffic
+                  </KialiPageLink>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -591,6 +648,16 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
     setIsKebabOpen(isOpen);
   };
 
+  // Only construct netflow URL if Network Observability plugin is available and we have valid namespace data
+  let netObsUrl: string | undefined;
+  const namespace = nodeData.namespace;
+  
+  if (isNetobservAvailable() && namespace) {
+    // For local development, construct URL relative to current host
+    const currentHost = window.location.origin;
+    netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
+  }
+
   return (
     <SummaryPanelNodeComponent
       tracingState={tracingState}
@@ -600,6 +667,7 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
       serviceDetails={isServiceDetailsLoading ? undefined : serviceDetails}
       gateways={gateways}
       peerAuthentications={peerAuthentications}
+      netObsurl={netObsUrl}
       onKebabToggled={handleKebabToggled}
       {...props}
     />

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom-v5-compat';
 import { refForKialiIstio } from './IstioResources';
 import { setRouter } from 'app/History';
 
-import { distributedTracingPluginConfig, pluginConfig } from '../components/KialiController';
+import { distributedTracingPluginConfig, netobservPluginConfig, pluginConfig } from '../components/KialiController';
 import { store } from 'store/ConfigStore';
 
 export const OSSM_CONSOLE = 'ossmconsole';
@@ -15,7 +15,8 @@ export const properties = {
   // 'plugin-config.json' is a resource mounted from a ConfigMap, so, the UI app can read config from that file
   pluginConfig: `/api/plugins/${OSSM_CONSOLE}/plugin-config.json`,
   // External
-  distributedTracingPluginConfig: `/api/plugins/distributed-tracing-console-plugin/plugin-manifest.json`
+  distributedTracingPluginConfig: `/api/plugins/distributed-tracing-console-plugin/plugin-manifest.json`,
+  netobservPluginConfig: `/api/plugins/netobserv-plugin/plugin-manifest.json`
 };
 
 type Observability = {
@@ -23,7 +24,6 @@ type Observability = {
   namespace: string;
   tenant?: string;
 };
-
 // This PluginConfig type should be mapped with the 'plugin-config.json' file
 export type PluginConfig = {
   observability?: Observability;
@@ -59,6 +59,19 @@ export const getDistributedTracingPluginManifest = async (): Promise<OpenShiftPl
         resolve(config);
       })
       .catch(error => reject(error));
+  });
+};
+
+export const getNetobservPluginManifest = async (): Promise<OpenShiftPluginConfig> => {
+  return await new Promise((resolve, reject) => {
+    consoleFetchJSON(properties.netobservPluginConfig)
+      .then(config => {
+        resolve(config);
+      })
+      .catch(error => {
+        console.log(`Error fetching netobserv plugin manifest: ${error}`);
+        reject(error);
+      });
   });
 };
 
@@ -178,6 +191,23 @@ export const useInitKialiListeners = (): void => {
             } else {
               consoleUrl = `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`;
             }
+          }
+        } else {
+          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
+          const url = urlParams.get('url');
+          if (url) {
+            window.location.href = url;
+          }
+        }
+      } else if (kialiAction.startsWith('/network-traffic') || kialiAction.startsWith('/netflow')) {
+        if (netobservPluginConfig && netobservPluginConfig.extensions.length > 0) {
+          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
+          const sourceNamespace = urlParams.get('namespace') || urlParams.get('src_namespace');
+          
+          if (sourceNamespace && sourceNamespace !== 'undefined') {
+            consoleUrl = `/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(sourceNamespace)}&bnf=false&function=last&type=Bytes`;
+          } else {
+            consoleUrl = `/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&bnf=false&function=last&type=Bytes`;
           }
         } else {
           const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
