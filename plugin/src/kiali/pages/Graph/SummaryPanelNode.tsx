@@ -107,11 +107,11 @@ const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyl
 
 const networkTrafficLinkStyle = kialiStyle({
   fontSize: 'var(--graph-side-panel--font-size)',
-  color: 'var(--pf-global--link--Color)',
+  color: PFColors.Link,
   textDecoration: 'none',
   $nest: {
     '&:hover': {
-      color: 'var(--pf-global--link--Color--hover)',
+      color: PFColors.Link,
       textDecoration: 'underline'
     }
   }
