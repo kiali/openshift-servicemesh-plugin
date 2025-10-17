@@ -1,0 +1,24 @@
+name: Update latest test suite images
+
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - 'hack/**'
+    - 'plugin/**'
+    # ignore src folder
+    - '!plugin/src/**'
+    - 'deploy/docker/Dockerfile-cypress'
+
+jobs:
+  push_test_images:
+    name: Build and push test images
+    uses: ./.github/workflows/test-images-creator.yml
+    with:
+      release_branch: ${{ github.ref_name }}
+      images_tag: 'latest'
+      quay_org: 'kiali'
+    secrets:
+      QUAY_USER: ${{ secrets.QUAY_USER }}
+      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
