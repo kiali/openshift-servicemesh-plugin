@@ -75,7 +75,6 @@ export type SummaryPanelNodeProps = Omit<SummaryPanelPropType, 'kiosk'> & {
 export type SummaryPanelNodeComponentProps = ReduxProps &
   SummaryPanelNodeProps & {
     gateways: string[] | null;
-    netObsurl?: string;
     onKebabToggled?: (isOpen: boolean) => void;
     peerAuthentications: PeerAuthentication[] | null;
     serviceDetails: ServiceDetailsInfo | null | undefined;
@@ -623,16 +622,6 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
     setIsKebabOpen(isOpen);
   };
 
-  // Only construct netflow URL if Network Observability plugin is available and we have valid namespace data
-  let netObsUrl: string | undefined;
-  const namespace = nodeData.namespace;
-  
-  if (isNetobservAvailable() && namespace) {
-    // For local development, construct URL relative to current host
-    const currentHost = window.location.origin;
-    netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
-  }
-
   return (
     <SummaryPanelNodeComponent
       tracingState={tracingState}
@@ -643,7 +632,6 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
       serviceDetails={isServiceDetailsLoading ? undefined : serviceDetails}
       gateways={gateways}
       peerAuthentications={peerAuthentications}
-      netObsurl={netObsUrl}
       onKebabToggled={handleKebabToggled}
       {...props}
     />
