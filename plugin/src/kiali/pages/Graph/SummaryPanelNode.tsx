@@ -41,9 +41,8 @@ import { panelBodyStyle, panelHeadingStyle, panelStyle } from './SummaryPanelSty
 import { dicTypeToGVK, gvkType } from '../../types/IstioConfigList';
 import { renderWaypointLabel } from '../../components/Ambient/WaypointLabel';
 import { Node } from '@patternfly/react-topology';
-import {KialiPageLink} from 'components/Link/KialiPageLink';
+import { KialiPageLink } from 'components/Link/KialiPageLink';
 import { netobservPluginConfig } from '../../../openshift/components/KialiController';
-import { PFColors } from 'components/Pf/PfColors';
 
 type SummaryPanelNodeState = {
   isActionOpen: boolean;
@@ -75,7 +74,6 @@ export type SummaryPanelNodeProps = Omit<SummaryPanelPropType, 'kiosk'> & {
 export type SummaryPanelNodeComponentProps = ReduxProps &
   SummaryPanelNodeProps & {
     gateways: string[] | null;
-    netObsurl?: string;
     onKebabToggled?: (isOpen: boolean) => void;
     peerAuthentications: PeerAuthentication[] | null;
     serviceDetails: ServiceDetailsInfo | null | undefined;
@@ -107,38 +105,26 @@ const nodeInfoStyle = kialiStyle({
 
 const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyle({ display: 'inline' }));
 
-const networkTrafficLinkStyle = kialiStyle({
-  fontSize: 'var(--graph-side-panel--font-size)',
-  color: PFColors.Link,
-  textDecoration: 'none',
-  $nest: {
-    '&:hover': {
-      color: PFColors.Link,
-      textDecoration: 'underline'
-    }
-  }
-});
-
 // Helper function to check if Network Observability plugin is available and functional
 const isNetobservAvailable = (): boolean => {
   console.log('Checking netobserv availability:', {
     hasConfig: !!netobservPluginConfig,
     config: netobservPluginConfig
   });
-  
+
   if (!netobservPluginConfig) {
     return false;
   }
-  
+
   if (!netobservPluginConfig.extensions || netobservPluginConfig.extensions.length === 0) {
     return false;
   }
-  
-  const result = netobservPluginConfig.extensions.some(ext => 
-    ext.type === 'console.page/route' && 
+
+  const result = netobservPluginConfig.extensions.some(ext =>
+    ext.type === 'console.page/route' &&
     ext.properties?.path?.includes('netflow')
   );
-  
+
   console.log('Netobserv available:', result);
   return result;
 };
@@ -168,11 +154,14 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
     const servicesList = nodeType !== NodeType.SERVICE && renderDestServicesLinks(nodeData);
     const destsList = nodeType === NodeType.SERVICE && isServiceEntry && this.renderDestServices(nodeData);
 
+    const hasNetobserv = isNetobservAvailable();
     const shouldRenderDestsList = destsList && destsList.length > 0;
     const shouldRenderSvcList = servicesList && servicesList.length > 0;
     const shouldRenderService = service && ![NodeType.SERVICE, NodeType.UNKNOWN].includes(nodeType);
     const shouldRenderApp = app && ![NodeType.APP, NodeType.UNKNOWN].includes(nodeType) && !nodeData.isWaypoint;
     const shouldRenderWorkload = workload && ![NodeType.WORKLOAD, NodeType.UNKNOWN].includes(nodeType);
+    const shouldRenderNetobservWorkload = hasNetobserv && (nodeType == NodeType.WORKLOAD || shouldRenderWorkload)
+    const shouldRenderNetobservService = hasNetobserv && (nodeType == NodeType.SERVICE || shouldRenderService)
     const shouldRenderTraces =
       !isServiceEntry &&
       !nodeData.isInaccessible &&
@@ -284,29 +273,33 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
             {shouldRenderService && <div>{renderBadgedLink(nodeData, NodeType.SERVICE)}</div>}
             {shouldRenderApp && <div>{renderBadgedLink(nodeData, NodeType.APP)}</div>}
             {shouldRenderWorkload && this.renderWorkloadSection(nodeData)}
-            {isNetobservAvailable() && (
-              <div className={nodeInfoStyle}>
-                <PFBadge badge={PFBadges.NetworkTraffic} size="sm" />
-                {this.props.netObsurl ? (
-                  <a href={this.props.netObsurl} className={networkTrafficLinkStyle}>
-                    network traffic
-                  </a>
-                ) : (
-                  <KialiPageLink
-                    href={`/graph/namespaces?namespaces=${encodeURIComponent(nodeData.namespace)}`}
-                    cluster={nodeData.cluster}
-                  >
-                    network traffic
-                  </KialiPageLink>
-                )}
-              </div>
-            )}
+            {shouldRenderNetobservService && this.renderNetobservLink(nodeData, NodeType.SERVICE)}
+            {shouldRenderNetobservWorkload && this.renderNetobservLink(nodeData, NodeType.WORKLOAD)}
           </div>
         </div>
 
         {shouldRenderTraces ? this.renderWithTabs(nodeData) : this.renderTrafficOnly()}
       </div>
     );
+  }
+
+  // this is relevant only to linking to a netobserv tab in OSSMC
+  private renderNetobservLink = (nodeData: DecoratedGraphNodeData, nodeType: NodeType): React.ReactNode => {
+    // prefix the workload or service link with '/netobserv' to indicate that we want to link
+    // to the netobserv 'Network Traffic' tab for the entity, not the 'Service Mesh' tab. The link will be intercepted
+    // by KialiIntegration in OSSM, and redirected as needed.
+    const link = `/netobserv${getLink(nodeData, nodeType).link}`;
+    return (
+      <div className={nodeInfoStyle}>
+        <PFBadge badge={PFBadges.NetworkTraffic} size="sm" />
+        <KialiPageLink
+          href={link}
+          cluster={nodeData.cluster}
+        >
+          network traffic
+        </KialiPageLink>
+      </div>
+    )
   }
 
   private renderWorkloadSection = (nodeData: DecoratedGraphNodeData): React.ReactNode => {
@@ -318,9 +311,8 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
     const workloadEntryLinks = nodeData.hasWorkloadEntry.map(we => (
       <div>
         {getLink(nodeData, NodeType.WORKLOAD, () => ({
-          link: `/namespaces/${encodeURIComponent(nodeData.namespace)}/istio/${weGVK.Group}/${weGVK.Version}/${
-            weGVK.Kind
-          }/${encodeURIComponent(we.name)}`,
+          link: `/namespaces/${encodeURIComponent(nodeData.namespace)}/istio/${weGVK.Group}/${weGVK.Version}/${weGVK.Kind
+            }/${encodeURIComponent(we.name)}`,
           displayName: we.name,
           key: `${nodeData.namespace}.wle.${we.name}`
         }))}
@@ -648,16 +640,6 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
     setIsKebabOpen(isOpen);
   };
 
-  // Only construct netflow URL if Network Observability plugin is available and we have valid namespace data
-  let netObsUrl: string | undefined;
-  const namespace = nodeData.namespace;
-  
-  if (isNetobservAvailable() && namespace) {
-    // For local development, construct URL relative to current host
-    const currentHost = window.location.origin;
-    netObsUrl = `${currentHost}/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(namespace)}&bnf=false&function=last&type=Bytes`;
-  }
-
   return (
     <SummaryPanelNodeComponent
       tracingState={tracingState}
@@ -667,7 +649,6 @@ export const SummaryPanelNode: React.FC<SummaryPanelNodeProps> = (props: Summary
       serviceDetails={isServiceDetailsLoading ? undefined : serviceDetails}
       gateways={gateways}
       peerAuthentications={peerAuthentications}
-      netObsurl={netObsUrl}
       onKebabToggled={handleKebabToggled}
       {...props}
     />

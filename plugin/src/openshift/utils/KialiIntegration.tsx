@@ -7,6 +7,7 @@ import { setRouter } from 'app/History';
 import { distributedTracingPluginConfig, netobservPluginConfig, pluginConfig } from '../components/KialiController';
 import { store } from 'store/ConfigStore';
 
+export const NETOBSERV = 'netflow';
 export const OSSM_CONSOLE = 'ossmconsole';
 
 export const properties = {
@@ -94,10 +95,18 @@ export const useInitKialiListeners = (): void => {
 
   if (!kialiListener) {
     kialiListener = (ev: MessageEvent) => {
-      const kialiAction = ev.data;
+      let kialiAction = ev.data;
 
       if (typeof kialiAction !== 'string') {
         return;
+      }
+
+      // When available, come URLs may ask to direct to the netobserv tab as opposed to the OSSMC tab
+      const netobservPrefix = '/netobserv';
+      let isNetobserv = false;
+      if (kialiAction.startsWith(netobservPrefix)) {
+        kialiAction = kialiAction.substring(netobservPrefix.length)
+        isNetobserv = netobservPluginConfig && netobservPluginConfig.extensions.length > 0
       }
 
       const webParamsIndex = kialiAction.indexOf('?');
@@ -150,12 +159,14 @@ export const useInitKialiListeners = (): void => {
           // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
           // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
           const workload = detail.substring('/workloads'.length);
-          consoleUrl = `/k8s/ns/${namespace}/deployments${workload}/${OSSM_CONSOLE}${webParams}`;
+          const target = isNetobserv ? NETOBSERV : OSSM_CONSOLE;
+          consoleUrl = `/k8s/ns/${namespace}/deployments${workload}/${target}${webParams}`;
         }
 
         if (detail.startsWith('/services')) {
           // OpenShift Console has a "services" list page
-          consoleUrl = `/k8s/ns/${namespace}${detail}/${OSSM_CONSOLE}${webParams}`;
+          const target = isNetobserv ? NETOBSERV : OSSM_CONSOLE;
+          consoleUrl = `/k8s/ns/${namespace}${detail}/${target}${webParams}`;
         }
 
         if (detail.startsWith('/istio')) {
@@ -191,23 +202,6 @@ export const useInitKialiListeners = (): void => {
             } else {
               consoleUrl = `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`;
             }
-          }
-        } else {
-          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
-          const url = urlParams.get('url');
-          if (url) {
-            window.location.href = url;
-          }
-        }
-      } else if (kialiAction.startsWith('/network-traffic') || kialiAction.startsWith('/netflow')) {
-        if (netobservPluginConfig && netobservPluginConfig.extensions.length > 0) {
-          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
-          const sourceNamespace = urlParams.get('namespace') || urlParams.get('src_namespace');
-          
-          if (sourceNamespace && sourceNamespace !== 'undefined') {
-            consoleUrl = `/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&filters=src_namespace%3D${encodeURIComponent(sourceNamespace)}&bnf=false&function=last&type=Bytes`;
-          } else {
-            consoleUrl = `/netflow-traffic?timeRange=300&limit=5&match=all&showDup=false&packetLoss=all&recordType=flowLog&dataSource=auto&bnf=false&function=last&type=Bytes`;
           }
         } else {
           const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
