@@ -1,0 +1,40 @@
+# don't forget to pass environmet variables to docker run like this:
+# podman run -e CYPRESS_BASE_URL=<OCP_URL> -e CYPRESS_USERNAME=<username> -e CYPRESS_PASSWD=<passwd> quay.io/kiali/kiali-ossmc-cypress-tests:dev
+# more details here https://github.com/kiali/openshift-servicemesh-plugin/tree/main/plugin/cypress
+
+# using same baseimage of node as its defined in package.json
+FROM cypress/base:20.16.0
+
+# we need to set HOME when running on OCP with random UID, otherwise the home is set to / and any writing there will fail with permission denied
+ENV HOME=/tmp/kiali
+
+# install required packages and oc bin
+WORKDIR /usr/bin
+RUN apt -y update && \
+    apt install -y tar gzip bash gettext curl && \
+    apt-get clean && \
+    curl -Lo ./oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz && \
+    tar -xf oc.tar.gz && \
+    rm -f oc.tar.gz
+
+# copy also hack scripts which will be used to install demo apps
+COPY hack $HOME/hack
+COPY plugin/ $HOME/
+
+WORKDIR $HOME
+
+# Use cypress cache in home folder, not under root
+RUN mkdir .cache
+ENV CYPRESS_CACHE_FOLDER=$HOME/.cache
+
+# Install Cypress dependencies.
+RUN yarn install --frozen-lockfile
+
+# Set required permissions for OpenShift usage
+RUN chgrp -R 0 $HOME && \
+    chmod -R g=u $HOME
+
+ENV TEST_GROUP="@ossmc"
+
+# Run Cypress tests.
+CMD ["yarn", "cypress:run:test-group:junit"]
