@@ -24,9 +24,19 @@ ARCH := $(shell uname -m | sed 's/x86_64/amd64/')
 # Container version used when tagging container images
 # When doing releases, you probably want to override this so it is set to the release version string.
 CONTAINER_VERSION ?= dev
+# Identifies the Kiali container image that will be built.
+IMAGE_ORG ?= kiali
+CONTAINER_NAME ?= ${IMAGE_ORG}/kiali
+
+# Identifies the Kiali OSSMC cypress tests container image that will be built
+CYPRESS_TESTS_CONTAINER_NAME ?= ${IMAGE_ORG}/kiali-ossmc-cypress-tests
+CYPRESS_TESTS_CONTAINER_VERSION ?= ${CONTAINER_VERSION}
+CYPRESS_TESTS_QUAY_NAME ?= quay.io/${CYPRESS_TESTS_CONTAINER_NAME}
+CYPRESS_TESTS_QUAY_TAG ?= ${CYPRESS_TESTS_QUAY_NAME}:${CYPRESS_TESTS_CONTAINER_VERSION}
 
 include make/Makefile.plugin.mk
 include make/Makefile.cluster.mk
+include make/Makefile.container.mk
 
 help:
 	@echo
