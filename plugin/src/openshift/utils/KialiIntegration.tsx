@@ -70,7 +70,6 @@ export const getNetobservPluginManifest = async (): Promise<OpenShiftPluginConfi
         resolve(config);
       })
       .catch(error => {
-        console.log(`Error fetching netobserv plugin manifest: ${error}`);
         reject(error);
       });
   });
