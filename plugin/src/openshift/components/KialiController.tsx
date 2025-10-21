@@ -171,7 +171,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         .register('getNetobservPluginManifestPromise', getNetobservPluginManifest())
         .then(response => (netobservPluginConfig = (response)))
         .catch(error => {
-          console.debug(`Error fetching Network Observability plugin configuration. (Probably is not installed) ${error}`)
+          console.debug(`Failed to fetch Netobserv plugin configuration (plugin is not probably installed). ${error}`)
           // For testing the netobserv integration locally, assign netobservPluginConfig = "plugin manifest json"
         });
       API.getStatus()
