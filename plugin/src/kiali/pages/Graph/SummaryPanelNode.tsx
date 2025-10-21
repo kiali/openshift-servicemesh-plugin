@@ -251,7 +251,7 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
       </div>
     );
   }
-  
+
   private renderWorkloadSection = (nodeData: DecoratedGraphNodeData): React.ReactNode => {
     if (!nodeData.hasWorkloadEntry) {
       return <div>{renderBadgedLink(nodeData, NodeType.WORKLOAD)}</div>;
