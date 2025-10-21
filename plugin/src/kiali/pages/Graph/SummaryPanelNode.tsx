@@ -42,6 +42,7 @@ import { dicTypeToGVK, gvkType } from '../../types/IstioConfigList';
 import { renderWaypointLabel } from '../../components/Ambient/WaypointLabel';
 import { Node } from '@patternfly/react-topology';
 import { KialiPageLink } from 'components/Link/KialiPageLink';
+import { netobservPluginConfig } from '../../../openshift/components/KialiController';
 
 type SummaryPanelNodeState = {
   isActionOpen: boolean;
@@ -104,23 +105,6 @@ const nodeInfoStyle = kialiStyle({
 
 const workloadExpandableSectionStyle = classes(expandableSectionStyle, kialiStyle({ display: 'inline' }));
 
-const networkTrafficLinkStyle = kialiStyle({
-  fontSize: 'var(--graph-side-panel--font-size)',
-  color: PFColors.Link,
-  textDecoration: 'none',
-  $nest: {
-    '&:hover': {
-      color: PFColors.Link,
-      textDecoration: 'underline'
-    }
-  }
-});
-
-// Helper function to check if Network Observability integration is available
-const isNetobservAvailable = (): boolean => {
-  return false;
-};
-
 export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeComponentProps, SummaryPanelNodeState> {
   private readonly mainDivRef: React.RefObject<HTMLDivElement>;
 
@@ -146,7 +130,6 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
     const servicesList = nodeType !== NodeType.SERVICE && renderDestServicesLinks(nodeData);
     const destsList = nodeType === NodeType.SERVICE && isServiceEntry && this.renderDestServices(nodeData);
 
-    const hasNetobserv = isNetobservAvailable();
     const shouldRenderDestsList = destsList && destsList.length > 0;
     const shouldRenderSvcList = servicesList && servicesList.length > 0;
     const shouldRenderService = service && ![NodeType.SERVICE, NodeType.UNKNOWN].includes(nodeType);
@@ -267,8 +250,6 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
             {shouldRenderService && <div>{renderBadgedLink(nodeData, NodeType.SERVICE)}</div>}
             {shouldRenderApp && <div>{renderBadgedLink(nodeData, NodeType.APP)}</div>}
             {shouldRenderWorkload && this.renderWorkloadSection(nodeData)}
-            {shouldRenderNetobservService && this.renderNetobservLink(nodeData, NodeType.SERVICE)}
-            {shouldRenderNetobservWorkload && this.renderNetobservLink(nodeData, NodeType.WORKLOAD)}
           </div>
         </div>
 
