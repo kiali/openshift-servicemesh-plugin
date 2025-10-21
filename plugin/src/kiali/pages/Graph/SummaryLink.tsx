@@ -228,9 +228,9 @@ export const getLink = (
   if (link && !nodeData.isInaccessible) {
     return (
       <>
-       <KialiPageLink key={key} href={link} cluster={cluster}>
-         {displayName}
-       </KialiPageLink>
+        <KialiPageLink key={key} href={link} cluster={cluster}>
+          {displayName}
+        </KialiPageLink>
         {extLink}
       </>
     );
