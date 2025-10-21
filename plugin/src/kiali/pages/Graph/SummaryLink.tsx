@@ -188,8 +188,9 @@ export const getLink = (nodeData: GraphNodeData, nodeType?: NodeType, linkGenera
       case NodeType.SERVICE:
         if (nodeData.isServiceEntry) {
           const seGVK = dicTypeToGVK[gvkType.ServiceEntry];
-          link = `/namespaces/${encodeURIComponent(nodeData.isServiceEntry.namespace)}/istio/${seGVK.Group}/${seGVK.Version
-            }/${seGVK.Kind}/${encodeURIComponent(service!)}`;
+          link = `/namespaces/${encodeURIComponent(nodeData.isServiceEntry.namespace)}/istio/${seGVK.Group}/${
+            seGVK.Version
+          }/${seGVK.Kind}/${encodeURIComponent(service!)}`;
         } else {
           link = `/namespaces/${encodeURIComponent(namespace)}/services/${encodeURIComponent(service!)}`;
         }
