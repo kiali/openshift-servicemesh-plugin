@@ -187,8 +187,9 @@ export const getLink = (
       case NodeType.SERVICE:
         if (nodeData.isServiceEntry) {
           const seGVK = dicTypeToGVK[gvkType.ServiceEntry];
-          link = `/namespaces/${encodeURIComponent(nodeData.isServiceEntry.namespace)}/istio/${seGVK.Group}/${seGVK.Version
-            }/${seGVK.Kind}/${encodeURIComponent(service!)}`;
+          link = `/namespaces/${encodeURIComponent(nodeData.isServiceEntry.namespace)}/istio/${seGVK.Group}/${
+            seGVK.Version
+          }/${seGVK.Kind}/${encodeURIComponent(service!)}`;
         } else {
           link = `/namespaces/${encodeURIComponent(namespace)}/services/${encodeURIComponent(service!)}`;
         }
@@ -226,13 +227,13 @@ export const getLink = (
 
   if (link && !nodeData.isInaccessible) {
     return (
-        <>
-          <KialiPageLink key={key} href={link} cluster={cluster}>
-            {displayName}
-          </KialiPageLink>
-          {extLink}
-        </>
-      );
+      <>
+       <KialiPageLink key={key} href={link} cluster={cluster}>
+         {displayName}
+       </KialiPageLink>
+        {extLink}
+      </>
+    );
   }
 
   return extLink ? extLink : <span key={key}>{displayName}</span>;
