@@ -130,7 +130,7 @@ That will help to validate if the logic and the URL are right, but in the localh
 
 ### Testing Locally Netobserv integration
 
-For testing the Netobser integration locally, assign to netobservPluginConfig in the getNetobservPluginManifestPromise in the KialiController.go, the following data: 
+For testing the Netobserv integration locally, assign to netobservPluginConfig in the getNetobservPluginManifestPromise in the KialiController.go, the following data: 
 
 ```sh
   netobservPluginConfig = {
