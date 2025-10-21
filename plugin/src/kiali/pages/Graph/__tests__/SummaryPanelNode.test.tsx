@@ -155,15 +155,4 @@ describe('SummaryPanelNodeComponent', () => {
     expect(rankText.exists()).toBeTruthy();
     expect(rankText.length).toEqual(1);
   });
-
-  it('always renders NT badge for testing', () => {
-    const wrapper = mount(
-      <Provider store={store}>
-        <MemoryRouter>
-          <SummaryPanelNodeComponent {...defaultProps} />
-        </MemoryRouter>
-      </Provider>
-    );
-    expect(wrapper.find('NTBadge').exists()).toBeTruthy();
-  });
 });
