@@ -98,9 +98,13 @@ Then('user sees the mesh side panel', () => {
       .within(() => {
         const resp = interception.response;
         expect(resp?.statusCode).to.eq(200);
-        expect(resp?.body.meshName).to.not.equal(undefined);
-        expect(resp?.body.meshName).to.not.equal('');
-        cy.contains(`Mesh: ${resp?.body.meshName}`);
+        expect(resp?.body.meshNames).to.not.equal(null);
+        expect(resp?.body.meshNames.length).to.be.greaterThan(0);
+        expect(resp?.body.meshNames).to.not.include('');
+        // Check that each mesh name is displayed in the UI
+        resp?.body.meshNames.forEach((meshName: string) => {
+          cy.contains(`Mesh: ${meshName}`);
+        });
       });
   });
 });
