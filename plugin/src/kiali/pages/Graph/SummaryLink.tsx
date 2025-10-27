@@ -227,7 +227,8 @@ export const getLink = (nodeData: GraphNodeData, nodeType?: NodeType, linkGenera
   }
 
   if (link && !nodeData.isInaccessible) {
-    return (
+    return {
+      elem: (
         <>
           <KialiPageLink key={key} href={link} cluster={cluster}>
             {displayName}
@@ -262,7 +263,7 @@ export const renderBadgedName = (nodeData: GraphNodeData, label?: string): React
         )}
 
         {getBadge(nodeData)}
-        {getLink({ ...nodeData, isInaccessible: true })}
+        {getLink({ ...nodeData, isInaccessible: true }).elem}
       </span>
     </div>
   );
@@ -275,7 +276,7 @@ export const renderBadgedLink = (
   linkGenerator?: () => LinkInfo,
   style?: string
 ): React.ReactNode => {
-  const link = getLink(nodeData, nodeType, linkGenerator);
+  const link = getLink(nodeData, nodeType, linkGenerator).elem;
 
   return (
     <div key={`node-${nodeData.id}`} className={style}>
