@@ -1,40 +1,39 @@
 import * as React from 'react';
-import { bindActionCreators } from 'redux';
-import { connect } from 'react-redux';
-import { Namespace } from 'types/Namespace';
-import { MessageType } from 'types/MessageCenter';
-import { DurationInSeconds, IntervalInMilliseconds, PF_THEME_DARK, Theme } from 'types/Common';
-import { TracingInfo } from 'types/TracingInfo';
-import { toGrpcRate, toHttpRate, toTcpRate, TrafficRate } from 'types/Graph';
-import { StatusKey, StatusState } from 'types/StatusState';
-import { PromisesRegistry } from 'utils/CancelablePromises';
+import {bindActionCreators} from 'redux';
+import {connect} from 'react-redux';
+import {Namespace} from 'types/Namespace';
+import {MessageType} from 'types/MessageCenter';
+import {DurationInSeconds, IntervalInMilliseconds, PF_THEME_DARK, Theme} from 'types/Common';
+import {TracingInfo} from 'types/TracingInfo';
+import {toGrpcRate, toHttpRate, toTcpRate, TrafficRate} from 'types/Graph';
+import {StatusKey, StatusState} from 'types/StatusState';
+import {PromisesRegistry} from 'utils/CancelablePromises';
 import * as API from 'services/Api';
 import * as AlertUtils from 'utils/AlertUtils';
-import { humanDurations, serverConfig, setServerConfig } from 'config/ServerConfig';
-import { config } from 'config';
-import { KialiDispatch } from 'types/Redux';
-import { MessageCenterActions } from 'actions/MessageCenterActions';
-import { LoginThunkActions } from 'actions/LoginThunkActions';
-import { NamespaceActions } from 'actions/NamespaceAction';
-import { UserSettingsActions } from 'actions/UserSettingsActions';
-import { TracingActions } from 'actions/TracingActions';
-import { LoginActions } from 'actions/LoginActions';
-import { GraphToolbarActions } from 'actions/GraphToolbarActions';
-import { HelpDropdownActions } from 'actions/HelpDropdownActions';
-import { GlobalActions } from 'actions/GlobalActions';
+import {humanDurations, serverConfig, setServerConfig} from 'config/ServerConfig';
+import {config} from 'config';
+import {KialiDispatch} from 'types/Redux';
+import {MessageCenterActions} from 'actions/MessageCenterActions';
+import {LoginThunkActions} from 'actions/LoginThunkActions';
+import {NamespaceActions} from 'actions/NamespaceAction';
+import {UserSettingsActions} from 'actions/UserSettingsActions';
+import {TracingActions} from 'actions/TracingActions';
+import {LoginActions} from 'actions/LoginActions';
+import {GraphToolbarActions} from 'actions/GraphToolbarActions';
+import {HelpDropdownActions} from 'actions/HelpDropdownActions';
+import {GlobalActions} from 'actions/GlobalActions';
 import {
   getDistributedTracingPluginManifest,
-  getNetobservPluginManifest,
   getPluginConfig,
   OpenShiftPluginConfig,
   PluginConfig
 } from 'openshift/utils/KialiIntegration';
-import { MeshTlsActions } from 'actions/MeshTlsActions';
-import { TLSStatus } from 'types/TLSStatus';
-import { IstioCertsInfoActions } from 'actions/IstioCertsInfoActions';
-import { CertsInfo } from 'types/CertsInfo';
-import { store } from 'store/ConfigStore';
-import { kialiStyle } from 'styles/StyleUtils';
+import {MeshTlsActions} from 'actions/MeshTlsActions';
+import {TLSStatus} from 'types/TLSStatus';
+import {IstioCertsInfoActions} from 'actions/IstioCertsInfoActions';
+import {CertsInfo} from 'types/CertsInfo';
+import {store} from 'store/ConfigStore';
+import {kialiStyle} from 'styles/StyleUtils';
 
 declare global {
   interface Date {
@@ -85,13 +84,10 @@ const defaultPluginConfig: PluginConfig = {
 };
 
 let pluginConfig: PluginConfig = defaultPluginConfig;
-export { pluginConfig };
+export {pluginConfig};
 
-let distributedTracingPluginConfig: OpenShiftPluginConfig;
-export { distributedTracingPluginConfig };
-
-let netobservPluginConfig: any;
-export { netobservPluginConfig };
+let distributedTracingPluginConfig:OpenShiftPluginConfig;
+export {distributedTracingPluginConfig};
 
 class KialiControllerComponent extends React.Component<KialiControllerProps> {
   private promises = new PromisesRegistry();
@@ -155,7 +151,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
       const getPluginPromise = this.promises
         .register('getPluginPromise', getPluginConfig())
-        .then(response => { pluginConfig = response })
+        .then(response => {pluginConfig = response})
         .catch(error => {
           AlertUtils.addError('Error fetching plugin configuration.', error, 'default', MessageType.WARNING);
         });
@@ -166,13 +162,6 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         .catch(error => {
           console.debug(`Error fetching Distributed Tracing plugin configuration. (Probably is not installed) ${error}`)
           // For testing the distributed tracing integration locally, assign distributedTracingPluginConfig = "plugin manifest json"
-        });
-      const getNetobservPluginManifestPromise = this.promises
-        .register('getNetobservPluginManifestPromise', getNetobservPluginManifest())
-        .then(response => (netobservPluginConfig = (response)))
-        .catch(error => {
-          console.debug(`Failed to fetch Netobserv plugin configuration (plugin is not probably installed). ${error}`)
-          // For testing the netobserv integration locally, assign netobservPluginConfig = "plugin manifest json"
         });
       API.getStatus()
         .then(response => this.processServerStatus(response.data))
@@ -185,12 +174,8 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         getServerConfigPromise,
         getTracingInfoPromise,
         getPluginPromise,
-        getDistributedTracingPluginManifestPromise,
-        getNetobservPluginManifestPromise
-      ]).then(() => {
-        // Set kiosk data for OSSMC
-        store.dispatch(GlobalActions.setKioskData({ hasExternalTracing: !!distributedTracingPluginConfig, hasNetobserv: !!netobservPluginConfig }));
-      });
+        getDistributedTracingPluginManifestPromise
+      ]);
     } catch (err) {
       console.error('Error loading kiali config', err);
     }
@@ -326,7 +311,4 @@ const mapDispatchToProps = (dispatch: KialiDispatch): KialiControllerReduxProps 
   statusRefresh: bindActionCreators(HelpDropdownActions.statusRefresh, dispatch)
 });
 
-export const KialiController = connect(
-  null,
-  mapDispatchToProps
-)(KialiControllerComponent);
+export const KialiController = connect(null, mapDispatchToProps)(KialiControllerComponent);
