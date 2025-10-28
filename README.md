@@ -90,7 +90,7 @@ At this point, the OpenShift Console will start and be accessible at http://loca
 
 ### Testing Locally Distributed Tracing integration
 
-For testing the distributed tracing integration locally, assign to distributedTracingPluginConfig in the getDistributedTracingPluginManifestPromise in the KialiController the following data: 
+For testing the distributed tracing integration locally, assign to distributedTracingPluginConfig in the getDistributedTracingPluginManifestPromise in the KialiController the following data:
 
 ```sh
   distributedTracingPluginConfig = {
@@ -126,7 +126,49 @@ For testing the distributed tracing integration locally, assign to distributedTr
   }
 ```
 
-That will help to validate if the logic and the URL are right, but in the localhost plugin it won't load the distributed tracing plugin page. 
+That will help to validate if the logic and the URL are right, but in the localhost plugin it won't load the distributed tracing plugin page.
+
+### Testing Locally Netobserv integration
+
+For testing the Netobserv integration locally, assign to netobservPluginConfig in the getNetobservPluginManifestPromise in the KialiController.go, the following data:
+
+```sh
+  netobservPluginConfig = {
+    "name": "network-observability-console-plugin",
+    "version": "0.0.1",
+    "displayName": "Network Observability Plugin",
+    "description": "This plugin adds a network observability UI to the OpenShift console.",
+    "dependencies": {
+      "@console/pluginAPI": "*"
+    },
+    "extensions": [
+      {
+        "type": "console.page/route",
+        "properties": {
+           "exact": false,
+           "path": "/observe/network-traffic",
+            "component": {
+              "$codeRef": "NetworkTrafficUI"
+            }
+          }
+      },
+      {
+        "type": "console.navigation/href",
+        "properties": {
+          "id": "network-observability",
+          "name": "Network Traffic",
+          "href": "/observe/network-traffic",
+          "perspective": "admin",
+           "section": "observe"
+        }
+      }
+    ]
+  };
+```
+
+That will help to validate if the logic and the URL are right, but in the localhost plugin it won't load the Network Observability plugin page.
+
+````
 
 ## Operator
 
@@ -152,7 +194,7 @@ To build and release the plugin, you can run this command either manually or ins
 
 ```sh
 make -e CONTAINER_VERSION=v0.1.0 build-plugin-image push-plugin-image
-```
+````
 
 Or for a multi-arch container:
 
