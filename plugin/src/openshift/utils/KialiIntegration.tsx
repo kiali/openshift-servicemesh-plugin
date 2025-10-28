@@ -162,12 +162,6 @@ export const useInitKialiListeners = (): void => {
           consoleUrl = `/k8s/ns/${namespace}/deployments${workload}/${target}${webParams}`;
         }
 
-        if (detail.startsWith('/services')) {
-          // OpenShift Console has a "services" list page
-          const target = isNetobserv ? NETOBSERV : OSSM_CONSOLE;
-          consoleUrl = `/k8s/ns/${namespace}${detail}/${target}${webParams}`;
-        }
-
         if (detail.startsWith('/istio')) {
           const istioUrl = refForKialiIstio(detail);
 
