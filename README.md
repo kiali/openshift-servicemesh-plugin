@@ -128,6 +128,48 @@ For testing the distributed tracing integration locally, assign to distributedTr
 
 That will help to validate if the logic and the URL are right, but in the localhost plugin it won't load the distributed tracing plugin page. 
 
+### Testing Locally Netobserv integration
+
+For testing the Netobserv integration locally, assign to netobservPluginConfig in the getNetobservPluginManifestPromise in the KialiController.go, the following data: 
+
+```sh
+  netobservPluginConfig = {
+    "name": "network-observability-console-plugin",
+    "version": "0.0.1",
+    "displayName": "Network Observability Plugin",
+    "description": "This plugin adds a network observability UI to the OpenShift console.",
+    "dependencies": {
+      "@console/pluginAPI": "*"
+    },
+    "extensions": [
+      {
+        "type": "console.page/route",
+        "properties": {
+           "exact": false,
+           "path": "/observe/network-traffic",
+            "component": {
+              "$codeRef": "NetworkTrafficUI"
+            }
+          }
+      },
+      {
+        "type": "console.navigation/href",
+        "properties": {
+          "id": "network-observability",
+          "name": "Network Traffic",
+          "href": "/observe/network-traffic",
+          "perspective": "admin",
+           "section": "observe"
+        }
+      }
+    ]
+  };
+```
+
+That will help to validate if the logic and the URL are right, but in the localhost plugin it won't load the Network Observability plugin page. 
+
+```
+
 ## Operator
 
 The OpenShift Service Mesh Console will be installed by end users using the Kiali Operator.
