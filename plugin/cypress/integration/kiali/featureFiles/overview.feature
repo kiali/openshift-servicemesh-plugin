@@ -19,6 +19,7 @@ Feature: Kiali Overview page
 
   @core-2
   @offline
+  @lpinterop
   Scenario: See "alpha" and "beta" namespaces
     Then user sees the "alpha" namespace card
     And user does not see any cluster badge in the "alpha" namespace card
@@ -27,23 +28,27 @@ Feature: Kiali Overview page
 
   @core-2
   @offline
+  @lpinterop
   Scenario: Doesn't see a "bad" namespace
     Then user does not see the "bad" namespace card in any cluster
 
   @core-2
   @offline
+  @lpinterop
   Scenario: Select the COMPACT view
     When user clicks in the "COMPACT" view
     Then user sees a "COMPACT" "alpha" namespace
 
   @core-2
   @offline
+  @lpinterop
   Scenario: Select the EXPAND view
     When user clicks in the "EXPAND" view
     Then user sees a "EXPAND" "beta" namespace
 
   @core-2
   @offline
+  @lpinterop
   Scenario: Select the LIST view
     When user clicks in the "LIST" view
     Then user sees a "LIST" "beta" namespace
@@ -66,18 +71,21 @@ Feature: Kiali Overview page
 
   @core-2
   @offline
+  @lpinterop
   Scenario: Health for Apps
     When user selects Health for "Apps"
     Then user sees the "alpha" namespace with "Applications"
 
   @core-2
   @offline
+  @lpinterop
   Scenario: Health for Workloads
     When user selects Health for "Workloads"
     Then user sees the "alpha" namespace with "Workloads"
 
   @core-2
   @offline
+  @lpinterop
   Scenario: Health for Services
     When user selects Health for "Services"
     Then user sees the "alpha" namespace with "Services"
@@ -100,6 +108,7 @@ Feature: Kiali Overview page
   @error-rates-app
   @bookinfo-app
   @core-2
+  @lpinterop
   Scenario: The healthy status of a logical mesh application is reported in the overview of a namespace
     Given a healthy application in the cluster
     When I fetch the overview of the cluster
@@ -124,7 +133,6 @@ Feature: Kiali Overview page
     And the "failure" application indicator should list the application
 
   @error-rates-app
-  @skip-lpinterop
   @core-2
   Scenario: The degraded status of a logical mesh application is reported in the overview of a namespace
     Given a degraded application in the mesh
@@ -207,6 +215,8 @@ Feature: Kiali Overview page
   Scenario: There should be two control plane cards for each cluster
     Then user sees the "Control plane" label in the "east" "istio-system" namespace card
     Then user sees the "Control plane" label in the "west" "istio-system" namespace card
+    And user does not see the "Ambient" label in the "east" "istio-system" namespace card
+    And user does not see the "Ambient" label in the "west" "istio-system" namespace card
 
   # TODO: offline - provide ambient in must-gather example.
   @ambient
@@ -249,3 +259,13 @@ Feature: Kiali Overview page
     Then user sees the "bookinfo" namespace card in cluster "west"
     And user sees the "Ambient" label in the "bookinfo" namespace card in the "east" cluster
     And user sees the "Ambient" label in the "bookinfo" namespace card in the "west" cluster
+
+  @ambient-multi-primary
+  Scenario: Ambient Multi-Primary: Control plane cards show Ambient badge in both clusters
+    Given user is at the "overview" page
+    Then user sees the "istio-system" namespace card in cluster "east"
+    And user sees the "istio-system" namespace card in cluster "west"
+    And user sees the "Control plane" label in the "east" "istio-system" namespace card
+    And user sees the "Control plane" label in the "west" "istio-system" namespace card
+    And user sees the "Ambient" label in the "istio-system" namespace card in the "east" cluster
+    And user sees the "Ambient" label in the "istio-system" namespace card in the "west" cluster
