@@ -8,7 +8,6 @@ import {
   Masthead,
   MastheadToggle,
   MastheadMain,
-  MastheadLogo,
   MastheadBrand,
   MastheadContent,
   PageSection,
@@ -17,24 +16,19 @@ import {
   ButtonVariant,
   PageSidebarBody
 } from '@patternfly/react-core';
-
+import { BarsIcon } from '@patternfly/react-icons';
 import { kialiStyle } from 'styles/StyleUtils';
 import { MessageCenter } from '../MessageCenter/MessageCenter';
-import { homeCluster, kialiLogoDark, kialiLogoLight, serverConfig } from '../../config';
+import { homeCluster, kialiLogoDark, serverConfig } from '../../config';
 import { KialiAppState } from '../../store/Store';
 import { UserSettingsThunkActions } from '../../actions/UserSettingsThunkActions';
 import { Menu } from './Menu';
 import { Link, useLocation } from 'react-router-dom-v5-compat';
 import { ExternalServiceInfo } from '../../types/StatusState';
-import { Theme } from 'types/Common';
-import { useKialiTranslation } from 'utils/I18nUtils';
-import { isKiosk } from '../Kiosk/KioskActions';
 
 type ReduxStateProps = {
   externalServices: ExternalServiceInfo[];
-  kiosk: string;
   navCollapsed: boolean;
-  theme: string;
   tracingUrl?: string;
 };
 
@@ -43,6 +37,8 @@ type ReduxDispatchProps = {
 };
 
 type NavigationProps = ReduxStateProps & ReduxDispatchProps;
+
+export const MASTHEAD_HEIGHT = '76px';
 
 const flexBoxColumnStyle = kialiStyle({
   display: 'flex',
@@ -54,7 +50,6 @@ export const NavigationComponent: React.FC<NavigationProps> = (props: Navigation
   const [isNavOpenDesktop, setIsNavOpenDesktop] = React.useState<boolean>(true);
   const [isNavOpenMobile, setIsNavOpenMobile] = React.useState<boolean>(false);
 
-  const { t } = useKialiTranslation();
   const { pathname } = useLocation();
 
   React.useEffect((): void => {
@@ -92,28 +87,24 @@ export const NavigationComponent: React.FC<NavigationProps> = (props: Navigation
 
   const isNavOpen = isMobileView ? isNavOpenMobile : isNavOpenDesktop || !props.navCollapsed;
 
-  const darkTheme = props.theme === Theme.DARK;
-  const kioskMode = isKiosk(props.kiosk);
-
-  const masthead = kioskMode ? undefined : (
-    <Masthead>
+  const masthead = (
+    <Masthead role="kiali_header" style={{ height: MASTHEAD_HEIGHT }}>
+      <MastheadToggle>
+        <PageToggleButton
+          variant={ButtonVariant.plain}
+          aria-label="Kiali navigation"
+          isSidebarOpen={isNavOpen}
+          onSidebarToggle={isMobileView ? onNavToggleMobile : onNavToggleDesktop}
+        >
+          <BarsIcon />
+        </PageToggleButton>
+      </MastheadToggle>
       <MastheadMain>
-        <MastheadToggle>
-          <PageToggleButton
-            aria-label={t('Kiali navigation')}
-            isHamburgerButton
-            isSidebarOpen={isNavOpen}
-            onSidebarToggle={isMobileView ? onNavToggleMobile : onNavToggleDesktop}
-            variant={ButtonVariant.plain}
-          />
-        </MastheadToggle>
-        <MastheadBrand>
-          <MastheadLogo component={linkProps => <Link {...linkProps} to="/" />}>
-            <img src={darkTheme ? kialiLogoDark : kialiLogoLight} alt={t('Kiali Logo')} />
-          </MastheadLogo>
+        <MastheadBrand component={props => <Link {...props} to="#" />}>
+          <img src={kialiLogoDark} alt="Kiali Logo" />
         </MastheadBrand>
       </MastheadMain>
-      <MastheadContent>
+      <MastheadContent style={{ height: MASTHEAD_HEIGHT }}>
         <MastheadItems />
       </MastheadContent>
     </Masthead>
@@ -121,20 +112,20 @@ export const NavigationComponent: React.FC<NavigationProps> = (props: Navigation
 
   const menu = <Menu isNavOpen={isNavOpen} externalServices={props.externalServices} />;
 
-  const Sidebar = kioskMode ? undefined : (
-    <PageSidebar isSidebarOpen={isNavOpen}>
+  const Sidebar = (
+    <PageSidebar style={{ width: '210px' }} isSidebarOpen={isNavOpen}>
       <PageSidebarBody>{menu}</PageSidebarBody>
     </PageSidebar>
   );
 
   return (
     <Page
-      masthead={masthead}
+      header={masthead}
       sidebar={Sidebar}
       onPageResize={(_, { mobileView, windowSize }) => onPageResize({ mobileView, windowSize })}
     >
-      <MessageCenter drawerTitle={t('Message Center')} />
-      <PageSection hasBodyWrapper={false} className={flexBoxColumnStyle}>
+      <MessageCenter drawerTitle="Message Center" />
+      <PageSection className={flexBoxColumnStyle} variant="light">
         <RenderPage isGraph={isGraph()} />
       </PageSection>
     </Page>
@@ -142,11 +133,9 @@ export const NavigationComponent: React.FC<NavigationProps> = (props: Navigation
 };
 
 const mapStateToProps = (state: KialiAppState): ReduxStateProps => ({
-  externalServices: state.statusState.externalServices,
-  kiosk: state.globalState.kiosk,
   navCollapsed: state.userSettings.interface.navCollapse,
-  theme: state.globalState.theme,
-  tracingUrl: state.tracingState.info && state.tracingState.info.url ? state.tracingState.info.url : undefined
+  tracingUrl: state.tracingState.info && state.tracingState.info.url ? state.tracingState.info.url : undefined,
+  externalServices: state.statusState.externalServices
 });
 
 const mapDispatchToProps = (dispatch: KialiDispatch): ReduxDispatchProps => ({

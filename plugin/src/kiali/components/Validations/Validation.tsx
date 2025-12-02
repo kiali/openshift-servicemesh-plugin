@@ -6,7 +6,7 @@ import {
   InfoCircleIcon
 } from '@patternfly/react-icons';
 import { ValidationTypes } from '../../types/IstioObjects';
-import { Content, ContentVariants } from '@patternfly/react-core';
+import { Text, TextVariants } from '@patternfly/react-core';
 import { PFColors } from 'components/Pf/PfColors';
 import { kialiStyle } from 'styles/StyleUtils';
 import { IconProps, createIcon } from 'config/KialiIcon';
@@ -28,27 +28,23 @@ type ValidationProps = {
 
 const ErrorValidation: IconProps = {
   color: PFColors.Danger,
-  status: 'danger',
   icon: ExclamationCircleIcon,
   dataTest: 'icon-error-validation'
 };
 
 const WarningValidation: IconProps = {
   color: PFColors.Warning,
-  status: 'warning',
   icon: ExclamationTriangleIcon,
   dataTest: 'icon-warning-validation'
 };
 
 const InfoValidation: IconProps = {
   color: PFColors.Info,
-  status: 'info',
   icon: InfoCircleIcon
 };
 
 const CorrectValidation: IconProps = {
   color: PFColors.Success,
-  status: 'success',
   icon: CheckCircleIcon,
   dataTest: 'icon-correct-validation'
 };
@@ -72,16 +68,15 @@ export const Validation: React.FC<ValidationProps> = (props: ValidationProps) =>
   const iconProps: IconProps = {
     className: iconStyle,
     icon: validation.icon,
-    dataTest: validation.dataTest,
-    status: validation.status
+    dataTest: validation.dataTest
   };
 
   if (hasMessage) {
     return (
       <div className={validationStyle}>
-        <Content component={ContentVariants.p} style={textStyle}>
+        <Text component={TextVariants.p} style={textStyle}>
           {createIcon(iconProps)} {props.message}
-        </Content>
+        </Text>
       </div>
     );
   } else {

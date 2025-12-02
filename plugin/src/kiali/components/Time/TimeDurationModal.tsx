@@ -1,14 +1,5 @@
 import * as React from 'react';
-import {
-	Button,
-	Form,
-	FormGroup,
-	TooltipPosition
-} from '@patternfly/react-core';
-import {
-	Modal,
-	ModalVariant
-} from '@patternfly/react-core/deprecated';
+import { Button, Form, FormGroup, Modal, ModalVariant, TooltipPosition } from '@patternfly/react-core';
 import { UserSettingsActions } from '../../actions/UserSettingsActions';
 import { HistoryManager, location, URLParam } from '../../app/History';
 import { useKialiDispatch, useKialiSelector } from '../../hooks/redux';

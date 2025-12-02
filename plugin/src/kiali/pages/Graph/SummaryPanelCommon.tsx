@@ -48,7 +48,7 @@ export const summaryTitle = kialiStyle({
 export const noTrafficStyle = kialiStyle({
   marginTop: '0.25rem',
   $nest: {
-    '& .pf-v6-c-icon': {
+    '& .pf-v5-c-icon': {
       marginRight: '0.25rem'
     }
   }

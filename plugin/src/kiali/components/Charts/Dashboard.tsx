@@ -1,9 +1,6 @@
 import * as React from 'react';
 import { Grid, GridItem } from '@patternfly/react-core';
-import {
-	ChartThemeColor,
-	getTheme
-} from '@patternfly/react-charts/victory';
+import { ChartThemeColor, getTheme } from '@patternfly/react-charts';
 
 import { AllPromLabelsValues } from 'types/Metrics';
 import { ChartModel, DashboardModel } from 'types/Dashboards';

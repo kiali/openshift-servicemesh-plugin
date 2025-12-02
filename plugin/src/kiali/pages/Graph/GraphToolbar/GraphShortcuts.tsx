@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Label } from '@patternfly/react-core';
+import { Chip } from '@patternfly/react-core';
 import { t } from 'utils/I18nUtils';
 
 interface Shortcut {
@@ -22,7 +22,7 @@ const makeShortcut = (shortcut: Shortcut): React.ReactNode => {
   return (
     <div style={{ display: 'flex', marginBottom: '10px' }}>
       <div style={{ flex: '45%' }}>
-        <Label variant="outline" >{shortcut.shortcut}</Label>
+        <Chip isReadOnly>{shortcut.shortcut}</Chip>
       </div>
 
       <div style={{ flex: '55%' }}>{shortcut.description}</div>

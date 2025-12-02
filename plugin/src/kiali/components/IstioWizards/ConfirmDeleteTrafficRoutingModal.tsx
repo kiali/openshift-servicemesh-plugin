@@ -1,12 +1,5 @@
 import * as React from 'react';
-import {
-	Button,
-	ButtonVariant
-} from '@patternfly/react-core';
-import {
-	Modal,
-	ModalVariant
-} from '@patternfly/react-core/deprecated';
+import { Button, ButtonVariant, Modal, ModalVariant } from '@patternfly/react-core';
 import { DestinationRuleC, K8sGRPCRoute, K8sHTTPRoute, VirtualService } from '../../types/IstioObjects';
 import { t } from 'utils/I18nUtils';
 

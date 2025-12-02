@@ -15,8 +15,8 @@ import {
   MenuToggle,
   TextInputGroup,
   TextInputGroupMain,
-  ToolbarLabelGroup,
-  ToolbarLabel
+  ToolbarChipGroup,
+  ToolbarChip
 } from '@patternfly/react-core';
 import {
   ActiveFilter,
@@ -46,16 +46,16 @@ import { classes } from 'typestyle';
 
 const toolbarStyle = kialiStyle({
   padding: 0,
-  rowGap: "var(--pf-t--global--spacer--md)",
+  rowGap: 'var(--pf-v5-global--spacer--md)',
   $nest: {
-    '& > .pf-v6-c-toolbar__content': {
+    '& > .pf-v5-c-toolbar__content': {
       paddingLeft: 0
     }
   }
 });
 
 const bottomPadding = kialiStyle({
-  paddingBottom: "var(--pf-t--global--spacer--md)"
+  paddingBottom: 'var(--pf-v5-global--spacer--md)'
 });
 
 const formSelectStyle = kialiStyle({
@@ -402,7 +402,7 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
     return this.state.activeFilters.filters.some(active => value === active.value && type.category === active.category);
   };
 
-  removeFilter = (category: string | ToolbarLabelGroup, value: string | ToolbarLabel): void => {
+  removeFilter = (category: string | ToolbarChipGroup, value: string | ToolbarChip): void => {
     const filterCategory = typeof category === 'string' ? category : category.key;
     const filterValue = typeof value === 'string' ? value : value.key;
 
@@ -643,13 +643,13 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
               {this.state.filterTypes.map((ft, i) => (
                 <ToolbarFilter
                   key={`toolbar_filter-${ft.category}`}
-                  labels={activeFilters.filters
+                  chips={activeFilters.filters
                     .filter(af => af.category === ft.category)
                     .map(af => ({
                       key: af.value,
                       node: t(af.value)
                     }))}
-                  deleteLabel={this.removeFilter}
+                  deleteChip={this.removeFilter}
                   categoryName={{ key: ft.category, name: t(ft.category) }}
                 >
                   {i === 0 && (

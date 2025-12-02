@@ -94,11 +94,17 @@ class AlertDrawerComponent extends React.PureComponent<AlertDrawerProps> {
               actions: (
                 <>
                   {this.props.isExpanded ? (
-                    <Button icon={<KialiIcon.AngleDoubleRight />} id="alert_drawer_collapse" variant={ButtonVariant.plain} onClick={this.props.expandDrawer} />
+                    <Button id="alert_drawer_collapse" variant={ButtonVariant.plain} onClick={this.props.expandDrawer}>
+                      <KialiIcon.AngleDoubleRight />
+                    </Button>
                   ) : (
-                    <Button icon={<KialiIcon.AngleDoubleLeft />} id="alert_drawer_expand" variant={ButtonVariant.plain} onClick={this.props.expandDrawer} />
+                    <Button id="alert_drawer_expand" variant={ButtonVariant.plain} onClick={this.props.expandDrawer}>
+                      <KialiIcon.AngleDoubleLeft />
+                    </Button>
                   )}
-                  <Button icon={<CloseIcon />} id="alert_drawer_close" variant={ButtonVariant.plain} onClick={this.props.hideDrawer} />
+                  <Button id="alert_drawer_close" variant={ButtonVariant.plain} onClick={this.props.hideDrawer}>
+                    <CloseIcon />
+                  </Button>
                 </>
               ),
               hasNoOffset: false,
@@ -122,17 +128,17 @@ class AlertDrawerComponent extends React.PureComponent<AlertDrawerProps> {
                 <Accordion className={AlertDrawerComponent.groups}>
                   {this.props.groups.map(group => {
                     return hideGroup(group) ? null : (
-                      <AccordionItem isExpanded={group.id === this.props.expandedGroupId} key={group.id + '_item'}>
+                      <AccordionItem key={group.id + '_item'}>
                         <AccordionToggle
                           id={group.id + '_toggle'}
-                          
+                          isExpanded={group.id === this.props.expandedGroupId}
                           onClick={() => {
                             this.props.toggleGroup(group);
                           }}
                         >
                           {group.title} {getUnreadMessageLabel(group.messages)}
                         </AccordionToggle>
-                        <AccordionContent id={group.id + '_content'} >
+                        <AccordionContent id={group.id + '_content'} isHidden={group.id !== this.props.expandedGroupId}>
                           <AlertDrawerGroup key={group.id} group={group} />
                         </AccordionContent>
                       </AccordionItem>

@@ -30,18 +30,15 @@ export const istioAceEditorStyle = kialiStyle({
 
 export const istioValidationErrorStyle = kialiStyle({
   position: 'absolute',
-  // Removing colors due PF6 dark mode changes
-  //background: 'rgba(204, 0, 0, 0.5)'
+  background: 'rgba(204, 0, 0, 0.5)'
 });
 
 export const istioValidationWarningStyle = kialiStyle({
   position: 'absolute',
-  // Removing colors due PF6 dark mode changes
-  //background: 'rgba(236, 122, 8, 0.5)'
+  background: 'rgba(236, 122, 8, 0.5)'
 });
 
 export const istioValidationInfoStyle = kialiStyle({
   position: 'absolute',
-  // Removing colors due PF6 dark mode changes
-  //background: PFColors.ColorLight300
+  background: PFColors.ColorLight300
 });

@@ -88,7 +88,6 @@ export interface RequestHealth {
 export interface Status {
   className: string;
   color: string;
-  status: string;
   icon: React.ComponentClass<SVGIconProps>;
   name: string;
   priority: number;
@@ -106,7 +105,6 @@ export const FAILURE: Status = {
   color: PFColors.Danger,
   icon: ExclamationCircleIcon,
   name: t('Failure'),
-  status: 'danger',
   priority: 4
 };
 
@@ -115,7 +113,6 @@ export const DEGRADED: Status = {
   color: PFColors.Warning,
   name: t('Degraded'),
   icon: ExclamationTriangleIcon,
-  status: 'warning',
   priority: 3
 };
 
@@ -124,7 +121,6 @@ export const INFO: Status = {
   color: PFColors.Info,
   icon: InfoCircleIcon,
   name: t('Info'),
-  status: 'info',
   priority: 2
 };
 
@@ -133,7 +129,6 @@ export const NOT_READY: Status = {
   color: PFColors.Info,
   icon: MinusCircleIcon,
   name: t('Not Ready'),
-  status: 'custom',
   priority: 2
 };
 
@@ -141,7 +136,6 @@ export const HEALTHY: Status = {
   className: 'icon-healthy',
   color: PFColors.Success,
   icon: CheckCircleIcon,
-  status: 'success',
   name: t('Healthy'),
   priority: 1
 };
@@ -151,7 +145,6 @@ export const NA: Status = {
   color: PFColors.Color200,
   name: t('No health information'),
   icon: UnknownIcon,
-  status: 'custom',
   priority: 0
 };
 

@@ -1,13 +1,5 @@
 import * as React from 'react';
-import {
-	Button,
-	ButtonVariant,
-	Split,
-	SplitItem
-} from '@patternfly/react-core';
-import {
-	Modal
-} from '@patternfly/react-core/deprecated';
+import { Button, ButtonVariant, Modal, Split, SplitItem } from '@patternfly/react-core';
 import { kialiStyle } from 'styles/StyleUtils';
 import { AccessLog } from 'types/IstioObjects';
 import { PFColors } from 'components/Pf/PfColors';

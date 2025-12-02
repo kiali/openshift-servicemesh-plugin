@@ -1,12 +1,6 @@
 import * as React from 'react';
 import { WIZARD_TITLES, WorkloadWizardProps, WorkloadWizardState } from './WizardActions';
-import {
-	Button,
-	ButtonVariant
-} from '@patternfly/react-core';
-import {
-	Modal
-} from '@patternfly/react-core/deprecated';
+import { Button, ButtonVariant, Modal } from '@patternfly/react-core';
 import { t } from 'utils/I18nUtils';
 
 // NOTE: This class is not used but I will keep it in the repo as skeleton as we'll add again WorkloadWizards for other

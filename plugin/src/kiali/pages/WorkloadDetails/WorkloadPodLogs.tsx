@@ -19,6 +19,7 @@ import {
   MenuGroup,
   MenuToggle,
   MenuToggleElement,
+  Modal,
   Tab,
   TextInput,
   Toolbar,
@@ -27,7 +28,6 @@ import {
   Tooltip,
   TooltipPosition
 } from '@patternfly/react-core';
-import { Modal } from '@patternfly/react-core/deprecated';
 import memoize from 'micro-memoize';
 import { AutoSizer, List } from 'react-virtualized';
 import { kialiStyle } from 'styles/StyleUtils';
@@ -189,7 +189,7 @@ const modalStyle = kialiStyle({
   width: '50%',
   height: '70%',
   $nest: {
-    '& .pf-v6-c-tab-content': {
+    '& .pf-v5-c-tab-content': {
       height: '100%',
       overflowY: 'auto'
     }
@@ -261,10 +261,6 @@ const checkboxMarginStyle = kialiStyle({
   marginRight: '1rem'
 });
 
-const gridStyle = kialiStyle({
-  paddingTop: '1rem'
-});
-
 const logListStyle = kialiStyle({
   overflow: 'auto !important',
   paddingTop: '0.375rem',
@@ -323,13 +319,13 @@ const logsHeight = (showToolbar: boolean, fullscreen: boolean, showMaxLinesWarni
   return {
     height: fullscreen
       ? `calc(100vh - 130px + ${toolbarHeight} - ${maxLinesWarningHeight})`
-      : `calc(var(--kiali-details-pages-tab-content-height) - 200px + ${toolbarHeight} - ${maxLinesWarningHeight})`
+      : `calc(var(--kiali-details-pages-tab-content-height) - 155px + ${toolbarHeight} - ${maxLinesWarningHeight})`
   };
 };
 
 const tabStyle = kialiStyle({
   $nest: {
-    '&& .pf-v6-c-tabs__list': {
+    '&& .pf-v5-c-tabs__list': {
       marginLeft: 0
     }
   }
@@ -468,7 +464,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
       <>
         <RenderComponentScroll>
           {this.state.containerOptions && (
-            <Grid key="logs" id="logs" className={gridStyle}>
+            <Grid key="logs" id="logs" style={{ height: '100%' }}>
               <GridItem span={12}>
                 <Card>
                   <CardBody>
@@ -770,14 +766,15 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
             content="Click to navigate to span detail"
           >
             <Button
-              icon={<KialiIcon.Info key={`al-i-${index}`} className={alInfoIcon} color={spanColor} />}
               key={`s-b-${index}`}
               variant={ButtonVariant.plain}
               className={logInfoStyle}
               onClick={() => {
                 this.gotoSpan(e.span!);
               }}
-            />
+            >
+              <KialiIcon.Info key={`al-i-${index}`} className={alInfoIcon} color={spanColor} />
+            </Button>
           </Tooltip>
           <p key={`al-p-${index}`} className={logMessageStyle} style={{ color: spanColor }}>
             {this.entryToString(e)}
@@ -799,12 +796,13 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
             content="Click for JSON object details"
           >
             <Button
-              icon={<KialiIcon.Info key={`jod-i-${index}`} className={alInfoIcon} color={messageColor} />}
               key={`jod-b-${index}`}
               variant={ButtonVariant.plain}
               className={logInfoStyle}
               onClick={() => this.openJSONModal(e)}
-            />
+            >
+              <KialiIcon.Info key={`jod-i-${index}`} className={alInfoIcon} color={messageColor} />
+            </Button>
           </Tooltip>
         )}
         <p key={`le-${index}`} className={logMessageStyle} style={{ color: messageColor }}>
@@ -826,14 +824,15 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
           content="Click for Envoy Access Log details"
         >
           <Button
-            icon={<KialiIcon.Info key={`al-i-${index}`} className={alInfoIcon} color={messageColor} />}
             key={`al-b-${index}`}
             variant={ButtonVariant.plain}
             className={logInfoStyle}
             onClick={() => {
               this.addAccessLogModal(le.message, le.accessLog!);
             }}
-          />
+          >
+            <KialiIcon.Info key={`al-i-${index}`} className={alInfoIcon} color={messageColor} />
+          </Button>
         </Tooltip>
 
         <p key={`al-p-${index}`} className={logMessageStyle} style={{ color: messageColor }}>
@@ -864,7 +863,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     });
 
     const dropdownGroupLabel = (
-      <h1 className="pf-v6-c-menu__group-title">
+      <h1 className="pf-v5-c-menu__group-title">
         Set Proxy Log Level
         <Tooltip
           position={TooltipPosition.right}

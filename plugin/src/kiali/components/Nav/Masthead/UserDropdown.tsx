@@ -47,7 +47,8 @@ type UserState = {
 };
 
 const dropdownStyle = kialiStyle({
-  marginRight: '0.5rem'
+  paddingLeft: 0,
+  paddingRight: 0
 });
 
 class UserDropdownComponent extends React.Component<UserProps, UserState> {
@@ -170,17 +171,17 @@ class UserDropdownComponent extends React.Component<UserProps, UserState> {
           timeOutCountDown={this.state.timeCountDownSeconds}
         />
 
-        {this.props.session && !canLogout && <span className={dropdownStyle}>{this.props.session.username}</span>}
+        {this.props.session && !canLogout && <>{this.props.session.username}</>}
 
         {this.props.session && canLogout && (
           <Dropdown
             toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
               <MenuToggle
                 ref={toggleRef}
-                onClick={() => this.onDropdownToggle(!isDropdownOpen)}
                 className={dropdownStyle}
-                isExpanded={isDropdownOpen}
                 variant="plainText"
+                onClick={() => this.onDropdownToggle(!isDropdownOpen)}
+                isExpanded={isDropdownOpen}
               >
                 {this.props.session?.username}
               </MenuToggle>

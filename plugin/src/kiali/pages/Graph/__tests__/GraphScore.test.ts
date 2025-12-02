@@ -35,8 +35,7 @@ describe('scoreNodes', () => {
           color: 'any',
           priority: 1,
           icon: WarningTriangleIcon,
-          className: 'any',
-          status: 'warning'
+          className: 'any'
         }),
         getStatusConfig: () => undefined,
         getTrafficStatus: () => undefined,

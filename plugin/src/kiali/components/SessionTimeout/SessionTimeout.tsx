@@ -1,11 +1,5 @@
 import * as React from 'react';
-import {
-	Button,
-	ButtonVariant
-} from '@patternfly/react-core';
-import {
-	Modal
-} from '@patternfly/react-core/deprecated';
+import { Modal, Button, ButtonVariant } from '@patternfly/react-core';
 import { AuthStrategy } from '../../types/Auth';
 import { LoginSession } from '../../store/Store';
 import { authenticationConfig } from '../../config/AuthenticationConfig';

@@ -1,10 +1,7 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 import { pluralize } from '@patternfly/react-core';
-import {
-  ChartLabelProps,
-	ChartCursorFlyout
-} from '@patternfly/react-charts/victory';
+import { ChartCursorFlyout, ChartLabelProps } from '@patternfly/react-charts';
 import { kialiStyle } from 'styles/StyleUtils';
 import { KialiAppState } from 'store/Store';
 import { averageSpanDuration, reduceMetricsStats, StatsMatrix } from 'utils/tracing/TraceStats';

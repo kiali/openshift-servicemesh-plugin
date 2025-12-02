@@ -5,7 +5,7 @@ import { KialiDispatch } from 'types/Redux';
 import { connect } from 'react-redux';
 import { Tooltip, Button, ButtonVariant } from '@patternfly/react-core';
 import { KialiIcon } from 'config/KialiIcon';
-import { useKialiTranslation } from 'utils/I18nUtils';
+import { kialiStyle } from 'styles/StyleUtils';
 
 type ReduxProps = {
   resetSettings: () => void;
@@ -13,9 +13,12 @@ type ReduxProps = {
 
 type GraphResetProps = ReduxProps & {};
 
-const GraphResetComponent: React.FC<GraphResetProps> = (props: GraphResetProps) => {
-  const { t } = useKialiTranslation();
+const resetStyle = kialiStyle({
+  marginLeft: '0.5rem',
+  alignSelf: 'center'
+});
 
+const GraphResetComponent: React.FC<GraphResetProps> = (props: GraphResetProps) => {
   const onReset = (): void => {
     props.resetSettings();
   };
@@ -23,12 +26,14 @@ const GraphResetComponent: React.FC<GraphResetProps> = (props: GraphResetProps) 
   return (
     <Tooltip key="factory_reset_settings" position="bottom" content="Reset to factory settings">
       <Button
-        icon={<KialiIcon.ResetSettings />}
         id="graph-factory-reset"
+        className={resetStyle}
         variant={ButtonVariant.link}
         onClick={() => onReset()}
+        isInline
       >
-        <span>{t('Reset')}</span>
+        <KialiIcon.ResetSettings />
+        <span style={{ marginLeft: '5px' }}>Reset</span>
       </Button>
     </Tooltip>
   );

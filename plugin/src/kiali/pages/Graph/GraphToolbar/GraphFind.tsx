@@ -36,6 +36,7 @@ import { elems, SelectAnd, SelectExp, selectOr, SelectOr, setObserved, toSafeFie
 import { descendents } from 'helpers/GraphHelpers';
 import { isArray } from 'lodash';
 import { graphLayout } from 'pages/Graph/Graph';
+import { infoStyle } from 'styles/IconStyle';
 
 type ReduxStateProps = {
   edgeLabels: EdgeLabelMode[];
@@ -83,13 +84,13 @@ const thinGroupStyle = kialiStyle({
 });
 
 const buttonClearStyle = kialiStyle({
-  marginLeft: '0.125rem',
   paddingLeft: '0.75rem',
   paddingRight: '0.75rem'
 });
 
 const findHideHelpStyle = kialiStyle({
-  marginLeft: '0.125rem'
+  paddingLeft: '0',
+  paddingRight: '0'
 });
 
 const gridStyle = kialiStyle({
@@ -99,7 +100,7 @@ const gridStyle = kialiStyle({
 const graphFindStyle = kialiStyle({
   marginRight: '0.75rem',
   $nest: {
-    '& > .pf-v6-c-form__group-control': {
+    '& > .pf-v5-c-form__group-control': {
       display: 'flex'
     }
   }
@@ -107,7 +108,7 @@ const graphFindStyle = kialiStyle({
 
 const graphHideStyle = kialiStyle({
   $nest: {
-    '& > .pf-v6-c-form__group-control': {
+    '& > .pf-v5-c-form__group-control': {
       display: 'flex'
     }
   }
@@ -387,30 +388,32 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
                 )}
               </FormGroup>
             </GridItem>
-
-            {this.props.showFindHelp ? (
-              <GraphHelpFind onClose={this.toggleFindHelp}>
-                <Button
-                  data-test="graph-find-hide-help-button"
-                  icon={<KialiIcon.Info />}
-                  variant={ButtonVariant.link}
-                  className={findHideHelpStyle}
-                  onClick={this.toggleFindHelp}
-                />
-              </GraphHelpFind>
-            ) : (
-              <Tooltip key={'ot_graph_find_help'} position="top" content="Click to open Find/Hide help">
-                <Button
-                  data-test="graph-find-hide-help-button"
-                  icon={<KialiIcon.Info />}
-                  variant={ButtonVariant.link}
-                  className={findHideHelpStyle}
-                  onClick={this.toggleFindHelp}
-                />
-              </Tooltip>
-            )}
           </Grid>
         </Form>
+
+        {this.props.showFindHelp ? (
+          <GraphHelpFind onClose={this.toggleFindHelp}>
+            <Button
+              data-test="graph-find-hide-help-button"
+              variant={ButtonVariant.link}
+              className={findHideHelpStyle}
+              onClick={this.toggleFindHelp}
+            >
+              <KialiIcon.Info className={infoStyle} />
+            </Button>
+          </GraphHelpFind>
+        ) : (
+          <Tooltip key={'ot_graph_find_help'} position="top" content="Click to open Find/Hide help">
+            <Button
+              data-test="graph-find-hide-help-button"
+              variant={ButtonVariant.link}
+              className={findHideHelpStyle}
+              onClick={this.toggleFindHelp}
+            >
+              <KialiIcon.Info className={infoStyle} />
+            </Button>
+          </Tooltip>
+        )}
       </TourStop>
     );
   }

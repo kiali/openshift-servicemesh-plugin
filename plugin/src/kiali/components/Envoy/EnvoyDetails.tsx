@@ -82,10 +82,6 @@ const fullHeightStyle = kialiStyle({
   height: '100%'
 });
 
-const cardStyle = kialiStyle({
-  marginTop: '1rem'
-});
-
 class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDetailsState> {
   aceEditorRef: React.RefObject<AceEditor>;
 
@@ -300,7 +296,7 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
 
       return (
         <Tab key={`tab_${value}`} eventKey={index} title={title}>
-          <Card className={cardStyle}>
+          <Card className={fullHeightStyle}>
             <CardBody>
               {this.showEditor() ? (
                 <div className={fullHeightStyle}>

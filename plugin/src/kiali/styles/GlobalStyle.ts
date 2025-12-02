@@ -3,24 +3,22 @@ import { kialiStyle } from './StyleUtils';
 export const globalStyle = kialiStyle({
   height: '100%',
   margin: 0,
-  fontFamily: 'var(--pf-t--global--font--family--body)',
+  padding: 0,
+  fontFamily: 'var(--pf-v5-global--FontFamily--text)',
   fontSize: '14px',
   overflow: 'hidden',
   $nest: {
     /**
-     * Kiosk mode (hide Kiali menu and sidebar)
+     * Kiosk mode (hide Kiali menu)
      */
     '&.kiosk': {
       $nest: {
-        '& .pf-v6-c-page': {
-          gridTemplateAreas: '"main"',
-          gridTemplateColumns: '100%',
-          gridTemplateRows: '100%'
+        '& #page-sidebar': {
+          display: 'none'
         },
 
-        '& .pf-v6-c-page__main-container': {
-          height: '100%',
-          margin: '0.5rem 1rem'
+        '& header[role="kiali_header"]': {
+          display: 'none'
         }
       }
     },
@@ -34,23 +32,32 @@ export const globalStyle = kialiStyle({
     },
 
     /**
+     * Remove global page padding by default
+     */
+    '& .pf-v5-c-page__main-section': {
+      padding: 0,
+      height: '100%',
+      overflowY: 'hidden'
+    },
+
+    /**
      * Drawer panels should have less z-index than dropdowns
      */
-    '& .pf-v6-c-drawer__panel': {
+    '& .pf-v5-c-drawer__panel': {
       zIndex: 199
     },
 
     /**
      * Reduce padding of menu group title
      */
-    '& .pf-v6-c-menu__group-title': {
+    '& .pf-v5-c-menu__group-title': {
       paddingTop: '0.5rem'
     },
 
     /**
      * Padding for table rows
      */
-    '& .pf-v6-c-table': {
+    '& .pf-v5-c-table': {
       $nest: {
         '&.pf-m-compact tr > *': {
           padding: '0.5rem'
@@ -65,36 +72,20 @@ export const globalStyle = kialiStyle({
     /**
      * Show graph legend
      */
-    '& .pf-v6-c-chart svg': {
+    '& .pf-v5-c-chart svg': {
       overflow: 'visible'
     },
 
     /**
      * Light color for links in tooltips
      */
-    '& .pf-v6-c-tooltip a': {
-      color:
-        'var(pf-t--global--text--color--link--default)' /* CODEMODS: original v5 color was --pf-v5-global--link--Color--light */,
+    '& .pf-v5-c-tooltip a': {
+      color: 'var(--pf-v5-global--link--Color--light)',
       $nest: {
         '&:hover': {
-          color:
-            'var(pf-t--global--text--color--link--hover)' /* CODEMODS: original v5 color was --pf-v5-global--link--Color--light--hover */
+          color: 'var(--pf-v5-global--link--Color--light--hover)'
         }
       }
-    },
-
-    /**
-     * Remove underline from links
-     */
-    '& a': {
-      textDecoration: 'none'
-    },
-
-    /**
-     * Remove color override for content in Cluster badge tooltip
-     */
-    '& .pf-v6-c-content, & .pf-v6-c-content > h4': {
-      color: 'unset'
     },
 
     /**

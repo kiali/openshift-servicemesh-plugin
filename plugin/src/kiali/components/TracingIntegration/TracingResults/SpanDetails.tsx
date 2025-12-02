@@ -9,7 +9,6 @@ import { spanFilters } from './Filters';
 import { runFilters } from 'components/FilterList/FilterHelper';
 import { ActiveFiltersInfo } from 'types/Filters';
 import { TraceLabels } from './TraceLabels';
-import { kialiStyle } from 'styles/StyleUtils';
 
 interface SpanDetailsProps {
   cluster?: string;
@@ -22,10 +21,6 @@ interface SpanDetailsProps {
   waypointServiceFilter?: string; // This is used to match the span (operationName) as this is different than the workload
 }
 
-const cardStyle = kialiStyle({
-  marginTop: '1rem'
-});
-
 export const SpanDetails: React.FC<SpanDetailsProps> = (props: SpanDetailsProps) => {
   const filters = spanFilters(props.items);
 
@@ -33,7 +28,7 @@ export const SpanDetails: React.FC<SpanDetailsProps> = (props: SpanDetailsProps)
   const filteredItems = runFilters(props.items, filters, activeFilters);
 
   return (
-    <Card isCompact className={cardStyle}>
+    <Card isCompact>
       <CardBody>
         <StatefulFilters initialFilters={filters} onFilterChange={active => setActiveFilters(active)}>
           <TraceLabels

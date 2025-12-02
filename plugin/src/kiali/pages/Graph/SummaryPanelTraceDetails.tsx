@@ -142,7 +142,9 @@ class SummaryPanelTraceDetailsComponent extends React.Component<Props, State> {
 
           <span className={closeBoxStyle}>
             <Tooltip content="Close and clear trace selection">
-              <Button icon={<KialiIcon.Close />} id="close-trace" variant={ButtonVariant.plain} onClick={this.props.close} />
+              <Button id="close-trace" variant={ButtonVariant.plain} onClick={this.props.close}>
+                <KialiIcon.Close />
+              </Button>
             </Tooltip>
           </span>
         </div>

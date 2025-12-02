@@ -22,8 +22,9 @@ type Props = ReduxProps & {
 };
 
 const containerStyle = kialiStyle({
-  borderBottom: `1px solid ${PFColors.BorderColor100}`,
-  marginBottom: '1.25rem'
+  padding: '0.625rem 1.25rem 0.625rem 1.25rem',
+  backgroundColor: PFColors.BackgroundColor100,
+  borderBottom: `1px solid ${PFColors.BorderColor100}`
 });
 
 const flexStyle = kialiStyle({
@@ -64,7 +65,7 @@ const DefaultSecondaryMastheadComponent: React.FC<Props> = (props: Props) => {
       return {
         title: (
           <>
-            <Title headingLevel="h1" size={TitleSizes['2xl']} style={{ margin: '1rem 0 0.5rem' }}>
+            <Title headingLevel="h1" size={TitleSizes['3xl']} style={{ margin: '1rem 0 0.5rem' }}>
               {title}
             </Title>
 

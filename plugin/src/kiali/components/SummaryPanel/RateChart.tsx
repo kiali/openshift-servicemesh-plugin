@@ -1,12 +1,5 @@
 import * as React from 'react';
-import {
-	Chart,
-	ChartBar,
-	ChartStack,
-	ChartAxis,
-	ChartTooltip,
-	ChartLegend
-} from '@patternfly/react-charts/victory';
+import { Chart, ChartBar, ChartStack, ChartAxis, ChartTooltip, ChartLegend } from '@patternfly/react-charts';
 
 import { PFColors } from '../../components/Pf/PfColors';
 import { SUMMARY_PANEL_CHART_WIDTH } from '../../types/Graph';
@@ -69,10 +62,10 @@ export class RateChart extends React.Component<Props, State> {
     const fontSize = cssVariables.kialiFontSize;
     const fontSizePx = cssVariables.kialiFontSizePx;
 
-    const horizontalAxisStyle = { tickLabels: { fontSize: fontSize, padding: 3 } };
+    const horizontalAxisStyle = { tickLabels: { fill: PFColors.Color100, fontSize: fontSize, padding: 3 } };
     const verticalAxisStyle = singleBar
-      ? { tickLabels: { fontSize: fontSize } }
-      : { tickLabels: { fontSize: fontSize, padding: 2 } };
+      ? { tickLabels: { fill: 'none', fontSize: fontSize } }
+      : { tickLabels: { fill: PFColors.Color100, fontSize: fontSize, padding: 2 } };
 
     return (
       <Chart
@@ -120,7 +113,7 @@ export class RateChart extends React.Component<Props, State> {
           tickValues={[0, 25, 50, 75, 100]}
         />
         <ChartLegend
-          style={{ labels: { fontSize: Number(fontSizePx) } }}
+          style={{ labels: { fill: PFColors.Color100, fontSize: Number(fontSizePx) } }}
           name={this.props.baseName + '-legend'}
           data={this.props.series.map((s, idx) => {
             if (this.state.hiddenSeries.has(idx)) {
