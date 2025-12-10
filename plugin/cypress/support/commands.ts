@@ -77,7 +77,7 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
         cy.get('#inputPassword').clear().type(password);
         cy.get('button[type="submit"]').click();
         // wait till page loading after login
-        cy.get("[data-test='username']").should('be.visible');
+        cy.get("[data-test-id='dashboard']").should('be.visible');
         guidedTour.close();
       });
     },
@@ -102,6 +102,8 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
 export const guidedTour = {
   close: () => {
     cy.waitForReact();
+    // wait a little bit for the guided tour modal to appear
+    cy.wait(5000);
     cy.get('body').then($body => {
       if ($body.find(`[data-test="guided-tour-modal"]`).length > 0) {
         cy.get(`[data-test="tour-step-footer-secondary"]`).contains('Skip tour').click();
