@@ -2,7 +2,7 @@ import { ConsolePluginBuildMetadata } from '@openshift-console/dynamic-plugin-sd
 
 const metadata: ConsolePluginBuildMetadata = {
   name: 'ossmconsole',
-  version: '2.4.11',
+  version: '2.4.12',
   displayName: 'OpenShift Service Mesh Console',
   description: 'Provides Service Mesh/Istio Observability',
   exposedModules: {
