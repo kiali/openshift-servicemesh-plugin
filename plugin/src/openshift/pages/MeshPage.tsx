@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom-v5-compat';
 import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { MeshPage } from 'pages/Mesh/MeshPage';
-import { paddingContainer } from 'openshift/styles/GlobalStyle';
 
 const MeshPageOSSMC: React.FC<void> = () => {
   const { pathname } = useLocation();
@@ -14,9 +13,7 @@ const MeshPageOSSMC: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <div className={paddingContainer}>
-        <MeshPage></MeshPage>
-      </div>
+      <MeshPage></MeshPage>
     </KialiContainer>
   );
 };

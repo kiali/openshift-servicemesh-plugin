@@ -2,18 +2,17 @@ import * as React from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Namespace } from 'types/Namespace';
-import { MessageType } from 'types/MessageCenter';
+import { MessageType } from 'types/NotificationCenter';
 import { DurationInSeconds, IntervalInMilliseconds, PF_THEME_DARK, Theme } from 'types/Common';
 import { TracingInfo } from 'types/TracingInfo';
 import { toGrpcRate, toHttpRate, toTcpRate, TrafficRate } from 'types/Graph';
 import { StatusKey, StatusState } from 'types/StatusState';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import * as API from 'services/Api';
-import * as AlertUtils from 'utils/AlertUtils';
 import { humanDurations, serverConfig, setServerConfig } from 'config/ServerConfig';
 import { config } from 'config';
 import { KialiDispatch } from 'types/Redux';
-import { MessageCenterActions } from 'actions/MessageCenterActions';
+import { NotificationCenterActions } from 'actions/NotificationCenterActions';
 import { LoginThunkActions } from 'actions/LoginThunkActions';
 import { NamespaceActions } from 'actions/NamespaceAction';
 import { UserSettingsActions } from 'actions/UserSettingsActions';
@@ -35,6 +34,7 @@ import { IstioCertsInfoActions } from 'actions/IstioCertsInfoActions';
 import { CertsInfo } from 'types/CertsInfo';
 import { store } from 'store/ConfigStore';
 import { kialiStyle } from 'styles/StyleUtils';
+import { addError } from 'utils/AlertUtils';
 
 declare global {
   interface Date {
@@ -58,7 +58,7 @@ export const centerVerticalHorizontalStyle = kialiStyle({
 });
 
 interface KialiControllerReduxProps {
-  addMessage: (content: string, detail: string, groupId?: string, msgType?: MessageType, showNotif?: boolean) => void;
+  addMessage: (content: string, detail: string, groupId: string, msgType: MessageType, isAlert: boolean) => void;
   checkCredentials: () => void;
   setActiveNamespaces: (namespaces: Namespace[]) => void;
   setDuration: (duration: DurationInSeconds) => void;
@@ -130,14 +130,14 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         .register('getNamespaces', API.getNamespaces())
         .then(response => this.props.setNamespaces(response.data, new Date()))
         .catch(error => {
-          AlertUtils.addError('Error fetching namespaces.', error, 'default', MessageType.WARNING);
+          addError('Error fetching namespaces.', error, true, MessageType.WARNING);
         });
 
       const getServerConfigPromise = this.promises
         .register('getServerConfig', API.getServerConfig())
         .then(response => setServerConfig(response.data))
         .catch(error => {
-          AlertUtils.addError('Error fetching server config.', error, 'default', MessageType.WARNING);
+          addError('Error fetching server config.', error, true, MessageType.WARNING);
         });
 
       const getTracingInfoPromise = this.promises
@@ -145,39 +145,38 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         .then(response => this.props.setTracingInfo(response.data))
         .catch(error => {
           this.props.setTracingInfo(null);
-          AlertUtils.addError(
-            'Could not fetch Tracing info. Turning off Tracing integration.',
-            error,
-            'default',
-            MessageType.INFO
-          );
+          addError('Could not fetch Tracing info. Turning off Tracing integration.', error, false, MessageType.INFO);
         });
 
       const getPluginPromise = this.promises
         .register('getPluginPromise', getPluginConfig())
-        .then(response => { pluginConfig = response })
+        .then(response => {
+          pluginConfig = response;
+        })
         .catch(error => {
-          AlertUtils.addError('Error fetching plugin configuration.', error, 'default', MessageType.WARNING);
+          addError('Error fetching plugin configuration.', error, true, MessageType.WARNING);
         });
 
       const getDistributedTracingPluginManifestPromise = this.promises
         .register('getDistributedTracingPluginManifestPromise', getDistributedTracingPluginManifest())
-        .then(response => (distributedTracingPluginConfig = (response)))
+        .then(response => (distributedTracingPluginConfig = response))
         .catch(error => {
-          console.debug(`Error fetching Distributed Tracing plugin configuration. (Probably is not installed) ${error}`)
+          console.debug(
+            `Error fetching Distributed Tracing plugin configuration. (Probably is not installed) ${error}`
+          );
           // For testing the distributed tracing integration locally, assign distributedTracingPluginConfig = "plugin manifest json"
         });
       const getNetobservPluginManifestPromise = this.promises
         .register('getNetobservPluginManifestPromise', getNetobservPluginManifest())
-        .then(response => (netobservPluginConfig = (response)))
+        .then(response => (netobservPluginConfig = response))
         .catch(error => {
-          console.debug(`Failed to fetch Netobserv plugin configuration (plugin is not probably installed). ${error}`)
+          console.debug(`Failed to fetch Netobserv plugin configuration (plugin is not probably installed). ${error}`);
           // For testing the netobserv integration locally, assign netobservPluginConfig = "plugin manifest json"
         });
       API.getStatus()
         .then(response => this.processServerStatus(response.data))
         .catch(error => {
-          AlertUtils.addError('Error fetching server status.', error, 'default', MessageType.WARNING);
+          addError('Error fetching server status.', error, true, MessageType.WARNING);
         });
 
       await Promise.all([
@@ -189,7 +188,12 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
         getNetobservPluginManifestPromise
       ]).then(() => {
         // Set kiosk data for OSSMC
-        store.dispatch(GlobalActions.setKioskData({ hasExternalTracing: !!distributedTracingPluginConfig, hasNetobserv: !!netobservPluginConfig }));
+        store.dispatch(
+          GlobalActions.setKioskData({
+            hasExternalTracing: !!distributedTracingPluginConfig,
+            hasNetobserv: !!netobservPluginConfig
+          })
+        );
       });
     } catch (err) {
       console.error('Error loading kiali config', err);
@@ -279,8 +283,8 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
       }
 
       if (serverConfig.ambientEnabled) {
-        rates.push(TrafficRate.AMBIENT_GROUP)
-        rates.push(TrafficRate.AMBIENT_TOTAL)
+        rates.push(TrafficRate.AMBIENT_GROUP);
+        rates.push(TrafficRate.AMBIENT_TOTAL);
       }
 
       this.props.setTrafficRates(rates);
@@ -312,7 +316,7 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 }
 
 const mapDispatchToProps = (dispatch: KialiDispatch): KialiControllerReduxProps => ({
-  addMessage: bindActionCreators(MessageCenterActions.addMessage, dispatch),
+  addMessage: bindActionCreators(NotificationCenterActions.addMessage, dispatch),
   checkCredentials: () => dispatch(LoginThunkActions.checkCredentials()),
   setActiveNamespaces: bindActionCreators(NamespaceActions.setActiveNamespaces, dispatch),
   setDuration: bindActionCreators(UserSettingsActions.setDuration, dispatch),
@@ -326,7 +330,4 @@ const mapDispatchToProps = (dispatch: KialiDispatch): KialiControllerReduxProps 
   statusRefresh: bindActionCreators(HelpDropdownActions.statusRefresh, dispatch)
 });
 
-export const KialiController = connect(
-  null,
-  mapDispatchToProps
-)(KialiControllerComponent);
+export const KialiController = connect(null, mapDispatchToProps)(KialiControllerComponent);

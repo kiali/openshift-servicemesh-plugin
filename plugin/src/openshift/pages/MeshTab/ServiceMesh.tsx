@@ -5,7 +5,6 @@ import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
 import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
-import { grayContainer } from 'openshift/styles/GlobalStyle';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 
@@ -30,9 +29,7 @@ const ServiceMeshTab: React.FC<void> = () => {
 
     return (
       <KialiContainer>
-        <div className={grayContainer}>
-          <ServiceDetailsPage serviceId={serviceId}></ServiceDetailsPage>
-        </div>
+        <ServiceDetailsPage serviceId={serviceId}></ServiceDetailsPage>
       </KialiContainer>
     );
   } else {

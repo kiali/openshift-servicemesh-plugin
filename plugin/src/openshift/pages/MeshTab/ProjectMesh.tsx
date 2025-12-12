@@ -6,7 +6,6 @@ import { GraphPage } from 'pages/Graph/GraphPage';
 import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
-import { paddingContainer } from 'openshift/styles/GlobalStyle';
 
 const ProjectMeshTab: React.FC<void> = () => {
   const { pathname } = useLocation();
@@ -21,9 +20,7 @@ const ProjectMeshTab: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <div className={paddingContainer}>
-        <GraphPage></GraphPage>
-      </div>
+      <GraphPage></GraphPage>
     </KialiContainer>
   );
 };

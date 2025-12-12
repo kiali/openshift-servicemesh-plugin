@@ -14,5 +14,9 @@
   "Service Mesh": "服务网格",
   "Traffic Graph": "图",
   "Workload detail error": "Workload detail error",
-  "Workload is not defined correctly": "Workload is not defined correctly"
+  "Workload is not defined correctly": "Workload is not defined correctly",
+  "Something wrong happened": "出现了问题",
+  "An error occurred. Please try again.": "发生错误。请重试。",
+  "Reload page": "重新加载页面",
+  "Try again": "重试"
 }
