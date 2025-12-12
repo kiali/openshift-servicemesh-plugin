@@ -11,7 +11,7 @@ import { IstioCertsInfoStateReducer } from 'reducers/IstioCertsInfoState';
 import { MetricsStatsStateReducer } from 'reducers/MetricsStatsState';
 import { TourStateReducer } from 'reducers/TourState';
 import { NamespaceStateReducer } from 'reducers/NamespaceState';
-import { MessageCenterReducer } from 'reducers/MessageCenter';
+import { NotificationCenterReducer } from 'reducers/NotificationCenter';
 import { KialiAppAction } from 'actions/KialiAppAction';
 import { ClusterStateReducer } from 'reducers/ClusterState';
 import { TracingStateReducer } from 'reducers/TracingState';
@@ -26,7 +26,7 @@ export default combineReducers<KialiAppState, KialiAppAction>({
   istioCertsInfo: IstioCertsInfoStateReducer,
   mesh: MeshDataStateReducer,
   meshTLSStatus: MeshTlsStateReducer,
-  messageCenter: MessageCenterReducer,
+  notificationCenter: NotificationCenterReducer,
   metricsStats: MetricsStatsStateReducer,
   namespaces: NamespaceStateReducer,
   statusState: HelpDropdownStateReducer,
