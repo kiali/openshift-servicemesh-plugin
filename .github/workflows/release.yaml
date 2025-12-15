@@ -1,9 +1,9 @@
 name: Release
 
 on:
-  schedule:
+  # schedule:
   # Every Tuesday at 01:00 (UTC) which is the day after the server release is done. This action takes several hours to complete.
-  - cron: "00 1 * * TUE"
+  # - cron: "00 1 * * TUE"
   workflow_dispatch:
     inputs:
       release_type:
