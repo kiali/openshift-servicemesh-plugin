@@ -5,11 +5,10 @@ import { WorkloadDetailsPage } from 'pages/WorkloadDetails/WorkloadDetailsPage';
 import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
-import { grayContainer } from 'openshift/styles/GlobalStyle';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import * as API from 'services/Api';
-import {centerVerticalHorizontalStyle} from "../../components/KialiController";
+import { centerVerticalHorizontalStyle } from '../../components/KialiController';
 
 // validateWorkload validate in the backend if a workload exists
 const validateWorkload = async (namespace: string, workloadName: string): Promise<boolean> => {
@@ -116,9 +115,7 @@ const WorkloadMeshTab: React.FC<void> = () => {
   if (isLoading || !isInitialized) {
     return (
       <KialiContainer>
-        <div className={grayContainer}>
         <h1 className={centerVerticalHorizontalStyle}>Loading...</h1>
-        </div>
       </KialiContainer>
     );
   }
@@ -131,9 +128,7 @@ const WorkloadMeshTab: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <div className={grayContainer}>
-        <WorkloadDetailsPage workloadId={workloadId}></WorkloadDetailsPage>
-      </div>
+      <WorkloadDetailsPage workloadId={workloadId}></WorkloadDetailsPage>
     </KialiContainer>
   );
 };

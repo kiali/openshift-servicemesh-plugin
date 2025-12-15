@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Provider } from 'react-redux';
 import { store } from 'store/ConfigStore';
 import { KialiController } from '../components/KialiController';
-import { MessageCenter } from 'components/MessageCenter';
+import { NotificationAlerts } from '../components/NotificationAlerts';
 import { globalStyle as kialiStyle } from 'styles/GlobalStyle';
 import { globalStyle as ossmcStyle } from '../styles/GlobalStyle';
 import kialiCSSVariables from 'styles/variables.module.scss';
@@ -27,7 +27,7 @@ interface Props {
 export const KialiContainer: React.FC<Props> = ({ children }) => {
   return (
     <Provider store={store}>
-      <MessageCenter drawerTitle="Message Center" />
+      <NotificationAlerts />
       <div id="root" className={`${kialiStyle} ${ossmcStyle} ${kialiCSSVariables.style} ${ossmcCSSVariables.style}`}>
         <KialiController>{children}</KialiController>
       </div>

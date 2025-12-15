@@ -1,54 +1,42 @@
 import * as React from 'react';
-import { PFColors } from 'components/Pf/PfColors';
-import { kialiStyle } from 'styles/StyleUtils';
-import { NestedCSSProperties } from 'typestyle/lib/types';
+import { ErrorState } from '@patternfly/react-component-groups';
+import { ActionList, ActionListGroup, ActionListItem, Button, ButtonVariant } from '@patternfly/react-core';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 export interface OSSMCError {
   message?: string;
   title?: string;
 }
 
-interface ErrorPageProps {
-  message?: string;
-  title?: string;
-}
+/**
+ * ErrorPage component following the OpenShift Console patterns
+ * Based on ErrorBoundaryFallbackPage.tsx from openshift/console repository
+ * Uses the exact same ErrorState component and pattern as OpenShift Console
+ */
+export const ErrorPage: React.FC<OSSMCError> = ({ title, message }) => {
+  const { t } = useKialiTranslation();
 
-const h1Style: NestedCSSProperties = {
-  fontFamily: 'var(--pf-global--FontFamily--heading--sans-serif)',
-  fontWeight: 'var(--pf-global--FontWeight--normal)',
-  fontSize: 'var(--pf-global--FontSize--2xl)',
-  lineHeight: 'var(--pf-global--LineHeight--sm)'
-};
+  // Use i18n with fallback to provided props or default values
+  const errorTitle = title || t('Something wrong happened');
+  const errorMessage = message || t('An error occurred. Please try again.');
 
-const headerStyle = kialiStyle({
-  ...h1Style,
-  padding: '1.5rem',
-  borderBottom: `1px solid ${PFColors.BorderColor100}`
-});
-
-const errorStyle = kialiStyle({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center'
-});
-
-const titleStyle = kialiStyle({
-  ...h1Style,
-  margin: '1rem 1.5rem 1.5rem'
-});
-
-const messageStyle = kialiStyle({
-  fontFamily: 'var(--pf-global--FontFamily--sans-serif)'
-});
-
-export const ErrorPage: React.FC<ErrorPageProps> = ({ title = 'Error', message = 'Unexpected error occurred' }) => {
   return (
-    <>
-      <h1 className={headerStyle}>Error</h1>
-      <div className={errorStyle}>
-        <h1 className={titleStyle}>{title}</h1>
-        <div className={messageStyle}>{message}</div>
-      </div>
-    </>
+    <ErrorState
+      titleText={errorTitle}
+      defaultBodyText={t('An error occurred. Please try again.')}
+      bodyText={errorMessage}
+      headingLevel="h1"
+      customFooter={
+        <ActionList>
+          <ActionListGroup>
+            <ActionListItem>
+              <Button variant={ButtonVariant.primary} onClick={() => window.location.reload()}>
+                {t('Reload page')}
+              </Button>
+            </ActionListItem>
+          </ActionListGroup>
+        </ActionList>
+      }
+    />
   );
 };

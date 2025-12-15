@@ -12,6 +12,7 @@ import { SortField } from '../../types/SortFilters';
 import { ActiveFiltersInfo, ActiveTogglesInfo } from '../../types/Filters';
 import { FilterSelected, StatefulFilters, Toggles } from '../../components/Filters/StatefulFilters';
 import * as API from '../../services/Api';
+import { addError } from '../../utils/AlertUtils';
 import { VirtualList } from '../../components/VirtualList/VirtualList';
 import { KialiAppState } from '../../store/Store';
 import { activeNamespacesSelector, durationSelector, refreshIntervalSelector } from '../../store/Selectors';
@@ -151,7 +152,9 @@ class WorkloadListPageComponent extends FilterComponent.Component<
         }),
         labels: deployment.labels,
         istioReferences: sortIstioReferences(deployment.istioReferences, true),
-        validations: data.validations['workload'][validationKey(deployment.name, deployment.namespace)]
+        validations: data.validations['workload']
+          ? data.validations['workload'][validationKey(deployment.name, deployment.namespace)]
+          : undefined
       }));
     }
 
@@ -202,8 +205,7 @@ class WorkloadListPageComponent extends FilterComponent.Component<
       })
       .catch(err => {
         if (!err.isCanceled) {
-          console.info(`error: ${err}`);
-          this.handleApiError('Could not fetch workloads list', err);
+          addError('Could not fetch workloads list', err);
         }
       });
   }

@@ -20,8 +20,17 @@ When('user closes graph tour', () => {
   cy.get('div[role="dialog"]').find('button[aria-label="Close"]').click();
 });
 
-When('user {string} traffic menu', (_action: string) => {
-  cy.get('button#graph-traffic-dropdown').click();
+When('user {string} traffic menu', (action: string) => {
+  cy.get('button#graph-traffic-dropdown').then($button => {
+    const currentState = $button.attr('aria-expanded');
+    const isCurrentlyOpen = currentState === 'true';
+    const shouldBeOpen = action.includes('open');
+
+    // Only click if the current state is different from the desired state
+    if (isCurrentlyOpen !== shouldBeOpen) {
+      cy.wrap($button).click();
+    }
+  });
 });
 
 When('user {string} {string} traffic option', (action: string, option: string) => {
@@ -76,14 +85,24 @@ When('user selects {string} graph type', (graphType: string) => {
 
 Then('user {string} graph tour', (action: string) => {
   if (action === 'sees') {
-    cy.get('.pf-v5-c-popover').find('span').contains('Shortcuts').should('exist');
+    cy.get('.pf-v6-c-popover').find('span').contains('Shortcuts').should('exist');
   } else {
-    cy.get('.pf-v5-c-popover').should('not.exist');
+    cy.get('.pf-v6-c-popover').should('not.exist');
   }
 });
 
-Then('user sees {string} graph traffic menu', (menu: string) => {
+Then('user sees graph traffic menu', () => {
   cy.get('button#graph-traffic-dropdown').invoke('attr', 'aria-expanded').should('eq', 'true');
+
+  let menu = 'default';
+  cy.request({ url: '/api/config' }).then(response => {
+    cy.wrap(response.isOkStatusCode).should('be.true');
+
+    const ambientEnabled = response.body.ambientEnabled;
+    if (ambientEnabled) {
+      menu = 'ambient';
+    }
+  });
 
   cy.get('div#graph-traffic-menu').within(() => {
     if (menu === 'ambient') {
@@ -186,7 +205,7 @@ Then('user does not see graph duration menu', () => {
 
 Then('user sees selected graph duration {string}', (duration: string) => {
   cy.get('button#time_range_duration-toggle')
-    .find('span[class="pf-v5-c-menu-toggle__text"]')
+    .find('span[class="pf-v6-c-menu-toggle__text"]')
     .contains(duration)
     .should('exist');
 });
@@ -212,7 +231,7 @@ Then('user does not see graph refresh menu', () => {
 
 Then('user sees selected graph refresh {string}', (refresh: string) => {
   cy.get('button#time_range_refresh-toggle')
-    .find('span[class="pf-v5-c-menu-toggle__text"]')
+    .find('span[class="pf-v6-c-menu-toggle__text"]')
     .contains(refresh)
     .should('exist');
 });
