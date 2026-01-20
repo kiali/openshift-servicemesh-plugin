@@ -138,7 +138,7 @@ function waitUntilConfigIsVisible(
                   .find('span.pf-v6-c-icon')
                   .should('be.visible')
                   .then(icon => {
-                    const colorVar = `--pf-v6-global--${healthStatus}-color--100`;
+                    const colorVar = `--pf-t--global--icon--color--status--${healthStatus}--default`;
                     const statusColor = getComputedStyle(icon[0]).getPropertyValue(colorVar).replace('#', '');
 
                     cy.wrap(icon[0])
