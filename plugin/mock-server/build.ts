@@ -17,7 +17,17 @@ const pluginRoot = path.resolve(__dirname, '..');
  */
 function getTsconfigPaths(): Record<string, string> {
   const tsconfigPath = path.resolve(pluginRoot, 'tsconfig.json');
-  const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath, 'utf-8'));
+  let tsconfig: { compilerOptions?: { paths?: Record<string, string[]>; baseUrl?: string } };
+
+  try {
+    const content = fs.readFileSync(tsconfigPath, 'utf-8');
+    tsconfig = JSON.parse(content);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Failed to read or parse tsconfig.json at ${tsconfigPath}: ${message}`);
+    return {};
+  }
+
   const paths = tsconfig.compilerOptions?.paths || {};
   const baseUrl = tsconfig.compilerOptions?.baseUrl || '.';
 
@@ -26,7 +36,7 @@ function getTsconfigPaths(): Record<string, string> {
   for (const [key, values] of Object.entries(paths)) {
     if (Array.isArray(values) && values.length > 0) {
       const aliasKey = key.replace(/\/\*$/, '');
-      const aliasValue = (values[0] as string).replace(/\/\*$/, '');
+      const aliasValue = values[0].replace(/\/\*$/, '');
       aliases[aliasKey] = path.resolve(pluginRoot, baseUrl, aliasValue);
     }
   }

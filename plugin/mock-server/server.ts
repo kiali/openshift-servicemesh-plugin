@@ -15,8 +15,23 @@
  * Note: Browser globals are set up in bootstrap.js
  */
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { handlers } from '../src/kiali/mocks/handlers';
+
+/**
+ * MSW handler info structure (internal MSW types are not exported)
+ */
+interface MswHandlerInfo {
+  method: string;
+  path: string;
+}
+
+interface MswHandler {
+  info?: MswHandlerInfo;
+  resolver?: (args: { request: globalThis.Request; params: Record<string, string>; cookies: Record<string, string> }) => Promise<globalThis.Response | object | string | null>;
+}
+
+type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
 
 const app = express();
 const PORT = parseInt(process.env.MOCK_SERVER_PORT || '3001', 10);
@@ -48,24 +63,25 @@ app.use((req, _res, next) => {
  */
 const registerHandlers = (): void => {
   for (const handler of handlers) {
-    const info = (handler as any).info;
+    const mswHandler = handler as unknown as MswHandler;
+    const info = mswHandler.info;
     if (!info?.method || !info?.path) continue;
 
-    const method = info.method.toLowerCase() as 'get' | 'post' | 'put' | 'delete' | 'patch';
-    let path: string = info.path;
+    const method = info.method.toLowerCase() as HttpMethod;
+    let routePath: string = info.path;
 
     // Convert MSW path pattern to Express
-    if (path.startsWith('*')) {
-      path = path.substring(1);
+    if (routePath.startsWith('*')) {
+      routePath = routePath.substring(1);
     }
-    if (!path.startsWith('/')) {
-      path = '/' + path;
+    if (!routePath.startsWith('/')) {
+      routePath = '/' + routePath;
     }
 
     // Skip catch-all patterns
-    if (path === '/' || path === '/*') continue;
+    if (routePath === '/' || routePath === '/*') continue;
 
-    const routeHandler = async (req: any, res: any): Promise<void> => {
+    const routeHandler = async (req: Request, res: Response): Promise<void> => {
       try {
         const protocol = req.protocol;
         const host = req.get('host') || `localhost:${PORT}`;
@@ -77,7 +93,7 @@ const registerHandlers = (): void => {
           body: ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body)
         });
 
-        const resolver = (handler as any).resolver;
+        const resolver = mswHandler.resolver;
         if (!resolver) {
           res.status(500).json({ error: 'No resolver for handler' });
           return;
@@ -85,11 +101,11 @@ const registerHandlers = (): void => {
 
         const result = await resolver({
           request: mswRequest,
-          params: req.params,
-          cookies: req.cookies || {}
+          params: req.params as Record<string, string>,
+          cookies: (req.cookies || {}) as Record<string, string>
         });
 
-        if (result instanceof Response) {
+        if (result instanceof globalThis.Response) {
           const body = await result.text();
           res.status(result.status);
           result.headers.forEach((value: string, key: string) => {
@@ -113,9 +129,10 @@ const registerHandlers = (): void => {
       }
     };
 
-    if ((app as any)[method]) {
-      console.log(`  ${method.toUpperCase().padEnd(6)} ${path}`);
-      (app as any)[method](path, routeHandler);
+    const registerRoute = app[method].bind(app);
+    if (registerRoute) {
+      console.log(`  ${method.toUpperCase().padEnd(6)} ${routePath}`);
+      registerRoute(routePath, routeHandler);
     }
   }
 };
