@@ -36,7 +36,8 @@ type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
 const app = express();
 const PORT = parseInt(process.env.MOCK_SERVER_PORT || '3001', 10);
 
-// Enable CORS
+// Enable CORS - Allow all origins for local development convenience.
+// This is intentional as the mock server is only used during development.
 app.use((_req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
@@ -87,9 +88,18 @@ const registerHandlers = (): void => {
         const host = req.get('host') || `localhost:${PORT}`;
         const fullUrl = `${protocol}://${host}${req.originalUrl}`;
 
+        // Convert Express headers to Fetch API Headers (handle array values)
+        const headers = new Headers(
+          Object.fromEntries(
+            Object.entries(req.headers)
+              .filter((entry): entry is [string, string | string[]] => entry[1] !== undefined)
+              .map(([k, v]) => [k, Array.isArray(v) ? v.join(', ') : v])
+          )
+        );
+
         const mswRequest = new globalThis.Request(fullUrl, {
           method: req.method,
-          headers: new Headers(req.headers as Record<string, string>),
+          headers,
           body: ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body)
         });
 
@@ -99,10 +109,12 @@ const registerHandlers = (): void => {
           return;
         }
 
+        // Note: cookies will be empty since cookie-parser middleware is not installed.
+        // Current handlers don't require cookies; add cookie-parser if needed in the future.
         const result = await resolver({
           request: mswRequest,
           params: req.params as Record<string, string>,
-          cookies: (req.cookies || {}) as Record<string, string>
+          cookies: {}
         });
 
         if (result instanceof globalThis.Response) {
@@ -117,12 +129,17 @@ const registerHandlers = (): void => {
           return;
         }
 
-        if (result && typeof result === 'object') {
+        if (result === null) {
+          res.status(204).send();
+          return;
+        }
+
+        if (typeof result === 'object') {
           res.json(result);
           return;
         }
 
-        res.status(200).send(result || '');
+        res.status(200).send(result ?? '');
       } catch (error) {
         console.error(`[Mock Server] Error:`, error);
         res.status(500).json({ error: 'Handler error', message: String(error) });

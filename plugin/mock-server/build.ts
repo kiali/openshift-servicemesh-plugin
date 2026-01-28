@@ -55,7 +55,9 @@ function tsconfigPathsPlugin(): esbuild.Plugin {
     name: 'tsconfig-paths',
     setup(build) {
       for (const [alias, targetPath] of Object.entries(aliases)) {
-        const filter = new RegExp(`^${alias}($|/.*)`);
+        // Escape special regex characters in alias to prevent injection
+        const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const filter = new RegExp(`^${escapedAlias}($|/.*)`);
 
         build.onResolve({ filter }, (args) => {
           const suffix = args.path.slice(alias.length);
