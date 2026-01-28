@@ -49,7 +49,8 @@
     "coverage",
     "webpack",
     "jest",
-    "src/kiali/setupTests.ts"
+    "src/kiali/setupTests.ts",
+    "src/kiali/mocks/**/*"
   ],
   "include": ["src"]
 }

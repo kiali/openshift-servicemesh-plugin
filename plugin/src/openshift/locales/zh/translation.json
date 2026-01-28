@@ -1,4 +1,5 @@
 {
+  "An error occurred. Please try again.": "发生错误。请重试。",
   "Configuration": "配置",
   "Create": "创建",
   "Istio Config": "Istio配置",
@@ -9,14 +10,12 @@
   "Name": "名称",
   "Namespace": "命名空间",
   "Overview": "概述",
+  "Reload page": "重新加载页面",
   "Service detail error": "Service detail error",
   "Service is not defined correctly": "Service is not defined correctly",
   "Service Mesh": "服务网格",
+  "Something wrong happened": "出现了问题",
   "Traffic Graph": "图",
   "Workload detail error": "Workload detail error",
-  "Workload is not defined correctly": "Workload is not defined correctly",
-  "Something wrong happened": "出现了问题",
-  "An error occurred. Please try again.": "发生错误。请重试。",
-  "Reload page": "重新加载页面",
-  "Try again": "重试"
+  "Workload is not defined correctly": "Workload is not defined correctly"
 }

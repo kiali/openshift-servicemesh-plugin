@@ -88,6 +88,60 @@ yarn run start-console
 
 At this point, the OpenShift Console will start and be accessible at http://localhost:9000
 
+### Running with Mock Server (No Kiali Backend Required)
+
+For frontend development without a real Kiali backend, you can use the mock server. This allows you to develop and test the UI without deploying Kiali Server in your cluster.
+
+> :warning: You still need access to an OpenShift cluster (local or remote) to run the OpenShift Console, which loads the OSSMC plugin. The mock server only replaces the Kiali backend API — you must be logged in via `oc login` to your cluster.
+
+This is useful for:
+- UI development and testing without Kiali Server deployed
+- Testing specific mock scenarios
+- Faster development iteration
+
+**Setup:**
+
+1. Configure `.env.development` to use the mock server:
+```sh
+API_PROXY=http://localhost:3001
+```
+
+2. Run in three separate terminals:
+
+```sh
+# Terminal 1: Start the mock server
+cd plugin
+yarn mock-server
+
+# Terminal 2: Start the plugin
+cd plugin
+yarn start
+
+# Terminal 3: Start the OpenShift Console
+cd plugin
+yarn start-console
+```
+
+3. Open http://localhost:9000
+
+The mock server provides simulated API responses using handlers defined in `src/kiali/mocks/handlers/`.
+
+**Configuration:**
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `MOCK_SERVER_PORT` | `3001` | Port for the mock server |
+| `REACT_APP_MOCK_SCENARIO` | `healthy` | Mock scenario to use |
+
+Example with custom port and scenario:
+```sh
+MOCK_SERVER_PORT=4000 REACT_APP_MOCK_SCENARIO=unhealthy yarn mock-server
+```
+
+Remember to update `API_PROXY` in `.env.development` if you change the port.
+
+Available scenarios are defined in `src/kiali/mocks/scenarios.ts`.
+
 ### Testing Locally Distributed Tracing integration
 
 For testing the distributed tracing integration locally, assign to distributedTracingPluginConfig in the getDistributedTracingPluginManifestPromise in the KialiController the following data:
