@@ -16,9 +16,11 @@ import { KialiAppAction } from 'actions/KialiAppAction';
 import { ClusterStateReducer } from 'reducers/ClusterState';
 import { TracingStateReducer } from 'reducers/TracingState';
 import { MeshDataStateReducer } from 'reducers/MeshDataState';
+import { ChatAiStateReducer } from 'reducers/ChatAIState';
 
 export default combineReducers<KialiAppState, KialiAppAction>({
   authentication: LoginStateReducer,
+  chatAi: ChatAiStateReducer,
   clusters: ClusterStateReducer,
   globalState: GlobalStateReducer,
   graph: GraphDataStateReducer,
