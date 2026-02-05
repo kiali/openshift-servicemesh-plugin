@@ -30,7 +30,8 @@ describe('scoreNodes', () => {
         health: {
           items: []
         },
-        getGlobalStatus: () => ({
+        getStatus: () => ({
+          id: 'Degraded',
           name: 'any',
           color: 'any',
           priority: 1,

@@ -10,6 +10,7 @@ Feature: Kiali Waypoint related features
   Background:
     Given user is at administrator perspective
     And all waypoints are healthy
+    And the waypoint tracing data is ready
 
   Scenario: [Setup] namespace is labeled with waypoint label
     Then "bookinfo" namespace is labeled with the waypoint label
@@ -112,7 +113,8 @@ Feature: Kiali Waypoint related features
     And user "enables" "ambient" traffic option
     And user "enables" "ambientWaypoint" traffic option
     And user "closes" traffic menu
-    Then 11 edges appear in the graph
+    Then 10 edges appear in the graph
+    And 11 nodes appear in the graph
 
   @skip-ossmc
   Scenario: [Istio Config] Waypoint should not have validation errors
@@ -120,11 +122,12 @@ Feature: Kiali Waypoint related features
     And user selects the "bookinfo" namespace
     Then the "K8sGateway" object in "bookinfo" namespace with "waypoint" name Istio Config is valid
 
-  Scenario: [Overview] Namespace is labeled with the waypoint labels
-    Given user is at the "overview" page
-    When user clicks in the "LIST" view
-    Then user sees a "LIST" "bookinfo" namespace
-    And badge for "istio.io/use-waypoint=waypoint" is visible in the LIST view in the namespace "bookinfo"
+  Scenario: [Namespaces] Namespace is labeled with the waypoint labels
+    Given user is at the "namespaces" list page
+    When user selects filter "Namespace"
+    And user filters for name "bookinfo"
+    Then user sees the "bookinfo" namespace in the namespaces page
+    And the "Labels" column on the "bookinfo" row has the text "istio.io/use-waypoint=waypoint"
 
   Scenario: [Traffic] Waypoint for different namespaces working as expected
     Given user is at the "graph" page
@@ -416,20 +419,19 @@ Feature: Kiali Waypoint related features
     Then 4 edges appear in the graph
     Then user "closes" traffic menu
 
-  Scenario: [Overview] Add to Ambient in the test-sidecar namespace
-    Given user is at administrator perspective
-    Given user is at the "overview" page
-    And user filters "test-sidecar" namespace
-    And wait for "waypoint-fornone-EXPAND" does not exist
-    And user opens the menu
+  Scenario: [Namespaces] Add to Ambient in the test-sidecar namespace
+    Given user is at the "namespaces" list page
+    When user selects filter "Namespace"
+    And user filters for name "test-sidecar"
+    And user opens the menu for the "test-sidecar" namespace
     And the option "Add to Ambient" does not exist for "test-sidecar" namespace
     And the user clicks on "removes auto injection" for "test-sidecar" namespace
-    Then "default" badge "not exist"
-    And user opens the menu
+    Then the "Labels" column on the "test-sidecar" row does not contain "istio-injection"
+    And user opens the menu for the "test-sidecar" namespace
     And the user clicks on "Add to Ambient" for "test-sidecar" namespace
-    Then "Ambient" badge "exist"
-    And user opens the menu
+    Then the "Labels" column on the "test-sidecar" row has the text "istio.io/dataplane-mode=ambient"
+    And user opens the menu for the "test-sidecar" namespace
     And the user clicks on "remove Ambient" for "test-sidecar" namespace
-    And user opens the menu
+    And user opens the menu for the "test-sidecar" namespace
     And the user clicks on "enable sidecar" for "test-sidecar" namespace
-    Then "default" badge "exist"
+    Then the "Labels" column on the "test-sidecar" row has the text "istio-injection=enabled"
