@@ -11,10 +11,14 @@ export const globalStyle = kialiStyle({
   display: 'flex',
   flexDirection: 'column',
   overflowY: 'auto',
-  padding: '0.5rem',
+  padding: '1rem 1.25rem',
   $nest: {
     '& .pf-v6-c-menu h1': {
       fontSize: 'var(--pf-t--global--font--size--md)'
     }
   }
+});
+
+export const meshTabPageStyle = kialiStyle({
+  paddingTop: '0'
 });

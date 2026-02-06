@@ -1,5 +1,5 @@
 import { Then, When } from '@badeball/cypress-cucumber-preprocessor';
-import { openTab } from './transition';
+import { ensureKialiFinishedLoading, openTab } from './transition';
 import { getCellsForCol } from './table';
 import { Pod } from 'types/IstioObjects';
 
@@ -285,6 +285,53 @@ Then('all waypoints are healthy', () => {
   });
 });
 
+const waitForWaypointTracesInApi = (
+  namespace: string,
+  workload: string,
+  clusterName?: string,
+  maxRetries = 10,
+  retryCount = 0
+): void => {
+  if (retryCount >= maxRetries) {
+    throw new Error(
+      `Waypoint traces not found after ${maxRetries} retries (namespace=${namespace}, cluster=${clusterName ?? ''})`
+    );
+  }
+
+  const nowMicros = Date.now() * 1000;
+  const qs: Record<string, any> = {
+    // last 10 minutes (micros)
+    startMicros: nowMicros - 10 * 60 * 1000 * 1000,
+    endMicros: nowMicros,
+    tags: '{}',
+    limit: 100
+  };
+  if (clusterName) {
+    qs.clusterName = clusterName;
+  }
+
+  cy.request({
+    method: 'GET',
+    url: `api/namespaces/${namespace}/workloads/${workload}/traces`,
+    qs,
+    failOnStatusCode: false
+  }).then(response => {
+    expect(response.status).to.equal(200);
+    const traces = response.body?.data;
+    if (Array.isArray(traces) && traces.length > 0) {
+      return;
+    }
+
+    return cy
+      .wait(10000)
+      .then(() => waitForWaypointTracesInApi(namespace, workload, clusterName, maxRetries, retryCount + 1));
+  });
+};
+
+Then('the waypoint tracing data is ready', () => {
+  waitForWaypointTracesInApi('bookinfo', 'bookinfo-gateway-istio');
+});
+
 Then('{string} namespace is labeled with the waypoint label', (namespace: string) => {
   cy.exec(`kubectl label namespace ${namespace} istio.io/use-waypoint=waypoint`, { failOnNonZeroExit: false });
   waitForWorkloadEnrolled(namespace);
@@ -459,8 +506,8 @@ Then('the user updates the log level to {string}', (level: string) => {
   cy.get(`#setLogLevel${level}`).should('exist').click();
 });
 
-When('user opens the menu', () => {
-  cy.get('[aria-label="Actions"]').click();
+When('user opens the menu for the {string} namespace', (namespace: string) => {
+  cy.get('tbody').contains('tr', namespace).find('button[aria-label="Actions"]').should('be.visible').click();
 });
 
 When('the option {string} does not exist for {string} namespace', (option, namespace: string) => {
@@ -468,7 +515,7 @@ When('the option {string} does not exist for {string} namespace', (option, names
   if (option === 'Add to Ambient') {
     selector = `add-${namespace}-namespace-ambient`;
   }
-  cy.get(selector).should('not.exist');
+  cy.get(`[data-test="${selector}"]`).should('not.exist');
 });
 
 When('the user clicks on {string} for {string} namespace', (option, namespace: string) => {
@@ -495,6 +542,7 @@ When('the user clicks on {string} for {string} namespace', (option, namespace: s
   cy.contains('Are you sure?', { timeout: 10000 }).should('be.visible');
   // Wait for modal confirm button to be visible and clickable
   cy.get(`[data-test="confirm-create"]`).should('be.visible').should('not.be.disabled').click();
+  ensureKialiFinishedLoading();
 });
 
 When('{string} badge {string}', (badge, option: string) => {

@@ -6,6 +6,7 @@ import { GraphPage } from 'pages/Graph/GraphPage';
 import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
+import { meshTabPageStyle } from 'openshift/styles/GlobalStyle';
 
 const ProjectMeshTab: React.FC<void> = () => {
   const { pathname } = useLocation();
@@ -19,7 +20,7 @@ const ProjectMeshTab: React.FC<void> = () => {
   store.dispatch({ type: ActionKeys.SET_ACTIVE_NAMESPACES, payload: [{ name: namespace! }] });
 
   return (
-    <KialiContainer>
+    <KialiContainer className={meshTabPageStyle}>
       <GraphPage></GraphPage>
     </KialiContainer>
   );

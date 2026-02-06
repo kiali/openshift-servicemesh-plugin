@@ -9,6 +9,7 @@ import { ErrorPage } from 'openshift/components/ErrorPage';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import * as API from 'services/Api';
 import { centerVerticalHorizontalStyle } from '../../components/KialiController';
+import { meshTabPageStyle } from 'openshift/styles/GlobalStyle';
 
 // validateWorkload validate in the backend if a workload exists
 const validateWorkload = async (namespace: string, workloadName: string): Promise<boolean> => {
@@ -127,7 +128,7 @@ const WorkloadMeshTab: React.FC<void> = () => {
   };
 
   return (
-    <KialiContainer>
+    <KialiContainer className={meshTabPageStyle}>
       <WorkloadDetailsPage workloadId={workloadId}></WorkloadDetailsPage>
     </KialiContainer>
   );

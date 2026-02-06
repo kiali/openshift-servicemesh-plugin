@@ -14,7 +14,7 @@ import {
 import { Popover, Tab, TabAction, Title, TitleSizes } from '@patternfly/react-core';
 import { serverConfig } from 'config';
 import { NamespaceInfo, NamespaceStatus } from 'types/NamespaceInfo';
-import { DirectionType } from 'pages/Overview/OverviewToolbar';
+import { DirectionType } from 'types/Common';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { TLSInfo } from 'components/Overview/TLSInfo';
 import * as API from '../../../services/Api';
@@ -345,7 +345,7 @@ export class TargetPanelControlPlane extends React.Component<
 
         Object.keys(rs).forEach(item => {
           const health: Health = rs[item];
-          const status = health.getGlobalStatus();
+          const status = health.getStatus();
 
           if (status === FAILURE) {
             nsStatus.inError.push(item);

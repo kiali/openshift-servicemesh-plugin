@@ -103,8 +103,10 @@ export const boundsToDuration = (bounds: BoundsInMilliseconds): DurationInSecond
 };
 
 export const durationToBounds = (duration: DurationInSeconds): BoundsInMilliseconds => {
+  const now = new Date().getTime();
   return {
-    from: new Date().getTime() - duration * 1000
+    from: now - duration * 1000,
+    to: now
   };
 };
 
@@ -129,3 +131,15 @@ export enum InstanceType {
   Service = 'service',
   Workload = 'workload'
 }
+
+// Show represents the different views/pages that can be shown for a namespace
+export enum Show {
+  GRAPH,
+  APPLICATIONS,
+  WORKLOADS,
+  SERVICES,
+  ISTIO_CONFIG
+}
+
+// DirectionType represents traffic direction for metrics
+export type DirectionType = 'inbound' | 'outbound';
