@@ -1,6 +1,7 @@
 import { AppHealth } from './Health';
 import { ObjectReference } from './IstioObjects';
 import { InstanceType } from 'types/Common';
+import { SpireInfo } from './Workload';
 
 export interface AppList {
   applications: AppListItem[];
@@ -20,10 +21,10 @@ export interface AppListItem {
   labels: { [key: string]: string };
   name: string;
   namespace: string;
+  spireInfo?: SpireInfo;
 }
 
 export interface AppListQuery {
   health: 'true' | 'false';
   istioResources: 'true' | 'false';
-  rateInterval: string;
 }
