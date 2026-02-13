@@ -43,7 +43,7 @@
     "@patternfly/react-icons": "^6.4.0",
     "@patternfly/react-table": "^6.4.0",
     "@patternfly/react-topology": "^6.4.0",
-    "axios": "^1.12.2",
+    "axios": "^1.13.5",
     "bootstrap-slider-without-jquery": "10.0.0",
     "deep-freeze": "0.0.1",
     "eventemitter3": "4.0.7",
@@ -57,7 +57,6 @@
     "react": "^17.0.1",
     "react-ace": "9.1.3",
     "react-copy-to-clipboard": "5.x",
-    "react-datepicker": "3.8.0",
     "react-dom": "^17.0.1",
     "react-flexview": "4.0.3",
     "react-i18next": "^11.7.3",
@@ -96,7 +95,6 @@
     "@types/node": "^20.14.9",
     "@types/react": "^17.0.1",
     "@types/react-copy-to-clipboard": "^5.0.7",
-    "@types/react-datepicker": "^4.15.0",
     "@types/react-dom": "^17.0.1",
     "@types/react-redux": "7.1.7",
     "@types/react-syntax-highlighter": "^15.5.13",
@@ -139,15 +137,15 @@
     "ts-node": "^10.4.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",
     "typescript": "^5.9.0",
-    "webpack": "^5.94.0",
+    "webpack": "^5.104.1",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.0.4"
+    "webpack-dev-server": "^5.2.1"
   },
   "resolutions": {
     "esbuild": "^0.25.2",
     "react-markdown": "^8.0.7",
     "unist-util-visit-parents": "^5.1.3",
-    "webpack": "^5.94.0"
+    "webpack": "^5.104.1"
   },
   "engines": {
     "node": ">=20.6.0",
