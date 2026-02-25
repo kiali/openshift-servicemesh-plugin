@@ -19,16 +19,18 @@ import 'ace-builds/src-noconflict/theme-twilight';
 
 // Enables the search box for the ACE editor
 import 'ace-builds/src-noconflict/ext-searchbox';
+import { classes } from 'typestyle';
 
 interface Props {
   children: React.ReactNode;
+  className?: string;
 }
 
-export const KialiContainer: React.FC<Props> = ({ children }) => {
+export const KialiContainer: React.FC<Props> = ({ className, children }) => {
   return (
     <Provider store={store}>
       <NotificationAlerts />
-      <div id="root" className={`${kialiStyle} ${ossmcStyle} ${kialiCSSVariables.style} ${ossmcCSSVariables.style}`}>
+      <div id="root" className={classes(kialiStyle, ossmcStyle, kialiCSSVariables.style, ossmcCSSVariables, className)}>
         <KialiController>{children}</KialiController>
       </div>
     </Provider>

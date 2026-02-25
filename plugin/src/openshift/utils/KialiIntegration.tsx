@@ -122,15 +122,19 @@ export const useInitKialiListeners = (): void => {
         if (webParamsIndex > -1) {
           const nsParamIndex = kialiAction.indexOf('namespaces=', webParamsIndex);
 
-          // Under the plugin it will be used for a single namespace
           let endNsParamIndex = kialiAction.indexOf('&', nsParamIndex);
           // In case that the 'namespaces=' is added alone as a param
           if (endNsParamIndex === -1) {
             endNsParamIndex = kialiAction.length;
           }
 
-          const namespace = kialiAction.substring(nsParamIndex + 'namespaces='.length, endNsParamIndex);
-          consoleUrl += `/ns/${namespace}/istio`;
+          const namespaces = kialiAction.substring(nsParamIndex + 'namespaces='.length, endNsParamIndex);
+          // If there is only one namespace, navigate to that namespace; otherwise go to all-namespaces
+          if (namespaces && !namespaces.includes('%2C')) {
+            consoleUrl += `/ns/${namespaces}/istio`;
+          } else {
+            consoleUrl += '/all-namespaces/istio';
+          }
         } else {
           consoleUrl += '/all-namespaces/istio';
         }
@@ -144,6 +148,11 @@ export const useInitKialiListeners = (): void => {
           namespacesLength + namespace.length,
           webParamsIndex > -1 ? webParamsIndex : kialiAction.length
         );
+
+        // If the detail is empty, navigate to the projects page
+        if (detail === '') {
+          consoleUrl = '/k8s/cluster/project.openshift.io~v1~Project';
+        }
 
         if (detail.startsWith('/applications')) {
           // OpenShift Console doesn't have an "application" concept
