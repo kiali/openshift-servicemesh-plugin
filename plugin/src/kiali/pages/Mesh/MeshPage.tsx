@@ -42,7 +42,7 @@ import { MeshTour } from './MeshHelpTour';
 import { MeshThunkActions } from 'actions/MeshThunkActions';
 import { toRangeString } from 'components/Time/Utils';
 import { HistoryManager, URLParam } from 'app/History';
-import { getValidMeshLayout, MeshLayout } from './layouts/layoutFactory';
+import { getValidMeshLayout, MeshLayout } from './layouts/LayoutFactory';
 import { RefreshIntervalManual, RefreshIntervalPause } from 'config/Config';
 import { setAIContext } from 'helpers/ChatAI';
 
@@ -64,6 +64,7 @@ type ReduxStateProps = {
 };
 
 type ReduxDispatchProps = {
+  dispatch: KialiDispatch;
   endTour: () => void;
   onReady: (controller: Controller) => void;
   setDefinition: (meshDefinition: MeshDefinition) => void;
@@ -72,7 +73,6 @@ type ReduxDispatchProps = {
   setUpdateTime: (val: TimeInMilliseconds) => void;
   startTour: ({ info, stop }) => void;
   toggleLegend: () => void;
-  dispatch: KialiDispatch;
 };
 
 type MeshPageProps = ReduxStateProps &
@@ -192,15 +192,17 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
   componentDidUpdate(prev: MeshPageProps): void {
     const curr = this.props;
 
-    // we need to consider URL prop here because redux may not yet reflect any change applied in the Refresh component, and
-    // the initial update needs to know whether to wait on fetching the mesh data.
+    // Check URL as a fallback only when Redux hasn't changed yet (initial mount), because
+    // HistoryManager may lag behind Redux when the user changes the interval via the dropdown.
     const manualRefresh =
-      curr.refreshInterval === RefreshIntervalManual || HistoryManager.getRefresh() === RefreshIntervalManual;
+      curr.refreshInterval === RefreshIntervalManual ||
+      (prev.refreshInterval === curr.refreshInterval && HistoryManager.getRefresh() === RefreshIntervalManual);
 
     if (
       prev.lastRefreshAt !== curr.lastRefreshAt ||
       (!manualRefresh &&
-        ((prev.refreshInterval !== curr.refreshInterval && curr.refreshInterval !== RefreshIntervalPause) ||
+        ((prev.refreshInterval !== curr.refreshInterval &&
+          (curr.refreshInterval !== RefreshIntervalPause || prev.refreshInterval === RefreshIntervalManual)) ||
           prev.duration !== curr.duration ||
           (prev.findValue !== curr.findValue && curr.findValue.includes('label:')) ||
           (prev.hideValue !== curr.hideValue && curr.hideValue.includes('label:')) ||
@@ -317,10 +319,7 @@ class MeshPageComponent extends React.Component<MeshPageProps, MeshPageState> {
       }
     });
 
-    setAIContext(
-      this.props.dispatch,
-      `Mesh status`
-    );
+    setAIContext(this.props.dispatch, `Mesh status`);
     this.props.setDefinition(this.meshDataSource.meshDefinition);
   };
 
