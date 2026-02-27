@@ -15,6 +15,9 @@ export const globalStyle = kialiStyle({
   $nest: {
     '& .pf-v6-c-menu h1': {
       fontSize: 'var(--pf-t--global--font--size--md)'
+    },
+    '& :is(ul,ol):where(:not([class*="pf-v6-c-"]))': {
+      paddingLeft: 0
     }
   }
 });

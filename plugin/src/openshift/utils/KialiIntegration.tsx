@@ -11,8 +11,6 @@ export const NETOBSERV = 'netflow';
 export const OSSM_CONSOLE = 'ossmconsole';
 
 export const properties = {
-  // This API is hardcoded but:
-  // 'ossmconsole' is the name of the plugin, it can be considered "fixed" in the project
   // 'plugin-config.json' is a resource mounted from a ConfigMap, so, the UI app can read config from that file
   pluginConfig: `/api/plugins/${OSSM_CONSOLE}/plugin-config.json`,
   // External
@@ -83,141 +81,163 @@ export const setRouterBasename = (pathname: string): void => {
   setRouter([{ element: <></> }], basename);
 };
 
-// Global scope variable to hold the kiali listener
-let kialiListener: (Event: MessageEvent) => void;
+interface RouteContext {
+  isNetobserv: boolean;
+  path: string;
+  urlParams: URLSearchParams;
+  webParams: string;
+}
 
-// This listener is responsible to receive the Kiali event that is sent inside the React page to the plugin
-// When users "clicks" a link in Kiali, there is no navigation in the Kiali side; and event it's send to the parent
-// And the "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
+const parseRouteContext = (kialiAction: string): RouteContext => {
+  const netobservPrefix = '/netobserv';
+  let action = kialiAction;
+  let isNetobserv = false;
+
+  if (action.startsWith(netobservPrefix)) {
+    action = action.substring(netobservPrefix.length);
+    isNetobserv = netobservPluginConfig && netobservPluginConfig.extensions.length > 0;
+  }
+
+  // Split action into path and query components
+  // e.g. "/namespaces/my-ns/workloads/foo?tab=info" becomes:
+  //   path: "/namespaces/my-ns/workloads/foo"
+  //   webParams: "?tab=info" (includes '?' for appending to URLs)
+  //   urlParams: URLSearchParams for easy param access
+  const queryIndex = action.indexOf('?');
+  const path = queryIndex > -1 ? action.substring(0, queryIndex) : action;
+  const webParams = queryIndex > -1 ? action.substring(queryIndex) : '';
+  const urlParams = new URLSearchParams(queryIndex > -1 ? action.substring(queryIndex + 1) : '');
+
+  return { path, webParams, urlParams, isNetobserv };
+};
+
+const handleGraphRoute = ({ path, webParams }: RouteContext): string => {
+  return path
+    .replace('graph/namespaces', `${OSSM_CONSOLE}/graph`)
+    .replace('graph/node/namespaces', `${OSSM_CONSOLE}/graph/ns`) + webParams;
+};
+
+const handleMeshRoute = ({ path, webParams }: RouteContext): string => {
+  return path.replace('mesh', `${OSSM_CONSOLE}/mesh`) + webParams;
+};
+
+const handleApplicationsRoute = (): string => `/k8s/all-namespaces/pods`;
+
+const handleServicesRoute = (): string => `/k8s/all-namespaces/services`;
+
+const handleIstioRoute = ({ urlParams }: RouteContext): string => {
+  const namespaces = urlParams.get('namespaces');
+
+  if (namespaces && !namespaces.includes(',')) {
+    return `/k8s/ns/${namespaces}/istio`;
+  }
+  return '/k8s/all-namespaces/istio';
+};
+
+const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): string => {
+  const pathSegments = path.split('/');
+  const namespace = pathSegments[2] ?? '';
+  const detail = pathSegments.length > 3 ? `/${pathSegments.slice(3).join('/')}` : '';
+
+  if (detail === '') {
+    return '/k8s/cluster/project.openshift.io~v1~Project';
+  }
+
+  if (detail.startsWith('/applications')) {
+    const application = detail.substring('/applications/'.length);
+    return `/k8s/ns/${namespace}/pods?labels=app%3D${application}`;
+  }
+
+  if (detail.startsWith('/workloads')) {
+    const workload = detail.substring('/workloads'.length);
+    const target = isNetobserv ? NETOBSERV : OSSM_CONSOLE;
+    return `/k8s/ns/${namespace}/deployments${workload}/${target}${webParams}`;
+  }
+
+  if (detail.startsWith('/services')) {
+    return `/k8s/ns/${namespace}${detail}/${OSSM_CONSOLE}${webParams}`;
+  }
+
+  if (detail.startsWith('/istio')) {
+    const istioUrl = refForKialiIstio(detail);
+    if (istioUrl.length === 0) {
+      return '/k8s/all-namespaces/istio';
+    }
+    return `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
+  }
+
+  return '/k8s/cluster/project.openshift.io~v1~Project';
+};
+
+const handleTracingRoute = ({ urlParams }: RouteContext): string | null => {
+  if (distributedTracingPluginConfig && distributedTracingPluginConfig.extensions.length > 0 && pluginConfig) {
+    let observabilityData: Observability | null = null;
+
+    if (pluginConfig.observability) {
+      observabilityData = {
+        instance: pluginConfig.observability.instance,
+        namespace: pluginConfig.observability.namespace,
+        tenant: pluginConfig.observability.tenant
+      };
+    } else {
+      const tracingInfo = store.getState().tracingState.info;
+      if (tracingInfo) {
+        observabilityData = parseTempoUrl(tracingInfo.internalURL);
+      }
+    }
+
+    if (observabilityData) {
+      const trace = urlParams.get('trace');
+      if (trace && trace !== 'undefined') {
+        return `/observe/traces/${trace}?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}`;
+      }
+      return `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`;
+    }
+  } else {
+    const url = urlParams.get('url');
+    if (url) {
+      window.location.href = url;
+    }
+  }
+  return null;
+};
+
+type RouteHandler = (ctx: RouteContext) => string | null;
+
+const routeHandlers: Array<{ handler: RouteHandler; prefix: string }> = [
+  { prefix: '/graph', handler: handleGraphRoute },
+  { prefix: '/mesh', handler: handleMeshRoute },
+  { prefix: '/applications', handler: handleApplicationsRoute },
+  { prefix: '/services', handler: handleServicesRoute },
+  { prefix: '/istio', handler: handleIstioRoute },
+  { prefix: '/namespaces', handler: handleNamespacesRoute },
+  { prefix: '/tracing', handler: handleTracingRoute }
+];
+
+const resolveConsoleUrl = (kialiAction: string): string | null => {
+  const context = parseRouteContext(kialiAction);
+
+  for (const { prefix, handler } of routeHandlers) {
+    if (context.path.startsWith(prefix)) {
+      return handler(context);
+    }
+  }
+  return null;
+};
+
+// This listener is responsible to receive the Kiali event that is sent inside the React page to the plugin.
+// When users "click" a link in Kiali, there is no navigation in the Kiali side; an event is sent to the parent.
+// The "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
 export const useInitKialiListeners = (): void => {
   const navigate = useNavigate();
 
-  if (!kialiListener) {
-    kialiListener = (ev: MessageEvent) => {
-      let kialiAction = ev.data;
-
-      if (typeof kialiAction !== 'string') {
+  React.useEffect(() => {
+    const kialiListener = (ev: MessageEvent): void => {
+      if (typeof ev.data !== 'string') {
         return;
       }
 
-      // When available, come URLs may ask to direct to the netobserv tab as opposed to the OSSMC tab
-      const netobservPrefix = '/netobserv';
-      let isNetobserv = false;
-      if (kialiAction.startsWith(netobservPrefix)) {
-        kialiAction = kialiAction.substring(netobservPrefix.length)
-        isNetobserv = netobservPluginConfig && netobservPluginConfig.extensions.length > 0
-      }
-
-      const webParamsIndex = kialiAction.indexOf('?');
-
-      let consoleUrl = '';
-      // Transform Kiali domain messages into Plugin info that helps to navigate
-      if (kialiAction.startsWith('/graph')) {
-        consoleUrl = kialiAction
-          .replace('graph/namespaces', `${OSSM_CONSOLE}/graph`)
-          .replace('graph/node/namespaces', `${OSSM_CONSOLE}/graph/ns`);
-      } else if (kialiAction.startsWith('/istio')) {
-        consoleUrl = '/k8s';
-
-        if (webParamsIndex > -1) {
-          const nsParamIndex = kialiAction.indexOf('namespaces=', webParamsIndex);
-
-          let endNsParamIndex = kialiAction.indexOf('&', nsParamIndex);
-          // In case that the 'namespaces=' is added alone as a param
-          if (endNsParamIndex === -1) {
-            endNsParamIndex = kialiAction.length;
-          }
-
-          const namespaces = kialiAction.substring(nsParamIndex + 'namespaces='.length, endNsParamIndex);
-          // If there is only one namespace, navigate to that namespace; otherwise go to all-namespaces
-          if (namespaces && !namespaces.includes('%2C')) {
-            consoleUrl += `/ns/${namespaces}/istio`;
-          } else {
-            consoleUrl += '/all-namespaces/istio';
-          }
-        } else {
-          consoleUrl += '/all-namespaces/istio';
-        }
-      } else if (kialiAction.startsWith('/namespaces')) {
-        const webParams = webParamsIndex > -1 ? kialiAction.substring(webParamsIndex) : '';
-
-        const namespacesLength = '/namespaces/'.length;
-        const namespace = kialiAction.substring(namespacesLength, kialiAction.indexOf('/', namespacesLength + 1));
-
-        const detail = kialiAction.substring(
-          namespacesLength + namespace.length,
-          webParamsIndex > -1 ? webParamsIndex : kialiAction.length
-        );
-
-        // If the detail is empty, navigate to the projects page
-        if (detail === '') {
-          consoleUrl = '/k8s/cluster/project.openshift.io~v1~Project';
-        }
-
-        if (detail.startsWith('/applications')) {
-          // OpenShift Console doesn't have an "application" concept
-          // As the "app" concept is based on Pod "app" annotations, a start could be to show those pods
-          // TBD a better link i.e. the "App" concept used for Developer preview
-          const application = detail.substring('/applications/'.length);
-          consoleUrl = `/k8s/ns/${namespace}/pods?labels=app%3D${application}`;
-        }
-
-        if (detail.startsWith('/workloads')) {
-          // OpenShift Console doesn't have a "generic" workloads page
-          // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
-          // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
-          const workload = detail.substring('/workloads'.length);
-          const target = isNetobserv ? NETOBSERV : OSSM_CONSOLE;
-          consoleUrl = `/k8s/ns/${namespace}/deployments${workload}/${target}${webParams}`;
-        }
-
-        if (detail.startsWith('/services')) {
-          // OpenShift Console has a "services" list page
-          consoleUrl = `/k8s/ns/${namespace}${detail}/${OSSM_CONSOLE}${webParams}`;
-        }
-
-        if (detail.startsWith('/istio')) {
-          const istioUrl = refForKialiIstio(detail);
-
-          if (istioUrl.length === 0) {
-            consoleUrl = '/k8s/all-namespaces/istio';
-          } else {
-            consoleUrl = `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
-          }
-        }
-      } else if (kialiAction.startsWith('/tracing')) {
-        if (distributedTracingPluginConfig && distributedTracingPluginConfig.extensions.length > 0 && pluginConfig) {
-          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
-          let observabilityData: Observability | null = null;
-          if (pluginConfig.observability) {
-            observabilityData = {
-              instance: pluginConfig.observability.instance,
-              namespace: pluginConfig.observability.namespace,
-              tenant: pluginConfig.observability.tenant
-            };
-          } else {
-            const tracingInfo = store.getState().tracingState.info;
-            if (tracingInfo) {
-              observabilityData = parseTempoUrl(tracingInfo.internalURL);
-            }
-          }
-
-          if (observabilityData) {
-            const trace = urlParams.get('trace');
-            if (trace && trace !== 'undefined') {
-              consoleUrl = `/observe/traces/${trace}?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}`;
-            } else {
-              consoleUrl = `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`;
-            }
-          }
-        } else {
-          const urlParams = new URLSearchParams(kialiAction.split('?')[1]);
-          const url = urlParams.get('url');
-          if (url) {
-            window.location.href = url;
-          }
-        }
-      }
+      const consoleUrl = resolveConsoleUrl(ev.data);
 
       if (consoleUrl) {
         setTimeout(() => navigate(consoleUrl), 0);
@@ -225,7 +245,8 @@ export const useInitKialiListeners = (): void => {
     };
 
     window.addEventListener('message', kialiListener);
-  }
+    return () => window.removeEventListener('message', kialiListener);
+  }, [navigate]);
 };
 
 export function parseTempoUrl(url: string): Observability | null {
