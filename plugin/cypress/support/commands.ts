@@ -101,7 +101,8 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
 //in case guided tour appears (OCP 4.19+)
 export const guidedTour = {
   close: () => {
-    cy.waitForReact();
+    // Use body as root: we're on the OpenShift Console dashboard here, not the plugin's #root
+    cy.waitForReact(10000, 'body');
     // wait a little bit for the guided tour modal to appear
     cy.wait(5000);
     cy.get('body').then($body => {
