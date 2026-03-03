@@ -25,7 +25,6 @@ import { isMultiCluster, serverConfig } from 'config';
 import { validationKey } from '../../types/IstioConfigList';
 import { connectRefresh } from 'components/Refresh/connectRefresh';
 import { RefreshIntervalManual, RefreshIntervalPause } from 'config/Config';
-import { EmptyVirtualList } from 'components/VirtualList/EmptyVirtualList';
 import { HistoryManager } from 'app/History';
 import { endPerfTimer, startPerfTimer } from '../../utils/PerformanceUtils';
 import { setAIContext } from 'helpers/ChatAI';
@@ -80,7 +79,8 @@ class WorkloadListPageComponent extends FilterComponent.Component<
       (this.props.refreshInterval !== RefreshIntervalManual &&
         (!namespaceEquals(this.props.activeNamespaces, prevProps.activeNamespaces) ||
           (this.props.refreshInterval !== prevProps.refreshInterval &&
-            this.props.refreshInterval !== RefreshIntervalPause) ||
+            (this.props.refreshInterval !== RefreshIntervalPause ||
+              prevProps.refreshInterval === RefreshIntervalManual)) ||
           this.state.currentSortField !== prevCurrentSortField ||
           this.state.isSortAscending !== prevIsSortAscending))
     ) {
@@ -226,18 +226,23 @@ class WorkloadListPageComponent extends FilterComponent.Component<
         <DefaultSecondaryMasthead
           rightToolbar={<Refresh id="workload-list-refresh" disabled={false} manageURL={true} />}
         />
-        <EmptyVirtualList loaded={this.state.loaded} refreshInterval={this.props.refreshInterval}>
-          <RenderContent>
-            <VirtualList rows={this.state.listItems} hiddenColumns={hiddenColumns} sort={this.onSort} type="workloads">
-              <StatefulFilters
-                initialFilters={WorkloadListFilters.availableFilters}
-                initialToggles={this.initialToggles}
-                onFilterChange={this.onFilterChange}
-                onToggleChange={this.onFilterChange}
-              />
-            </VirtualList>
-          </RenderContent>
-        </EmptyVirtualList>
+        <RenderContent>
+          <VirtualList
+            loaded={this.state.loaded}
+            refreshInterval={this.props.refreshInterval}
+            rows={this.state.listItems}
+            hiddenColumns={hiddenColumns}
+            sort={this.onSort}
+            type="workloads"
+          >
+            <StatefulFilters
+              initialFilters={WorkloadListFilters.availableFilters}
+              initialToggles={this.initialToggles}
+              onFilterChange={this.onFilterChange}
+              onToggleChange={this.onFilterChange}
+            />
+          </VirtualList>
+        </RenderContent>
       </>
     );
   }

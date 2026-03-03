@@ -7,6 +7,7 @@ import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps, istioResources } from 'openshift/utils/IstioResources';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 import { useKialiTranslation } from 'utils/I18nUtils';
+import { meshTabPageStyle } from 'openshift/styles/GlobalStyle';
 
 const IstioConfigMeshTab: React.FC<void> = () => {
   const { t } = useKialiTranslation();
@@ -38,7 +39,7 @@ const IstioConfigMeshTab: React.FC<void> = () => {
       };
 
       return (
-        <KialiContainer>
+        <KialiContainer className={meshTabPageStyle}>
           <IstioConfigDetailsPage istioConfigId={istioConfigId}></IstioConfigDetailsPage>
         </KialiContainer>
       );
