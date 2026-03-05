@@ -14,9 +14,7 @@ export default defineConfig({
   responseTimeout: 15000,
   fixturesFolder: 'cypress/fixtures',
   env: {
-    'cypress-react-selector': {
-      root: '#app'
-    },
+    rootSelector: '#app',
     OSSMC: true,
     cookie: false,
     omitFiltered: true,
