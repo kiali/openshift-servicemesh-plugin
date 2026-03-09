@@ -2,8 +2,8 @@ FROM  registry.access.redhat.com/ubi9/nodejs-24 AS build
 
 USER root
 
-# Enable corepack to install yarn
-RUN corepack enable
+# Install and enable corepack to use Yarn 4
+RUN npm install -g corepack && corepack enable
 
 ADD . /usr/src/app
 WORKDIR /usr/src/app
@@ -11,7 +11,7 @@ WORKDIR /usr/src/app
 # Install dependencies and build the plugin
 RUN yarn install && yarn build
 
-FROM registry.access.redhat.com/ubi9/nginx-124:1-10
+FROM registry.access.redhat.com/ubi9/nginx-126
 
 # Add application sources to a directory that the assemble script expects them
 # and set permissions so that the container runs without root access
