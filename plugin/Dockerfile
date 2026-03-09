@@ -1,11 +1,15 @@
 FROM  registry.access.redhat.com/ubi9/nodejs-24 AS build
 
 USER root
-RUN command -v yarn || npm i -g yarn
+
+# Enable corepack to install yarn
+RUN corepack enable
 
 ADD . /usr/src/app
 WORKDIR /usr/src/app
-RUN yarn install --network-timeout 7200000 && yarn build
+
+# Install dependencies and build the plugin
+RUN yarn install && yarn build
 
 FROM registry.access.redhat.com/ubi9/nginx-124:1-10
 
