@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Card, CardBody, CardFooter, CardHeader, CardTitle, Popover, PopoverPosition } from '@patternfly/react-core';
 import { KialiIcon } from 'config/KialiIcon';
 import { KialiLink } from 'components/Link/KialiLink';
+import { IstioAPIDisabledBadge } from 'components/Badge/IstioAPIDisabledBadge';
 import { t } from 'utils/I18nUtils';
 import { useControlPlanes } from 'hooks/controlPlanes';
 import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
@@ -46,7 +47,7 @@ export const ControlPlaneStats: React.FC = () => {
               {cp.istiodName}
             </KialiLink>
           </span>
-          <span className={popoverItemStatusStyle}>{cp.status}</span>
+          <span className={popoverItemStatusStyle}>{t(cp.status ?? 'Unknown')}</span>
         </div>
       ))}
     </>
@@ -90,6 +91,7 @@ export const ControlPlaneStats: React.FC = () => {
                 </div>
               </Popover>
             )}
+            <IstioAPIDisabledBadge />
           </div>
         )}
       </CardBody>

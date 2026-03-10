@@ -96,6 +96,7 @@ type ReduxDispatchProps = {
   setActiveNamespaces: (namespaces: Namespace[]) => void;
   setEdgeMode: (edgeMode: EdgeMode) => void;
   setGraphDefinition: (graphDefinition: GraphDefinition) => void;
+  setGraphType: (graphType: GraphType) => void;
   setLayout: (layout: GraphLayout) => void;
   setNode: (node?: NodeParamsType) => void;
   setRankResult: (result: RankResult) => void;
@@ -118,7 +119,6 @@ type ReduxStateProps = {
   graphType: GraphType;
   hideValue: string;
   isPageVisible: boolean;
-  istioAPIEnabled: boolean;
   kiosk: string;
   layout: GraphLayout;
   mtlsEnabled: boolean;
@@ -386,8 +386,21 @@ class GraphPageComponent extends React.Component<GraphPageProps, GraphPageState>
       HistoryManager.setParam(URLParam.GRAPH_LAYOUT, this.props.layout);
     }
 
+    // Sync graphType from URL before initial fetch so we don't fetch with default then again after toolbar sync.
+    const urlGraphType = HistoryManager.getParam(URLParam.GRAPH_TYPE) as GraphType;
+    const graphTypeSyncedFromUrl = !!urlGraphType && urlGraphType !== this.props.graphType;
+    if (graphTypeSyncedFromUrl) {
+      this.props.setGraphType(urlGraphType);
+    }
+
     // Unless we are waiting for Manual refresh, ensure we initialize the graph.
-    if (this.props.refreshInterval !== RefreshIntervalManual && HistoryManager.getRefresh() !== RefreshIntervalManual) {
+    // When graphType was just synced from URL, skip the initial fetch here; componentDidUpdate will run
+    // once Redux updates and trigger a single fetch with the correct graphType.
+    if (
+      !graphTypeSyncedFromUrl &&
+      this.props.refreshInterval !== RefreshIntervalManual &&
+      HistoryManager.getRefresh() !== RefreshIntervalManual
+    ) {
       // Using setTimeout() ensures we wait for the toolbar to render and ensure all redux props are updated
       // with URL settings. That in turn ensures the initial fetchParams are correct.
       setTimeout(() => this.loadGraphDataFromBackend(), 0);
@@ -575,7 +588,6 @@ class GraphPageComponent extends React.Component<GraphPageProps, GraphPageState>
           peerAuthentications={this.state.wizardsData.peerAuthentications || []}
           tlsStatus={this.state.wizardsData.serviceDetails?.namespaceMTLS}
           onClose={this.handleWizardClose}
-          istioAPIEnabled={this.props.istioAPIEnabled}
         />
         {this.state.showConfirmDeleteTrafficRouting && (
           <ConfirmDeleteTrafficRoutingModal
@@ -818,7 +830,6 @@ const mapStateToProps = (state: KialiAppState): ReduxStateProps => ({
   findValue: findValueSelector(state),
   graphType: graphTypeSelector(state),
   hideValue: hideValueSelector(state),
-  istioAPIEnabled: state.statusState.istioEnvironment.istioAPIEnabled,
   isPageVisible: state.globalState.isPageVisible,
   kiosk: state.globalState.kiosk,
   layout: state.graph.layout,
@@ -852,6 +863,7 @@ const mapDispatchToProps = (dispatch: KialiDispatch): ReduxDispatchProps => ({
   setActiveNamespaces: (namespaces: Namespace[]) => dispatch(NamespaceActions.setActiveNamespaces(namespaces)),
   setEdgeMode: bindActionCreators(GraphActions.setEdgeMode, dispatch),
   setGraphDefinition: bindActionCreators(GraphActions.setGraphDefinition, dispatch),
+  setGraphType: bindActionCreators(GraphToolbarActions.setGraphType, dispatch),
   setLayout: bindActionCreators(GraphActions.setLayout, dispatch),
   setNode: bindActionCreators(GraphActions.setNode, dispatch),
   setRankResult: bindActionCreators(GraphActions.setRankResult, dispatch),
