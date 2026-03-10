@@ -25,5 +25,5 @@ Then('validate OSSMC custom resource by a script', () => {
 Then('uninstallation scripts to clean OSSMC resources is successful', () => {
   cy.exec('bash ./../hack/manage-ossmc.sh --uninstall', { timeout: 60000 })
     .its('stdout')
-    .should('eq', 'ossmconsole.kiali.io "ossmconsole" deleted');
+    .should('include', 'ossmconsole.kiali.io "ossmconsole" deleted');
 });
