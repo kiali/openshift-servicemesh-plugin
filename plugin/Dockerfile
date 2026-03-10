@@ -2,7 +2,7 @@ FROM  registry.access.redhat.com/ubi9/nodejs-24 AS build
 
 USER root
 
-# Install and enable corepack to use Yarn 4
+# Install and enable corepack to use yarn
 RUN npm install -g corepack && corepack enable
 
 ADD . /usr/src/app
