@@ -27,7 +27,7 @@ WORKDIR $HOME
 RUN mkdir .cache
 ENV CYPRESS_CACHE_FOLDER=$HOME/.cache
 
-# Install and enable corepack to use Yarn 4
+# Install and enable corepack to use yarn
 RUN npm install -g corepack && corepack enable
 
 # Install Cypress dependencies.
