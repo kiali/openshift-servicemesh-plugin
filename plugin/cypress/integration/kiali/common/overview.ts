@@ -1,4 +1,4 @@
-import { After, Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
+import { After, Before, Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
 
 const APP_RATES_API_PATHNAME = '**/api/overview/metrics/apps/rates';
 const CONTROL_PLANES_API_PATHNAME = '**/api/mesh/controlplanes';
@@ -11,6 +11,14 @@ let didServiceInsightsRetry = false;
 let lastClickedServiceInsightsHref: string | undefined;
 let shouldWaitAppsCardRetry = false;
 let shouldWaitServiceInsightsRetry = false;
+
+Before(() => {
+  didAppsCardRetry = false;
+  didServiceInsightsRetry = false;
+  lastClickedServiceInsightsHref = undefined;
+  shouldWaitAppsCardRetry = false;
+  shouldWaitServiceInsightsRetry = false;
+});
 
 const istioConfigsWithNoValidations = {
   permissions: {},
@@ -355,6 +363,9 @@ function waitForUnhealthyClusters(retries: number): void {
   }
 
   cy.waitForReact();
+  // Wait for Clusters card to finish loading first (istio status API may be delayed when
+  // other overview cards, e.g. Data planes, are also loading).
+  getClustersCard().should($card => expect($card.text()).not.to.include('Fetching cluster data'), { timeout: 20000 });
   cy.get('body').then($body => {
     const $issues = $body.find('[data-test="clusters-issues"]');
     if ($issues.length > 0 && $issues.is(':visible')) {
@@ -392,6 +403,7 @@ function waitForHealthyClusters(retries: number): void {
   }
 
   cy.waitForReact();
+  getClustersCard().should($card => expect($card.text()).not.to.include('Fetching cluster data'), { timeout: 20000 });
   cy.get('body').then($body => {
     const $healthy = $body.find('[data-test="clusters-healthy"]');
     const $issues = $body.find('[data-test="clusters-issues"]');

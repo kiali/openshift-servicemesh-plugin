@@ -73,11 +73,6 @@ const labelNumberStyle = kialiStyle({
   fontSize: '1.5rem'
 });
 
-const labelStyle = kialiStyle({
-  marginTop: '0.5rem',
-  marginBottom: '0.5rem'
-});
-
 // Maximum number of items to show in the popover
 const MAX_POPOVER_ITEMS = 3;
 
@@ -85,17 +80,17 @@ const MAX_POPOVER_ITEMS = 3;
 const getHealthStatusLabel = (status?: HealthStatusId): string => {
   switch (status) {
     case DEGRADED.id:
-      return DEGRADED.name;
+      return t(DEGRADED.name);
     case FAILURE.id:
-      return FAILURE.name;
+      return t(FAILURE.name);
     case NOT_READY.id:
-      return NOT_READY.name;
+      return t(NOT_READY.name);
     case HEALTHY.id:
-      return HEALTHY.name;
+      return t(HEALTHY.name);
     case NA.id:
-      return 'n/a';
+      return t('n/a');
     default:
-      return status ?? t('Unknown');
+      return t(status ?? 'Unknown');
   }
 };
 
@@ -260,18 +255,14 @@ export const DataPlaneStats: React.FC = () => {
               <div className={labelGroupStyle}>
                 {ambient > 0 && (
                   <div className={labelItemStyle}>
-                    <span className={labelNumberStyle}>{ambient}</span>{' '}
-                    <Label variant="outline" className={labelStyle}>
-                      {t('Ambient')}
-                    </Label>
+                    <span className={labelNumberStyle}>{ambient}</span>
+                    <Label variant="outline">{t('Ambient')}</Label>
                   </div>
                 )}
                 {sidecar > 0 && (
                   <div className={labelItemStyle}>
-                    <span className={labelNumberStyle}>{sidecar}</span>{' '}
-                    <Label variant="outline" className={labelStyle}>
-                      {t('Sidecar')}
-                    </Label>
+                    <span className={labelNumberStyle}>{sidecar}</span>
+                    <Label variant="outline">{t('Sidecar')}</Label>
                   </div>
                 )}
               </div>
