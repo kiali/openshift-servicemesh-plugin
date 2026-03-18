@@ -11,6 +11,7 @@ import { IstioCertsInfoStateReducer } from 'reducers/IstioCertsInfoState';
 import { MetricsStatsStateReducer } from 'reducers/MetricsStatsState';
 import { TourStateReducer } from 'reducers/TourState';
 import { NamespaceStateReducer } from 'reducers/NamespaceState';
+import { NamespacesListStateReducer } from 'reducers/NamespacesListState';
 import { NotificationCenterReducer } from 'reducers/NotificationCenter';
 import { KialiAppAction } from 'actions/KialiAppAction';
 import { ClusterStateReducer } from 'reducers/ClusterState';
@@ -31,6 +32,7 @@ export default combineReducers<KialiAppState, KialiAppAction>({
   notificationCenter: NotificationCenterReducer,
   metricsStats: MetricsStatsStateReducer,
   namespaces: NamespaceStateReducer,
+  namespacesList: NamespacesListStateReducer,
   statusState: HelpDropdownStateReducer,
   tourState: TourStateReducer,
   tracingState: TracingStateReducer,
