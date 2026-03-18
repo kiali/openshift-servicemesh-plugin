@@ -50,7 +50,7 @@ import { namespaceMTLSStatusDescriptors } from '../MTls/NamespaceMTLSStatusDescr
 import { ControlPlaneBadge } from '../Badge/ControlPlaneBadge';
 import { DataPlaneBadge } from '../Badge/DataPlaneBadge';
 import { NotPartOfMeshBadge } from '../Badge/NotPartOfMeshBadge';
-import { isDataPlaneNamespace } from 'utils/NamespaceUtils';
+import { getNamespaceModeInfo, isDataPlaneNamespace } from 'utils/NamespaceUtils';
 
 const rendererInfoStyle = kialiStyle({
   marginBottom: '-0.125rem',
@@ -486,13 +486,19 @@ export const nsType: Renderer<NamespaceInfo> = (ns: NamespaceInfo) => {
 
   return (
     <Td role="gridcell" dataLabel="Type" key={`VirtuaItem_Type_${ns.name}`} style={{ verticalAlign: 'middle' }}>
-      {ns.isControlPlane ? (
-        <ControlPlaneBadge isAmbient={ns.isAmbient} />
-      ) : isDataPlane ? (
-        <DataPlaneBadge />
-      ) : (
-        <NotPartOfMeshBadge />
-      )}
+      {ns.isControlPlane ? <ControlPlaneBadge /> : isDataPlane ? <DataPlaneBadge /> : <NotPartOfMeshBadge />}
+    </Td>
+  );
+};
+
+export const nsMode: Renderer<NamespaceInfo> = (ns: NamespaceInfo) => {
+  const modeInfo = getNamespaceModeInfo(ns);
+
+  return (
+    <Td role="gridcell" dataLabel="Mode" key={`VirtuaItem_Mode_${ns.name}`} style={{ verticalAlign: 'middle' }}>
+      <PFLabel variant="outline" color={modeInfo.color} isCompact>
+        {t(modeInfo.displayText)}
+      </PFLabel>
     </Td>
   );
 };

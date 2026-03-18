@@ -63,7 +63,8 @@ const waitForBookinfoWaypointTrafficGeneratedInGraph = (
 ): void => {
   if (retryCount >= maxRetries) {
     throw new Error(
-      `Condition not met after ${maxRetries} retries (waitForBookinfoWaypointTrafficGeneratedInGraph, ambientTraffic=${ambientTraffic}, namespace=${targetNamespace}, lastEdgeCount=${lastEdgeCount}, expected>=${ambientTraffic === 'waypoint' ? 8 : 9
+      `Condition not met after ${maxRetries} retries (waitForBookinfoWaypointTrafficGeneratedInGraph, ambientTraffic=${ambientTraffic}, namespace=${targetNamespace}, lastEdgeCount=${lastEdgeCount}, expected>=${
+        ambientTraffic === 'waypoint' ? 8 : 9
       }, baseUrl=${Cypress.config('baseUrl')})`
     );
   }
@@ -150,7 +151,8 @@ const waitForWorkloadTracesInApi = (
 ): void => {
   if (retryCount >= maxRetries) {
     throw new Error(
-      `Waypoint traces not found after ${maxRetries} retries (namespace=${namespace}, workload=${workload} cluster=${clusterName ?? ''
+      `Waypoint traces not found after ${maxRetries} retries (namespace=${namespace}, workload=${workload} cluster=${
+        clusterName ?? ''
       }, baseUrl=${Cypress.config('baseUrl')})`
     );
   }
@@ -184,8 +186,9 @@ const waitForWorkloadTracesInApi = (
         name: 'waitForWorkloadTraces',
         message: `retry=${retryCount}/${maxRetries} url=${Cypress.config(
           'baseUrl'
-        )}/api/namespaces/${namespace}/workloads/${workload}/traces clusterName=${clusterName ?? ''} tracesCount=${Array.isArray(traces) ? traces.length : -1
-          } baseUrl=${Cypress.config('baseUrl')}`
+        )}/api/namespaces/${namespace}/workloads/${workload}/traces clusterName=${clusterName ?? ''} tracesCount=${
+          Array.isArray(traces) ? traces.length : -1
+        } baseUrl=${Cypress.config('baseUrl')}`
       });
     }
 
@@ -207,7 +210,8 @@ const waitForHealthyWaypoint = (name: string, namespace: string, cluster?: strin
   const wait = (retryCount: number, lastResponseSummary = ''): void => {
     if (retryCount >= maxRetries) {
       throw new Error(
-        `Condition not met after ${maxRetries} retries (waitForHealthyWaypoint name=${name} ns=${namespace} cluster=${cluster ?? ''
+        `Condition not met after ${maxRetries} retries (waitForHealthyWaypoint name=${name} ns=${namespace} cluster=${
+          cluster ?? ''
         }, baseUrl=${Cypress.config('baseUrl')}, url=${requestUrl}, lastResponse=${lastResponseSummary})`
       );
     }
@@ -221,8 +225,8 @@ const waitForHealthyWaypoint = (name: string, namespace: string, cluster?: strin
         responseBody === undefined
           ? 'undefined'
           : typeof responseBody === 'string'
-            ? responseBody
-            : JSON.stringify(responseBody);
+          ? responseBody
+          : JSON.stringify(responseBody);
       const responseBodyShort = responseBodyStr.length > 800 ? `${responseBodyStr.slice(0, 800)}...` : responseBodyStr;
 
       const workload = responseBody;
@@ -231,13 +235,14 @@ const waitForHealthyWaypoint = (name: string, namespace: string, cluster?: strin
       const proxySummary =
         podsLen > 0
           ? pods
-            .slice(0, 3)
-            .map(p => {
-              const ps = p?.proxyStatus ?? {};
-              return `${p?.name ?? 'pod'}(CDS=${ps.CDS ?? ''},EDS=${ps.EDS ?? ''},LDS=${ps.LDS ?? ''},RDS=${ps.RDS ?? ''
+              .slice(0, 3)
+              .map(p => {
+                const ps = p?.proxyStatus ?? {};
+                return `${p?.name ?? 'pod'}(CDS=${ps.CDS ?? ''},EDS=${ps.EDS ?? ''},LDS=${ps.LDS ?? ''},RDS=${
+                  ps.RDS ?? ''
                 })`;
-            })
-            .join(',')
+              })
+              .join(',')
           : 'no-pods';
 
       const responseSummary = `status=${response.status} fullUrl=${requestUrl} pods=${podsLen} proxy=${proxySummary} body=${responseBodyShort}`;
@@ -383,6 +388,12 @@ Then('the user sees the L7 {string} link', (waypoint: string) => {
 
 Then('the link for the waypoint {string} should redirect to a valid workload details', (waypoint: string) => {
   cy.get(`[data-test=waypoint-link]`).contains('a,button', waypoint).click({ force: true });
+  // Wait for navigation before asserting (avoid asserting on previous workload's card).
+  // OSSMC uses /deployments/<name>/ossmconsole; standalone Kiali uses /workloads/<name>.
+  cy.url().should(
+    'satisfy',
+    (url: string) => url.includes(`/workloads/${waypoint}`) || url.includes(`/deployments/${waypoint}/ossmconsole`)
+  );
   cy.get(`[data-test=workload-description-card]`).contains('h5', waypoint);
 });
 
@@ -481,11 +492,11 @@ Then('validates waypoint Info data for {string}', (type: string) => {
 When('the user validates the Ztunnel tab for the {string} namespace', (namespace: string) => {
   openTab('Ztunnel');
   cy.get('#ztunnel-details').should('be.visible').contains('Services').click();
-  cy.get('[role="grid"]').should('be.visible').get('[data-label="Service VIP"]');
+  cy.get('[role="grid"]').should('be.visible').get('[data-label="Service VIP"]').should('be.visible');
   cy.get('[role="grid"]').should('be.visible').get('[data-label=Waypoint]');
   cy.get('[role="grid"]').should('be.visible').get('[data-label=Namespace]').and('contain', 'bookinfo');
   cy.get('#ztunnel-details').should('be.visible').contains('Workloads').click();
-  cy.get('[role="grid"]').should('be.visible').get('[data-label="Pod Name"]');
+  cy.get('[role="grid"]').should('be.visible').get('[data-label="Pod Name"]').should('be.visible');
   cy.get('[role="grid"]').should('be.visible').get('[data-label=Node]');
   cy.get('[role="grid"]').should('be.visible').get('[data-label=Namespace]').and('contain', 'bookinfo');
   // Validate filters in the Namespace column
