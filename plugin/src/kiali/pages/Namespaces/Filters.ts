@@ -6,11 +6,11 @@ import {
   RunnableFilter,
   FilterValue
 } from '../../types/Filters';
-import { DEGRADED, FAILURE, HEALTHY, NA, NOT_READY } from '../../types/Health';
+import { DEGRADED, FAILURE, HEALTHY, NA, NOT_READY, statusFromString } from '../../types/Health';
 import { NamespaceInfo } from '../../types/NamespaceInfo';
 import { MTLSStatuses } from '../../types/TLSStatus';
 import { TextInputTypes } from '@patternfly/react-core';
-import { isDataPlaneNamespace } from 'utils/NamespaceUtils';
+import { getNamespaceMode, isDataPlaneNamespace } from 'utils/NamespaceUtils';
 
 export const nameFilter: RunnableFilter<NamespaceInfo> = {
   category: t('Namespace'),
@@ -183,37 +183,22 @@ export const healthFilter: RunnableFilter<NamespaceInfo> = {
   action: FILTER_ACTION_APPEND,
   filterValues: healthValues,
   run: (ns: NamespaceInfo, filters: ActiveFiltersInfo) => {
-    const { showInNotReady, showInError, showInWarning, showInSuccess, showInNA, noFilter } = summarizeHealthFilters(
+    const { noFilter, showInNotReady, showInError, showInWarning, showInSuccess, showInNA } = summarizeHealthFilters(
       filters
     );
 
     if (noFilter) {
       return true;
     }
-    // Namespaces page: check all three status types (statusApp, statusService, statusWorkload)
-    // Collect all statuses from the three types
-    const allStatuses = [ns.statusApp, ns.statusService, ns.statusWorkload].filter(s => s !== undefined);
 
-    if (allStatuses.length === 0) {
-      // No health information received for this namespace
-      return showInNA;
-    }
-
-    // Check if any status matches the filter criteria
-    const hasNotReady = allStatuses.some(s => s && (s.inNotReady?.length ?? 0) > 0);
-    const hasError = allStatuses.some(s => s && (s.inError?.length ?? 0) > 0);
-    const hasWarning = allStatuses.some(s => s && (s.inWarning?.length ?? 0) > 0);
-    const hasSuccess = allStatuses.some(s => s && (s.inSuccess?.length ?? 0) > 0);
-    const hasNotAvailable = allStatuses.some(s => s && (s.notAvailable?.length ?? 0) > 0);
-    const hasOnlySuccess = hasSuccess && !hasError && !hasWarning;
-    const hasOnlyNA = hasNotAvailable && !hasError && !hasWarning && !hasNotReady && !hasSuccess;
+    const worst = statusFromString(ns.worstStatus ?? 'NA');
 
     return (
-      (showInNotReady && hasNotReady) ||
-      (showInError && hasError) ||
-      (showInWarning && hasWarning) ||
-      (showInSuccess && hasOnlySuccess) ||
-      (showInNA && hasOnlyNA)
+      (showInError && worst === FAILURE) ||
+      (showInWarning && worst === DEGRADED) ||
+      (showInNotReady && worst === NOT_READY) ||
+      (showInSuccess && worst === HEALTHY) ||
+      (showInNA && worst === NA)
     );
   }
 };
@@ -242,10 +227,37 @@ export const categoryFilter: RunnableFilter<NamespaceInfo> = {
   }
 };
 
+const modeValues: FilterValue[] = [
+  { id: 'ambient', title: t('Ambient') },
+  { id: 'sidecar', title: t('Sidecar') },
+  { id: 'notApplicable', title: t('Not applicable') }
+];
+
+export const modeFilter: RunnableFilter<NamespaceInfo> = {
+  category: t('Mode'),
+  placeholder: t('Filter by Mode'),
+  filterType: AllFilterTypes.select,
+  action: FILTER_ACTION_APPEND,
+  filterValues: modeValues,
+  run: (ns: NamespaceInfo, filters: ActiveFiltersInfo) => {
+    if (filters.filters.length === 0) {
+      return true;
+    }
+
+    const mode = getNamespaceMode(ns);
+    const modeId = mode === 'ambient' ? 'ambient' : mode === 'sidecar' ? 'sidecar' : 'notApplicable';
+    const modeTitle = mode === 'ambient' ? t('Ambient') : mode === 'sidecar' ? t('Sidecar') : t('Not applicable');
+
+    // Filters in URL usually use titles; accept both id/title for stability.
+    return filters.filters.some(f => f.value === modeId || f.value === modeTitle);
+  }
+};
+
 export const availableFilters: RunnableFilter<NamespaceInfo>[] = [
   nameFilter,
   healthFilter,
   categoryFilter,
+  modeFilter,
   mtlsFilter,
   labelFilter
 ];

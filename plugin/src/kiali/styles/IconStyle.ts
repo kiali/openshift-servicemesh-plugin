@@ -4,5 +4,8 @@ import { kialiStyle } from 'styles/StyleUtils';
 // TODO replace by helpIconStyle when tooltip is migrated to popover
 export const infoStyle = kialiStyle({ marginLeft: '0.375rem' });
 
-// help icon placement that triggers popover on hover
-export const helpIconStyle = kialiStyle({ marginLeft: '0.5rem', cursor: 'pointer' });
+// question mark (help) icon in display menu: no background or border
+export const helpIconStyle = kialiStyle({
+  marginLeft: '0.375rem',
+  cursor: 'pointer'
+});

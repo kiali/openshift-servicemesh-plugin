@@ -1,6 +1,9 @@
 import * as React from 'react';
 import {
+  Button,
   Checkbox,
+  Label,
+  LabelGroup,
   TextInput,
   TextInputTypes,
   Toolbar,
@@ -34,7 +37,9 @@ import { PromisesRegistry } from '../../utils/CancelablePromises';
 import { kialiStyle } from 'styles/StyleUtils';
 import { LabelFilters } from './LabelFilter';
 import { arrayEquals } from 'utils/Common';
-import { labelFilter } from './CommonFilters';
+import { healthFilter, labelFilter } from './CommonFilters';
+import { statusFromString } from '../../types/Health';
+import { createIcon } from '../../config/KialiIcon';
 import { HistoryManager, location } from 'app/History';
 import { serverConfig } from 'config';
 import { PFColors } from '../Pf/PfColors';
@@ -46,7 +51,7 @@ import { classes } from 'typestyle';
 
 const toolbarStyle = kialiStyle({
   padding: 0,
-  rowGap: "var(--pf-t--global--spacer--md)",
+  rowGap: 'var(--pf-t--global--spacer--md)',
   $nest: {
     '& > .pf-v6-c-toolbar__content': {
       paddingLeft: 0
@@ -55,7 +60,7 @@ const toolbarStyle = kialiStyle({
 });
 
 const bottomPadding = kialiStyle({
-  paddingBottom: "var(--pf-t--global--spacer--md)"
+  paddingBottom: 'var(--pf-t--global--spacer--md)'
 });
 
 const formSelectStyle = kialiStyle({
@@ -83,6 +88,7 @@ type StatefulFiltersProps = ReduxProps & {
   onFilterChange: (active: ActiveFiltersInfo) => void;
   onToggleChange?: (active: ActiveTogglesInfo) => void;
   ref?: React.RefObject<StatefulFiltersComponent>;
+  rightToolbar?: React.ReactNode;
   toolbarClass?: string;
 };
 
@@ -538,7 +544,14 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
           <SelectList>
             {currentFilterType.filterValues.map(filter => (
               <SelectOption id={filter.id} key={filter.id} value={filter.id}>
-                {t(filter.title)}
+                {currentFilterType.category === healthFilter.category ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {createIcon(statusFromString(filter.id))}
+                    {t(filter.title)}
+                  </span>
+                ) : (
+                  t(filter.title)
+                )}
               </SelectOption>
             ))}
           </SelectList>
@@ -635,49 +648,35 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
         <Toolbar
           id="filter-selection"
           className={this.props.toolbarClass ? classes(toolbarStyle, this.props.toolbarClass) : toolbarStyle}
-          clearAllFilters={this.clearFilters}
         >
           {this.props.childrenFirst && this.renderChildren()}
           <ToolbarContent>
             <ToolbarGroup variant="filter-group">
-              {this.state.filterTypes.map((ft, i) => (
-                <ToolbarFilter
-                  key={`toolbar_filter-${ft.category}`}
-                  labels={activeFilters.filters
-                    .filter(af => af.category === ft.category)
-                    .map(af => ({
-                      key: af.value,
-                      node: t(af.value)
-                    }))}
-                  deleteLabel={this.removeFilter}
-                  categoryName={{ key: ft.category, name: t(ft.category) }}
+              <ToolbarFilter categoryName="">
+                <Select
+                  id="filter_select_type"
+                  onSelect={(_event, value) => this.selectFilterType(value as string)}
+                  onOpenChange={isFilterTypeOpen => this.setState({ isFilterTypeOpen })}
+                  toggle={filterTypeToggle}
+                  isOpen={this.state.isFilterTypeOpen}
+                  aria-label="Filter Select Type"
                 >
-                  {i === 0 && (
-                    <Select
-                      id="filter_select_type"
-                      onSelect={(_event, value) => this.selectFilterType(value as string)}
-                      onOpenChange={isFilterTypeOpen => this.setState({ isFilterTypeOpen })}
-                      toggle={filterTypeToggle}
-                      isOpen={this.state.isFilterTypeOpen}
-                      aria-label="Filter Select Type"
-                    >
-                      <SelectList>
-                        {this.state.filterTypes.map(option => (
-                          <SelectOption
-                            id={option.category}
-                            key={option.category}
-                            value={option.category}
-                            isSelected={option.category === currentFilterType.category}
-                          >
-                            {t(option.category)}
-                          </SelectOption>
-                        ))}
-                      </SelectList>
-                    </Select>
-                  )}
-                  {i === 0 && this.renderInput()}
-                </ToolbarFilter>
-              ))}
+                  <SelectList>
+                    {this.state.filterTypes.map(option => (
+                      <SelectOption
+                        id={option.category}
+                        key={option.category}
+                        value={option.category}
+                        isSelected={option.category === currentFilterType.category}
+                      >
+                        {t(option.category)}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
+                </Select>
+                {this.renderInput()}
+              </ToolbarFilter>
+              {this.props.rightToolbar && <ToolbarItem>{this.props.rightToolbar}</ToolbarItem>}
             </ToolbarGroup>
 
             <ToolbarGroup>
@@ -696,8 +695,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
                   </ToolbarItem>
                 ))}
             </ToolbarGroup>
-
-            {!this.props.childrenFirst && this.renderChildren()}
 
             {hasActiveFilters && (
               <ToolbarGroup>
@@ -739,7 +736,44 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
                 </ToolbarItem>
               </ToolbarGroup>
             )}
+
+            {!this.props.childrenFirst && this.renderChildren()}
           </ToolbarContent>
+
+          {activeFilters.filters.length > 0 && (
+            <ToolbarContent>
+              <ToolbarGroup>
+                <ToolbarItem>
+                  {this.state.filterTypes.map(ft => {
+                    const filtersForCategory = activeFilters.filters.filter(af => af.category === ft.category);
+                    if (filtersForCategory.length === 0) return null;
+                    return (
+                      <LabelGroup
+                        key={ft.category}
+                        categoryName={t(ft.category)}
+                        style={{ marginRight: 'var(--pf-t--global--spacer--md)' }}
+                      >
+                        {filtersForCategory.map(af => (
+                          <Label
+                            key={af.value}
+                            onClose={() => this.removeFilter(ft.category, af.value)}
+                            closeBtnProps={{ 'aria-label': `Close ${af.value}` }}
+                          >
+                            {t(af.value)}
+                          </Label>
+                        ))}
+                      </LabelGroup>
+                    );
+                  })}
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button variant="link" onClick={this.clearFilters}>
+                    {t('Clear all filters')}
+                  </Button>
+                </ToolbarItem>
+              </ToolbarGroup>
+            </ToolbarContent>
+          )}
         </Toolbar>
         <div className={bottomPadding} />
       </>

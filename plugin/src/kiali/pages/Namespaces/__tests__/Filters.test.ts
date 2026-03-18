@@ -1,5 +1,5 @@
 import { categoryFilter, healthFilter } from '../Filters';
-import { NA } from 'types/Health';
+import { DEGRADED, FAILURE, HEALTHY, NA, NOT_READY } from 'types/Health';
 
 describe('Namespaces Filters', () => {
   describe('categoryFilter', () => {
@@ -14,32 +14,56 @@ describe('Namespaces Filters', () => {
   });
 
   describe('healthFilter', () => {
-    it('includes "No health information" option (NA)', () => {
+    it('includes n/a option (NA)', () => {
       expect(healthFilter.filterValues?.some(v => v.id === NA.id)).toBeTruthy();
     });
 
-    it('matches NA when namespace has no status fields', () => {
+    it('matches NA when worstStatus is NA', () => {
+      const ns: any = { name: 'ns1', worstStatus: 'NA' };
+      const filters: any = { filters: [{ value: NA.name }] };
+      expect(healthFilter.run(ns, filters)).toBe(true);
+    });
+
+    it('matches NA when worstStatus is undefined', () => {
       const ns: any = { name: 'ns1' };
       const filters: any = { filters: [{ value: NA.name }] };
       expect(healthFilter.run(ns, filters)).toBe(true);
     });
 
-    it('matches NA when status is only notAvailable across all types', () => {
-      const ns: any = {
-        name: 'ns1',
-        statusApp: { inError: [], inWarning: [], inNotReady: [], inSuccess: [], notAvailable: ['a'] }
-      };
-      const filters: any = { filters: [{ value: NA.name }] };
+    it('matches Failure when worstStatus is Failure', () => {
+      const ns: any = { name: 'ns1', worstStatus: 'Failure' };
+      const filters: any = { filters: [{ value: FAILURE.name }] };
       expect(healthFilter.run(ns, filters)).toBe(true);
     });
 
-    it('does not match NA when there are errors', () => {
-      const ns: any = {
-        name: 'ns1',
-        statusApp: { inError: ['a'], inWarning: [], inNotReady: [], inSuccess: [], notAvailable: [] }
-      };
+    it('matches Degraded when worstStatus is Degraded', () => {
+      const ns: any = { name: 'ns1', worstStatus: 'Degraded' };
+      const filters: any = { filters: [{ value: DEGRADED.name }] };
+      expect(healthFilter.run(ns, filters)).toBe(true);
+    });
+
+    it('matches Healthy when worstStatus is Healthy', () => {
+      const ns: any = { name: 'ns1', worstStatus: 'Healthy' };
+      const filters: any = { filters: [{ value: HEALTHY.name }] };
+      expect(healthFilter.run(ns, filters)).toBe(true);
+    });
+
+    it('matches Not Ready when worstStatus is Not Ready', () => {
+      const ns: any = { name: 'ns1', worstStatus: 'Not Ready' };
+      const filters: any = { filters: [{ value: NOT_READY.name }] };
+      expect(healthFilter.run(ns, filters)).toBe(true);
+    });
+
+    it('does not match NA when worstStatus is Failure', () => {
+      const ns: any = { name: 'ns1', worstStatus: 'Failure' };
       const filters: any = { filters: [{ value: NA.name }] };
       expect(healthFilter.run(ns, filters)).toBe(false);
+    });
+
+    it('matches when multiple filters are selected', () => {
+      const ns: any = { name: 'ns1', worstStatus: 'Degraded' };
+      const filters: any = { filters: [{ value: FAILURE.name }, { value: DEGRADED.name }] };
+      expect(healthFilter.run(ns, filters)).toBe(true);
     });
   });
 });

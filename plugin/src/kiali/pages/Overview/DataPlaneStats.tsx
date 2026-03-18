@@ -20,7 +20,7 @@ import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
 import { useSelector } from 'react-redux';
 import { durationSelector } from 'store/Selectors';
 import { DurationInSeconds } from 'types/Common';
-import { DEGRADED, FAILURE, HEALTHY, HealthStatusId, NA, NOT_READY } from 'types/Health';
+import { DEGRADED, FAILURE, HEALTHY, HealthStatusId, NA, NOT_READY, statusFromString } from 'types/Health';
 import { NamespaceWithHealthStatus, useDataPlanes } from 'hooks/dataPlanes';
 import {
   cardBodyStyle,
@@ -36,7 +36,7 @@ import {
   statsContainerStyle
 } from './OverviewStyles';
 import { classes } from 'typestyle';
-import { buildDataPlanesUrl, buildUnhealthyDataPlanesUrl } from './LinkBuilder';
+import { buildDataPlanesByModeUrl, buildDataPlanesUrl, buildUnhealthyDataPlanesUrl } from './LinkBuilder';
 import { OverviewCardErrorState, OverviewCardLoadingState } from './OverviewCardState';
 
 const namespaceContainerStyle = kialiStyle({
@@ -88,7 +88,7 @@ const getHealthStatusLabel = (status?: HealthStatusId): string => {
     case HEALTHY.id:
       return t(HEALTHY.name);
     case NA.id:
-      return t('n/a');
+      return NA.name;
     default:
       return t(status ?? 'Unknown');
   }
@@ -131,10 +131,16 @@ export const DataPlaneStats: React.FC = () => {
             <PFBadge badge={PFBadges.Namespace} size="sm" />
             {ns.name}
           </span>
-          <span className={popoverItemStatusStyle}>{getHealthStatusLabel(ns.healthStatus)}</span>
+          <span
+            className={popoverItemStatusStyle}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+          >
+            {ns.healthStatus && createIcon(statusFromString(ns.healthStatus))}
+            {getHealthStatusLabel(ns.healthStatus)}
+          </span>
         </div>
       ))}
-      {viewAll && list.length > MAX_POPOVER_ITEMS && (
+      {viewAll && (
         <div className={popoverFooterStyle}>
           <KialiLink
             to={viewAll.to}
@@ -240,7 +246,7 @@ export const DataPlaneStats: React.FC = () => {
                   }
                   bodyContent={popoverContentFor(namespacesNA, {
                     text: t('View all n/a Data planes'),
-                    to: buildDataPlanesUrl(NA.id as HealthStatusId)
+                    to: buildDataPlanesUrl(NA.name as HealthStatusId)
                   })}
                 >
                   <div className={classes(statItemStyle, clickableStyle)} data-test="data-planes-na">
@@ -255,13 +261,27 @@ export const DataPlaneStats: React.FC = () => {
               <div className={labelGroupStyle}>
                 {ambient > 0 && (
                   <div className={labelItemStyle}>
-                    <span className={labelNumberStyle}>{ambient}</span>
+                    <KialiLink
+                      to={buildDataPlanesByModeUrl('ambient')}
+                      onClick={() => FilterSelected.resetFilters()}
+                      className={classes(linkStyle, labelNumberStyle)}
+                      dataTest="data-planes-ambient"
+                    >
+                      {ambient}
+                    </KialiLink>
                     <Label variant="outline">{t('Ambient')}</Label>
                   </div>
                 )}
                 {sidecar > 0 && (
                   <div className={labelItemStyle}>
-                    <span className={labelNumberStyle}>{sidecar}</span>
+                    <KialiLink
+                      to={buildDataPlanesByModeUrl('sidecar')}
+                      onClick={() => FilterSelected.resetFilters()}
+                      className={classes(linkStyle, labelNumberStyle)}
+                      dataTest="data-planes-sidecar"
+                    >
+                      {sidecar}
+                    </KialiLink>
                     <Label variant="outline">{t('Sidecar')}</Label>
                   </div>
                 )}

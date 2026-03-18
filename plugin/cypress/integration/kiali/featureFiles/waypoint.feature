@@ -122,6 +122,8 @@ Feature: Kiali Waypoint related features
     And user selects the "bookinfo" namespace
     Then the "K8sGateway" object in "bookinfo" namespace with "waypoint" name Istio Config is valid
 
+  # TODO: Remove tag once namespace actions exist in OSSMC
+  @skip-ossmc
   Scenario: [Namespaces] Namespace is labeled with the waypoint labels
     Given user is at the "namespaces" list page
     When user selects filter "Namespace"
@@ -364,7 +366,7 @@ Feature: Kiali Waypoint related features
   Scenario: [Waypoint details] The waypoint details for a waypoint for workload are valid
     Given user is at the details page for the "workload" "waypoint-forworkload/echo-server" located in the "" cluster
     And the user sees the L7 "bwaypoint" link
-    And the link for the waypoint "waypoint" should redirect to a valid workload details
+    And the link for the waypoint "bwaypoint" should redirect to a valid workload details
     When the user goes to the "Waypoint" tab
     Then user goes to the waypoint "Workloads" subtab
     And validates Services data with "1" rows and "echo-server" workload, "waypoint-forworkload" namespace, "workload" label for, "pfbadge-W" badge
@@ -419,6 +421,8 @@ Feature: Kiali Waypoint related features
     Then 4 edges appear in the graph
     Then user "closes" traffic menu
 
+  # TODO: Remove skip-ossmc tag once the namespace page is created in OSSMC
+  @skip-ossmc
   Scenario: [Namespaces] Add to Ambient in the test-sidecar namespace
     Given user is at the "namespaces" list page
     When user selects filter "Namespace"
