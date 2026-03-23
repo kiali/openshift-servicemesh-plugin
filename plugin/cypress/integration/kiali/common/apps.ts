@@ -13,7 +13,7 @@ import {
   getColWithRowText,
   hasAtLeastOneClass
 } from './table';
-import { openTab } from './transition';
+import { openTab, waitForKialiApiReady } from './transition';
 import { enableKialiFeature, HEALTH_CACHE_CONFIG } from './kiali-config';
 
 // Type definition for health cache metrics API response
@@ -26,6 +26,29 @@ interface HealthCacheMetrics {
 const APP = 'details';
 const CLUSTER1_CONTEXT = Cypress.env('CLUSTER1_CONTEXT');
 const CLUSTER2_CONTEXT = Cypress.env('CLUSTER2_CONTEXT');
+
+Given('a healthy application in the cluster', function () {
+  this.targetNamespace = 'bookinfo';
+  this.targetApp = 'details';
+});
+
+// When you use this, you need to annotate test by @sleep-app-scaleup-after to revert this change after the test
+Given('an idle sleep application in the cluster', function () {
+  this.targetNamespace = 'sleep';
+  this.targetApp = 'sleep';
+
+  cy.exec('kubectl scale -n sleep --replicas=0 deployment/sleep');
+});
+
+Given('a failing application in the mesh', function () {
+  this.targetNamespace = 'alpha';
+  this.targetApp = 'v-server';
+});
+
+Given('a degraded application in the mesh', function () {
+  this.targetNamespace = 'alpha';
+  this.targetApp = 'b-client';
+});
 
 Then('user sees trace information', () => {
   openTab('Traces');
@@ -232,6 +255,7 @@ Then('user should see no duplicate namespaces', () => {
 // Health cache metrics test steps
 Given('health cache is enabled', () => {
   enableKialiFeature(HEALTH_CACHE_CONFIG);
+  waitForKialiApiReady();
 });
 
 Given('health cache metrics are recorded', () => {

@@ -1,10 +1,7 @@
 import { When, Then } from '@badeball/cypress-cucumber-preprocessor';
 import { getCellsForCol } from './table';
 import { clusterParameterExists } from './navigation';
-
-const openTab = (tab: string): void => {
-  cy.get('#basic-tabs').should('exist').contains(tab).click();
-};
+import { openTab } from './transition';
 
 const openEnvoyTab = (tab: string): void => {
   cy.get('#envoy-details').should('exist').contains(tab).click();
@@ -126,7 +123,7 @@ Then('the user sees clusters expected information', () => {
 Then('the user sees listeners expected information', () => {
   cy.get('tbody').within(() => {
     cy.contains('td', 'PassthroughCluster').should('not.exist');
-    cy.contains('td', 'Route: 9090');
+    cy.contains('td', /Route:.*9090/);
   });
 });
 
