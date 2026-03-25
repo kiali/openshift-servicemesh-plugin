@@ -27,8 +27,11 @@ WORKDIR $HOME
 RUN mkdir .cache
 ENV CYPRESS_CACHE_FOLDER=$HOME/.cache
 
+# Install and enable corepack to use yarn
+RUN npm install -g corepack && corepack enable
+
 # Install Cypress dependencies.
-RUN yarn install --frozen-lockfile
+RUN yarn install --immutable
 
 # Set required permissions for OpenShift usage
 RUN chgrp -R 0 $HOME && \
