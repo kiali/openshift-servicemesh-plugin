@@ -3,6 +3,10 @@ plugin/.yarn
 plugin/node_modules
 plugin/package-lock.json
 
+plugin/npm-debug.log*
+plugin/yarn-debug.log*
+plugin/yarn-error.log*
+
 # IDE
 plugin/.idea
 plugin/.vscode
@@ -19,7 +23,6 @@ plugin/.env.local
 plugin/.env.development.local
 plugin/.env.test.local
 plugin/.env.production.local
-plugin/npm-debug.log*
 
 # compiled patternfly assets
 plugin/src/kiali/**/*.css
