@@ -20,7 +20,7 @@ clean-plugin:
 
 ## build-plugin: Builds the plugin.
 build-plugin:
-	cd ${PLUGIN_DIR} && yarn install --network-timeout 7200000 && yarn build
+	cd ${PLUGIN_DIR} && yarn install && yarn build
 
 ## build-plugin-image: Builds the plugin and its container image.
 build-plugin-image:
