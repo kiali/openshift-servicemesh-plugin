@@ -16,6 +16,7 @@ These are the things you need before developers can start working with the OpenS
 2. Kiali Server deployed in the cluster
 3. `oc` client available in the path
 4. `podman` or `docker` client available in the path
+5. [NodeJS](https://nodejs.org) (>= 24) with [corepack](https://nodejs.org/api/corepack.html) enabled (`corepack enable`). The exact Yarn version is pinned in `plugin/package.json` via the `packageManager` field.
 
 ## Quickly Deploy the OSSM Console
 
@@ -50,7 +51,9 @@ make prepare-dev-env -e KIALI_URL=https://<your-kiali-server-host>
 
 ### Preparing your local dev environment manually
 
-Alternatively, you can manually set up your dev environment outside of make by performing these steps:
+Alternatively, you can manually set up your dev environment outside of make by performing these steps.
+
+> **Note:** Yarn is managed via [corepack](https://nodejs.org/api/corepack.html). Run `corepack enable` once before using `yarn`. The exact Yarn version is pinned in `plugin/package.json` via the `packageManager` field.
 
 ```sh
 cd plugin
