@@ -1,4 +1,4 @@
-import { After, Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
+import { AfterAll, Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
 import { colExists, getColWithRowText } from './table';
 import { ensureKialiFinishedLoading } from './transition';
 import { getGVKTypeString } from 'utils/IstioConfigUtils';
@@ -735,22 +735,6 @@ Then(
   }
 );
 
-After({ tags: '@istio-page and @crd-validation' }, () => {
-  cy.exec('kubectl delete PeerAuthentications,DestinationRules,AuthorizationPolicies,Sidecars --all --all-namespaces', {
-    failOnNonZeroExit: false
-  });
-
-  cy.exec('kubectl delete gateways.networking.istio.io,Gateways,VirtualServices foo foo-route bar -n bookinfo', {
-    failOnNonZeroExit: false
-  });
-  cy.exec('kubectl delete gateways.networking.istio.io,Gateways,VirtualServices foo foo-route bar -n sleep', {
-    failOnNonZeroExit: false
-  });
-  cy.exec('kubectl delete gateways.networking.istio.io,Gateways,VirtualServices foo foo-route bar -n istio-system', {
-    failOnNonZeroExit: false
-  });
-});
-
 Then('user sees all the Istio Config toggles', () => {
   cy.get('[data-test="toggle-configuration"]').should('be.checked');
   colExists('Configuration', true);
@@ -764,3 +748,17 @@ Then(
       .should('exist');
   }
 );
+
+// KIA0104 and similar scenarios delete VirtualService/bookinfo; re-apply sample networking once when
+// istio_config.feature finishes (step defs are global, so gate on basename — not wizard_istio_config.feature).
+AfterAll(() => {
+  const specPath = (Cypress.spec?.relative ?? Cypress.spec?.name ?? '').replace(/\\/g, '/');
+  const specBasename = specPath.split('/').pop() ?? '';
+  if (specBasename !== 'istio_config.feature') {
+    return;
+  }
+  cy.exec(
+    'sh -c \'ISTIO_DIR=$(ls -dt1 ../_output/istio-* 2>/dev/null | head -n1); [ -z "$ISTIO_DIR" ] && exit 0; NET="$ISTIO_DIR/samples/bookinfo/networking/bookinfo-gateway.yaml"; [ -f "$NET" ] || exit 0; kubectl apply -n bookinfo -f "$NET"\'',
+    { failOnNonZeroExit: false }
+  );
+});
