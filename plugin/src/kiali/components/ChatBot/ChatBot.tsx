@@ -80,6 +80,7 @@ export const ChatBotComponent: React.FC<ChatBotProps> = (props: ChatBotProps) =>
   const defaultProvider = props.providers.filter(provider => provider.name === props.defaultProvider)[0];
   const defaultModel = defaultProvider.models.filter(model => model.name === defaultProvider.defaultModel)[0];
   const {
+    addBotMessage,
     handleSend,
     alertMessage,
     botMessage,
@@ -320,6 +321,7 @@ export const ChatBotComponent: React.FC<ChatBotProps> = (props: ChatBotProps) =>
         isRound={true}
         closedToggleIcon={() => <ClosedToggleIcon style={{ height: '2.5rem', width: '2.5rem' }} />}
         style={chatbotToggleStyle}
+        data-test="ai-chatbot-toggle"
       />
       <Chatbot isVisible={chatbotVisible} displayMode={displayMode}>
         <ChatbotConversationHistoryNav
@@ -381,6 +383,7 @@ export const ChatBotComponent: React.FC<ChatBotProps> = (props: ChatBotProps) =>
                 />
               )}
               <ChatBotContent
+                addBotMessage={addBotMessage}
                 username={props.username}
                 displayMode={displayMode}
                 alertMessage={alertMessage}

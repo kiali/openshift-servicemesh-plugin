@@ -11,6 +11,7 @@ import { ChatResponse } from '../types/Chatbot';
 import { GraphDefinition, GraphElementsQuery, NodeParamsType, NodeType } from '../types/Graph';
 import {
   AppHealth,
+  HealthStatusId,
   NamespaceAppHealth,
   NamespaceHealth,
   NamespaceHealthQuery,
@@ -1577,7 +1578,15 @@ export const getOverviewAppRates = (): Promise<
 export const getOverviewServiceLatencies = (
   params: { limit?: number; rateInterval?: string } = {}
 ): Promise<
-  ApiResponse<{ services: Array<{ cluster: string; latency: number; namespace: string; serviceName: string }> }>
+  ApiResponse<{
+    services: Array<{
+      cluster: string;
+      healthStatus?: HealthStatusId;
+      latency: number;
+      namespace: string;
+      serviceName: string;
+    }>;
+  }>
 > => {
   return newRequest(HTTP_VERBS.GET, urls.overviewServiceLatencies, params, {});
 };
@@ -1589,6 +1598,7 @@ export const getOverviewServiceRates = (
     services: Array<{
       cluster: string;
       errorRate: number;
+      healthStatus?: HealthStatusId;
       namespace: string;
       requestRate: number;
       serviceName: string;
@@ -1596,4 +1606,20 @@ export const getOverviewServiceRates = (
   }>
 > => {
   return newRequest(HTTP_VERBS.GET, urls.overviewServiceRates, params, {});
+};
+
+export const getOverviewServiceThroughput = (
+  params: { limit?: number; rateInterval?: string } = {}
+): Promise<
+  ApiResponse<{
+    services: Array<{
+      cluster: string;
+      healthStatus?: HealthStatusId;
+      namespace: string;
+      serviceName: string;
+      tcpRate: number;
+    }>;
+  }>
+> => {
+  return newRequest(HTTP_VERBS.GET, urls.overviewServiceThroughput, params, {});
 };
