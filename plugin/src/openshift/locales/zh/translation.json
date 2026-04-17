@@ -1,5 +1,6 @@
 {
   "An error occurred. Please try again.": "发生错误。请重试。",
+  "Applications": "Applications",
   "Configuration": "配置",
   "Create": "创建",
   "Istio Config": "Istio配置",
@@ -9,6 +10,7 @@
   "Mesh": "Mesh",
   "Name": "名称",
   "Namespace": "命名空间",
+  "Namespaces": "Namespaces",
   "Overview": "概述",
   "Reload page": "重新加载页面",
   "Service detail error": "Service detail error",
