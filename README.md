@@ -29,21 +29,23 @@ You can undeploy/disable the plugin using `make undeploy-plugin`.
 
 ## How to Run the Plugin for Local Development
 
-> :warning: To avoid CORS errors when running in a local dev environment, you must disable CORS security in your browser. If using Chrome, start it using `--disable-web-security --user-data-dir="<some directory here>"` or install a CORS plugin such as [CORS Unblock](https://chrome.google.com/webstore/detail/cors-unblock/lfhmikememgdcahcdlaciloancbhjino) and use it to disable CORS security.
-
 > :warning: For this local dev environment to work, you _must_ deploy the Kiali Server with `auth.strategy` set to `anonymous`.
+
+### How the plugin proxy works
+
+The OpenShift Console has a built-in plugin proxy (`BRIDGE_PLUGIN_PROXY`) that forwards API requests from the browser to the Kiali backend server-side. This means the browser only communicates with the console (same origin), avoiding CORS issues entirely. The `KIALI_URL` environment variable configures where the proxy sends requests. If omitted, it defaults to `http://localhost:20001`.
 
 ### Preparing your local dev environment using `make`
 
-There is a single make target to help you set up your dev environment. When you run this make target, you must provide the `KIALI_URL` environment variable - it must be set to either (a) the Kiali Server public endpoint URL or (b) the literal value `route`. If you set it to `route`, the make target will attempt to auto-discover the Kiali Server URL by examining the Kiali Route. This auto-discovery will only work if you deployed Kiali in the cluster via the operator or helm chart. If you are running the Kiali Server outside of the cluster on your local machine, you have to specify the URL yourself directly in the value of `KIALI_URL`.
+The `make prepare-dev-env` target installs dependencies, copies the plugin config, and prints the commands to start the plugin and console with the correct `KIALI_URL`.
 
-To set up your dev environment using make, run this command:
+Set `KIALI_URL` to either a URL or the literal value `route` to auto-discover it from the Kiali OpenShift Route (requires the operator or helm chart deployment):
 
 ```sh
 make prepare-dev-env -e KIALI_URL=route
 ```
 
-or, if auto-discovery will not work, specify the URL directly like this:
+Or specify the URL directly:
 
 ```sh
 make prepare-dev-env -e KIALI_URL=https://<your-kiali-server-host>
@@ -51,16 +53,13 @@ make prepare-dev-env -e KIALI_URL=https://<your-kiali-server-host>
 
 ### Preparing your local dev environment manually
 
-Alternatively, you can manually set up your dev environment outside of make by performing these steps.
+Alternatively, you can perform the same steps manually (this is what `make prepare-dev-env` does under the hood):
 
 > **Note:** Yarn is managed via [corepack](https://nodejs.org/api/corepack.html). Run `corepack enable` once before using `yarn`. The exact Yarn version is pinned in `plugin/package.json` via the `packageManager` field.
 
 ```sh
 cd plugin
 yarn install
-
-# If necessary, make sure you change the "API_PROXY" value in .env.development so it points to your Kiali Server URL
-# vi .env.development
 
 # Copy the plugin-config.json file into the "dist" folder to emulate the ConfigMap in a local environment
 cp plugin-config.json dist
@@ -73,23 +72,23 @@ cp plugin-config.json dist
 
 Once your dev environment is prepared, run the plugin and the OpenShift Console in separate command line windows:
 
-In one command line window, execute:
+In one command line window, start the plugin:
 
 ```sh
 cd plugin
 yarn run start
 ```
 
-At this point, the plugin will start and be accessible at http://localhost:9001
+The plugin will be accessible at http://localhost:9001
 
-In a second command line window, execute:
+In a second command line window, start the OpenShift Console:
 
 ```sh
 cd plugin
-yarn run start-console
+KIALI_URL=https://<your-kiali-server-host> yarn run start-console
 ```
 
-At this point, the OpenShift Console will start and be accessible at http://localhost:9000
+The `KIALI_URL` environment variable tells `start-console.sh` where to proxy API requests. If omitted, it defaults to `http://localhost:20001`. The OpenShift Console will be accessible at http://localhost:9000
 
 ### Running with Mock Server (No Kiali Backend Required)
 
@@ -104,12 +103,7 @@ This is useful for:
 
 **Setup:**
 
-1. Configure `.env.development` to use the mock server:
-```sh
-API_PROXY=http://localhost:3001
-```
-
-2. Run in three separate terminals:
+Run in three separate terminals:
 
 ```sh
 # Terminal 1: Start the mock server
@@ -120,12 +114,12 @@ yarn mock-server
 cd plugin
 yarn start
 
-# Terminal 3: Start the OpenShift Console
+# Terminal 3: Start the OpenShift Console (point KIALI_URL to the mock server)
 cd plugin
-yarn start-console
+KIALI_URL=http://localhost:3001 yarn start-console
 ```
 
-3. Open http://localhost:9000
+Open http://localhost:9000
 
 The mock server provides simulated API responses using handlers defined in `src/kiali/mocks/handlers/`.
 
@@ -141,7 +135,7 @@ Example with custom port and scenario:
 MOCK_SERVER_PORT=4000 REACT_APP_MOCK_SCENARIO=unhealthy yarn mock-server
 ```
 
-Remember to update `API_PROXY` in `.env.development` if you change the port.
+Remember to update `KIALI_URL` when starting the console if you change the mock server port.
 
 Available scenarios are defined in `src/kiali/mocks/scenarios.ts`.
 
@@ -149,7 +143,7 @@ Available scenarios are defined in `src/kiali/mocks/scenarios.ts`.
 
 For testing the distributed tracing integration locally, assign to distributedTracingPluginConfig in the getDistributedTracingPluginManifestPromise in the KialiController the following data:
 
-```sh
+```json
   distributedTracingPluginConfig = {
     "name": "distributed-tracing-console-plugin",
     "version": "0.0.1",
@@ -189,7 +183,7 @@ That will help to validate if the logic and the URL are right, but in the localh
 
 For testing the Netobserv integration locally, assign to netobservPluginConfig in the getNetobservPluginManifestPromise in the KialiController.go, the following data:
 
-```sh
+```json
   netobservPluginConfig = {
     "name": "network-observability-console-plugin",
     "version": "0.0.1",
@@ -225,8 +219,6 @@ For testing the Netobserv integration locally, assign to netobservPluginConfig i
 
 That will help to validate if the logic and the URL are right, but in the localhost plugin it won't load the Network Observability plugin page.
 
-````
-
 ## Operator
 
 The OpenShift Service Mesh Console will be installed by end users using the Kiali Operator.
@@ -251,7 +243,7 @@ To build and release the plugin, you can run this command either manually or ins
 
 ```sh
 make -e CONTAINER_VERSION=v0.1.0 build-plugin-image push-plugin-image
-````
+```
 
 Or for a multi-arch container:
 

@@ -20,9 +20,6 @@ plugin/dist
 # misc
 plugin/.DS_Store
 plugin/.env.local
-plugin/.env.development.local
-plugin/.env.test.local
-plugin/.env.production.local
 
 # compiled patternfly assets
 plugin/src/kiali/**/*.css

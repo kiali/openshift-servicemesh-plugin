@@ -81,14 +81,11 @@ prepare-git:
 prepare-dev-env: .determine-kiali-url
 	@cd ${PLUGIN_DIR} && yarn install
 	@cp ${PLUGIN_DIR}/plugin-config.json ${PLUGIN_DIR}/dist
-	@sed -i -r 's|^API_PROXY=(.*)|API_PROXY=${KIALI_URL_TO_USE}|' ${PLUGIN_DIR}/.env.development
-	@echo
-	@echo "Using KIALI_URL=${KIALI_URL_TO_USE}"
 	@echo
 	@echo "To run the plugin and the OpenShift Console in your local dev environment, do the following:"
 	@echo "1. cd ${PLUGIN_DIR}"
 	@echo "2. Start the plugin: yarn run start"
-	@echo "3. In a second command line window, start the OpenShift Console: yarn run start-console"
+	@echo "3. In a second command line window, start the OpenShift Console: KIALI_URL=${KIALI_URL_TO_USE} yarn run start-console"
 
 # Ensure "docker buildx" is available and enabled. For more details, see: https://github.com/docker/buildx/blob/master/README.md
 # This does a few things:
