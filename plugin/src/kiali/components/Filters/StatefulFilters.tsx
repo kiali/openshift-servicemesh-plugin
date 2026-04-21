@@ -19,7 +19,8 @@ import {
   TextInputGroup,
   TextInputGroupMain,
   ToolbarLabelGroup,
-  ToolbarLabel
+  ToolbarLabel,
+  Tooltip
 } from '@patternfly/react-core';
 import {
   ActiveFilter,
@@ -48,10 +49,12 @@ import { connect } from 'react-redux';
 import { KialiAppState } from 'store/Store';
 import { languageSelector } from 'store/Selectors';
 import { classes } from 'typestyle';
+import { PFSpacer } from 'styles/PfSpacer';
+import { ColumnsIcon } from '@patternfly/react-icons';
 
 const toolbarStyle = kialiStyle({
   padding: 0,
-  rowGap: 'var(--pf-t--global--spacer--md)',
+  rowGap: PFSpacer.md,
   $nest: {
     '& > .pf-v6-c-toolbar__content': {
       paddingLeft: 0
@@ -60,7 +63,7 @@ const toolbarStyle = kialiStyle({
 });
 
 const bottomPadding = kialiStyle({
-  paddingBottom: 'var(--pf-t--global--spacer--md)'
+  paddingBottom: PFSpacer.md
 });
 
 const formSelectStyle = kialiStyle({
@@ -83,12 +86,16 @@ type StatefulFiltersProps = ReduxProps & {
   children?: React.ReactNode;
   childrenFirst?: boolean;
   cleanState?: boolean; // For shared components, state is not saved in the URL
+  /** When true, show the standard "Manage columns" control; requires {@link onColumnManagementClick}. */
+  columnManagement?: boolean;
+  /** `data-test` on the manage-columns button (per-page, e.g. namespaces list). */
+  columnManagementButtonTestId?: string;
   initialFilters: FilterType[];
   initialToggles?: ToggleType[];
+  onColumnManagementClick?: () => void;
   onFilterChange: (active: ActiveFiltersInfo) => void;
   onToggleChange?: (active: ActiveTogglesInfo) => void;
   ref?: React.RefObject<StatefulFiltersComponent>;
-  rightToolbar?: React.ReactNode;
   toolbarClass?: string;
 };
 
@@ -676,7 +683,20 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
                 </Select>
                 {this.renderInput()}
               </ToolbarFilter>
-              {this.props.rightToolbar && <ToolbarItem>{this.props.rightToolbar}</ToolbarItem>}
+              {this.props.columnManagement && this.props.onColumnManagementClick && (
+                <ToolbarItem>
+                  <Tooltip content={t('Manage columns')}>
+                    <Button
+                      variant="plain"
+                      aria-label={t('Manage columns')}
+                      data-test={this.props.columnManagementButtonTestId ?? 'manage-columns-toolbar'}
+                      onClick={this.props.onColumnManagementClick}
+                    >
+                      <ColumnsIcon />
+                    </Button>
+                  </Tooltip>
+                </ToolbarItem>
+              )}
             </ToolbarGroup>
 
             <ToolbarGroup>
