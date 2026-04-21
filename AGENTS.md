@@ -332,7 +332,7 @@ make cluster-status
 Requires an OpenShift cluster with Kiali deployed. Kiali must use `auth.strategy: anonymous` for local dev.
 
 ```bash
-# 1. Prepare environment (sets API_PROXY, installs deps)
+# 1. Prepare environment (installs deps, prints KIALI_URL commands)
 make prepare-dev-env -e KIALI_URL=route
 # Or with explicit URL:
 make prepare-dev-env -e KIALI_URL=https://<kiali-host>
@@ -344,24 +344,21 @@ cd plugin && yarn start
 cd plugin && yarn start-console
 ```
 
-Open http://localhost:9000 in your browser. You may need to disable CORS (Chrome flag or extension).
+Open http://localhost:9000 in your browser.
 
 ### Local Development (with Mock Server, no cluster)
 
 No cluster required. Uses MSW handlers to mock the Kiali API.
 
 ```bash
-# 1. Set API_PROXY in plugin/.env.development:
-#    API_PROXY=http://localhost:3001
-
-# 2. Start mock server (terminal 1)
+# 1. Start mock server (terminal 1)
 cd plugin && yarn mock-server
 
-# 3. Start plugin dev server (terminal 2)
+# 2. Start plugin dev server (terminal 2)
 cd plugin && yarn start
 
-# 4. Start console bridge (terminal 3)
-cd plugin && yarn start-console
+# 3. Start console bridge pointing to the mock server (terminal 3)
+cd plugin && KIALI_URL=http://localhost:3001 yarn start-console
 ```
 
 **Mock server configuration:**
@@ -559,7 +556,7 @@ Check that `tsconfig.json` path aliases match. OSSMC uses aliases like `store/..
 
 - Ensure `oc login` is active and the cluster token is valid
 - Ensure the console bridge binary is present (downloaded by `yarn start-console` on first run)
-- Check that the `API_PROXY` value in `plugin/.env.development` points to an accessible Kiali instance
+- Check that the `KIALI_URL` environment variable points to an accessible Kiali instance when running `yarn start-console`
 
 ### Pre-commit hook reformats files
 
