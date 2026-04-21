@@ -2,6 +2,53 @@ import { Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
 import { checkHealthIndicatorInTable, checkHealthStatusInTable, colExists } from './table';
 import { ensureKialiFinishedLoading } from './transition';
 
+// Helper function to wait for a workload to reach a specific health status
+const waitForWorkloadHealthStatus = (
+  namespace: string,
+  workload: string,
+  expectedStatus: string,
+  timeoutMs = 90000
+): Cypress.Chainable => {
+  const startTime = Date.now();
+  const pollInterval = 5000; // Check every 5 seconds
+
+  const checkHealth = (): Cypress.Chainable => {
+    return cy
+      .request({
+        url: `api/namespaces/${namespace}/workloads/${workload}?health=true`,
+        failOnStatusCode: false
+      })
+      .then(response => {
+        if (response.status !== 200) {
+          cy.log(`Health API returned ${response.status}, retrying...`);
+          if (Date.now() - startTime < timeoutMs) {
+            cy.wait(pollInterval);
+            return checkHealth();
+          } else {
+            throw new Error(`Timeout waiting for workload ${workload} health API to be available`);
+          }
+        }
+
+        const actualStatus = response.body?.health?.status?.status;
+        cy.log(`Workload ${workload} health status: ${actualStatus} (expecting ${expectedStatus})`);
+
+        if (actualStatus === expectedStatus) {
+          cy.log(`✓ Workload ${workload} reached ${expectedStatus} status`);
+          return cy.wrap(response.body);
+        } else if (Date.now() - startTime < timeoutMs) {
+          cy.wait(pollInterval);
+          return checkHealth();
+        } else {
+          throw new Error(
+            `Timeout after ${timeoutMs}ms: Workload ${workload} in namespace ${namespace} never reached ${expectedStatus} status. Last status: ${actualStatus}`
+          );
+        }
+      });
+  };
+
+  return checkHealth();
+};
+
 const activateFilter = (state: string): void => {
   //decided to pause the refresh, because I'm intercepting the very same request that is used for the timed refresh
   cy.get('button#workload-list-refresh-toggle').click();
@@ -35,11 +82,17 @@ Given('an idle sleep workload in the cluster', function () {
 Given('a failing workload in the mesh', function () {
   this.targetNamespace = 'alpha';
   this.targetWorkload = 'v-server';
+
+  // Wait for the workload to actually be in Failure state before proceeding
+  waitForWorkloadHealthStatus(this.targetNamespace, this.targetWorkload, 'Failure');
 });
 
 Given('a degraded workload in the mesh', function () {
   this.targetNamespace = 'alpha';
   this.targetWorkload = 'b-client';
+
+  // Wait for the workload to actually be in Degraded state before proceeding
+  waitForWorkloadHealthStatus(this.targetNamespace, this.targetWorkload, 'Degraded');
 });
 
 When('user filters for workload type {string}', (workloadType: string) => {

@@ -277,14 +277,16 @@ export const checkHealthIndicatorInTable = (
         const found = $row.find(`span.icon-${healthStatus}`).length > 0;
 
         if (found) {
-          cy.wrap($row).find(`span.icon-${healthStatus}`).should('exist');
+          // Re-query from the live DOM to avoid assertions on stale row snapshots.
+          cy.getBySel(rowSelector).find(`span.icon-${healthStatus}`).should('exist');
         } else if (retriesLeft > 0) {
           cy.getBySel('refresh-button').click();
           ensureKialiFinishedLoading();
           cy.wait(10000);
           checkHealth(retriesLeft - 1);
         } else {
-          cy.wrap($row).find(`span.icon-${healthStatus}`).should('exist');
+          // Give one final long retry window after the last refresh attempt.
+          cy.getBySel(rowSelector).find(`span.icon-${healthStatus}`, { timeout: 60000 }).should('exist');
         }
       });
     };

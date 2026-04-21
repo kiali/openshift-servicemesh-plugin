@@ -1,5 +1,14 @@
 import { Then, When } from '@badeball/cypress-cucumber-preprocessor';
-import { autoNavigatePayload, mockPayload, multipleActionsPayload, singleActionPayload } from './ai_chatbot_mocks';
+import {
+  autoNavigatePayload,
+  fileCreateYamlPayload,
+  fileDeleteYamlPayload,
+  filePatchYamlPayload,
+  mockPayload,
+  multipleActionsPayload,
+  singleActionPayload
+} from './ai_chatbot_mocks';
+import { ensureKialiFinishedLoading } from './transition';
 
 const CHATBOT_TOGGLE = '[data-test="ai-chatbot-toggle"]';
 const CHATBOT_VISIBLE = '.pf-chatbot.pf-chatbot--visible';
@@ -12,6 +21,16 @@ const CHATBOT_SOURCES = '.pf-chatbot__source';
 const CHATBOT_ALWAYS_NAVIGATE_SWITCH = '[data-testid="chatbot-always-navigate-switch"]';
 const CHATBOT_NAVIGATION_ACTION = '[data-testid="chatbot-navigation-action"]';
 const CHATBOT_NAVIGATION_ACTION_LINK = '[data-testid^="chatbot-navigation-action-link-"]';
+/** PF6 / chatbot: file chip is a clickable button; truncated text omits the extension (e.g. vs-ai-cypress.yaml → vs-ai-cypress). */
+const CHATBOT_FILE_ATTACHMENT_CONTENTS = '.pf-chatbot__file-label-contents';
+const CHATBOT_YAML_MODAL = '[data-ouia-component-id="chatbot-yaml-modal"]';
+const AI_CHATBOT_TEST_VS = 'vs-ai-cypress';
+/** Istio Config list page uses VirtualList rows: data-test="VirtualItem_Ns{ns}_VirtualService_{name}" or VirtualItem_Cluster*_*Ns{ns}_VirtualService_{name}". */
+const AI_CHATBOT_ISTIO_NS = 'bookinfo';
+
+function virtualIstioConfigRowSelector(namespace: string, kind: string, name: string): string {
+  return `[data-test*="_Ns${namespace}_${kind}_${name}"]`;
+}
 
 let lastResponseAlias = '';
 
@@ -129,4 +148,124 @@ Then('the navigation actions container should not be visible', () => {
 
 Then('the URL should contain {string}', (path: string) => {
   cy.url().should('include', path);
+});
+
+When('user sends a message with YAML create action {string}', (message: string) => {
+  sendMessageWithMockedResponse(message, fileCreateYamlPayload, 'chatAIYamlResponse');
+});
+
+When('user sends a message with YAML patch action {string}', (message: string) => {
+  sendMessageWithMockedResponse(message, filePatchYamlPayload, 'chatAIYamlResponse');
+});
+
+When('user sends a message with YAML delete action {string}', (message: string) => {
+  sendMessageWithMockedResponse(message, fileDeleteYamlPayload, 'chatAIYamlResponse');
+});
+
+When('user opens the chatbot YAML attachment {string}', (fileName: string) => {
+  const baseName = fileName.lastIndexOf('.') > 0 ? fileName.slice(0, fileName.lastIndexOf('.')) : fileName;
+  cy.get(CHATBOT_VISIBLE, { timeout: 10000 })
+    .contains(CHATBOT_FILE_ATTACHMENT_CONTENTS, baseName)
+    .parents('button.pf-m-clickable')
+    .first()
+    .click();
+});
+
+When('user confirms YAML create in the chatbot modal', () => {
+  cy.intercept('POST', '**/api/namespaces/bookinfo/istio/networking.istio.io/v1/VirtualService', req => {
+    req.continue();
+  }).as('istioYamlApply');
+  cy.get(CHATBOT_YAML_MODAL).should('be.visible');
+  cy.get(CHATBOT_YAML_MODAL).within(() => {
+    cy.contains('button', 'Create').click();
+  });
+});
+
+When('user confirms YAML patch in the chatbot modal', () => {
+  cy.intercept(
+    'PATCH',
+    '**/api/namespaces/bookinfo/istio/networking.istio.io/v1/VirtualService/vs-ai-cypress*',
+    req => {
+      req.continue();
+    }
+  ).as('istioYamlApply');
+  cy.get(CHATBOT_YAML_MODAL).should('be.visible');
+  cy.get(CHATBOT_YAML_MODAL).within(() => {
+    cy.contains('button', 'Patch').click();
+  });
+});
+
+When('user confirms YAML delete in the chatbot modal', () => {
+  cy.intercept(
+    'DELETE',
+    '**/api/namespaces/bookinfo/istio/networking.istio.io/v1/VirtualService/vs-ai-cypress*',
+    req => {
+      req.continue();
+    }
+  ).as('istioYamlApply');
+  cy.get(CHATBOT_YAML_MODAL).should('be.visible');
+  cy.get(CHATBOT_YAML_MODAL).within(() => {
+    cy.contains('button', 'Delete').click();
+  });
+});
+
+Then('the Istio YAML apply request should succeed with method {string}', (method: string) => {
+  cy.wait('@istioYamlApply', { timeout: 10000 }).then(interception => {
+    expect(interception.response?.statusCode).to.eq(200);
+    expect(interception.request.method).to.eq(method);
+  });
+});
+
+Then('the AI chatbot should show YAML apply success for {string}', (operation: string) => {
+  const label: Record<string, string> = {
+    create: 'Successfully created',
+    patch: 'Successfully patched',
+    delete: 'Successfully deleted'
+  };
+  cy.get(CHATBOT_VISIBLE, { timeout: 10000 }).should('contain.text', label[operation]);
+  cy.get(CHATBOT_VISIBLE).should('contain.text', AI_CHATBOT_TEST_VS);
+});
+
+When('user views the Istio Config list for namespaces {string}', (namespaces: string) => {
+  cy.visit({
+    url: `${Cypress.config('baseUrl')}/console/istio`,
+    qs: { refresh: '0', namespaces }
+  });
+  ensureKialiFinishedLoading();
+  cy.get('[data-test="refresh-button"]').click();
+  ensureKialiFinishedLoading();
+});
+
+When(
+  'user opens Istio Config details for VirtualService {string} in namespace {string}',
+  (vsName: string, namespace: string) => {
+    cy.visit({
+      url: `${Cypress.config(
+        'baseUrl'
+      )}/console/namespaces/${namespace}/istio/networking.istio.io/v1/VirtualService/${vsName}`,
+      qs: { refresh: '0' }
+    });
+    ensureKialiFinishedLoading();
+  }
+);
+
+Then('user sees VirtualService {string} in the Istio Config list', (name: string) => {
+  const rowSel = virtualIstioConfigRowSelector(AI_CHATBOT_ISTIO_NS, 'VirtualService', name);
+  cy.get(rowSel, { timeout: 45000 }).should('exist').and('be.visible');
+});
+
+Then('user does not see VirtualService {string} in the Istio Config list', (name: string) => {
+  const rowSel = virtualIstioConfigRowSelector(AI_CHATBOT_ISTIO_NS, 'VirtualService', name);
+  cy.get('[data-test="refresh-button"]').click();
+  ensureKialiFinishedLoading();
+  cy.get(rowSel).should('not.exist');
+});
+
+Then('the Istio config YAML editor should contain {string}', (snippet: string) => {
+  cy.get('#ace-editor', { timeout: 30000 }).should('be.visible');
+  cy.window().then(win => {
+    const w = win as Window & { ace?: { edit: (id: string) => { getValue: () => string } } };
+    const editor = w.ace?.edit('ace-editor');
+    expect(editor?.getValue() ?? '').to.include(snippet);
+  });
 });

@@ -309,7 +309,8 @@ export const mergeStatus = (s1: Status, s2: Status): Status => {
 
 export const ascendingThresholdCheck = (value: number, thresholds: Thresholds): ThresholdStatus => {
   if (value > 0) {
-    if (value >= thresholds.failure) {
+    // failure === 0 means "unset" / no failure tier (same as business/health_calculator.go applyThresholds).
+    if (thresholds.failure > 0 && value >= thresholds.failure) {
       return {
         value: value,
         status: FAILURE,
@@ -425,16 +426,11 @@ interface HealthContext {
   rateInterval: number;
 }
 
+const emptyRequestHealth = (): RequestHealth => ({ inbound: {}, outbound: {}, healthAnnotations: {} });
+
 export class ServiceHealth extends Health {
   public static fromJson = (ns: string, srv: string, json: any, ctx: HealthContext): ServiceHealth =>
-    new ServiceHealth(ns, srv, json.requests, ctx, json.status);
-
-  // Factory method for list pages that only need backend-calculated status
-  public static fromBackendStatus = (json: any): ServiceHealth => {
-    const health = new ServiceHealth('', '', { inbound: {}, outbound: {}, healthAnnotations: {} }, { rateInterval: 0 });
-    health.backendStatus = json.status;
-    return health;
-  };
+    new ServiceHealth(ns, srv, json.requests ?? emptyRequestHealth(), ctx, json.status);
 
   private static computeItems(ns: string, srv: string, requests: RequestHealth, ctx: HealthContext): HealthConfig {
     const items: HealthItem[] = [];
@@ -494,14 +490,7 @@ export class ServiceHealth extends Health {
 
 export class AppHealth extends Health {
   public static fromJson = (ns: string, app: string, json: any, ctx: HealthContext): AppHealth =>
-    new AppHealth(ns, app, json.workloadStatuses, json.requests, ctx, json.status);
-
-  // Factory method for list pages that only need backend-calculated status
-  public static fromBackendStatus = (json: any): AppHealth => {
-    const health = new AppHealth('', '', [], { inbound: {}, outbound: {}, healthAnnotations: {} }, { rateInterval: 0 });
-    health.backendStatus = json.status;
-    return health;
-  };
+    new AppHealth(ns, app, json.workloadStatuses ?? [], json.requests ?? emptyRequestHealth(), ctx, json.status);
 
   private static computeItems(
     ns: string,
@@ -580,29 +569,24 @@ export class AppHealth extends Health {
   }
 }
 
+const emptyWorkloadStatus = (): WorkloadStatus => ({
+  name: '',
+  desiredReplicas: 0,
+  currentReplicas: 0,
+  availableReplicas: 0,
+  syncedProxies: -1
+});
+
 export class WorkloadHealth extends Health {
   public static fromJson = (ns: string, workload: string, json: any, ctx: HealthContext): WorkloadHealth =>
-    new WorkloadHealth(ns, workload, json.workloadStatus, json.requests, ctx, json.status);
-
-  // Factory method for list pages that only need backend-calculated status
-  public static fromBackendStatus = (json: any): WorkloadHealth => {
-    const emptyWorkloadStatus = {
-      name: '',
-      desiredReplicas: 0,
-      currentReplicas: 0,
-      availableReplicas: 0,
-      syncedProxies: -1
-    };
-    const health = new WorkloadHealth(
-      '',
-      '',
-      emptyWorkloadStatus,
-      { inbound: {}, outbound: {}, healthAnnotations: {} },
-      { rateInterval: 0 }
+    new WorkloadHealth(
+      ns,
+      workload,
+      json.workloadStatus ?? emptyWorkloadStatus(),
+      json.requests ?? emptyRequestHealth(),
+      ctx,
+      json.status
     );
-    health.backendStatus = json.status;
-    return health;
-  };
 
   private static computeItems(
     ns: string,

@@ -2,34 +2,29 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { KialiAppState } from '../../store/Store';
 import {
-  durationSelector,
   languageSelector,
   meshWideMTLSStatusSelector,
   minTLSVersionSelector,
   refreshIntervalSelector
 } from '../../store/Selectors';
-import { DurationInSeconds, IntervalInMilliseconds, TimeInMilliseconds } from 'types/Common';
+import { IntervalInMilliseconds, TimeInMilliseconds } from 'types/Common';
 import { NamespaceInfo } from '../../types/NamespaceInfo';
 import { SortField } from '../../types/SortFilters';
 import { PromisesRegistry } from '../../utils/CancelablePromises';
 import { RenderContent } from '../../components/Nav/Page';
 import { DefaultSecondaryMasthead } from '../../components/DefaultSecondaryMasthead/DefaultSecondaryMasthead';
 import { Refresh } from '../../components/Refresh/Refresh';
+import { HealthComputeDurationMastheadToolbar } from 'components/Time/HealthComputeDurationMastheadToolbar';
 import { VirtualList } from '../../components/VirtualList/VirtualList';
 import { NamespaceAction, NamespaceActions } from './NamespaceActions';
 import { FilterSelected, StatefulFilters, StatefulFiltersRef } from '../../components/Filters/StatefulFilters';
-import {
-  isCurrentSortAscending,
-  currentSortField,
-  runFilters,
-  currentDuration
-} from '../../components/FilterList/FilterHelper';
+import { isCurrentSortAscending, currentSortField, runFilters } from '../../components/FilterList/FilterHelper';
 import { HistoryManager, URLParam } from '../../app/History';
 import * as API from '../../services/Api';
 import { sortFields, sortFunc } from './Sorts';
 import { availableFilters, nameFilter } from './Filters';
-import { Button, EmptyState, EmptyStateBody, EmptyStateVariant, Tooltip } from '@patternfly/react-core';
-import { ColumnsIcon, CubesIcon, SearchIcon } from '@patternfly/react-icons';
+import { EmptyState, EmptyStateBody, EmptyStateVariant } from '@patternfly/react-core';
+import { CubesIcon, SearchIcon } from '@patternfly/react-icons';
 import { isMultiCluster } from '../../config';
 import { addDanger } from '../../utils/AlertUtils';
 import { arrayEquals } from '../../utils/Common';
@@ -57,8 +52,12 @@ import { gvkType, IstioConfigList } from 'types/IstioConfigList';
 import { getGVKTypeString } from '../../utils/IstioConfigUtils';
 import { serverConfig } from '../../config';
 import { fetchClusterNamespacesHealth } from '../../services/NamespaceHealth';
+import { healthComputeDurationValidSeconds } from 'utils/HealthComputeDuration';
 import { config as virtualListConfig } from '../../components/VirtualList/Config';
-import { ColumnManagementModal, ColumnManagementModalColumn } from '@patternfly/react-component-groups';
+import {
+  ColumnManagementModalColumn,
+  ListColumnManagementModal
+} from '../../components/Filters/ListColumnManagementModal';
 import { ManagedColumn } from '../../components/VirtualList/ManagedColumnTypes';
 import { NamespacesListActions } from '../../actions/NamespacesListActions';
 
@@ -95,7 +94,6 @@ type State = {
 
 type ReduxStateProps = {
   columnOrder: string[];
-  duration: DurationInSeconds;
   externalServices: any[];
   hiddenColumnIds: string[];
   istioAPIEnabled: boolean;
@@ -117,7 +115,7 @@ type NamespacesProps = ReduxStateProps &
   };
 
 export class NamespacesPageComponent extends React.Component<NamespacesProps, State> {
-  private sFNamespacesToolbar: StatefulFiltersRef = React.createRef();
+  private sFStatefulFilters: StatefulFiltersRef = React.createRef();
   private promises = new PromisesRegistry();
 
   // Grafana promise is only invoked by componentDidMount() no need to repeat it on componentDidUpdate()
@@ -127,9 +125,9 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
   private kioskNamespacesAction = (
     showType: Show,
     namespace: string,
-    duration: DurationInSeconds,
     refreshInterval: IntervalInMilliseconds
   ): void => {
+    const duration = healthComputeDurationValidSeconds();
     // For GRAPH and ISTIO_CONFIG, use the existing kiosk action
     // Convert Show enum from Namespaces to the one expected by kiosk action
     if (showType === Show.GRAPH || showType === Show.ISTIO_CONFIG) {
@@ -153,7 +151,7 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
       default:
         return;
     }
-    showInParent += `&duration=${duration}&refresh=${refreshInterval}`;
+    showInParent += `&duration=${String(duration)}&refresh=${refreshInterval}`;
 
     // Use the same sendParentMessage logic from KioskActions
     const targetOrigin = store.getState().globalState.kiosk;
@@ -185,6 +183,20 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
     this.fetchGrafanaInfo();
     this.fetchPersesInfo();
     if (this.props.refreshInterval !== RefreshIntervalManual && HistoryManager.getRefresh() !== RefreshIntervalManual) {
+      this.load();
+    }
+  }
+
+  componentDidUpdate(prevProps: NamespacesProps): void {
+    const refreshChanged =
+      this.props.lastRefreshAt !== prevProps.lastRefreshAt ||
+      (this.props.refreshInterval !== RefreshIntervalManual &&
+        (prevProps.navCollapse !== this.props.navCollapse ||
+          (prevProps.refreshInterval !== this.props.refreshInterval &&
+            (this.props.refreshInterval !== RefreshIntervalPause ||
+              prevProps.refreshInterval === RefreshIntervalManual))));
+
+    if (refreshChanged) {
       this.load();
     }
   }
@@ -230,7 +242,7 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
     return virtualListConfig.namespaces.columns
       .filter(c => c.title && c.title.trim().length > 0)
       .map(c => {
-        const id = c.title.toLowerCase();
+        const id = (c.id ?? c.name.toLowerCase()).toLowerCase();
         return {
           id,
           title: c.title,
@@ -258,7 +270,14 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
     }));
   };
 
-  /** Columns in the format expected by PatternFly ColumnManagementModal */
+  private resetNamespaceColumnsToDefault = (): void => {
+    this.props.dispatch(NamespacesListActions.setColumnOrder([]));
+    this.props.dispatch(NamespacesListActions.setHiddenColumns([]));
+    HistoryManager.deleteParam(URLParam.NAMESPACES_COLUMN_ORDER);
+    HistoryManager.deleteParam(URLParam.NAMESPACES_HIDDEN_COLUMNS);
+  };
+
+  /** Columns in the format expected by {@link ListColumnManagementModal} */
   private getAppliedColumnsForModal = (): ColumnManagementModalColumn[] => {
     return this.getManagedColumns().map(c => ({
       key: c.id,
@@ -268,19 +287,6 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
       isUntoggleable: c.id === 'namespace'
     }));
   };
-
-  componentDidUpdate(prevProps: NamespacesProps): void {
-    if (
-      this.props.lastRefreshAt !== prevProps.lastRefreshAt ||
-      (this.props.refreshInterval !== RefreshIntervalManual &&
-        (prevProps.navCollapse !== this.props.navCollapse ||
-          (prevProps.refreshInterval !== this.props.refreshInterval &&
-            (this.props.refreshInterval !== RefreshIntervalPause ||
-              prevProps.refreshInterval === RefreshIntervalManual))))
-    ) {
-      this.load();
-    }
-  }
 
   componentWillUnmount(): void {
     this.promises.cancelAll();
@@ -366,7 +372,6 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
   };
 
   fetchHealth = (isAscending: boolean, sortField: SortField<NamespaceInfo>): void => {
-    const duration = currentDuration();
     const uniqueClusters = new Set<string>();
 
     this.state.namespaces.forEach(namespace => {
@@ -377,9 +382,7 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
 
     uniqueClusters.forEach(cluster => {
       this.promises
-        .registerChained('health', undefined, () =>
-          this.fetchHealthForCluster(this.state.namespaces, cluster, duration)
-        )
+        .registerChained('health', undefined, () => this.fetchHealthForCluster(this.state.namespaces, cluster))
         .then(() => {
           this.setState(prevState => {
             let newNamespaces = prevState.namespaces.slice();
@@ -394,17 +397,12 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
     });
   };
 
-  fetchHealthForCluster = async (
-    namespaces: NamespaceInfo[],
-    cluster: string,
-    duration: DurationInSeconds
-  ): Promise<void> => {
+  fetchHealthForCluster = async (namespaces: NamespaceInfo[], cluster: string): Promise<void> => {
     try {
       // Filter namespaces for this cluster
       const clusterNamespaces = namespaces.filter(ns => ns.cluster === cluster);
       const healthByNamespace = await fetchClusterNamespacesHealth(
         clusterNamespaces.map(ns => ns.name),
-        duration,
         cluster
       );
 
@@ -725,15 +723,13 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
                 isGroup: true,
                 isSeparator: false,
                 title: 'Graph',
-                action: (ns: string) =>
-                  this.kioskNamespacesAction(Show.GRAPH, ns, this.props.duration, this.props.refreshInterval)
+                action: (ns: string) => this.kioskNamespacesAction(Show.GRAPH, ns, this.props.refreshInterval)
               },
               {
                 isGroup: true,
                 isSeparator: false,
                 title: 'Istio Config',
-                action: (ns: string) =>
-                  this.kioskNamespacesAction(Show.ISTIO_CONFIG, ns, this.props.duration, this.props.refreshInterval)
+                action: (ns: string) => this.kioskNamespacesAction(Show.ISTIO_CONFIG, ns, this.props.refreshInterval)
               }
             ]
           }
@@ -1094,7 +1090,7 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
 
     if (destination) {
       if (isParentKiosk(this.props.kiosk)) {
-        this.kioskNamespacesAction(showType, namespace, this.props.duration, this.props.refreshInterval);
+        this.kioskNamespacesAction(showType, namespace, this.props.refreshInterval);
       } else {
         router.navigate(destination);
       }
@@ -1145,12 +1141,17 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
     }
     const userHidden = this.props.hiddenColumnIds;
     const allHiddenColumns = hiddenColumns.concat(userHidden);
+    const healthListDuration = healthComputeDurationValidSeconds();
 
     return (
       <>
         <DefaultSecondaryMasthead
           hideNamespaceSelector={true}
-          rightToolbar={<Refresh id="namespaces-list-refresh" disabled={false} manageURL={true} />}
+          rightToolbar={
+            <HealthComputeDurationMastheadToolbar>
+              <Refresh id="namespaces-list-refresh" disabled={false} manageURL={true} />
+            </HealthComputeDurationMastheadToolbar>
+          }
         />
         <RenderContent>
           <VirtualList
@@ -1159,55 +1160,49 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
             refreshInterval={this.props.refreshInterval}
             rows={filteredNamespaces}
             sort={this.sort}
-            statefulProps={this.sFNamespacesToolbar}
+            statefulProps={this.sFStatefulFilters}
             actions={namespaceActions}
             columnOrder={this.props.columnOrder}
             hiddenColumns={allHiddenColumns}
             type="namespaces"
           >
             <StatefulFilters
+              columnManagement={true}
+              columnManagementButtonTestId="namespaces-manage-columns"
               initialFilters={availableFilters}
+              onColumnManagementClick={() => this.setState({ showColumnManagement: true })}
               onFilterChange={this.onChange}
-              ref={this.sFNamespacesToolbar}
-              rightToolbar={
-                <Tooltip content={t('Manage columns')}>
-                  <Button
-                    variant="plain"
-                    aria-label={t('Manage columns')}
-                    data-test="namespaces-manage-columns"
-                    onClick={() => this.setState({ showColumnManagement: true })}
-                  >
-                    <ColumnsIcon />
-                  </Button>
-                </Tooltip>
-              }
+              ref={this.sFStatefulFilters}
             />
           </VirtualList>
         </RenderContent>
 
-        <ColumnManagementModal
+        <ListColumnManagementModal
           appliedColumns={this.getAppliedColumnsForModal()}
           applyColumns={newColumns => {
-            const orderedIds = newColumns.map(c => c.key);
             const hiddenIds = newColumns.filter(c => !c.isShown).map(c => c.key);
+            const orderedIds = newColumns.map(c => c.key);
             this.props.dispatch(NamespacesListActions.setColumnOrder(orderedIds));
-            this.props.dispatch(NamespacesListActions.setHiddenColumns(hiddenIds));
             if (orderedIds.length > 0) {
               HistoryManager.setParam(URLParam.NAMESPACES_COLUMN_ORDER, orderedIds.join(','));
             } else {
               HistoryManager.deleteParam(URLParam.NAMESPACES_COLUMN_ORDER);
             }
+
+            this.props.dispatch(NamespacesListActions.setHiddenColumns(hiddenIds));
             if (hiddenIds.length > 0) {
               HistoryManager.setParam(URLParam.NAMESPACES_HIDDEN_COLUMNS, hiddenIds.join(','));
             } else {
               HistoryManager.deleteParam(URLParam.NAMESPACES_HIDDEN_COLUMNS);
             }
+
             this.setState({ showColumnManagement: false });
           }}
           description={t('Selected categories will be displayed in the table. Drag and drop to reorder columns.')}
           enableDragDrop={true}
           isOpen={this.state.showColumnManagement}
           onClose={() => this.setState({ showColumnManagement: false })}
+          onResetToDefault={this.resetNamespaceColumnsToDefault}
           title={t('Manage columns')}
         />
 
@@ -1225,7 +1220,7 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
               ns => ns.name === this.state.nsTarget && ns.cluster === this.state.clusterTarget
             )[0]
           }
-          duration={this.props.duration}
+          duration={healthListDuration}
           load={this.onChange}
         />
       </>
@@ -1235,7 +1230,6 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
 
 const mapStateToProps = (state: KialiAppState): ReduxStateProps => ({
   columnOrder: state.namespacesList.columnOrder,
-  duration: durationSelector(state),
   externalServices: state.statusState.externalServices,
   hiddenColumnIds: state.namespacesList.hiddenColumnIds,
   istioAPIEnabled: state.statusState.istioEnvironment.istioAPIEnabled,

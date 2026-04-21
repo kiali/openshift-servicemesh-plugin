@@ -13,7 +13,7 @@ import {
   getColWithRowText,
   hasAtLeastOneClass
 } from './table';
-import { openTab } from './transition';
+import { openTab, waitForKialiApiReady } from './transition';
 import { enableKialiFeature, HEALTH_CACHE_CONFIG } from './kiali-config';
 
 // Type definition for health cache metrics API response
@@ -26,6 +26,53 @@ interface HealthCacheMetrics {
 const APP = 'details';
 const CLUSTER1_CONTEXT = Cypress.env('CLUSTER1_CONTEXT');
 const CLUSTER2_CONTEXT = Cypress.env('CLUSTER2_CONTEXT');
+
+// Helper function to wait for an app to reach a specific health status
+const waitForAppHealthStatus = (
+  namespace: string,
+  app: string,
+  expectedStatus: string,
+  timeoutMs = 90000
+): Cypress.Chainable => {
+  const startTime = Date.now();
+  const pollInterval = 5000; // Check every 5 seconds
+
+  const checkHealth = (): Cypress.Chainable => {
+    return cy
+      .request({
+        url: `api/namespaces/${namespace}/apps/${app}?health=true`,
+        failOnStatusCode: false
+      })
+      .then(response => {
+        if (response.status !== 200) {
+          cy.log(`Health API returned ${response.status}, retrying...`);
+          if (Date.now() - startTime < timeoutMs) {
+            cy.wait(pollInterval);
+            return checkHealth();
+          } else {
+            throw new Error(`Timeout waiting for app ${app} health API to be available`);
+          }
+        }
+
+        const actualStatus = response.body?.health?.status?.status;
+        cy.log(`App ${app} health status: ${actualStatus} (expecting ${expectedStatus})`);
+
+        if (actualStatus === expectedStatus) {
+          cy.log(`✓ App ${app} reached ${expectedStatus} status`);
+          return cy.wrap(response.body);
+        } else if (Date.now() - startTime < timeoutMs) {
+          cy.wait(pollInterval);
+          return checkHealth();
+        } else {
+          throw new Error(
+            `Timeout after ${timeoutMs}ms: App ${app} in namespace ${namespace} never reached ${expectedStatus} status. Last status: ${actualStatus}`
+          );
+        }
+      });
+  };
+
+  return checkHealth();
+};
 
 Given('a healthy application in the cluster', function () {
   this.targetNamespace = 'bookinfo';
@@ -43,11 +90,17 @@ Given('an idle sleep application in the cluster', function () {
 Given('a failing application in the mesh', function () {
   this.targetNamespace = 'alpha';
   this.targetApp = 'v-server';
+
+  // Wait for the app to actually be in Failure state before proceeding
+  waitForAppHealthStatus(this.targetNamespace, this.targetApp, 'Failure');
 });
 
 Given('a degraded application in the mesh', function () {
   this.targetNamespace = 'alpha';
   this.targetApp = 'b-client';
+
+  // Wait for the app to actually be in Degraded state before proceeding
+  waitForAppHealthStatus(this.targetNamespace, this.targetApp, 'Degraded');
 });
 
 Then('user sees trace information', () => {
@@ -255,6 +308,7 @@ Then('user should see no duplicate namespaces', () => {
 // Health cache metrics test steps
 Given('health cache is enabled', () => {
   enableKialiFeature(HEALTH_CACHE_CONFIG);
+  waitForKialiApiReady();
 });
 
 Given('health cache metrics are recorded', () => {

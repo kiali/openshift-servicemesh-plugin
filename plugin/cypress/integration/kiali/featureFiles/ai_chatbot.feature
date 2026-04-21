@@ -58,3 +58,42 @@ Feature: Kiali AI Chatbot
     Then the AI chatbot should display the answer "Sure, I can navigate you to the services in the bookinfo namespace."
     And the navigation actions container should not be visible
     And the URL should contain "/services?namespaces=bookinfo"
+
+  Scenario: The AI chatbot YAML attachment triggers Istio VirtualService create
+    Given there is not a "vs-ai-cypress" "VirtualService" in the "bookinfo" namespace
+    When user clicks the AI chatbot toggle
+    And the AI chatbot window should be open
+    And user sends a message with YAML create action "Create a VirtualService for reviews in bookinfo"
+    Then the AI chatbot should display the answer "Here is a VirtualService you can create in bookinfo."
+    When user opens the chatbot YAML attachment "vs-ai-cypress.yaml"
+    And user confirms YAML create in the chatbot modal
+    Then the Istio YAML apply request should succeed with method "POST"
+    And the AI chatbot should show YAML apply success for "create"
+    When user views the Istio Config list for namespaces "bookinfo"
+    Then user sees VirtualService "vs-ai-cypress" in the Istio Config list
+
+  Scenario: The AI chatbot YAML attachment triggers Istio VirtualService patch
+    Given there is a "vs-ai-cypress" VirtualService in the "bookinfo" namespace with a "main" http-route to host "reviews"
+    When user clicks the AI chatbot toggle
+    And the AI chatbot window should be open
+    And user sends a message with YAML patch action "Patch the reviews VirtualService timeout in bookinfo"
+    Then the AI chatbot should display the answer "Apply this patch to the existing VirtualService."
+    When user opens the chatbot YAML attachment "vs-ai-cypress.yaml"
+    And user confirms YAML patch in the chatbot modal
+    Then the Istio YAML apply request should succeed with method "PATCH"
+    And the AI chatbot should show YAML apply success for "patch"
+    When user opens Istio Config details for VirtualService "vs-ai-cypress" in namespace "bookinfo"
+    Then the Istio config YAML editor should contain "timeout: 2s"
+
+  Scenario: The AI chatbot YAML attachment triggers Istio VirtualService delete
+    Given there is a "vs-ai-cypress" VirtualService in the "bookinfo" namespace with a "main" http-route to host "reviews"
+    When user clicks the AI chatbot toggle
+    And the AI chatbot window should be open
+    And user sends a message with YAML delete action "Delete the reviews VirtualService in bookinfo"
+    Then the AI chatbot should display the answer "Confirm deletion of this VirtualService."
+    When user opens the chatbot YAML attachment "vs-ai-cypress.yaml"
+    And user confirms YAML delete in the chatbot modal
+    Then the Istio YAML apply request should succeed with method "DELETE"
+    And the AI chatbot should show YAML apply success for "delete"
+    When user views the Istio Config list for namespaces "bookinfo"
+    Then user does not see VirtualService "vs-ai-cypress" in the Istio Config list

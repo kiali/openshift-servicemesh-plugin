@@ -140,6 +140,7 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({
     <div key={fileName}>
       <FileDetailsLabel fileName={fileName} onClick={toggle} />
       <Modal
+        ouiaId="chatbot-yaml-modal"
         title={action.title || fileName}
         variant={ModalVariant.large}
         isOpen={isModalOpen}
