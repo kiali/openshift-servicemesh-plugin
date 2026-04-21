@@ -8,9 +8,9 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "yarn clean && sh -ac '. ./.env.production; yarn ts-node node_modules/.bin/webpack'",
-    "build:dev": "yarn clean && sh -ac '. ./.env.development; yarn ts-node node_modules/.bin/webpack'",
-    "start": "sh -ac '. ./.env.development; yarn ts-node node_modules/.bin/webpack serve'",
+    "build": "yarn clean && sh -ac '. ./.env; NODE_ENV=production yarn ts-node node_modules/.bin/webpack'",
+    "build:dev": "yarn clean && sh -ac '. ./.env; NODE_ENV=development yarn ts-node node_modules/.bin/webpack'",
+    "start": "sh -ac '. ./.env; NODE_ENV=development yarn ts-node node_modules/.bin/webpack serve'",
     "start-console": "./start-console.sh",
     "mock-server:build": "ts-node -O '{\"module\":\"commonjs\"}' mock-server/build.ts",
     "mock-server": "yarn mock-server:build && node mock-server/bootstrap.js",

@@ -10,7 +10,7 @@
  *   Terminal 3: yarn start-console
  *
  * The mock server runs on port 3001 by default (configurable via MOCK_SERVER_PORT).
- * Set API_PROXY=http://localhost:<port> in .env.development
+ * Set KIALI_URL=http://localhost:<port> when running start-console
  *
  * Note: Browser globals are set up in bootstrap.js
  */
