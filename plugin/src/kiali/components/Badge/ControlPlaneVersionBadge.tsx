@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Label, Tooltip } from '@patternfly/react-core';
-import { useLocation } from 'react-router-dom-v5-compat';
-import { KialiLink } from '../Link/KialiLink';
+import { Link, useLocation } from 'react-router-dom-v5-compat';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import { useKialiTheme } from 'utils/ThemeUtils';
 import { Theme } from 'types/Common';
@@ -42,9 +41,9 @@ export const ControlPlaneVersionBadge: React.FC<ControlPlaneVersionBadgeProps> =
           {!pathname.endsWith('/mesh') && (
             <div className={badgeTooltipLinkStyle}>
               <span>{t('More info at')}</span>
-              <KialiLink to="/mesh" style={{ color: linkColor }}>
+              <Link to="/mesh" style={{ color: linkColor }}>
                 {t('Mesh page')}
-              </KialiLink>
+              </Link>
             </div>
           )}
         </>

@@ -2,10 +2,11 @@ import * as React from 'react';
 import { IstioObjectLink } from '../components/Link/IstioObjectLink';
 import { Namespace } from '../types/Namespace';
 import { Paths } from '../config';
+import { Link } from 'react-router-dom-v5-compat';
 import { EnvoySummary, GroupVersionKind, Host } from '../types/IstioObjects';
 import { ActiveFilter, ActiveFiltersInfo } from '../types/Filters';
 import { FilterSelected } from '../components/Filters/StatefulFilters';
-import { KialiLink } from '../components/Link/KialiLink';
+import { kioskContextMenuAction } from '../components/Kiosk/KioskActions';
 
 export type FilterMethodMap = { [id: string]: (value, filter) => boolean };
 
@@ -36,12 +37,12 @@ export const routeLink = (
     if (result && result[1]) {
       return (
         <React.Fragment>
-          <KialiLink
+          <Link
             onClick={handler}
             to={`/namespaces/${namespace}/workloads/${workload}?tab=envoy&envoyTab=routes&name=${result[1]}`}
           >
             {route}
-          </KialiLink>
+          </Link>
         </React.Fragment>
       );
     }
@@ -54,7 +55,8 @@ export const serviceLink = (
   host: Host,
   namespaces: Namespace[] | undefined,
   podNamespace: string,
-  simpleSvc = false
+  simpleSvc = false,
+  isParentKiosk: boolean
 ): JSX.Element | string => {
   let to = '/namespaces/';
   let linkText: string = host.service;
@@ -79,7 +81,18 @@ export const serviceLink = (
   if (showLink) {
     return (
       <React.Fragment>
-        <KialiLink to={to}>{linkText}</KialiLink>
+        {isParentKiosk ? (
+          <Link
+            to={''}
+            onClick={() => {
+              kioskContextMenuAction(to);
+            }}
+          >
+            {linkText}
+          </Link>
+        ) : (
+          <Link to={to}>{linkText}</Link>
+        )}
       </React.Fragment>
     );
   } else {

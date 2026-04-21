@@ -14,11 +14,11 @@ import { buildQueriesFromSpans } from 'utils/tracing/TraceStats';
 import { getParamsSeparator, getSpanId } from '../../../utils/SearchParamUtils';
 import { kialiStyle } from 'styles/StyleUtils';
 import { formatDuration, isErrorTag } from 'utils/tracing/TracingHelper';
-import { KialiLink } from '../../Link/KialiLink';
+import { Link } from 'react-router-dom-v5-compat';
 import { responseFlags } from 'utils/ResponseFlags';
 import { renderMetricsComparison } from './StatsComparison';
 import { router } from 'app/History';
-import { isParentKiosk, kioskNavigateAction, kioskTracingAction } from '../../Kiosk/KioskActions';
+import { isParentKiosk, kioskContextMenuAction, kioskTracingAction } from '../../Kiosk/KioskActions';
 import { TracingUrlProvider } from 'types/Tracing';
 import { KialiIcon } from 'config/KialiIcon';
 import { SimpleTable, SortableTh } from 'components/Table/SimpleTable';
@@ -254,7 +254,7 @@ class SpanTableComponent extends React.Component<Props, State> {
         onClick: () => {
           const href = `${item.linkToApp}${getParamsSeparator(rowData.item.linkToApp)}tab=in_metrics`;
           if (parentKiosk) {
-            kioskNavigateAction(href);
+            kioskContextMenuAction(href);
           } else {
             router.navigate(href);
           }
@@ -265,7 +265,7 @@ class SpanTableComponent extends React.Component<Props, State> {
         onClick: () => {
           const href = `${item.linkToApp}${getParamsSeparator(rowData.item.linkToApp)}tab=out_metrics`;
           if (parentKiosk) {
-            kioskNavigateAction(href);
+            kioskContextMenuAction(href);
           } else {
             router.navigate(href);
           }
@@ -286,7 +286,7 @@ class SpanTableComponent extends React.Component<Props, State> {
           onClick: () => {
             const href = `${item.linkToWorkload}?tab=logs`;
             if (parentKiosk) {
-              kioskNavigateAction(href);
+              kioskContextMenuAction(href);
             } else {
               router.navigate(href);
             }
@@ -297,7 +297,7 @@ class SpanTableComponent extends React.Component<Props, State> {
           onClick: () => {
             const href = `${item.linkToWorkload}${getParamsSeparator(rowData.item.linkToWorkload)}tab=in_metrics`;
             if (parentKiosk) {
-              kioskNavigateAction(href);
+              kioskContextMenuAction(href);
             } else {
               router.navigate(href);
             }
@@ -308,7 +308,7 @@ class SpanTableComponent extends React.Component<Props, State> {
           onClick: () => {
             const href = `${item.linkToWorkload}${getParamsSeparator(rowData.item.linkToWorkload)}tab=out_metrics`;
             if (parentKiosk) {
-              kioskNavigateAction(href);
+              kioskContextMenuAction(href);
             } else {
               router.navigate(href);
             }
@@ -362,28 +362,55 @@ class SpanTableComponent extends React.Component<Props, State> {
   };
 
   private originCell = (item: RichSpanData): React.ReactNode => {
+    const parentKiosk = isParentKiosk(this.props.kiosk);
     const key = `${item.spanID}-origin`;
     return (
       <>
         {!this.props.fromWaypoint && (
           <>
             <strong key={`${key}-app`}>Application: </strong>
-            {(item.linkToApp && (
-              <KialiLink key={`${key}-link-app`} to={item.linkToApp}>
-                {item.app}
-              </KialiLink>
-            )) ||
+            {(item.linkToApp &&
+              (parentKiosk ? (
+                <Link
+                  key={`${key}-link-app`}
+                  to={''}
+                  onClick={() => {
+                    if (item.linkToApp) {
+                      kioskContextMenuAction(item.linkToApp);
+                    }
+                  }}
+                >
+                  {item.app}
+                </Link>
+              ) : (
+                <Link key={`${key}-link-app`} to={item.linkToApp}>
+                  {item.app}
+                </Link>
+              ))) ||
               item.app}
 
             <br key={`${key}-br`} />
           </>
         )}
         <strong key={`${key}-wl`}>Workload: </strong>
-        {(item.linkToWorkload && (
-          <KialiLink key={`${key}-link-wl`} to={item.linkToWorkload}>
-            {item.workload}
-          </KialiLink>
-        )) ||
+        {(item.linkToWorkload &&
+          (parentKiosk ? (
+            <Link
+              key={`${key}-link-wl`}
+              to={''}
+              onClick={() => {
+                if (item.linkToWorkload) {
+                  kioskContextMenuAction(item.linkToWorkload);
+                }
+              }}
+            >
+              {item.workload}
+            </Link>
+          ) : (
+            <Link key={`${key}-link-wl`} to={item.linkToWorkload}>
+              {item.workload}
+            </Link>
+          ))) ||
           'unknown'}
 
         {this.isExpanded(item.spanID) && (
@@ -434,6 +461,7 @@ class SpanTableComponent extends React.Component<Props, State> {
   };
 
   private renderEnvoySummary = (item: RichSpanData): React.ReactNode => {
+    const parentKiosk = isParentKiosk(this.props.kiosk);
     const info = item.info as EnvoySpanInfo;
     let rqLabel = 'Request';
     let peerLink: JSX.Element | undefined = undefined;
@@ -446,9 +474,20 @@ class SpanTableComponent extends React.Component<Props, State> {
         peerLink = (
           <>
             {' from '}
-            <KialiLink to={`/namespaces/${info.peer.namespace}/workloads/${info.peer.name}`}>
-              {info.peer.name}
-            </KialiLink>
+            {parentKiosk ? (
+              <Link
+                to={''}
+                onClick={() => {
+                  if (info.peer) {
+                    kioskContextMenuAction(`/namespaces/${info.peer.namespace}/workloads/${info.peer.name}`);
+                  }
+                }}
+              >
+                {info.peer.name}
+              </Link>
+            ) : (
+              <Link to={`/namespaces/${info.peer.namespace}/workloads/${info.peer.name}`}>{info.peer.name}</Link>
+            )}
           </>
         );
       }
@@ -459,9 +498,23 @@ class SpanTableComponent extends React.Component<Props, State> {
         peerLink = (
           <React.Fragment key={`${key}-out`}>
             <span key={`${key}-out-to`}>{' to '}</span>
-            <KialiLink key={`${key}-out-link`} to={`/namespaces/${info.peer.namespace}/services/${info.peer.name}`}>
-              {info.peer.name}
-            </KialiLink>
+            {parentKiosk ? (
+              <Link
+                key={`${key}-out-link`}
+                to={''}
+                onClick={() => {
+                  if (info.peer) {
+                    kioskContextMenuAction(`/namespaces/${info.peer.namespace}/services/${info.peer.name}`);
+                  }
+                }}
+              >
+                {info.peer.name}
+              </Link>
+            ) : (
+              <Link key={`${key}-out-link`} to={`/namespaces/${info.peer.namespace}/services/${info.peer.name}`}>
+                {info.peer.name}
+              </Link>
+            )}
           </React.Fragment>
         );
       }
