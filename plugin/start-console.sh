@@ -12,13 +12,15 @@ PLUGIN_NAME="${npm_package_name:-ossmconsole}"
 CONSOLE_API_PATH="/api/proxy/plugin/${PLUGIN_NAME}/kiali/"
 
 # Build BRIDGE_PLUGIN_PROXY JSON for the given Kiali endpoint.
-# Uses jq for safe JSON escaping when available; falls back to string interpolation.
+# Uses jq for safe JSON escaping when available; falls back to printf
+# (assumes the endpoint is a plain HTTP(S) URL without special characters).
 build_proxy_json() {
     local endpoint="$1"
     if command -v jq &>/dev/null; then
         jq -cn --arg path "$CONSOLE_API_PATH" --arg ep "$endpoint" \
             '{"services":[{"consoleAPIPath":$path,"endpoint":$ep,"authorize":false}]}'
     else
+        echo "Warning: jq not found; JSON values will not be escaped. Install jq for safe handling." >&2
         printf '{"services":[{"consoleAPIPath":"%s","endpoint":"%s","authorize":false}]}' \
             "$CONSOLE_API_PATH" "$endpoint"
     fi
@@ -26,7 +28,7 @@ build_proxy_json() {
 
 # Rewrite localhost and loopback addresses so they resolve inside the container.
 rewrite_url_for_container() {
-    echo "$1" | sed 's|localhost|'"$2"'|g; s|127\.0\.0\.1|'"$2"'|g'
+    echo "$1" | sed 's|://localhost|://'"$2"'|g; s|://127\.0\.0\.1|://'"$2"'|g'
 }
 
 echo "Starting local OpenShift console..."
@@ -58,16 +60,16 @@ if [ -x "$(command -v podman)" ]; then
         # Use host networking on Linux since host.containers.internal is unreachable in some environments.
         BRIDGE_PLUGINS="${PLUGIN_NAME}=http://localhost:9001"
         BRIDGE_PLUGIN_PROXY=$(build_proxy_json "$KIALI_URL")
-        podman run --pull always --platform $CONSOLE_IMAGE_PLATFORM --rm --network=host --env-file <(for var in "${!BRIDGE_@}"; do echo "$var=${!var}"; done) $CONSOLE_IMAGE
+        podman run --pull always --platform "$CONSOLE_IMAGE_PLATFORM" --rm --network=host --env-file <(for var in "${!BRIDGE_@}"; do echo "$var=${!var}"; done) "$CONSOLE_IMAGE"
     else
         BRIDGE_PLUGINS="${PLUGIN_NAME}=http://host.containers.internal:9001"
         KIALI_CONTAINER_URL=$(rewrite_url_for_container "$KIALI_URL" "host.containers.internal")
         BRIDGE_PLUGIN_PROXY=$(build_proxy_json "$KIALI_CONTAINER_URL")
-        podman run --pull always --platform $CONSOLE_IMAGE_PLATFORM --rm -p "$CONSOLE_PORT":9000 --env-file <(for var in "${!BRIDGE_@}"; do echo "$var=${!var}"; done) $CONSOLE_IMAGE
+        podman run --pull always --platform "$CONSOLE_IMAGE_PLATFORM" --rm -p "$CONSOLE_PORT":9000 --env-file <(for var in "${!BRIDGE_@}"; do echo "$var=${!var}"; done) "$CONSOLE_IMAGE"
     fi
 else
     BRIDGE_PLUGINS="${PLUGIN_NAME}=http://host.docker.internal:9001"
     KIALI_CONTAINER_URL=$(rewrite_url_for_container "$KIALI_URL" "host.docker.internal")
     BRIDGE_PLUGIN_PROXY=$(build_proxy_json "$KIALI_CONTAINER_URL")
-    docker run --pull always --platform $CONSOLE_IMAGE_PLATFORM --rm -p "$CONSOLE_PORT":9000 --env-file <(for var in "${!BRIDGE_@}"; do echo "$var=${!var}"; done) $CONSOLE_IMAGE
+    docker run --pull always --platform "$CONSOLE_IMAGE_PLATFORM" --rm -p "$CONSOLE_PORT":9000 --env-file <(for var in "${!BRIDGE_@}"; do echo "$var=${!var}"; done) "$CONSOLE_IMAGE"
 fi
