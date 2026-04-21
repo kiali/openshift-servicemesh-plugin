@@ -12,7 +12,7 @@ import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { FormattedTraceInfo, fullIDStyle } from './FormattedTraceInfo';
 import { KialiAppState } from '../../../store/Store';
 import { connect } from 'react-redux';
-import { isParentKiosk, kioskNavigateAction, kioskTracingAction } from '../../Kiosk/KioskActions';
+import { isParentKiosk, kioskContextMenuAction, kioskTracingAction } from '../../Kiosk/KioskActions';
 import { KialiIcon } from 'config/KialiIcon';
 import { kebabToggleStyle } from 'styles/DropdownStyles';
 import { useKialiTranslation } from 'utils/I18nUtils';
@@ -41,7 +41,7 @@ const TracingTraceTitleComponent: React.FC<Props> = (props: Props) => {
       key="view_on_graph"
       onClick={() => {
         if (isParentKiosk(props.kiosk)) {
-          kioskNavigateAction(props.graphURL);
+          kioskContextMenuAction(props.graphURL);
         } else {
           navigate(props.graphURL);
         }

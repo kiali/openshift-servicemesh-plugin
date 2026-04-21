@@ -104,6 +104,7 @@ export const SummaryTableBuilder = (
   namespaces: Namespace[],
   namespace: string,
   routeLinkHandler: () => void,
+  kiosk: string,
   workload?: string
 ): [typeof React.Component, ClusterTable | ListenerTable | RouteTable] => {
   let writerComp, writerProps;
@@ -111,7 +112,7 @@ export const SummaryTableBuilder = (
   switch (resource) {
     case 'clusters':
       writerComp = ClusterSummaryTable;
-      writerProps = new ClusterTable(config.clusters ?? [], sortBy['clusters'], namespaces, namespace);
+      writerProps = new ClusterTable(config.clusters ?? [], sortBy['clusters'], namespaces, namespace, kiosk);
       break;
     case 'listeners':
       writerComp = ListenerSummaryTable;
@@ -126,7 +127,7 @@ export const SummaryTableBuilder = (
       break;
     case 'routes':
       writerComp = RouteSummaryTable;
-      writerProps = new RouteTable(config.routes ?? [], sortBy['routes'], namespaces, namespace);
+      writerProps = new RouteTable(config.routes ?? [], sortBy['routes'], namespaces, namespace, kiosk);
       break;
   }
 
