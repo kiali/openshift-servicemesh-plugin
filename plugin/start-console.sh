@@ -16,7 +16,7 @@ CONSOLE_API_PATH="/api/proxy/plugin/${PLUGIN_NAME}/kiali/"
 build_proxy_json() {
     local endpoint="$1"
     if command -v jq &>/dev/null; then
-        jq -n --arg path "$CONSOLE_API_PATH" --arg ep "$endpoint" \
+        jq -cn --arg path "$CONSOLE_API_PATH" --arg ep "$endpoint" \
             '{"services":[{"consoleAPIPath":$path,"endpoint":$ep,"authorize":false}]}'
     else
         printf '{"services":[{"consoleAPIPath":"%s","endpoint":"%s","authorize":false}]}' \
