@@ -8,6 +8,26 @@ CONSOLE_IMAGE=${CONSOLE_IMAGE:="quay.io/openshift/origin-console:$OPENSHIFT_VERS
 CONSOLE_PORT=${CONSOLE_PORT:=9000}
 CONSOLE_IMAGE_PLATFORM=${CONSOLE_IMAGE_PLATFORM:="linux/amd64"}
 KIALI_URL=${KIALI_URL:="http://localhost:20001"}
+PLUGIN_NAME="${npm_package_name:-ossmconsole}"
+CONSOLE_API_PATH="/api/proxy/plugin/${PLUGIN_NAME}/kiali/"
+
+# Build BRIDGE_PLUGIN_PROXY JSON for the given Kiali endpoint.
+# Uses jq for safe JSON escaping when available; falls back to string interpolation.
+build_proxy_json() {
+    local endpoint="$1"
+    if command -v jq &>/dev/null; then
+        jq -n --arg path "$CONSOLE_API_PATH" --arg ep "$endpoint" \
+            '{"services":[{"consoleAPIPath":$path,"endpoint":$ep,"authorize":false}]}'
+    else
+        printf '{"services":[{"consoleAPIPath":"%s","endpoint":"%s","authorize":false}]}' \
+            "$CONSOLE_API_PATH" "$endpoint"
+    fi
+}
+
+# Rewrite localhost and loopback addresses so they resolve inside the container.
+rewrite_url_for_container() {
+    echo "$1" | sed 's|localhost|'"$2"'|g; s|127\.0\.0\.1|'"$2"'|g'
+}
 
 echo "Starting local OpenShift console..."
 
@@ -21,9 +41,9 @@ BRIDGE_K8S_MODE_OFF_CLUSTER_ENDPOINT=$(oc whoami --show-server)
 # BRIDGE_K8S_MODE_OFF_CLUSTER_ALERTMANAGER=$(oc -n openshift-config-managed get configmap monitoring-shared-config -o jsonpath='{.data.alertmanagerPublicURL}')
 BRIDGE_K8S_AUTH_BEARER_TOKEN=$(oc whoami --show-token 2>/dev/null)
 BRIDGE_USER_SETTINGS_LOCATION="localstorage"
-BRIDGE_I18N_NAMESPACES="plugin__${npm_package_name}"
+BRIDGE_I18N_NAMESPACES="plugin__${PLUGIN_NAME}"
 
-BRIDGE_PLUGINS="${npm_package_name}=http://host.docker.internal:9001"
+BRIDGE_PLUGINS="${PLUGIN_NAME}=http://host.docker.internal:9001"
 
 echo "API Server: $BRIDGE_K8S_MODE_OFF_CLUSTER_ENDPOINT"
 echo "Console Image: $CONSOLE_IMAGE"
@@ -36,18 +56,18 @@ echo "Kiali URL: $KIALI_URL"
 if [ -x "$(command -v podman)" ]; then
     if [ "$(uname -s)" = "Linux" ]; then
         # Use host networking on Linux since host.containers.internal is unreachable in some environments.
-        BRIDGE_PLUGINS="${npm_package_name}=http://localhost:9001"
-        BRIDGE_PLUGIN_PROXY='{"services":[{"consoleAPIPath":"/api/proxy/plugin/ossmconsole/kiali/","endpoint":"'"${KIALI_URL}"'","authorize":false}]}'
+        BRIDGE_PLUGINS="${PLUGIN_NAME}=http://localhost:9001"
+        BRIDGE_PLUGIN_PROXY=$(build_proxy_json "$KIALI_URL")
         podman run --pull always --platform $CONSOLE_IMAGE_PLATFORM --rm --network=host --env-file <(for var in "${!BRIDGE_@}"; do echo "$var=${!var}"; done) $CONSOLE_IMAGE
     else
-        BRIDGE_PLUGINS="${npm_package_name}=http://host.containers.internal:9001"
-        KIALI_CONTAINER_URL=$(echo "$KIALI_URL" | sed 's|localhost|host.containers.internal|g')
-        BRIDGE_PLUGIN_PROXY='{"services":[{"consoleAPIPath":"/api/proxy/plugin/ossmconsole/kiali/","endpoint":"'"${KIALI_CONTAINER_URL}"'","authorize":false}]}'
+        BRIDGE_PLUGINS="${PLUGIN_NAME}=http://host.containers.internal:9001"
+        KIALI_CONTAINER_URL=$(rewrite_url_for_container "$KIALI_URL" "host.containers.internal")
+        BRIDGE_PLUGIN_PROXY=$(build_proxy_json "$KIALI_CONTAINER_URL")
         podman run --pull always --platform $CONSOLE_IMAGE_PLATFORM --rm -p "$CONSOLE_PORT":9000 --env-file <(for var in "${!BRIDGE_@}"; do echo "$var=${!var}"; done) $CONSOLE_IMAGE
     fi
 else
-    BRIDGE_PLUGINS="${npm_package_name}=http://host.docker.internal:9001"
-    KIALI_CONTAINER_URL=$(echo "$KIALI_URL" | sed 's|localhost|host.docker.internal|g')
-    BRIDGE_PLUGIN_PROXY='{"services":[{"consoleAPIPath":"/api/proxy/plugin/ossmconsole/kiali/","endpoint":"'"${KIALI_CONTAINER_URL}"'","authorize":false}]}'
+    BRIDGE_PLUGINS="${PLUGIN_NAME}=http://host.docker.internal:9001"
+    KIALI_CONTAINER_URL=$(rewrite_url_for_container "$KIALI_URL" "host.docker.internal")
+    BRIDGE_PLUGIN_PROXY=$(build_proxy_json "$KIALI_CONTAINER_URL")
     docker run --pull always --platform $CONSOLE_IMAGE_PLATFORM --rm -p "$CONSOLE_PORT":9000 --env-file <(for var in "${!BRIDGE_@}"; do echo "$var=${!var}"; done) $CONSOLE_IMAGE
 fi
