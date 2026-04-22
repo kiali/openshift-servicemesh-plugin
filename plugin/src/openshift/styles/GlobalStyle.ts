@@ -25,9 +25,3 @@ export const globalStyle = kialiStyle({
 export const meshTabPageStyle = kialiStyle({
   paddingTop: '0'
 });
-
-// Style for list pages (Namespaces, Applications, etc.) to prevent global scrollbar
-// VirtualList calculates its own fixed height, so we just need to hide overflow here
-export const listPageStyle = kialiStyle({
-  overflow: 'hidden'
-});

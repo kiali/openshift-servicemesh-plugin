@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom-v5-compat';
 import { NamespacesPage } from 'pages/Namespaces/NamespacesPage';
 import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
-import { listPageStyle } from '../styles/GlobalStyle';
 
 const NamespacesPageOSSMC: React.FC<void> = () => {
   const { pathname } = useLocation();
@@ -13,7 +12,7 @@ const NamespacesPageOSSMC: React.FC<void> = () => {
   useInitKialiListeners();
 
   return (
-    <KialiContainer className={listPageStyle}>
+    <KialiContainer>
       <NamespacesPage></NamespacesPage>
     </KialiContainer>
   );
