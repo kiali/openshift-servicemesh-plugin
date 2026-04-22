@@ -30,7 +30,10 @@ export const KialiContainer: React.FC<Props> = ({ className, children }) => {
   return (
     <Provider store={store}>
       <NotificationAlerts />
-      <div id="root" className={classes(kialiStyle, ossmcStyle, kialiCSSVariables.style, ossmcCSSVariables, className)}>
+      <div
+        id="root"
+        className={classes(kialiStyle, ossmcStyle, kialiCSSVariables.style, ossmcCSSVariables.style, className)}
+      >
         <KialiController>{children}</KialiController>
       </div>
     </Provider>

@@ -7,9 +7,11 @@ const ADMIN = 'admin';
 const getConsoleTitle = (title: string) => `%plugin__ossmconsole~${title}%`;
 
 const enum Page {
+  APPLICATIONS = 'AppListPage',
   GRAPH = 'GraphPage',
   ISTIO = 'IstioConfigListPage',
   MESH = 'MeshPage',
+  NAMESPACES = 'NamespacesPage',
   OVERVIEW = 'OverviewPage'
 }
 
@@ -224,8 +226,18 @@ const extensions: EncodedExtension[] = [
     `/${OSSM_CONSOLE}/graph/ns/:namespace/services/:service`,
     `/${OSSM_CONSOLE}/graph/ns/:namespace/workloads/:workload`
   ]),
-  ...consoleRoute('istio', 'Istio Config', Page.ISTIO, ['/k8s/all-namespaces/istio', '/k8s/ns/:ns/istio']),
   ...consoleRoute('mesh', 'Mesh', Page.MESH, [`/${OSSM_CONSOLE}/mesh`]),
+  {
+    type: 'console.navigation/separator',
+    properties: {
+      id: `${OSSM_CONSOLE}_separator`,
+      perspective: ADMIN,
+      section: OSSM_CONSOLE
+    }
+  },
+  ...consoleRoute('namespaces', 'Namespaces', Page.NAMESPACES, [`/${OSSM_CONSOLE}/namespaces`]),
+  ...consoleRoute('applications', 'Applications', Page.APPLICATIONS, [`/${OSSM_CONSOLE}/applications`]),
+  ...consoleRoute('istio', 'Istio Config', Page.ISTIO, ['/k8s/all-namespaces/istio', '/k8s/ns/:ns/istio']),
 
   // K8s horizontal navs - service mesh tab of k8s resources
   horizontalNav(K8sResource.Project, Tab.PROJECT),

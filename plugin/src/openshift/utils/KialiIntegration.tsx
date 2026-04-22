@@ -112,16 +112,20 @@ const parseRouteContext = (kialiAction: string): RouteContext => {
 };
 
 const handleGraphRoute = ({ path, webParams }: RouteContext): string => {
-  return path
-    .replace('graph/namespaces', `${OSSM_CONSOLE}/graph`)
-    .replace('graph/node/namespaces', `${OSSM_CONSOLE}/graph/ns`) + webParams;
+  return (
+    path
+      .replace(/^\/graph\/node\/namespaces/, `/${OSSM_CONSOLE}/graph/ns`)
+      .replace(/^\/graph\/namespaces/, `/${OSSM_CONSOLE}/graph`) + webParams
+  );
 };
 
 const handleMeshRoute = ({ path, webParams }: RouteContext): string => {
-  return path.replace('mesh', `${OSSM_CONSOLE}/mesh`) + webParams;
+  return path.replace(/^\/mesh/, `/${OSSM_CONSOLE}/mesh`) + webParams;
 };
 
-const handleApplicationsRoute = (): string => `/k8s/all-namespaces/pods`;
+const handleApplicationsRoute = ({ path, webParams }: RouteContext): string => {
+  return path.replace(/^\/applications/, `/${OSSM_CONSOLE}/applications`) + webParams;
+};
 
 const handleServicesRoute = (): string => `/k8s/all-namespaces/services`;
 
@@ -138,10 +142,6 @@ const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): 
   const pathSegments = path.split('/');
   const namespace = pathSegments[2] ?? '';
   const detail = pathSegments.length > 3 ? `/${pathSegments.slice(3).join('/')}` : '';
-
-  if (detail === '') {
-    return '/k8s/cluster/project.openshift.io~v1~Project';
-  }
 
   if (detail.startsWith('/applications')) {
     const application = detail.substring('/applications/'.length);
@@ -166,7 +166,7 @@ const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): 
     return `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
   }
 
-  return '/k8s/cluster/project.openshift.io~v1~Project';
+  return path.replace(/^\/namespaces/, `/${OSSM_CONSOLE}/namespaces`) + webParams;
 };
 
 const handleTracingRoute = ({ urlParams }: RouteContext): string | null => {
@@ -214,7 +214,7 @@ const routeHandlers: Array<{ handler: RouteHandler; prefix: string }> = [
   { prefix: '/tracing', handler: handleTracingRoute }
 ];
 
-const resolveConsoleUrl = (kialiAction: string): string | null => {
+export const resolveConsoleUrl = (kialiAction: string): string | null => {
   const context = parseRouteContext(kialiAction);
 
   for (const { prefix, handler } of routeHandlers) {

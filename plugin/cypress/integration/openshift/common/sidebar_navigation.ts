@@ -15,16 +15,19 @@ When('user clicks on the Service Mesh icon in the left navigation bar', () => {
 
 When('cypress intercept hooks for sidebar are registered', () => {
   cy.intercept(`**/api/mesh/controlplanes`).as('overviewRequest');
-  cy.intercept(`**/api/namespaces`).as('istioConfigRequest');
+  cy.intercept(`**/api/namespaces`).as('namespacesRequest');
   cy.intercept(`**/api/namespaces/graph*`).as('graphNamespaces');
   cy.intercept(`**/api/mesh/graph?*`).as('meshRequest');
+  cy.intercept(`**/api/apps*`).as('appsRequest');
 });
 
-Then('buttons for Overview, Graph and Istio Config are displayed', () => {
+Then('buttons for Overview, Graph, Namespaces, Applications and Istio Config are displayed', () => {
   cy.waitForReact();
   cy.reload(true); // force reload to make sure OSSMC is loaded
   cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Overview');
   cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Graph');
+  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Namespaces');
+  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Applications');
   cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Istio Config');
 });
 
@@ -51,6 +54,20 @@ Then('user navigates to the OSSMC {string} page', (hrefName: string) => {
           cy.url().should('include', '/k8s/all-namespaces/istio');
         });
       break;
+    case 'Namespaces':
+      cy.get('a[href*="/ossmconsole/namespaces"]')
+        .click()
+        .then(() => {
+          cy.url().should('include', '/ossmconsole/namespaces');
+        });
+      break;
+    case 'Applications':
+      cy.get('a[href*="/ossmconsole/applications"]')
+        .click()
+        .then(() => {
+          cy.url().should('include', '/ossmconsole/applications');
+        });
+      break;
     case 'Mesh':
       cy.get('a[href*="/ossmconsole/mesh"]')
         .click()
@@ -73,6 +90,18 @@ When('user selects the {string} namespace in the graph', (ns: string) => {
 
   // Click outside the namespace selector to load the namespace graph
   cy.get('div#global-namespace-selector').click();
+});
+
+Then('user sees the namespaces list', () => {
+  cy.wait('@namespacesRequest').then(() => {
+    cy.get('table').should('be.visible');
+  });
+});
+
+Then('user sees the applications list', () => {
+  cy.wait('@appsRequest').then(() => {
+    cy.get('table').should('be.visible');
+  });
 });
 
 Then('user sees Istio Config page elements from Kiali', () => {
