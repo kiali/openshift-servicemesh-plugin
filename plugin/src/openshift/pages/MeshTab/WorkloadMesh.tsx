@@ -27,7 +27,7 @@ const validateWorkload = async (namespace: string, workloadName: string): Promis
 };
 
 // parseWorkloadName Parse workload name from pod name (Usually containing a hash)
-const parseWorkloadName = (podName: string): string => {
+export const parseWorkloadName = (podName: string): string => {
   const parts = podName.split('-');
 
   if (parts.length >= 3) {

@@ -1,0 +1,52 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches:
+    - main
+    - v*.*
+    paths-ignore:
+    - 'docs/**'
+    - '**/*.md'
+    - '**/*.adoc'
+
+jobs:
+  lint_and_test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Enable Corepack
+      run: corepack enable
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '24'
+        cache: 'yarn'
+        cache-dependency-path: plugin/yarn.lock
+
+    - name: Install dependencies
+      working-directory: plugin
+      run: yarn install --immutable
+
+    - name: Lint
+      working-directory: plugin
+      run: yarn lint
+
+    - name: Unit tests
+      working-directory: plugin
+      run: yarn test
+
+  build_plugin:
+    name: Build plugin
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Build image
+      run: |
+        make -e CONTAINER_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile) build-plugin-image
