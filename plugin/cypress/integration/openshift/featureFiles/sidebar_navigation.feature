@@ -13,7 +13,7 @@ Feature: Kiali sidebar integration with OCP Console
     And cypress intercept hooks for sidebar are registered
 
   Scenario: Service mesh buttons are displayed
-    Then buttons for Overview, Graph and Istio Config are displayed
+    Then buttons for Overview, Graph, Namespaces, Applications and Istio Config are displayed
 
   Scenario: Overview page is displayed correctly
     When user navigates to the OSSMC "Overview" page
@@ -30,6 +30,17 @@ Feature: Kiali sidebar integration with OCP Console
   Scenario: Istio Config page is displayed correctly
     When user navigates to the OSSMC "Istio Config" page
     Then user sees Istio Config page elements from Kiali
+
+  @core-1
+  Scenario: Namespaces page is displayed correctly
+    When user navigates to the OSSMC "Namespaces" page
+    Then user sees the namespaces list
+
+  @bookinfo-app
+  @core-1
+  Scenario: Applications page is displayed correctly
+    When user navigates to the OSSMC "Applications" page
+    Then user sees the applications list
 
   @core-1
   Scenario: Mesh page is displayed correctly

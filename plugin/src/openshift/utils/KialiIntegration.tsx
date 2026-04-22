@@ -114,17 +114,17 @@ const parseRouteContext = (kialiAction: string): RouteContext => {
 const handleGraphRoute = ({ path, webParams }: RouteContext): string => {
   return (
     path
-      .replace('graph/namespaces', `${OSSM_CONSOLE}/graph`)
-      .replace('graph/node/namespaces', `${OSSM_CONSOLE}/graph/ns`) + webParams
+      .replace(/^\/graph\/node\/namespaces/, `/${OSSM_CONSOLE}/graph/ns`)
+      .replace(/^\/graph\/namespaces/, `/${OSSM_CONSOLE}/graph`) + webParams
   );
 };
 
 const handleMeshRoute = ({ path, webParams }: RouteContext): string => {
-  return path.replace('mesh', `${OSSM_CONSOLE}/mesh`) + webParams;
+  return path.replace(/^\/mesh/, `/${OSSM_CONSOLE}/mesh`) + webParams;
 };
 
 const handleApplicationsRoute = ({ path, webParams }: RouteContext): string => {
-  return path.replace('applications', `${OSSM_CONSOLE}/applications`) + webParams;
+  return path.replace(/^\/applications/, `/${OSSM_CONSOLE}/applications`) + webParams;
 };
 
 const handleServicesRoute = (): string => `/k8s/all-namespaces/services`;
@@ -166,7 +166,7 @@ const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): 
     return `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
   }
 
-  return path.replace('namespaces', `${OSSM_CONSOLE}/namespaces`) + webParams;
+  return path.replace(/^\/namespaces/, `/${OSSM_CONSOLE}/namespaces`) + webParams;
 };
 
 const handleTracingRoute = ({ urlParams }: RouteContext): string | null => {
@@ -214,7 +214,7 @@ const routeHandlers: Array<{ handler: RouteHandler; prefix: string }> = [
   { prefix: '/tracing', handler: handleTracingRoute }
 ];
 
-const resolveConsoleUrl = (kialiAction: string): string | null => {
+export const resolveConsoleUrl = (kialiAction: string): string | null => {
   const context = parseRouteContext(kialiAction);
 
   for (const { prefix, handler } of routeHandlers) {

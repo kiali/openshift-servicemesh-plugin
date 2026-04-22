@@ -9,9 +9,9 @@ const getConsoleTitle = (title: string) => `%plugin__ossmconsole~${title}%`;
 const enum Page {
   APPLICATIONS = 'AppListPage',
   GRAPH = 'GraphPage',
+  ISTIO = 'IstioConfigListPage',
   MESH = 'MeshPage',
   NAMESPACES = 'NamespacesPage',
-  ISTIO = 'IstioConfigListPage',
   OVERVIEW = 'OverviewPage'
 }
 
