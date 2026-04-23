@@ -1,15 +1,15 @@
 import * as React from 'react';
 import { useParams, useLocation } from 'react-router-dom-v5-compat';
-import { WorkloadId, WorkloadQuery } from 'types/Workload';
-import { WorkloadDetailsPage } from 'pages/WorkloadDetails/WorkloadDetailsPage';
-import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
-import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 import { ErrorPage } from 'openshift/components/ErrorPage';
-import { useKialiTranslation } from 'utils/I18nUtils';
-import * as API from 'services/Api';
-import { centerVerticalHorizontalStyle } from '../../components/KialiController';
 import { meshTabPageStyle } from 'openshift/styles/GlobalStyle';
+import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
+import { WorkloadDetailsPage } from 'pages/WorkloadDetails/WorkloadDetailsPage';
+import * as API from 'services/Api';
+import { WorkloadId, WorkloadQuery } from 'types/Workload';
+import { useKialiTranslation } from 'utils/I18nUtils';
+import { centerVerticalHorizontalStyle } from '../../components/KialiController';
+import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { parseWorkloadName } from '../../utils/PodNameParser';
 
 // validateWorkload validate in the backend if a workload exists

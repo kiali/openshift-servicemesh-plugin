@@ -6,12 +6,11 @@ const config: Config = {
     '^.+\\.tsx?$': [
       'ts-jest',
       {
-        tsconfig: {
-          jsx: 'react-jsx'
-        }
+        tsconfig: 'tsconfig.jest.json'
       }
     ]
   },
+  // Only OSSMC-specific code is tested here; vendored kiali/ tests use their own infrastructure.
   roots: ['<rootDir>/src/openshift'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   modulePaths: ['<rootDir>/src'],
