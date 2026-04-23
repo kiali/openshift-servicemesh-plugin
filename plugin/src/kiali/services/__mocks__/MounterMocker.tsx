@@ -5,6 +5,11 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom-v5-compat';
 import { store } from '../../store/ConfigStore';
 
+type ApiFunctionKeys = {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  [K in keyof typeof API]: (typeof API)[K] extends Function ? K : never;
+}[keyof typeof API];
+
 export class MounterMocker {
   private promises: Promise<void>[] = [];
   private toMount: JSX.Element = (<></>);
@@ -25,10 +30,10 @@ export class MounterMocker {
   // About nestData: set it accordingly to the object returned by API promise:
   // - if it's the Api response directly, keep default (true) as content is encapsulated in 'data' field
   // - if it's a transformed object extracted from Api response, set to false.
-  addMock = (func: keyof typeof API, obj: any, nestData = true): MounterMocker => {
+  addMock = (func: ApiFunctionKeys, obj: any, nestData = true): MounterMocker => {
     this.promises.push(
       new Promise((resolve, reject) => {
-        jest.spyOn(API, func).mockImplementation(() => {
+        (jest.spyOn(API, func) as jest.SpyInstance).mockImplementation(() => {
           return new Promise(r => {
             nestData ? r({ data: obj }) : r(obj);
             setTimeout(() => {
