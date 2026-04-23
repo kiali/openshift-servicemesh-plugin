@@ -254,3 +254,23 @@ make -e CONTAINER_VERSION=v0.1.0 build-push-plugin-multi-arch
 If you want to release a "latest" image, set `CONTAINER_VERSION` to "latest".
 
 Once complete, the image will be pushed to quay.io in this repository: https://quay.io/repository/kiali/ossmconsole?tab=tags
+
+## AI-Assisted Development Tooling
+
+The [kiali/ai-tools](https://github.com/kiali/ai-tools) repository contains shared Cursor rules and AI configuration used across Kiali repositories. To use them, clone the repo alongside the other Kiali repositories and create a symlink:
+
+```sh
+cd $OSSMC_SOURCES
+git clone https://github.com/kiali/ai-tools.git
+ln -s $OSSMC_SOURCES/ai-tools/cursor/.cursor/rules openshift-servicemesh-plugin/.cursor/rules
+```
+
+This makes the shared Cursor rules (`.mdc` files) available in the OSSMC workspace. The symlink is gitignored — each developer sets it up locally.
+
+### Code Reviewer Plugin
+
+The project includes configuration for an AI-powered code review pipeline under `.cursor/code-reviewer/` and `.claude/code-reviewer/`. The pipeline runs three parallel review phases — adversarial (bugs, security, architecture), style (convention enforcement against the project's style guide), and testing (coverage gaps, test quality) — then consolidates findings into a single report with structured IDs and a verdict.
+
+For Cursor users, the review pipeline is activated by typing `/code-reviewer:review` once the `ai-tools` symlink above is in place.
+
+For Claude Code users, the code-reviewer plugin must be installed separately from [openshift-service-mesh/ci-utils](https://github.com/openshift-service-mesh/ci-utils/tree/main/plugins/code-reviewer). Once installed, run `/code-reviewer:review` to review your branch changes.
