@@ -1,4 +1,4 @@
-import { parseWorkloadName } from '../../../utils/PodNameParser';
+import { parseWorkloadName } from '../PodNameParser';
 
 describe('parseWorkloadName', () => {
   describe('Deployment pods (3+ segments)', () => {
