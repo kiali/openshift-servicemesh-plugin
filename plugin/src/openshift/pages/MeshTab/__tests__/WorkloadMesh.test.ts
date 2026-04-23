@@ -1,46 +1,4 @@
-import { parseWorkloadName } from '../WorkloadMesh';
-
-jest.mock('react-router-dom-v5-compat', () => ({
-  useParams: jest.fn(),
-  useLocation: jest.fn()
-}));
-
-jest.mock('../../../utils/KialiIntegration', () => ({
-  setRouterBasename: jest.fn(),
-  useInitKialiListeners: jest.fn()
-}));
-
-jest.mock('../../../components/KialiController', () => ({
-  centerVerticalHorizontalStyle: 'mock-style'
-}));
-
-jest.mock('openshift/components/KialiContainer', () => ({
-  KialiContainer: jest.fn()
-}));
-
-jest.mock('openshift/utils/IstioResources', () => ({
-  ResourceURLPathProps: {}
-}));
-
-jest.mock('openshift/components/ErrorPage', () => ({
-  ErrorPage: jest.fn()
-}));
-
-jest.mock('utils/I18nUtils', () => ({
-  useKialiTranslation: jest.fn(() => ({ t: (s: string) => s }))
-}));
-
-jest.mock('services/Api', () => ({
-  getWorkload: jest.fn()
-}));
-
-jest.mock('openshift/styles/GlobalStyle', () => ({
-  meshTabPageStyle: 'mock-style'
-}));
-
-jest.mock('pages/WorkloadDetails/WorkloadDetailsPage', () => ({
-  WorkloadDetailsPage: jest.fn()
-}));
+import { parseWorkloadName } from '../../../utils/PodNameParser';
 
 describe('parseWorkloadName', () => {
   describe('Deployment pods (3+ segments)', () => {
