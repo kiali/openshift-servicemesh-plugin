@@ -51,6 +51,11 @@ import { ControlPlaneBadge } from '../Badge/ControlPlaneBadge';
 import { DataPlaneBadge } from '../Badge/DataPlaneBadge';
 import { NotPartOfMeshBadge } from '../Badge/NotPartOfMeshBadge';
 import { getNamespaceModeInfo, isDataPlaneNamespace } from 'utils/NamespaceUtils';
+import { isRevisionAvailable } from '../../pages/Namespaces/NamespaceRevisionUtils';
+
+const revisionWarningIconStyle = kialiStyle({
+  verticalAlign: 'middle'
+});
 
 const rendererInfoStyle = kialiStyle({
   marginBottom: '-0.125rem',
@@ -540,12 +545,16 @@ export const nsRevision: Renderer<NamespaceInfo> = (ns: NamespaceInfo) => {
         key={`VirtuaItem_Revision_${ns.name}`}
         style={{ verticalAlign: 'middle' }}
       >
-        <PFLabel variant="outline" color="grey" isCompact>
-          {t('Not applicable')}
-        </PFLabel>
+        {!ns.isControlPlane && (
+          <PFLabel variant="outline" color="grey">
+            {t('Not applicable')}
+          </PFLabel>
+        )}
       </Td>
     );
   }
+
+  const revAvailable = isRevisionAvailable(ns);
 
   return (
     <Td role="gridcell" dataLabel="Revision" key={`VirtuaItem_Revision_${ns.name}`} style={{ verticalAlign: 'middle' }}>
@@ -553,14 +562,20 @@ export const nsRevision: Renderer<NamespaceInfo> = (ns: NamespaceInfo) => {
         {revisions.map((rev, idx) => (
           <Tooltip
             key={`${ns.name}-rev-${idx}`}
-            content={<span>{t('Istio revision {{version}}', { version: rev })}</span>}
+            content={
+              <span>
+                {!revAvailable
+                  ? t('Control plane with revision "{{version}}" does not exist', { version: rev })
+                  : t('Istio revision {{version}}', { version: rev })}
+              </span>
+            }
           >
             <PFLabel
               variant="outline"
-              color="orange"
-              isCompact
+              color={!revAvailable ? 'red' : 'orange'}
               data-test={idx === 0 ? 'data-plane-revision-badge' : undefined}
               style={idx > 0 ? { marginLeft: '0.25rem' } : undefined}
+              icon={!revAvailable ? <KialiIcon.Warning className={revisionWarningIconStyle} /> : undefined}
             >
               {rev}
             </PFLabel>

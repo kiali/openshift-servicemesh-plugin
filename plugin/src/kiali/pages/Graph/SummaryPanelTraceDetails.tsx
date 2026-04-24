@@ -406,7 +406,7 @@ const mapStateToProps = (state: KialiAppState): ReduxStateProps => ({
 });
 
 const mapDispatchToProps = (dispatch: KialiDispatch): ReduxDispatchProps => ({
-  close: () => dispatch(TracingThunkActions.setTraceId('', undefined)),
+  close: () => dispatch(TracingThunkActions.setTraceId(undefined, undefined)),
   setNode: bindActionCreators(GraphActions.setNode, dispatch)
 });
 
