@@ -5,7 +5,7 @@ import { K8sGroupVersionKind } from '@openshift-console/dynamic-plugin-sdk';
 
 Given('user is at the istio config list page', () => {
   // Forcing "Pause" to not cause unhandled promises from the browser when cypress is testing
-  cy.visit({ url: `${Cypress.config('baseUrl')}/k8s/all-namespaces/istio?refresh=0` });
+  cy.visit({ url: `${Cypress.config('baseUrl')}/ossmconsole/istio?refresh=0` });
 });
 
 When('user selects the {string} project', (namespace: string) => {

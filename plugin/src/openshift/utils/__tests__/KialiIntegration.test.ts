@@ -108,16 +108,16 @@ describe('resolveConsoleUrl', () => {
   });
 
   describe('istio route', () => {
-    test('should map /istio with single namespace to /k8s/ns/<namespace>/istio', () => {
-      expect(resolveConsoleUrl('/istio?namespaces=bookinfo')).toEqual('/k8s/ns/bookinfo/istio');
+    test('should map /istio with single namespace to /ossmconsole/istio preserving query params', () => {
+      expect(resolveConsoleUrl('/istio?namespaces=bookinfo')).toEqual('/ossmconsole/istio?namespaces=bookinfo');
     });
 
-    test('should map /istio without namespaces to /k8s/all-namespaces/istio', () => {
-      expect(resolveConsoleUrl('/istio')).toEqual('/k8s/all-namespaces/istio');
+    test('should map /istio without namespaces to /ossmconsole/istio', () => {
+      expect(resolveConsoleUrl('/istio')).toEqual('/ossmconsole/istio');
     });
 
-    test('should map /istio with multiple namespaces to /k8s/all-namespaces/istio', () => {
-      expect(resolveConsoleUrl('/istio?namespaces=a,b')).toEqual('/k8s/all-namespaces/istio');
+    test('should map /istio with multiple namespaces to /ossmconsole/istio preserving query params', () => {
+      expect(resolveConsoleUrl('/istio?namespaces=a,b')).toEqual('/ossmconsole/istio?namespaces=a,b');
     });
   });
 

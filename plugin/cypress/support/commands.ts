@@ -245,7 +245,7 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
         .replace('/console/graph/namespaces', '/ossmconsole/graph')
         .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns');
     } else if (targetPage === 'istio') {
-      visitUrl.url = '/k8s/all-namespaces/istio';
+      visitUrl.url = '/ossmconsole/istio';
     } else {
       visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
     }

@@ -237,7 +237,10 @@ const extensions: EncodedExtension[] = [
   },
   ...consoleRoute('namespaces', 'Namespaces', Page.NAMESPACES, [`/${OSSM_CONSOLE}/namespaces`]),
   ...consoleRoute('applications', 'Applications', Page.APPLICATIONS, [`/${OSSM_CONSOLE}/applications`]),
-  ...consoleRoute('istio', 'Istio Config', Page.ISTIO, ['/k8s/all-namespaces/istio', '/k8s/ns/:ns/istio']),
+  ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [
+    `/${OSSM_CONSOLE}/istio`,
+    `/${OSSM_CONSOLE}/istio/new/:objectGroup/:objectVersion/:objectKind`
+  ]),
 
   // K8s horizontal navs - service mesh tab of k8s resources
   horizontalNav(K8sResource.Project, Tab.PROJECT),

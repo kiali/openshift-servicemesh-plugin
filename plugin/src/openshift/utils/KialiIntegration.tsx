@@ -129,13 +129,8 @@ const handleApplicationsRoute = ({ path, webParams }: RouteContext): string => {
 
 const handleServicesRoute = (): string => `/k8s/all-namespaces/services`;
 
-const handleIstioRoute = ({ urlParams }: RouteContext): string => {
-  const namespaces = urlParams.get('namespaces');
-
-  if (namespaces && !namespaces.includes(',')) {
-    return `/k8s/ns/${namespaces}/istio`;
-  }
-  return '/k8s/all-namespaces/istio';
+const handleIstioRoute = ({ path, webParams }: RouteContext): string => {
+  return path.replace(/^\/istio/, `/${OSSM_CONSOLE}/istio`) + webParams;
 };
 
 const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): string => {
@@ -161,7 +156,7 @@ const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): 
   if (detail.startsWith('/istio')) {
     const istioUrl = refForKialiIstio(detail);
     if (istioUrl.length === 0) {
-      return '/k8s/all-namespaces/istio';
+      return `/${OSSM_CONSOLE}/istio`;
     }
     return `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
   }

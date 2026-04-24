@@ -48,10 +48,10 @@ Then('user navigates to the OSSMC {string} page', (hrefName: string) => {
         });
       break;
     case 'Istio Config':
-      cy.get('a[href*="/k8s/all-namespaces/istio"]')
+      cy.get('a[href*="/ossmconsole/istio"]')
         .click()
         .then(() => {
-          cy.url().should('include', '/k8s/all-namespaces/istio');
+          cy.url().should('include', '/ossmconsole/istio');
         });
       break;
     case 'Namespaces':
