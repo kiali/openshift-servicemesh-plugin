@@ -18,7 +18,7 @@ jest.mock('app/History', () => ({
 }));
 
 jest.mock('../IstioResources', () => {
-  const actual = jest.requireActual('../IstioResources');
+  const actual = (jest as any).requireActual('../IstioResources');
   return {
     refForKialiIstio: jest.fn(actual.refForKialiIstio)
   };
@@ -122,8 +122,10 @@ describe('resolveConsoleUrl', () => {
   });
 
   describe('tracing route', () => {
-    const mockController = jest.requireMock('../../components/KialiController') as Record<string, unknown>;
-    const mockStore = jest.requireMock('store/ConfigStore') as { store: { getState: jest.Mock } };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mockController = require('../../components/KialiController') as Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mockStore = require('store/ConfigStore') as { store: { getState: jest.Mock } };
 
     afterEach(() => {
       mockController.distributedTracingPluginConfig = undefined;
@@ -203,7 +205,8 @@ describe('resolveConsoleUrl', () => {
   });
 
   describe('netobserv route', () => {
-    const mockController = jest.requireMock('../../components/KialiController') as Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mockController = require('../../components/KialiController') as Record<string, unknown>;
 
     afterEach(() => {
       mockController.netobservPluginConfig = undefined;

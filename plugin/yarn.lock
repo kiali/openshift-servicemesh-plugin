@@ -5004,13 +5004,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jest@npm:^30.0.0":
-  version: 30.0.0
-  resolution: "@types/jest@npm:30.0.0"
-  dependencies:
-    expect: "npm:^30.0.0"
-    pretty-format: "npm:^30.0.0"
-  checksum: 10c0/20c6ce574154bc16f8dd6a97afacca4b8c4921a819496a3970382031c509ebe87a1b37b152a1b8475089b82d8ca951a9e95beb4b9bf78fbf579b1536f0b65969
+"@types/jest@npm:23.3.10":
+  version: 23.3.10
+  resolution: "@types/jest@npm:23.3.10"
+  checksum: 10c0/a39224320a07430beaa99b11cb92f06b90272eb9fe90afd1d6096e711183b5c0f4cb23d54d1e33fc339bd42a032a9bc09e7813f3b5b3cd79fc219bcc8c621f82
   languageName: node
   linkType: hard
 
@@ -9964,7 +9961,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expect@npm:30.3.0, expect@npm:^30.0.0":
+"expect@npm:30.3.0":
   version: 30.3.0
   resolution: "expect@npm:30.3.0"
   dependencies:
@@ -15382,7 +15379,7 @@ __metadata:
     "@types/cypress-cucumber-preprocessor": "npm:^4.0.5"
     "@types/enzyme": "npm:3.10.5"
     "@types/express": "npm:^4.17.21"
-    "@types/jest": "npm:^30.0.0"
+    "@types/jest": "npm:23.3.10"
     "@types/js-yaml": "npm:^4.0.9"
     "@types/lodash-es": "npm:4.17.x"
     "@types/node": "npm:^24.0.0"
@@ -16000,7 +15997,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pretty-format@npm:30.3.0, pretty-format@npm:^30.0.0":
+"pretty-format@npm:30.3.0":
   version: 30.3.0
   resolution: "pretty-format@npm:30.3.0"
   dependencies:
