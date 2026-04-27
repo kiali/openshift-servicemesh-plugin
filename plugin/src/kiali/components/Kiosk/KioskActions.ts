@@ -56,15 +56,19 @@ export const isParentKiosk = (kiosk: string): boolean => {
   return kiosk.length > 0 && kiosk !== 'true';
 };
 
-// Message has no format, parent should parse it for its needs
+// Some embedders can run in the same window (e.g., OSSMC plugin) rather than
+// in an iframe, so we must target window itself there instead of window.top.
+// Security: the browser's postMessage rejects delivery when a specific
+// targetOrigin doesn't match the recipient's actual origin, so an
+// attacker-supplied ?kiosk=https://evil.com is harmless.
 const sendParentMessage = (msg: string): void => {
-  // Kiosk parameter will send the parent target when kiosk !== "true"
-  // this will enable parent communication.
-  // Guard: only send if actually embedded in a parent frame. Without this check,
-  // a direct visit with ?kiosk=https://attacker.com would attempt postMessage to
-  // window.top (which equals window itself), allowing origin confusion.
   const targetOrigin = store.getState().globalState.kiosk;
-  if (isParentKiosk(targetOrigin) && window.top !== window.self) {
-    window.top?.postMessage(msg, targetOrigin);
+
+  if (!isParentKiosk(targetOrigin) || targetOrigin === '*') {
+    return;
   }
+
+  const isEmbeddedInIframe = window.top !== window.self;
+  const target = isEmbeddedInIframe ? window.top : window;
+  target?.postMessage(msg, targetOrigin);
 };

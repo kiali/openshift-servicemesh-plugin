@@ -6,7 +6,6 @@ import {
   ChartGroup,
   ChartScatter,
   ChartLabel,
-  ChartLegend,
   ChartLine,
   createContainer
 } from '@patternfly/react-charts/victory';
@@ -18,7 +17,7 @@ import { VCLines, LegendItem, LineInfo, RichDataPoint, RawOrBucket, VCDataPoint 
 import { Overlay } from 'types/Overlay';
 import { BrushHandlers, getVoronoiContainerProps } from './Container';
 import { toBuckets } from 'utils/VictoryChartsUtils';
-import { VCEvent, addLegendEvent } from 'utils/VictoryEvents';
+import { VCEvent } from 'utils/VictoryEvents';
 import { XAxisType } from 'types/Dashboards';
 import { CustomTooltip } from './CustomTooltip';
 import { INTERPOLATION_STRATEGY } from './SparklineChart';
@@ -27,6 +26,7 @@ import { Button, ButtonVariant, Tooltip, TooltipPosition } from '@patternfly/rea
 import regression from 'regression';
 import { kialiStyle } from 'styles/StyleUtils';
 import { PFColors } from 'components/Pf/PfColors';
+import { t } from 'utils/I18nUtils';
 import { VictoryVoronoiContainer } from 'victory-voronoi-container';
 
 type Props<T extends RichDataPoint, O extends LineInfo> = {
@@ -58,7 +58,8 @@ type Props<T extends RichDataPoint, O extends LineInfo> = {
 
 type State = {
   hiddenSeries: Set<string>;
-  showMoreLegend: boolean;
+  legendExpanded: boolean;
+  legendOverflows: boolean;
   width: number;
 };
 
@@ -84,61 +85,81 @@ export const MIN_HEIGHT = 20;
 export const MIN_HEIGHT_YAXIS = 70;
 export const MIN_WIDTH = 275;
 export const LEGEND_HEIGHT = 25;
-const FONT_SIZE_LEGEND = 14;
+const CHART_BOTTOM_PADDING = 15;
 
-const moreLegendStyle = kialiStyle({
-  display: 'flex',
-  marginTop: '0.25rem',
-  marginLeft: 'auto'
-});
-
-const overlayLegendStyle = kialiStyle({
+const legendCollapsedStyle = kialiStyle({
   display: 'flex',
   flexWrap: 'wrap',
-  flexDirection: 'column',
-  position: 'relative',
-  opacity: 0.7,
-  overflow: 'auto'
+  gap: '0 1rem',
+  height: `${LEGEND_HEIGHT}px`,
+  overflow: 'hidden'
 });
 
-const fullLegendStyle = kialiStyle({
-  color: PFColors.White,
-  margin: 'auto',
-  $nest: {
-    '& > div': {
-      display: 'inline-block',
-      marginRight: '0.25rem',
-      width: '0.5rem',
-      height: '0.5rem'
-    }
-  }
+const legendExpandedStyle = kialiStyle({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '0 1rem'
+});
+
+const htmlLegendItemStyle = kialiStyle({
+  alignItems: 'center',
+  cursor: 'pointer',
+  display: 'inline-flex',
+  fontSize: '0.875rem',
+  gap: '0.25rem',
+  userSelect: 'none'
+});
+
+const legendToggleStyle = kialiStyle({
+  marginLeft: 'auto'
 });
 
 export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extends React.Component<Props<T, O>, State> {
   containerRef: React.RefObject<HTMLDivElement>;
   hoveredItem?: VCDataPoint;
-  mouseOnLegend = false;
+  legendRef: HTMLDivElement | null = null;
+  private mountTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(props: Props<T, O>) {
     super(props);
     this.containerRef = React.createRef<HTMLDivElement>();
     this.state = {
-      width: 0,
       hiddenSeries: new Set([overlayName]),
-      showMoreLegend: false
+      legendExpanded: false,
+      legendOverflows: false,
+      width: 0
     };
   }
 
   componentDidMount(): void {
-    setTimeout(() => {
+    this.mountTimer = setTimeout(() => {
+      this.mountTimer = undefined;
       this.handleResize();
+      this.checkLegendOverflow();
       window.addEventListener('resize', this.handleResize);
     });
   }
 
+  componentDidUpdate(): void {
+    this.checkLegendOverflow();
+  }
+
   componentWillUnmount(): void {
+    if (this.mountTimer !== undefined) {
+      clearTimeout(this.mountTimer);
+    }
     window.removeEventListener('resize', this.handleResize);
   }
+
+  private checkLegendOverflow = (): void => {
+    if (this.legendRef && !this.state.legendExpanded) {
+      const overflows = this.legendRef.scrollHeight > this.legendRef.clientHeight;
+
+      if (overflows !== this.state.legendOverflows) {
+        this.setState({ legendOverflows: overflows });
+      }
+    }
+  };
 
   private onTooltipClose = (): void => {
     if (this.props.onTooltipClose) {
@@ -160,50 +181,24 @@ export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extend
     }
   };
 
-  private onShowMoreLegend = (): void => {
-    this.setState(prevState => {
-      return {
-        showMoreLegend: !prevState.showMoreLegend
-      };
-    });
+  private handleToggleLegendExpanded = (): void => {
+    this.setState(prevState => ({ legendExpanded: !prevState.legendExpanded }));
   };
 
   render(): React.ReactNode {
     const scaleInfo = this.scaledAxisInfo(this.props.data);
     const fullLegendData = this.buildFullLegendData();
-    const filteredLegendData = this.buildFilteredLegendData(fullLegendData);
-    const showMoreLegend = fullLegendData.length > filteredLegendData.length;
     const chartHeight = this.props.chartHeight ?? 300;
-    const overlayIdx = this.props.data.length;
     const showOverlay = (this.props.overlay && this.props.showSpans) ?? false;
     const overlayRightPadding = showOverlay ? 15 : 0;
 
+    const showLegend = chartHeight > MIN_HEIGHT_YAXIS;
     const padding: Padding = {
-      top: 0,
-      bottom: chartHeight > MIN_HEIGHT_YAXIS ? LEGEND_HEIGHT : 0,
+      bottom: showLegend ? CHART_BOTTOM_PADDING : 0,
       left: 0,
-      right: 10 + overlayRightPadding
+      right: 10 + overlayRightPadding,
+      top: 0
     };
-
-    const events: VCEvent[] = [];
-
-    if (this.props.onClick) {
-      events.push({
-        target: 'parent',
-        eventHandlers: {
-          onClick: () => {
-            if (this.hoveredItem) {
-              this.props.onClick!(this.hoveredItem as RawOrBucket<O>);
-            }
-            return [];
-          }
-        }
-      });
-    }
-
-    this.props.data.forEach((s, idx) =>
-      this.registerEvents(events, idx, [`serie-${idx}`, `serie-reg-${idx}`], s.legendItem.name)
-    );
 
     let useSecondAxis = showOverlay;
     let normalizedOverlay: RawOrBucket<O>[] = [];
@@ -212,7 +207,6 @@ export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extend
     const mainMax = Math.max(...this.props.data.map(line => Math.max(...line.datapoints.map(d => d.y))));
 
     if (this.props.overlay) {
-      this.registerEvents(events, overlayIdx, [overlayName], overlayName);
       // Normalization for y-axis display to match y-axis domain of the main data
       // (see https://formidable.com/open-source/victory/gallery/multiple-dependent-axes/)
       const overlayMax = Math.max(...this.props.overlay.vcLine.datapoints.map(d => d.y));
@@ -251,7 +245,31 @@ export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extend
 
     const filteredData = this.props.data.filter(s => !this.state.hiddenSeries.has(s.legendItem.name));
 
-    const voronoiProps = getVoronoiContainerProps(labelComponent, () => this.mouseOnLegend);
+    const events: VCEvent[] = [];
+
+    if (this.props.onClick) {
+      // Register click events directly on data series so Victory provides the
+      // clicked datum synchronously, avoiding the race where hoveredItem is set
+      // asynchronously through the tooltip mount lifecycle.
+      const serieNames = filteredData.map((_, idx) => `serie-${idx}`);
+      const onClick = this.props.onClick;
+
+      // Victory data-level handlers receive (event, victoryProps) but the VCEvent
+      // type only declares (event).  We cast to any to bridge the mismatch.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dataClickHandler: any = (_evt: MouseEvent, victoryProps: { datum: RawOrBucket<O> }) => {
+        onClick(victoryProps.datum);
+        return [];
+      };
+
+      events.push({
+        childName: serieNames,
+        target: 'data',
+        eventHandlers: { onClick: dataClickHandler }
+      });
+    }
+
+    const voronoiProps = getVoronoiContainerProps(labelComponent, () => false);
 
     let containerComponent: React.ReactElement;
 
@@ -274,13 +292,14 @@ export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extend
       containerComponent = <VictoryVoronoiContainer {...voronoiProps} />;
     }
 
+    const svgHeight = showLegend ? chartHeight - LEGEND_HEIGHT : chartHeight;
     const chart = (
-      <div ref={this.containerRef} style={{ marginTop: 0, height: chartHeight }}>
+      <div ref={this.containerRef} style={{ marginTop: 0 }}>
         <Chart
           width={this.state.width}
           padding={padding}
           events={events as any[]}
-          height={chartHeight}
+          height={svgHeight}
           containerComponent={containerComponent}
           scale={{ x: this.props.xAxis === 'series' ? 'linear' : 'time', y: 'linear' }}
           // Hack: Need at least 1 pxl on Y domain padding to prevent harsh clipping (https://github.com/kiali/kiali/issues/2069)
@@ -352,9 +371,7 @@ export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extend
             />
           )}
 
-          {this.props.xAxis === 'series'
-            ? this.renderCategories()
-            : this.renderTimeSeries(chartHeight > MIN_HEIGHT_YAXIS ? chartHeight - LEGEND_HEIGHT : chartHeight)}
+          {this.props.xAxis === 'series' ? this.renderCategories() : this.renderTimeSeries(svgHeight)}
 
           {showOverlay &&
             (this.props.overlay!.info.buckets ? (
@@ -378,62 +395,61 @@ export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extend
                 style={{ data: this.props.overlay!.info.dataStyle }}
               />
             ))}
-
-          {chartHeight > MIN_HEIGHT_YAXIS ? (
-            <ChartLegend
-              name="serie-legend"
-              data={filteredLegendData}
-              x={0}
-              y={chartHeight}
-              height={LEGEND_HEIGHT}
-              width={this.state.width}
-              style={{
-                data: { cursor: 'pointer', padding: 0 },
-                labels: { cursor: 'pointer', fontSize: FONT_SIZE_LEGEND }
-              }}
-              borderPadding={{
-                top: 5,
-                left: 0,
-                right: 0,
-                bottom: 0
-              }}
-              symbolSpacer={5}
-              gutter={{
-                left: 0,
-                right: 15
-              }}
-            />
-          ) : undefined}
         </Chart>
 
-        {showMoreLegend && chartHeight > MIN_HEIGHT_YAXIS && (
-          <Tooltip position={TooltipPosition.left} content={<div style={{ textAlign: 'left' }}>Show full legend</div>}>
-            <Button
-              variant={ButtonVariant.link}
-              className={moreLegendStyle}
-              isInline
-              onClick={() => this.onShowMoreLegend()}
+        {showLegend && (
+          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+            <div
+              ref={ref => {
+                this.legendRef = ref;
+              }}
+              className={this.state.legendExpanded ? legendExpandedStyle : legendCollapsedStyle}
+              style={{ flex: 1 }}
             >
-              <KialiIcon.MoreLegend />
-            </Button>
-          </Tooltip>
-        )}
+              {fullLegendData.map(item => (
+                <span
+                  key={item.name}
+                  aria-pressed={this.state.hiddenSeries.has(item.name)}
+                  className={htmlLegendItemStyle}
+                  onClick={() => this.handleToggleSeries(item.name)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      this.handleToggleSeries(item.name);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10">
+                    {this.renderLegendSymbol(item.symbol)}
+                  </svg>
+                  <span style={{ color: this.state.hiddenSeries.has(item.name) ? PFColors.Color200 : undefined }}>
+                    {item.name}
+                  </span>
+                </span>
+              ))}
+            </div>
 
-        {this.state.showMoreLegend && (
-          <div
-            style={{
-              width: this.state.width,
-              height: chartHeight,
-              top: -(chartHeight + LEGEND_HEIGHT)
-            }}
-            className={overlayLegendStyle}
-          >
-            {fullLegendData.map((ld: LegendItem, idx: number) => (
-              <div key={`full_legend_${idx}`} className={fullLegendStyle}>
-                <div style={{ backgroundColor: ld.symbol.fill }}></div>
-                {ld.name}
-              </div>
-            ))}
+            {(this.state.legendOverflows || this.state.legendExpanded) && (
+              <Tooltip
+                position={TooltipPosition.left}
+                content={
+                  <div style={{ textAlign: 'left' }}>
+                    {this.state.legendExpanded ? t('Collapse legend') : t('Show full legend')}
+                  </div>
+                }
+              >
+                <Button
+                  variant={ButtonVariant.link}
+                  className={legendToggleStyle}
+                  isInline
+                  onClick={this.handleToggleLegendExpanded}
+                >
+                  <KialiIcon.MoreLegend />
+                </Button>
+              </Tooltip>
+            )}
           </div>
         )}
       </div>
@@ -445,7 +461,7 @@ export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extend
       <div>
         <Tooltip
           position={TooltipPosition.right}
-          content={<div style={{ textAlign: 'left' }}>Increase height of the chart</div>}
+          content={<div style={{ textAlign: 'left' }}>{t('Increase height of the chart')}</div>}
         >
           <Button variant={ButtonVariant.link} isInline>
             <KialiIcon.MoreLegend />
@@ -533,7 +549,7 @@ export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extend
 
   private renderCategories = (): React.ReactNode => {
     let domainX = 1;
-    const nbSeries = this.props.data.length - this.state.hiddenSeries.size;
+    const nbSeries = this.props.data.filter(s => !this.state.hiddenSeries.has(s.legendItem.name)).length;
     const size = ((this.props.sizeRatio ?? 1) * this.state.width) / Math.max(nbSeries, 1);
 
     return this.props.data.map((serie, idx) => {
@@ -582,56 +598,45 @@ export class ChartWithLegend<T extends RichDataPoint, O extends LineInfo> extend
     }
   };
 
+  private renderLegendSymbol = (symbol: { fill: string; type?: string }): React.ReactNode => {
+    switch (symbol.type) {
+      case 'circle':
+        return <circle cx="5" cy="5" r="5" fill={symbol.fill} />;
+      case 'diamond':
+        return <polygon points="5,0 10,5 5,10 0,5" fill={symbol.fill} />;
+      case 'star':
+        return <polygon points="5,0 6.5,3.5 10,4 7.5,6.5 8,10 5,8 2,10 2.5,6.5 0,4 3.5,3.5" fill={symbol.fill} />;
+      case 'triangleUp':
+        return <polygon points="5,0 10,10 0,10" fill={symbol.fill} />;
+      case 'triangleDown':
+        return <polygon points="0,0 10,0 5,10" fill={symbol.fill} />;
+      default:
+        return <rect width="10" height="10" fill={symbol.fill} />;
+    }
+  };
+
+  private handleToggleSeries = (name?: string): void => {
+    if (name === undefined) {
+      return;
+    }
+    this.setState(prevState => {
+      const next = new Set(prevState.hiddenSeries);
+      if (!next.delete(name)) {
+        next.add(name);
+      }
+      return { hiddenSeries: next };
+    });
+  };
+
   private buildFullLegendData = (): LegendItem[] => {
     return this.props.data.map(s => {
       const name = s.legendItem.name;
 
-      if (this.state.hiddenSeries.has(s.legendItem.name)) {
+      if (this.state.hiddenSeries.has(name)) {
         return { name, symbol: { ...s.legendItem.symbol, fill: PFColors.Color200 } };
       }
 
       return { ...s.legendItem, name };
-    });
-  };
-
-  private buildFilteredLegendData = (fullLegendData: LegendItem[]): LegendItem[] => {
-    // 30px == "more legend" left button width
-    // 10px == "more legend" left padding
-    const maxWidth = this.state.width - 30 - 10;
-    const filtered: LegendItem[] = [];
-    let currentWidth = 0;
-
-    for (let i = 0; i < fullLegendData.length; i++) {
-      const item = fullLegendData[i];
-      // 12px == legend icon + space
-      // 7px == char size
-      // 15px == right padding
-      currentWidth += 12 + item.name.length * 7 + 15;
-
-      if (currentWidth >= maxWidth) {
-        break;
-      }
-
-      filtered.push(item);
-    }
-
-    return filtered;
-  };
-
-  private registerEvents = (events: VCEvent[], idx: number, serieID: string[], serieName: string): void => {
-    addLegendEvent(events, {
-      legendName: 'serie-legend',
-      idx: idx,
-      serieID: serieID,
-      onClick: () => {
-        if (!this.state.hiddenSeries.delete(serieName)) {
-          // Was not already hidden => add to set
-          this.state.hiddenSeries.add(serieName);
-        }
-
-        this.setState({ hiddenSeries: new Set(this.state.hiddenSeries) });
-        return null;
-      }
     });
   };
 

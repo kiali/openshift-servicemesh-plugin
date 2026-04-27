@@ -1,17 +1,6 @@
 import * as React from 'react';
-import {
-  Button,
-  EmptyState,
-  EmptyStateBody,
-  ButtonVariant,
-  EmptyStateVariant
-} from '@patternfly/react-core';
-import {
-	ChartArea,
-	ChartBar,
-	ChartScatter,
-	ChartLine
-} from '@patternfly/react-charts/victory';
+import { Button, EmptyState, EmptyStateBody, ButtonVariant, EmptyStateVariant } from '@patternfly/react-core';
+import { ChartArea, ChartBar, ChartScatter, ChartLine } from '@patternfly/react-charts/victory';
 import { CubesIcon, ErrorCircleOIcon } from '@patternfly/react-icons';
 
 import { ChartModel } from 'types/Dashboards';
@@ -24,16 +13,16 @@ import { kialiStyle } from 'styles/StyleUtils';
 import { PFColors } from 'components/Pf/PfColors';
 
 type KChartProps<T extends LineInfo> = {
+  brushHandlers?: BrushHandlers;
   chart: ChartModel;
   chartHeight?: number;
   data: VCLines<RichDataPoint>;
   isMaximized: boolean;
-  onToggleMaximized: () => void;
   onClick?: (datum: RawOrBucket<T>) => void;
+  onToggleMaximized: () => void;
+  overlay?: Overlay<T>;
   showSpans: boolean;
   showTrendline?: boolean;
-  brushHandlers?: BrushHandlers;
-  overlay?: Overlay<T>;
   timeWindow?: [Date, Date];
 };
 
@@ -43,30 +32,32 @@ export const maximizeButtonStyle: React.CSSProperties = {
 };
 
 const emptyStyle = kialiStyle({
-  padding: '0 0 0 0',
-  margin: '0 0 0 0'
+  padding: '0',
+  margin: '0'
 });
 
 const kchartStyle = kialiStyle({
-  paddingTop: 15,
-  paddingLeft: 25,
-  paddingRight: 25,
-  paddingBottom: 12
+  marginBottom: '0.5rem',
+  marginLeft: '1.5rem',
+  marginRight: '1.5rem',
+  marginTop: '0.5rem'
 });
 
-// 24px (title + toolbar) + 20px (margin) + 15px (padding) + 15px (padding)
-const titlePadding = 64;
+const chartContainerStyle = kialiStyle({
+  marginTop: '1.25rem'
+});
 
 type State = {
   collapsed: boolean;
+  innerChartHeight: number;
 };
 
 type ChartTypeData = {
   fill: boolean;
-  stroke: boolean;
   groupOffset: number;
   seriesComponent: React.ReactElement;
   sizeRatio: number;
+  stroke: boolean;
 };
 
 const lineInfo: ChartTypeData = {
@@ -99,16 +90,24 @@ const scatterInfo: ChartTypeData = {
 };
 
 export class KChart<T extends LineInfo> extends React.Component<KChartProps<T>, State> {
+  chartContainerRef: React.RefObject<HTMLDivElement>;
+  titleRef: React.RefObject<HTMLDivElement>;
+
   constructor(props: KChartProps<T>) {
     super(props);
+    this.chartContainerRef = React.createRef<HTMLDivElement>();
+    this.titleRef = React.createRef<HTMLDivElement>();
     this.state = {
-      collapsed: this.props.chart.startCollapsed || (!this.props.chart.error && this.isEmpty())
+      collapsed: this.props.chart.startCollapsed || (!this.props.chart.error && this.isEmpty()),
+      innerChartHeight: this.props.chartHeight || 300
     };
   }
 
-  componentDidUpdate(prevProps: KChartProps<T>) {
-    // Check when there is a change on empty datapoints on a refresh to draw the chart collapsed the first time
-    // User can change the state after that point
+  componentDidMount(): void {
+    this.measureInnerChartHeight();
+  }
+
+  componentDidUpdate(prevProps: KChartProps<T>): void {
     const propsIsEmpty = !this.props.data.some(s => s.datapoints.length !== 0);
     const prevPropsIsEmpty = !prevProps.data.some(s => s.datapoints.length !== 0);
     if (propsIsEmpty !== prevPropsIsEmpty) {
@@ -116,18 +115,26 @@ export class KChart<T extends LineInfo> extends React.Component<KChartProps<T>, 
         collapsed: propsIsEmpty
       });
     }
+    this.measureInnerChartHeight();
   }
 
-  private getInnerChartHeight = (): number => {
-    const chartHeight: number = this.props.chartHeight || 300;
-    const innerChartHeight = chartHeight - titlePadding;
-    return innerChartHeight;
+  private measureInnerChartHeight = (): void => {
+    if (this.titleRef.current && this.chartContainerRef.current) {
+      const chartHeight = this.props.chartHeight || 300;
+      const titleHeight = this.titleRef.current.offsetHeight;
+      const margin = parseFloat(getComputedStyle(this.chartContainerRef.current).marginTop);
+      const measured = chartHeight - titleHeight - margin;
+      if (measured > 0 && measured !== this.state.innerChartHeight) {
+        this.setState({ innerChartHeight: measured });
+      }
+    }
   };
 
-  render() {
+  render(): React.ReactNode {
     return (
       <div className={kchartStyle}>
         <div
+          ref={this.titleRef}
           style={{
             display: 'flex',
             justifyContent: 'space-between'
@@ -152,14 +159,14 @@ export class KChart<T extends LineInfo> extends React.Component<KChartProps<T>, 
             </div>
           )}
         </div>
-        <div style={{ marginTop: 20 }} data-test={'metrics-chart'}>
+        <div ref={this.chartContainerRef} className={chartContainerStyle} data-test={'metrics-chart'}>
           {this.props.chart.error ? this.renderError() : this.isEmpty() ? this.renderEmpty() : this.renderChart()}
         </div>
       </div>
     );
   }
 
-  private determineChartType() {
+  private determineChartType(): ChartTypeData {
     if (this.props.chart.chartType === undefined) {
       if (this.props.chart.xAxis === 'series') {
         return barInfo;
@@ -183,7 +190,7 @@ export class KChart<T extends LineInfo> extends React.Component<KChartProps<T>, 
     }
   }
 
-  private renderChart() {
+  private renderChart(): React.ReactNode {
     if (this.state.collapsed) {
       return undefined;
     }
@@ -192,7 +199,7 @@ export class KChart<T extends LineInfo> extends React.Component<KChartProps<T>, 
     const maxDomain = this.props.chart.max === undefined ? undefined : { y: this.props.chart.max };
     return (
       <ChartWithLegend
-        chartHeight={this.getInnerChartHeight()}
+        chartHeight={this.state.innerChartHeight}
         data={this.props.data}
         seriesComponent={typeData.seriesComponent}
         fill={typeData.fill}
@@ -217,8 +224,8 @@ export class KChart<T extends LineInfo> extends React.Component<KChartProps<T>, 
     return !this.props.data.some(s => s.datapoints.length !== 0);
   }
 
-  private renderEmpty() {
-    const chartHeight = this.getInnerChartHeight();
+  private renderEmpty(): React.ReactNode {
+    const chartHeight = this.state.innerChartHeight;
     const conditionalIcon = this.props.isMaximized ? { icon: CubesIcon } : {};
 
     return chartHeight > MIN_HEIGHT ? (
@@ -241,7 +248,7 @@ export class KChart<T extends LineInfo> extends React.Component<KChartProps<T>, 
     ) : undefined;
   }
 
-  private renderError() {
+  private renderError(): React.ReactNode {
     const conditionalIcon = this.props.isMaximized
       ? { icon: () => <ErrorCircleOIcon style={{ color: PFColors.Danger }} width={32} height={32} /> }
       : {};
@@ -252,7 +259,7 @@ export class KChart<T extends LineInfo> extends React.Component<KChartProps<T>, 
           justifyContent: 'center',
           alignItems: 'center',
           overflow: 'hidden',
-          height: this.getInnerChartHeight(),
+          height: this.state.innerChartHeight,
           textAlign: 'center'
         }}
       >
