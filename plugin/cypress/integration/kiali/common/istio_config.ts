@@ -1,6 +1,6 @@
 import { AfterAll, Given, Then, When } from '@badeball/cypress-cucumber-preprocessor';
 import { colExists, getColWithRowText } from './table';
-import { ensureKialiFinishedLoading } from './transition';
+import { ensureKialiFinishedLoading, waitForResourceDeletion } from './transition';
 import { getGVKTypeString } from 'utils/IstioConfigUtils';
 
 const CLUSTER1_CONTEXT = Cypress.env('CLUSTER1_CONTEXT');
@@ -761,4 +761,11 @@ AfterAll(() => {
     'sh -c \'ISTIO_DIR=$(ls -dt1 ../_output/istio-* 2>/dev/null | head -n1); [ -z "$ISTIO_DIR" ] && exit 0; NET="$ISTIO_DIR/samples/bookinfo/networking/bookinfo-gateway.yaml"; [ -f "$NET" ] || exit 0; kubectl apply -n bookinfo -f "$NET"\'',
     { failOnNonZeroExit: false }
   );
+  waitForResourceDeletion('istio-system', 'PeerAuthentication', 'default');
+  waitForResourceDeletion('istio-system', 'Sidecar', 'default');
+  // Restart alpha and beta deployments to ensure clean state for subsequent tests
+  cy.exec('kubectl rollout restart deployment -n alpha', { failOnNonZeroExit: false });
+  cy.exec('kubectl rollout restart deployment -n beta', { failOnNonZeroExit: false });
+  cy.exec('kubectl rollout status deployment -n alpha --timeout=60s', { failOnNonZeroExit: false });
+  cy.exec('kubectl rollout status deployment -n beta --timeout=60s', { failOnNonZeroExit: false });
 });

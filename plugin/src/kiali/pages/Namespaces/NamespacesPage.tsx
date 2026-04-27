@@ -36,8 +36,11 @@ import { Show } from 'types/Common';
 import { ApiError } from 'types/Api';
 import { router } from '../../app/History';
 import { Paths } from '../../config';
-import { isParentKiosk, kioskOverviewAction as kioskAction } from '../../components/Kiosk/KioskActions';
-import { store } from '../../store/ConfigStore';
+import {
+  isParentKiosk,
+  kioskNavigateAction,
+  kioskOverviewAction as kioskAction
+} from '../../components/Kiosk/KioskActions';
 import { setAIContext } from 'helpers/ChatAI';
 import { KialiDispatch } from 'types/Redux';
 import { t } from 'utils/I18nUtils';
@@ -60,6 +63,7 @@ import {
 } from '../../components/Filters/ListColumnManagementModal';
 import { ManagedColumn } from '../../components/VirtualList/ManagedColumnTypes';
 import { NamespacesListActions } from '../../actions/NamespacesListActions';
+import { setControlPlaneRevisions } from './NamespaceRevisionUtils';
 
 // Maximum number of namespaces to include in a single backend API call
 const MAX_NAMESPACES_PER_CALL = 100;
@@ -153,11 +157,7 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
     }
     showInParent += `&duration=${String(duration)}&refresh=${refreshInterval}`;
 
-    // Use the same sendParentMessage logic from KioskActions
-    const targetOrigin = store.getState().globalState.kiosk;
-    if (isParentKiosk(targetOrigin)) {
-      window.top?.postMessage(showInParent, targetOrigin);
-    }
+    kioskNavigateAction(showInParent);
   };
 
   constructor(props: NamespacesProps) {
@@ -687,9 +687,9 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
   private fetchControlPlanes = async (): Promise<void> => {
     return API.getControlPlanes()
       .then(response => {
-        this.setState({
-          controlPlanes: response.data
-        });
+        const controlPlanes = response.data;
+        setControlPlaneRevisions(new Set(controlPlanes.map(cp => cp.revision)));
+        this.setState({ controlPlanes });
       })
       .catch(err => {
         addError('Error fetching control planes.', err);
@@ -1016,7 +1016,7 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
             isExternal: true,
             title: link.name,
             action: (_ns: string) => {
-              window.open(link.url, '_blank');
+              window.open(link.url, '_blank', 'noopener,noreferrer');
               this.onChange();
             }
           };
@@ -1038,7 +1038,7 @@ export class NamespacesPageComponent extends React.Component<NamespacesProps, St
             isExternal: true,
             title: link.name,
             action: (_ns: string) => {
-              window.open(link.url, '_blank');
+              window.open(link.url, '_blank', 'noopener,noreferrer');
               this.onChange();
             }
           };

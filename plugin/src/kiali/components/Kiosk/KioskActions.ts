@@ -40,8 +40,11 @@ export const kioskRefreshAction = (refreshInterval: IntervalInMilliseconds): voi
   sendParentMessage(showInParent);
 };
 
+// Encode parameters to prevent query-string injection in parent message parsing.
 export const kioskTracingAction = (url?: string, traceID?: string): void => {
-  const showInParent = `/tracing/namespaces?trace=${traceID}&url=${url}`;
+  const showInParent = `/tracing/namespaces?trace=${encodeURIComponent(traceID ?? '')}&url=${encodeURIComponent(
+    url ?? ''
+  )}`;
   sendParentMessage(showInParent);
 };
 
@@ -53,12 +56,19 @@ export const isParentKiosk = (kiosk: string): boolean => {
   return kiosk.length > 0 && kiosk !== 'true';
 };
 
-// Message has no format, parent should parse it for its needs
+// Some embedders can run in the same window (e.g., OSSMC plugin) rather than
+// in an iframe, so we must target window itself there instead of window.top.
+// Security: the browser's postMessage rejects delivery when a specific
+// targetOrigin doesn't match the recipient's actual origin, so an
+// attacker-supplied ?kiosk=https://evil.com is harmless.
 const sendParentMessage = (msg: string): void => {
-  // Kiosk parameter will send the parent target when kiosk !== "true"
-  // this will enable parent communication
   const targetOrigin = store.getState().globalState.kiosk;
-  if (isParentKiosk(targetOrigin)) {
-    window.top?.postMessage(msg, targetOrigin);
+
+  if (!isParentKiosk(targetOrigin) || targetOrigin === '*') {
+    return;
   }
+
+  const isEmbeddedInIframe = window.top !== window.self;
+  const target = isEmbeddedInIframe ? window.top : window;
+  target?.postMessage(msg, targetOrigin);
 };

@@ -10,8 +10,6 @@ import { MetricsObjectTypes } from '../../../types/Metrics';
 import { MounterMocker } from 'services/__mocks__/MounterMocker';
 import { ChartModel, DashboardModel } from 'types/Dashboards';
 import { KialiDisabledFeatures } from 'types/ServerConfig';
-import { ApiResponse } from 'types/Api';
-import { GrafanaInfo } from 'types/GrafanaInfo';
 
 const createMetricChart = (name: string): ChartModel => {
   return {
@@ -81,20 +79,18 @@ const createHistogramChart = (name: string): ChartModel => {
 
 describe('Metrics for a service', () => {
   beforeEach(() => {
-    jest.spyOn(API, 'getGrafanaInfo').mockResolvedValue({ data: { externalLinks: [] } } as ApiResponse<GrafanaInfo>);
+    jest.spyOn(API, 'getGrafanaInfo').mockResolvedValue({ externalLinks: [] });
     jest.spyOn(API, 'getDisabledFeatures').mockResolvedValue({
-      data: {
-        requestSize: false,
-        requestSizeAverage: false,
-        requestSizePercentiles: false,
-        responseSize: false,
-        responseSizeAverage: false,
-        responseSizePercentiles: false,
-        responseTime: false,
-        responseTimeAverage: false,
-        responseTimePercentiles: false
-      }
-    } as ApiResponse<KialiDisabledFeatures>);
+      requestSize: false,
+      requestSizeAverage: false,
+      requestSizePercentiles: false,
+      responseSize: false,
+      responseSizeAverage: false,
+      responseSizePercentiles: false,
+      responseTime: false,
+      responseTimeAverage: false,
+      responseTimePercentiles: false
+    } as KialiDisabledFeatures);
   });
 
   afterEach(() => {
@@ -172,18 +168,16 @@ describe('Metrics for a service', () => {
 describe('Inbound Metrics for a workload', () => {
   beforeEach(() => {
     jest.spyOn(API, 'getDisabledFeatures').mockResolvedValue({
-      data: {
-        requestSize: false,
-        requestSizeAverage: false,
-        requestSizePercentiles: false,
-        responseSize: false,
-        responseSizeAverage: false,
-        responseSizePercentiles: false,
-        responseTime: false,
-        responseTimeAverage: false,
-        responseTimePercentiles: false
-      }
-    } as ApiResponse<KialiDisabledFeatures>);
+      requestSize: false,
+      requestSizeAverage: false,
+      requestSizePercentiles: false,
+      responseSize: false,
+      responseSizeAverage: false,
+      responseSizePercentiles: false,
+      responseTime: false,
+      responseTimeAverage: false,
+      responseTimePercentiles: false
+    } as KialiDisabledFeatures);
   });
 
   afterEach(() => {
