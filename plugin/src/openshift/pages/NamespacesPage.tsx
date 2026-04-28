@@ -13,7 +13,7 @@ const NamespacesPageOSSMC: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <NamespacesPage></NamespacesPage>
+      <NamespacesPage />
     </KialiContainer>
   );
 };

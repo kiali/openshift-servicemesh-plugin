@@ -4,8 +4,6 @@ import { IstioConfigListPage } from 'pages/IstioConfigList/IstioConfigListPage';
 import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 
-const KialiIstioConfigListPage = IstioConfigListPage as unknown as React.ComponentType;
-
 const IstioConfigListPageOSSMC: React.FC<void> = () => {
   const { pathname } = useLocation();
 
@@ -15,7 +13,7 @@ const IstioConfigListPageOSSMC: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <KialiIstioConfigListPage />
+      <IstioConfigListPage />
     </KialiContainer>
   );
 };

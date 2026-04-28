@@ -10,6 +10,7 @@ const enum Page {
   APPLICATIONS = 'AppListPage',
   GRAPH = 'GraphPage',
   ISTIO = 'IstioConfigListPage',
+  ISTIO_NEW = 'IstioConfigNewPage',
   MESH = 'MeshPage',
   NAMESPACES = 'NamespacesPage',
   OVERVIEW = 'OverviewPage'
@@ -237,10 +238,15 @@ const extensions: EncodedExtension[] = [
   },
   ...consoleRoute('namespaces', 'Namespaces', Page.NAMESPACES, [`/${OSSM_CONSOLE}/namespaces`]),
   ...consoleRoute('applications', 'Applications', Page.APPLICATIONS, [`/${OSSM_CONSOLE}/applications`]),
-  ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [
-    `/${OSSM_CONSOLE}/istio`,
-    `/${OSSM_CONSOLE}/istio/new/:objectGroup/:objectVersion/:objectKind`
-  ]),
+  ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [`/${OSSM_CONSOLE}/istio`]),
+  {
+    type: 'console.page/route',
+    properties: {
+      exact: true,
+      path: `/${OSSM_CONSOLE}/istio/new/:objectGroup/:objectVersion/:objectKind`,
+      component: { $codeRef: Page.ISTIO_NEW }
+    }
+  },
 
   // K8s horizontal navs - service mesh tab of k8s resources
   horizontalNav(K8sResource.Project, Tab.PROJECT),

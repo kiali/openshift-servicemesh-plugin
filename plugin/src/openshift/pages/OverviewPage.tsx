@@ -13,7 +13,7 @@ const OverviewPageOSSMC: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <OverviewPage></OverviewPage>
+      <OverviewPage />
     </KialiContainer>
   );
 };

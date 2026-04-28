@@ -13,7 +13,7 @@ const AppListPageOSSMC: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <AppListPage></AppListPage>
+      <AppListPage />
     </KialiContainer>
   );
 };
