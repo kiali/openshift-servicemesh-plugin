@@ -105,6 +105,10 @@ const config: Configuration = {
             fileName: 'locales/en/plugin__ossmconsole.json'
           },
           {
+            pattern: '**/locales/es/translation.json',
+            fileName: 'locales/es/plugin__ossmconsole.json'
+          },
+          {
             pattern: '**/locales/zh/translation.json',
             fileName: 'locales/zh/plugin__ossmconsole.json'
           }

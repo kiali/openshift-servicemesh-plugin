@@ -1,0 +1,18 @@
+{
+  "An error occurred. Please try again.": "Se ha producido un error. Por favor, inténtelo de nuevo.",
+  "Applications": "Aplicaciones",
+  "Istio Config": "Configuración de Istio",
+  "Istio detail error": "Error en detalle de Istio",
+  "Istio object is not defined correctly": "El objeto Istio no está definido correctamente",
+  "Mesh": "Mesh",
+  "Namespaces": "Espacios de nombres",
+  "Overview": "Resumen",
+  "Reload page": "Recargar página",
+  "Service detail error": "Error en detalle del servicio",
+  "Service is not defined correctly": "El servicio no está definido correctamente",
+  "Service Mesh": "Service Mesh",
+  "Something wrong happened": "Algo salió mal",
+  "Traffic Graph": "Gráfico de tráfico",
+  "Workload detail error": "Error en detalle de la carga de trabajo",
+  "Workload is not defined correctly": "La carga de trabajo no está definida correctamente"
+}
