@@ -13,7 +13,7 @@ const MeshPageOSSMC: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <MeshPage></MeshPage>
+      <MeshPage />
     </KialiContainer>
   );
 };

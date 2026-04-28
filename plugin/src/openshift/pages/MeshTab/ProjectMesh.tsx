@@ -20,7 +20,7 @@ const ProjectMeshTab: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <GraphPage></GraphPage>
+      <GraphPage />
     </KialiContainer>
   );
 };

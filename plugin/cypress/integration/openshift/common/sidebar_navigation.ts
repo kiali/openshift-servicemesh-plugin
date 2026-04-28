@@ -19,6 +19,7 @@ When('cypress intercept hooks for sidebar are registered', () => {
   cy.intercept(`**/api/namespaces/graph*`).as('graphNamespaces');
   cy.intercept(`**/api/mesh/graph?*`).as('meshRequest');
   cy.intercept(`**/api/apps*`).as('appsRequest');
+  cy.intercept(`**/api/istio/config?*`).as('istioConfigRequest');
 });
 
 Then('buttons for Overview, Graph, Namespaces, Applications and Istio Config are displayed', () => {
@@ -48,10 +49,10 @@ Then('user navigates to the OSSMC {string} page', (hrefName: string) => {
         });
       break;
     case 'Istio Config':
-      cy.get('a[href*="/k8s/all-namespaces/istio"]')
+      cy.get('a[href*="/ossmconsole/istio"]')
         .click()
         .then(() => {
-          cy.url().should('include', '/k8s/all-namespaces/istio');
+          cy.url().should('include', '/ossmconsole/istio');
         });
       break;
     case 'Namespaces':
@@ -106,10 +107,8 @@ Then('user sees the applications list', () => {
 
 Then('user sees Istio Config page elements from Kiali', () => {
   cy.wait('@istioConfigRequest').then(() => {
-    cy.get('[data-test-id="filter-dropdown-toggle"]').should('be.visible');
-      // OCP 4.19 and earlier use the dropdown-button (and data-test-id="dropdown-button"), OCP 4.20 and later use the console-select-menu-toggle (and data-test)
-    cy.get('[data-test-id="dropdown-button"], [data-test="console-select-menu-toggle"]').should('be.visible').click();
-    cy.get('[data-test-id="item-filter"]').should('be.visible');
+    cy.get('button#namespace-selector').should('be.visible');
+    cy.get('[data-test="istio-actions-toggle"]').should('be.visible');
   });
 });
 

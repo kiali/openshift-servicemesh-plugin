@@ -9,6 +9,7 @@ const metadata: ConsolePluginBuildMetadata = {
     AppListPage: './openshift/pages/AppListPage',
     GraphPage: './openshift/pages/GraphPage',
     IstioConfigListPage: './openshift/pages/IstioConfigListPage',
+    IstioConfigNewPage: './openshift/pages/IstioConfigNewPage',
     IstioMeshTab: './openshift/pages/MeshTab/IstioMesh',
     MeshPage: './openshift/pages/MeshPage',
     NamespacesPage: './openshift/pages/NamespacesPage',
