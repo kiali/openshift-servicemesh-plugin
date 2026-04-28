@@ -6663,15 +6663,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dompurify@npm:^3.2.4":
-  version: 3.2.4
-  resolution: "dompurify@npm:3.2.4"
+"dompurify@npm:^3.4.0":
+  version: 3.4.1
+  resolution: "dompurify@npm:3.4.1"
   dependencies:
     "@types/trusted-types": "npm:^2.0.7"
   dependenciesMeta:
     "@types/trusted-types":
       optional: true
-  checksum: 10c0/6be56810fb7ad2776155c8fc2967af5056783c030094362c7d0cf1ad13f2129cf922d8eefab528a34bdebfb98e2f44b306a983ab93aefb9d6f24c18a3d027a05
+  checksum: 10c0/440a4246020cb54b82ef2cb66381e4d310a0c470f9994655e61b6122811f0eaa00a2f9665d2bed30ca3f58932ba7bb0d5e26fdfce61c8daf35d21a3f5a799e48
   languageName: node
   linkType: hard
 
