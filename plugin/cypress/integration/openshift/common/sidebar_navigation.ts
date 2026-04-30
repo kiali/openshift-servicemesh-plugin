@@ -18,107 +18,83 @@ When('cypress intercept hooks for sidebar are registered', () => {
   cy.intercept(`**/api/namespaces`).as('namespacesRequest');
   cy.intercept(`**/api/namespaces/graph*`).as('graphNamespaces');
   cy.intercept(`**/api/mesh/graph?*`).as('meshRequest');
-  cy.intercept(`**/api/apps*`).as('appsRequest');
+  cy.intercept(`**/api/clusters/apps*`).as('appsRequest');
   cy.intercept(`**/api/istio/config?*`).as('istioConfigRequest');
 });
 
-Then('buttons for Overview, Graph, Namespaces, Applications and Istio Config are displayed', () => {
-  cy.waitForReact();
-  cy.reload(true); // force reload to make sure OSSMC is loaded
-  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Overview');
-  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Graph');
-  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Namespaces');
-  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Applications');
-  cy.get('a[data-test="nav"][class*="c-nav__link"]').contains('Istio Config');
-});
-
-Then('user navigates to the OSSMC {string} page', (hrefName: string) => {
-  switch (hrefName) {
-    case 'Overview':
-      cy.get('a[href*="/ossmconsole/overview"]')
-        .click()
-        .then(() => {
-          cy.url().should('include', '/ossmconsole/overview');
-        });
-      break;
-    case 'Graph':
-      cy.get('a[href*="/ossmconsole/graph"]')
-        .click()
-        .then(() => {
-          cy.url().should('include', '/ossmconsole/graph');
-        });
-      break;
-    case 'Istio Config':
-      cy.get('a[href*="/ossmconsole/istio"]')
-        .click()
-        .then(() => {
-          cy.url().should('include', '/ossmconsole/istio');
-        });
-      break;
-    case 'Namespaces':
-      cy.get('a[href*="/ossmconsole/namespaces"]')
-        .click()
-        .then(() => {
-          cy.url().should('include', '/ossmconsole/namespaces');
-        });
-      break;
-    case 'Applications':
-      cy.get('a[href*="/ossmconsole/applications"]')
-        .click()
-        .then(() => {
-          cy.url().should('include', '/ossmconsole/applications');
-        });
-      break;
-    case 'Mesh':
-      cy.get('a[href*="/ossmconsole/mesh"]')
-        .click()
-        .then(() => {
-          cy.url().should('include', '/ossmconsole/mesh');
-        });
-      break;
-  }
-});
-
-Then('user sees istio-system overview card', () => {
-  cy.wait('@overviewRequest').then(() => {
-    cy.get('h5').contains('istio-system').should('be.visible');
+Then('Service Mesh buttons are displayed', () => {
+  ['Overview', 'Traffic Graph', 'Mesh', 'Namespaces', 'Applications', 'Istio Config'].forEach(label => {
+    cy.get('a[data-test="nav"]').contains(label).should('exist');
   });
 });
 
-When('user selects the {string} namespace in the graph', (ns: string) => {
-  cy.get('button#namespace-selector').click();
-  cy.get('div[class*="c-menu"]').contains('span', ns).parent('div').find('input').check();
+When('user navigates to the OSSMC {string} page', (hrefName: string) => {
+  const hrefMap: Record<string, string> = {
+    Overview: 'overview',
+    'Traffic Graph': 'graph',
+    Mesh: 'mesh',
+    Namespaces: 'namespaces',
+    Applications: 'applications',
+    'Istio Config': 'istio'
+  };
+  const path = hrefMap[hrefName];
+  cy.get(`a[href*="/ossmconsole/${path}"]`)
+    .click()
+    .then(() => {
+      cy.url().should('include', `/ossmconsole/${path}`);
+    });
+});
 
-  // Click outside the namespace selector to load the namespace graph
-  cy.get('div#global-namespace-selector').click();
+Then('user sees the overview cards', () => {
+  cy.url().should('include', '/ossmconsole/overview');
+  cy.wait('@overviewRequest').then(interception => {
+    expect(interception.response?.statusCode).to.eq(200);
+    cy.getBySel('clusters-card').should('be.visible');
+    cy.getBySel('control-planes-card').should('be.visible');
+    cy.getBySel('data-planes-card').should('be.visible');
+  });
 });
 
 Then('user sees the namespaces list', () => {
-  cy.wait('@namespacesRequest').then(() => {
+  cy.url().should('include', '/ossmconsole/namespaces');
+  cy.wait('@namespacesRequest').then(interception => {
+    expect(interception.response?.statusCode).to.eq(200);
     cy.get('table').should('be.visible');
+    cy.get('table tbody tr').should('have.length.greaterThan', 0);
   });
 });
 
 Then('user sees the applications list', () => {
-  cy.wait('@appsRequest').then(() => {
+  cy.url().should('include', '/ossmconsole/applications');
+  cy.wait('@appsRequest').then(interception => {
+    expect(interception.response?.statusCode).to.eq(200);
+    cy.get('table').should('be.visible');
+    cy.get('table tbody tr').should('have.length.greaterThan', 0);
+  });
+});
+
+Then('user sees Istio Config list', () => {
+  cy.url().should('include', '/ossmconsole/istio');
+  cy.wait('@istioConfigRequest').then(interception => {
+    expect(interception.response?.statusCode).to.eq(200);
+    cy.getBySel('istio-actions-toggle').should('be.visible');
+    cy.getBySel('refresh-button').should('be.visible');
     cy.get('table').should('be.visible');
   });
 });
 
-Then('user sees Istio Config page elements from Kiali', () => {
-  cy.wait('@istioConfigRequest').then(() => {
-    cy.get('button#namespace-selector').should('be.visible');
-    cy.get('[data-test="istio-actions-toggle"]').should('be.visible');
-  });
-});
-
-Then(`user sees the {string} graph summary`, (ns: string) => {
-  cy.wait('@graphNamespaces').then(() => {
+Then(`user sees the {string} traffic graph`, (ns: string) => {
+  cy.url().should('include', '/ossmconsole/graph');
+  cy.wait('@graphNamespaces').then(interception => {
+    expect(interception.response?.statusCode).to.eq(200);
+    cy.get('#pft-graph').should('be.visible');
     cy.get('div#summary-panel-graph-heading').find(`div#ns-${ns}`).should('be.visible');
   });
 });
 
 Then('user sees the mesh side panel', () => {
+  cy.url().should('include', '/ossmconsole/mesh');
+  cy.get('#mesh-container').should('be.visible');
   cy.wait('@meshRequest').then(interception => {
     cy.waitForReact();
     cy.get('#target-panel-mesh')

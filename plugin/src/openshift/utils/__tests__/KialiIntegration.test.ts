@@ -52,7 +52,7 @@ describe('resolveConsoleUrl', () => {
 
     test('should map namespace application detail to k8s pods URL', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/applications/reviews')).toEqual(
-        '/k8s/ns/bookinfo/pods?labels=app%3Dreviews'
+        '/k8s/ns/bookinfo/pods?label=app%3Dreviews'
       );
     });
 

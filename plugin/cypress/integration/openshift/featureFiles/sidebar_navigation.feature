@@ -1,5 +1,6 @@
 @smoke
 @ossmc
+@core-1
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
 
 Feature: Kiali sidebar integration with OCP Console
@@ -13,36 +14,33 @@ Feature: Kiali sidebar integration with OCP Console
     And cypress intercept hooks for sidebar are registered
 
   Scenario: Service mesh buttons are displayed
-    Then buttons for Overview, Graph, Namespaces, Applications and Istio Config are displayed
+    Then Service Mesh buttons are displayed
 
   Scenario: Overview page is displayed correctly
     When user navigates to the OSSMC "Overview" page
-    Then user sees istio-system overview card
+    Then user sees the overview cards
 
   @bookinfo-app
-  @core-1
   Scenario: Graph page is displayed correctly
-    When user navigates to the OSSMC "Graph" page
-    And user selects the "bookinfo" namespace in the graph
-    Then user sees the "bookinfo" graph summary
+    When user navigates to the OSSMC "Traffic Graph" page
+    And user selects the "bookinfo" namespace
+    Then user sees the "bookinfo" traffic graph
 
-  @core-1
-  Scenario: Istio Config page is displayed correctly
-    When user navigates to the OSSMC "Istio Config" page
-    Then user sees Istio Config page elements from Kiali
+  Scenario: Mesh page is displayed correctly
+    When user navigates to the OSSMC "Mesh" page
+    Then user sees the mesh side panel
 
-  @core-1
   Scenario: Namespaces page is displayed correctly
     When user navigates to the OSSMC "Namespaces" page
     Then user sees the namespaces list
 
   @bookinfo-app
-  @core-1
   Scenario: Applications page is displayed correctly
     When user navigates to the OSSMC "Applications" page
+    And user selects the "bookinfo" namespace
     Then user sees the applications list
 
-  @core-1
-  Scenario: Mesh page is displayed correctly
-    When user navigates to the OSSMC "Mesh" page
-    Then user sees the mesh side panel
+  Scenario: Istio Config page is displayed correctly
+    When user navigates to the OSSMC "Istio Config" page
+    And user selects the "bookinfo" namespace
+    Then user sees Istio Config list

@@ -163,7 +163,8 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
 
 Cypress.Commands.add('getColWithRowText', (rowSearchText: string, colName: string) =>
-  cy.get('tbody')
+  cy
+    .get('tbody')
     .contains('tr', rowSearchText)
     // Different selectors depending on Patternfly version
     // id="${colName}" for PF5, data-label="${colName}" for PF6
@@ -216,39 +217,43 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
   const webParamsIndex = visitUrl.url.indexOf('?');
   const webParams = webParamsIndex > -1 ? visitUrl.url.substring(webParamsIndex) : '';
 
-  const url = visitUrl.url.replace(Cypress.config('baseUrl') ?? '', '').split('?')[0].split('/');
+  const url = visitUrl.url
+    .replace(Cypress.config('baseUrl') ?? '', '')
+    .split('?')[0]
+    .split('/');
 
   const targetPage = url[2];
 
   if (targetPage === 'namespaces') {
     const namespace = url[3];
     const type = url[4];
-    const details = url[5];
+    const details = url.slice(5).join('/');
 
     if (type === 'workloads') {
-      // OpenShift Console doesn't have a "generic" workloads page
-      // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
-      // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
       visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
     } else if (type === 'services') {
       visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
+    } else if (type === 'applications') {
+      visitUrl.url = `/k8s/ns/${namespace}/pods?label=app%3D${details}`;
     } else if (type === 'istio') {
       const istioUrl = refForKialiIstio(details);
 
       visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
     } else if (type === 'pods') {
       visitUrl.url = `/k8s/ns/${namespace}/pods/${details}/ossmconsole${webParams}`;
-    }
-  } else {
-    if (targetPage === 'graph') {
-      visitUrl.url = visitUrl.url
-        .replace('/console/graph/namespaces', '/ossmconsole/graph')
-        .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns');
-    } else if (targetPage === 'istio') {
-      visitUrl.url = '/ossmconsole/istio';
     } else {
-      visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
+      visitUrl.url = `/ossmconsole/namespaces/${namespace}${type ? `/${type}` : ''}${
+        details ? `/${details}` : ''
+      }${webParams}`;
     }
+  } else if (targetPage === 'graph') {
+    visitUrl.url = visitUrl.url
+      .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns')
+      .replace('/console/graph/namespaces', '/ossmconsole/graph');
+  } else if (targetPage === 'istio') {
+    visitUrl.url = `/ossmconsole/istio${webParams}`;
+  } else {
+    visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
   }
 
   return originalFn(visitUrl);
