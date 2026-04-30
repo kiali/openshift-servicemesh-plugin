@@ -23,6 +23,8 @@ When('cypress intercept hooks for sidebar are registered', () => {
 });
 
 Then('Service Mesh buttons are displayed', () => {
+  // PF6 sets visibility:hidden on collapsed nav <li> parents, so be.visible
+  // fails even when the menu is open. Using exist is intentional here.
   ['Overview', 'Traffic Graph', 'Mesh', 'Namespaces', 'Applications', 'Istio Config'].forEach(label => {
     cy.get('a[data-test="nav"]').contains(label).should('exist');
   });
@@ -38,6 +40,9 @@ When('user navigates to the OSSMC {string} page', (hrefName: string) => {
     'Istio Config': 'istio'
   };
   const path = hrefMap[hrefName];
+  if (!path) {
+    throw new Error(`Unknown OSSMC page: "${hrefName}". Valid pages: ${Object.keys(hrefMap).join(', ')}`);
+  }
   cy.get(`a[href*="/ossmconsole/${path}"]`)
     .click()
     .then(() => {
