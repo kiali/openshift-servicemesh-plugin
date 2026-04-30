@@ -120,8 +120,6 @@ export const guidedTour = {
   }
 };
 
-let csrfToken: string | undefined;
-
 Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
   const user = clusterUser || Cypress.env('USERNAME');
   const password = clusterPassword || Cypress.env('PASSWD');
@@ -151,13 +149,6 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
       }
     }
   );
-
-  if (!csrfToken) {
-    // Store csrf-token value for non-GET request headers
-    cy.getCookie('csrf-token').then(cookie => {
-      csrfToken = cookie?.value;
-    });
-  }
 });
 
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
@@ -265,13 +256,15 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
 });
 
 Cypress.Commands.overwrite('request', (originalFn, request) => {
-  // don't overwrite specific requests to OSSMC plugin
   if (!request.url?.includes('ossmconsole')) {
     request.url = request.url?.replace('api/', 'api/proxy/plugin/ossmconsole/kiali/api/');
   }
 
   if (request.method !== 'GET') {
-    request.headers = { 'X-CSRFToken': csrfToken };
+    return cy.getCookie('csrf-token').then(cookie => {
+      request.headers = { ...request.headers, 'X-CSRFToken': cookie?.value ?? '' };
+      return originalFn(request);
+    });
   }
 
   return originalFn(request);
