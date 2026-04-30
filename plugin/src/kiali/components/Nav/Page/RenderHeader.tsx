@@ -8,6 +8,7 @@ import { PFColors } from 'components/Pf/PfColors';
 
 const containerStyle = kialiStyle({
   backgroundColor: PFColors.BackgroundColor100,
+  flexShrink: 0,
   paddingBottom: '1rem'
 });
 
@@ -22,7 +23,7 @@ const rightToolbarStyle = kialiStyle({
   marginLeft: 'auto'
 });
 
-// Positioned absolutely to align with the tabs row below
+// Absolute position so it floats at tab-strip level without adding vertical space.
 const actionsToolbarStyle = kialiStyle({
   position: 'absolute',
   right: '3rem',
@@ -41,8 +42,6 @@ type RenderHeaderProps = ReduxProps & {
 };
 
 const RenderHeaderComponent: React.FC<RenderHeaderProps> = (props: RenderHeaderProps) => {
-  // RenderHeader is used only in the detail pages
-  // On kiosk mode, it should be hidden
   return isKiosk(props.kiosk) ? null : (
     <>
       <div className={containerStyle}>
