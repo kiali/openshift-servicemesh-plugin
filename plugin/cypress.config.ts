@@ -14,8 +14,6 @@ export default defineConfig({
   responseTimeout: 15000,
   fixturesFolder: 'cypress/fixtures',
   env: {
-    USERNAME: 'kiali',
-    PASSWD: 'kiali',
     rootSelector: '#app',
     OSSMC: true,
     cookie: false,
@@ -24,7 +22,7 @@ export default defineConfig({
   },
 
   e2e: {
-    baseUrl: 'https://console-openshift-console.apps-crc.testing/',
+    baseUrl: 'http://localhost:9000',
     async setupNodeEvents(
       on: Cypress.PluginEvents,
       config: Cypress.PluginConfigOptions
