@@ -226,25 +226,30 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
 
   if (targetPage === 'namespaces') {
     const namespace = url[3];
-    const type = url[4];
-    const details = url.slice(5).join('/');
 
-    if (type === 'workloads') {
-      visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
-    } else if (type === 'services') {
-      visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
-    } else if (type === 'applications') {
-      visitUrl.url = `/k8s/ns/${namespace}/pods?label=app%3D${details}`;
-    } else if (type === 'istio') {
-      const istioUrl = refForKialiIstio(details);
+    if (namespace) {
+      const type = url[4];
+      const details = url.slice(5).join('/');
 
-      visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
-    } else if (type === 'pods') {
-      visitUrl.url = `/k8s/ns/${namespace}/pods/${details}/ossmconsole${webParams}`;
+      if (type === 'workloads') {
+        visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
+      } else if (type === 'services') {
+        visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
+      } else if (type === 'applications') {
+        visitUrl.url = `/k8s/ns/${namespace}/pods?label=app%3D${details}`;
+      } else if (type === 'istio') {
+        const istioUrl = refForKialiIstio(details);
+
+        visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
+      } else if (type === 'pods') {
+        visitUrl.url = `/k8s/ns/${namespace}/pods/${details}/ossmconsole${webParams}`;
+      } else {
+        visitUrl.url = `/ossmconsole/namespaces/${namespace}${type ? `/${type}` : ''}${
+          details ? `/${details}` : ''
+        }${webParams}`;
+      }
     } else {
-      visitUrl.url = `/ossmconsole/namespaces/${namespace}${type ? `/${type}` : ''}${
-        details ? `/${details}` : ''
-      }${webParams}`;
+      visitUrl.url = `/ossmconsole/namespaces${webParams}`;
     }
   } else if (targetPage === 'graph') {
     visitUrl.url = visitUrl.url
