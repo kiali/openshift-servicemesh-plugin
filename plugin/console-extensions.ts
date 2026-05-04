@@ -7,6 +7,7 @@ const ADMIN = 'admin';
 const getConsoleTitle = (title: string) => `%plugin__ossmconsole~${title}%`;
 
 const enum Page {
+  APPLICATION_DETAIL = 'AppDetailsPage',
   APPLICATIONS = 'AppListPage',
   GRAPH = 'GraphPage',
   ISTIO = 'IstioConfigListPage',
@@ -238,6 +239,14 @@ const extensions: EncodedExtension[] = [
   },
   ...consoleRoute('namespaces', 'Namespaces', Page.NAMESPACES, [`/${OSSM_CONSOLE}/namespaces`]),
   ...consoleRoute('applications', 'Applications', Page.APPLICATIONS, [`/${OSSM_CONSOLE}/applications`]),
+  {
+    type: 'console.page/route',
+    properties: {
+      exact: true,
+      path: `/${OSSM_CONSOLE}/namespaces/:namespace/applications/:app`,
+      component: { $codeRef: Page.APPLICATION_DETAIL }
+    }
+  },
   ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [`/${OSSM_CONSOLE}/istio`]),
   {
     type: 'console.page/route',
