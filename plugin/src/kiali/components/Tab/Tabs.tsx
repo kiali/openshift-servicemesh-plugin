@@ -11,8 +11,8 @@ type TabsProps = {
   defaultTab: string;
   id: string;
   mountOnEnter?: boolean;
+  onPostSelect?: (tabName: string) => void;
   onSelect: (tabName: string) => void;
-  postHandler?: (tabName: string) => void;
   tabMap: { [key: string]: number };
   tabName?: string;
   unmountOnExit?: boolean;
@@ -24,6 +24,13 @@ export const activeTab = (tabName: string, defaultTab: string): string => {
 
 const tabStyle = kialiStyle({
   backgroundColor: PFColors.BackgroundColor100
+});
+
+const flexTabWrapperStyle = kialiStyle({
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  minHeight: 0
 });
 
 type TabElement = React.ReactElement<TabProps, React.JSXElementConstructor<TabProps>>;
@@ -82,7 +89,7 @@ export class ParameterizedTabs extends React.Component<TabsProps> {
     return this.tabLinks[index] != null;
   };
 
-  tabSelectHandler = (tabKey: string): void => {
+  handleTabSelect = (tabKey: string): void => {
     const urlParams = new URLSearchParams(location.getSearch());
 
     if (!!this.props.tabName) {
@@ -90,39 +97,36 @@ export class ParameterizedTabs extends React.Component<TabsProps> {
       router.navigate(`${location.getPathname()}?${urlParams.toString()}`);
     }
 
-    if (this.props.postHandler) {
-      this.props.postHandler(tabKey);
+    if (this.props.onPostSelect) {
+      this.props.onPostSelect(tabKey);
     }
-
-    this.setState({
-      currentTab: tabKey
-    });
   };
 
-  tabTransitionHandler = (tabKey: number): void => {
+  handleTabTransition = (tabKey: number): void => {
     const tabName = this.tabNameOf(tabKey);
-    this.tabSelectHandler(tabName);
+    this.handleTabSelect(tabName);
     this.props.onSelect(tabName);
   };
 
   render(): React.ReactNode {
     return (
-      <Tabs
-        id={this.props.id}
-        className={classes(this.props.className, tabStyle)}
-        activeKey={this.activeIndex()}
-        onSelect={(_, ek) => {
-          if (!this.isLinkTab(ek as number)) {
-            this.tabTransitionHandler(ek as number);
-          }
-        }}
-        mountOnEnter={this.props.mountOnEnter === undefined ? true : this.props.mountOnEnter}
-        unmountOnExit={this.props.unmountOnExit === undefined ? true : this.props.unmountOnExit}
-      >
-        {!Array.isArray(this.props.children)
-          ? (this.props.children as TabElement)
-          : this.props.children.map(child => child)}
-      </Tabs>
+      <div className={classes(flexTabWrapperStyle, this.props.className, tabStyle)}>
+        <Tabs
+          id={this.props.id}
+          activeKey={this.activeIndex()}
+          onSelect={(_, ek) => {
+            if (!this.isLinkTab(ek as number)) {
+              this.handleTabTransition(ek as number);
+            }
+          }}
+          mountOnEnter={this.props.mountOnEnter === undefined ? true : this.props.mountOnEnter}
+          unmountOnExit={this.props.unmountOnExit === undefined ? true : this.props.unmountOnExit}
+        >
+          {!Array.isArray(this.props.children)
+            ? (this.props.children as TabElement)
+            : this.props.children.map(child => child)}
+        </Tabs>
+      </div>
     );
   }
 }

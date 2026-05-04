@@ -16,7 +16,6 @@ import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { connect } from 'react-redux';
 import * as API from 'services/Api';
 import { addDanger, addWarning } from 'utils/AlertUtils';
-import { RenderComponentScroll } from '../Nav/Page';
 import { KioskElement } from '../Kiosk/KioskElement';
 import { TimeDurationModal } from '../Time/TimeDurationModal';
 import { KialiAppState } from 'store/Store';
@@ -45,7 +44,9 @@ import { GetTracingUrlProvider } from 'utils/tracing/UrlProviders';
 import { ExternalServiceInfo } from 'types/StatusState';
 import { retrieveTimeRange } from '../Time/TimeRangeHelper';
 import { isParentKiosk, kioskTracingAction } from '../Kiosk/KioskActions';
+import { classes } from 'typestyle';
 import { kialiStyle } from 'styles/StyleUtils';
+import { tabCardStyle, flexFillStyle } from 'styles/FlexStyles';
 
 type ReduxProps = {
   externalServices: ExternalServiceInfo[];
@@ -84,10 +85,6 @@ interface TracesState {
 
 const traceDetailsTab = 0;
 const spansDetailsTab = 1;
-
-const cardStyle = kialiStyle({
-  marginTop: '1rem'
-});
 
 const containerStyle = kialiStyle({
   paddingRight: '0.5rem'
@@ -290,8 +287,8 @@ class TracesComp extends React.Component<TracesProps, TracesState> {
     const tracingURL = this.getTracingUrl();
     return (
       <>
-        <RenderComponentScroll className={containerStyle}>
-          <Card className={cardStyle}>
+        <div className={classes(flexFillStyle, containerStyle)}>
+          <Card className={tabCardStyle}>
             <CardBody>
               <Toolbar style={{ padding: 0 }}>
                 {this.state.infoMessage && this.state.visibleAlert && (
@@ -366,40 +363,41 @@ class TracesComp extends React.Component<TracesProps, TracesState> {
                 marginTop: 25
               }}
             >
-              <Tabs
-                id="trace-details"
-                data-test="trace-details-tabs"
-                className={subTabStyle}
-                activeKey={this.state.activeTab}
-                onSelect={(_, idx: any) => this.setState({ activeTab: idx })}
-              >
-                <Tab eventKey={traceDetailsTab} title="Trace Details">
-                  <TraceDetails
-                    namespace={this.props.namespace}
-                    target={this.props.target}
-                    targetKind={this.props.targetKind}
-                    tracingURLProvider={this.urlProvider}
-                    otherTraces={this.state.traces}
-                    cluster={this.props.cluster ? this.props.cluster : ''}
-                    provider={this.props.provider}
-                  />
-                </Tab>
-                <Tab eventKey={spansDetailsTab} title="Span Details">
-                  <SpanDetails
-                    namespace={this.props.namespace}
-                    target={this.props.target}
-                    externalURLProvider={this.urlProvider}
-                    items={this.props.selectedTrace.spans}
-                    traceID={this.props.selectedTrace.traceID}
-                    cluster={this.props.cluster ? this.props.cluster : ''}
-                    fromWaypoint={this.props.fromWaypoint}
-                    waypointServiceFilter={this.props.waypointServiceFilter}
-                  />
-                </Tab>
-              </Tabs>
+              <div className={subTabStyle}>
+                <Tabs
+                  id="trace-details"
+                  data-test="trace-details-tabs"
+                  activeKey={this.state.activeTab}
+                  onSelect={(_, idx: any) => this.setState({ activeTab: idx })}
+                >
+                  <Tab eventKey={traceDetailsTab} title="Trace Details">
+                    <TraceDetails
+                      namespace={this.props.namespace}
+                      target={this.props.target}
+                      targetKind={this.props.targetKind}
+                      tracingURLProvider={this.urlProvider}
+                      otherTraces={this.state.traces}
+                      cluster={this.props.cluster ? this.props.cluster : ''}
+                      provider={this.props.provider}
+                    />
+                  </Tab>
+                  <Tab eventKey={spansDetailsTab} title="Span Details">
+                    <SpanDetails
+                      namespace={this.props.namespace}
+                      target={this.props.target}
+                      externalURLProvider={this.urlProvider}
+                      items={this.props.selectedTrace.spans}
+                      traceID={this.props.selectedTrace.traceID}
+                      cluster={this.props.cluster ? this.props.cluster : ''}
+                      fromWaypoint={this.props.fromWaypoint}
+                      waypointServiceFilter={this.props.waypointServiceFilter}
+                    />
+                  </Tab>
+                </Tabs>
+              </div>
             </div>
           )}
-        </RenderComponentScroll>
+        </div>
         <TimeDurationModal
           customDuration={true}
           isOpen={this.state.isTimeOptionsOpen}
