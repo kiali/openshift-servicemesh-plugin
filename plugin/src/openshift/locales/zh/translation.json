@@ -1,10 +1,13 @@
 {
   "An error occurred. Please try again.": "发生错误。请重试。",
+  "Application detail error": "Application detail error",
+  "Application is not defined correctly": "Application is not defined correctly",
   "Applications": "应用程序",
   "Istio Config": "Istio配置",
   "Istio detail error": "Istio detail error",
   "Istio object is not defined correctly": "Istio object is not defined correctly",
   "Mesh": "Mesh",
+  "Namespace: {{namespace}}": "Namespace: {{namespace}}",
   "Namespaces": "命名空间列表",
   "Overview": "概述",
   "Reload page": "重新加载页面",

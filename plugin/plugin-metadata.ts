@@ -6,6 +6,7 @@ const metadata: ConsolePluginBuildMetadata = {
   displayName: 'OpenShift Service Mesh Console',
   description: 'Provides Service Mesh/Istio Observability',
   exposedModules: {
+    AppDetailsPage: './openshift/pages/AppDetailsPage',
     AppListPage: './openshift/pages/AppListPage',
     GraphPage: './openshift/pages/GraphPage',
     IstioConfigListPage: './openshift/pages/IstioConfigListPage',

@@ -50,14 +50,22 @@ describe('resolveConsoleUrl', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo')).toEqual('/ossmconsole/namespaces/bookinfo');
     });
 
-    test('should map namespace application detail to k8s pods URL', () => {
+    test('should map namespace application detail to ossmconsole application detail page', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/applications/reviews')).toEqual(
-        '/k8s/ns/bookinfo/pods?label=app%3Dreviews'
+        '/ossmconsole/namespaces/bookinfo/applications/reviews'
+      );
+    });
+
+    test('should preserve query parameters on namespace application detail', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/applications/reviews?clusterName=west')).toEqual(
+        '/ossmconsole/namespaces/bookinfo/applications/reviews?clusterName=west'
       );
     });
 
     test('should fall back to applications list when application name is empty', () => {
-      expect(resolveConsoleUrl('/namespaces/bookinfo/applications')).toEqual('/ossmconsole/applications');
+      expect(resolveConsoleUrl('/namespaces/bookinfo/applications')).toEqual(
+        '/ossmconsole/namespaces/bookinfo/applications/'
+      );
     });
 
     test('should map namespace workload detail to k8s deployment URL', () => {
