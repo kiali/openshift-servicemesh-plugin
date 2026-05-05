@@ -208,6 +208,9 @@ export const resolveConsoleUrl = (kialiAction: string): string | null => {
 // The "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
 export const useInitKialiListeners = (): void => {
   const navigate = useNavigate();
+  // Store navigate in a ref so the message listener always uses the latest
+  // function without needing it in the useEffect dependency array, avoiding
+  // unnecessary listener teardown/re-registration on every render.
   const navigateRef = React.useRef(navigate);
   navigateRef.current = navigate;
 
