@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { classes } from 'typestyle';
 import { connect } from 'react-redux';
 import { KialiAppState } from 'store/Store';
 import { namespaceItemsSelector } from 'store/Selectors';
@@ -18,7 +19,6 @@ import { activeTab } from '../../components/Tab/Tabs';
 import { KialiIcon } from 'config/KialiIcon';
 import { aceOptions } from 'types/IstioConfigDetails';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
-import { RenderComponentScroll } from 'components/Nav/Page';
 import { DashboardRef } from 'types/Runtimes';
 import { CustomMetrics } from 'components/Metrics/CustomMetrics';
 import { FilterSelected } from 'components/Filters/StatefulFilters';
@@ -28,6 +28,15 @@ import {
   defaultTab as workloadDefaultTab
 } from '../../pages/WorkloadDetails/WorkloadDetailsPage';
 import { istioAceEditorStyle } from 'styles/AceEditorStyle';
+import {
+  tabCardStyle,
+  constrainedScrollStyle,
+  flexCardStyle,
+  flexFillStyle,
+  noShrinkStyle,
+  scrollableContentStyle
+} from 'styles/FlexStyles';
+import { ResizeHeightObserver } from 'utils/ResizeHeightObserver';
 import { Theme, TimeInMilliseconds } from '../../types/Common';
 import { subTabStyle } from 'styles/TabStyles';
 import { getAppLabelName, getVersionLabelName } from 'config/ServerConfig';
@@ -70,33 +79,41 @@ type EnvoyDetailsProps = ReduxProps & {
 type EnvoyDetailsState = {
   activeKey: number;
   config: EnvoyProxyDump;
+  editorHeight: number;
   fetch: boolean;
   pod: Pod;
   resource: string;
-  tabHeight: number;
   tableSortBy: ResourceSorts;
 };
 
-const fullHeightStyle = kialiStyle({
-  height: '100%'
+const editorColumnStyle = kialiStyle({
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  minHeight: 0
 });
 
-const cardStyle = kialiStyle({
-  marginTop: '1rem'
+const editorWrapperStyle = kialiStyle({
+  flex: 1,
+  minHeight: 0,
+  position: 'relative'
 });
 
 class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDetailsState> {
   aceEditorRef: React.RefObject<AceEditor>;
+  editorWrapperRef: React.RefObject<HTMLDivElement>;
+  private heightObserver = new ResizeHeightObserver(h => this.setState({ editorHeight: h }), 2, 1);
 
   constructor(props: EnvoyDetailsProps) {
     super(props);
 
     this.aceEditorRef = React.createRef();
+    this.editorWrapperRef = React.createRef();
 
     this.state = {
       pod: this.sortedPods()[0],
       config: {},
-      tabHeight: 300,
+      editorHeight: 300,
       fetch: true,
       activeKey: envoyTabs.indexOf(activeTab(tabName, defaultTab)),
       resource: activeTab(tabName, defaultTab),
@@ -119,6 +136,13 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
 
   componentDidMount(): void {
     this.fetchContent();
+    if (this.editorWrapperRef.current) {
+      this.heightObserver.observe(this.editorWrapperRef.current);
+    }
+  }
+
+  componentWillUnmount(): void {
+    this.heightObserver.disconnect();
   }
 
   componentDidUpdate(_prevProps: EnvoyDetailsProps, prevState: EnvoyDetailsState): void {
@@ -129,6 +153,14 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
 
       if (currentTabIndex !== this.state.activeKey) {
         this.setState({ activeKey: currentTabIndex });
+      }
+    }
+
+    if (this.state.activeKey !== prevState.activeKey) {
+      if (this.showEditor() && this.editorWrapperRef.current) {
+        this.heightObserver.observe(this.editorWrapperRef.current);
+      } else if (!this.showEditor()) {
+        this.heightObserver.unobserve();
       }
     }
   }
@@ -281,7 +313,6 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
 
     const SummaryWriterComp = builder[0];
     const summaryWriter = builder[1];
-    const height = this.state.tabHeight - 226;
     const appLabelName = getAppLabelName(this.props.workload.labels);
     const verLabelName = getVersionLabelName(this.props.workload.labels);
     const app = appLabelName ? this.props.workload.labels[appLabelName] : '';
@@ -298,11 +329,11 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
 
       return (
         <Tab key={`tab_${value}`} eventKey={index} title={title}>
-          <Card className={cardStyle}>
-            <CardBody>
-              {this.showEditor() ? (
-                <div className={fullHeightStyle}>
-                  <div style={{ marginBottom: '1.25rem' }}>
+          {this.showEditor() ? (
+            <Card className={classes(flexCardStyle, tabCardStyle)}>
+              <CardBody>
+                <div className={editorColumnStyle}>
+                  <div className={noShrinkStyle} style={{ marginBottom: '1.25rem' }}>
                     <div key="service-icon" className={iconStyle}>
                       <PFBadge badge={PFBadges.Pod} position={TooltipPosition.top} />
                     </div>
@@ -326,33 +357,44 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
                     </Tooltip>
                   </div>
 
-                  <AceEditor
-                    ref={this.aceEditorRef}
-                    mode="yaml"
-                    theme={this.props.theme === Theme.DARK ? 'twilight' : 'eclipse'}
-                    width={'100%'}
-                    height={`${height.toString()}px`}
-                    className={istioAceEditorStyle}
-                    wrapEnabled={true}
-                    readOnly={true}
-                    setOptions={aceOptions ?? { foldStyle: 'markbegin' }}
-                    value={this.editorContent()}
+                  <div ref={this.editorWrapperRef} className={editorWrapperStyle}>
+                    <AceEditor
+                      ref={this.aceEditorRef}
+                      mode="yaml"
+                      theme={this.props.theme === Theme.DARK ? 'twilight' : 'eclipse'}
+                      width={'100%'}
+                      height={`${this.state.editorHeight}px`}
+                      className={istioAceEditorStyle}
+                      wrapEnabled={true}
+                      readOnly={true}
+                      setOptions={aceOptions ?? { foldStyle: 'markbegin' }}
+                      value={this.editorContent()}
+                    />
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          ) : this.showMetrics() && envoyMetricsDashboardRef ? (
+            <Card className={classes(flexCardStyle, tabCardStyle)}>
+              <CardBody>
+                <div className={scrollableContentStyle}>
+                  <CustomMetrics
+                    app={app}
+                    appLabelName={appLabelName}
+                    data-test="envoy-metrics-component"
+                    embedded={true}
+                    lastRefreshAt={this.props.lastRefreshAt}
+                    namespace={this.props.namespace}
+                    template={envoyMetricsDashboardRef.template}
+                    version={version}
+                    workload={this.props.workload!.name}
                   />
                 </div>
-              ) : this.showMetrics() && envoyMetricsDashboardRef ? (
-                <CustomMetrics
-                  app={app}
-                  appLabelName={appLabelName}
-                  data-test="envoy-metrics-component"
-                  embedded={true}
-                  height={this.state.tabHeight - 40 - 24 + 13}
-                  lastRefreshAt={this.props.lastRefreshAt}
-                  namespace={this.props.namespace}
-                  template={envoyMetricsDashboardRef.template}
-                  version={version}
-                  workload={this.props.workload!.name}
-                />
-              ) : (
+              </CardBody>
+            </Card>
+          ) : (
+            <Card className={classes(flexCardStyle, tabCardStyle)}>
+              <CardBody>
                 <SummaryWriterComp
                   writer={summaryWriter}
                   sortBy={this.state.tableSortBy}
@@ -361,26 +403,27 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
                   pods={this.props.workload.pods.map(pod => pod.name)}
                   setPod={this.setPod}
                 />
-              )}
-            </CardBody>
-          </Card>
+              </CardBody>
+            </Card>
+          )}
         </Tab>
       );
     });
 
     return (
-      <RenderComponentScroll onResize={height => this.setState({ tabHeight: height })} containTable>
-        <Tabs
-          id="envoy-details"
-          className={subTabStyle}
-          activeKey={this.state.activeKey}
-          onSelect={this.envoyHandleTabClick}
-          mountOnEnter={true}
-          unmountOnExit={true}
-        >
-          {tabs}
-        </Tabs>
-      </RenderComponentScroll>
+      <div className={classes(flexFillStyle, constrainedScrollStyle)}>
+        <div className={subTabStyle}>
+          <Tabs
+            id="envoy-details"
+            activeKey={this.state.activeKey}
+            onSelect={this.envoyHandleTabClick}
+            mountOnEnter={true}
+            unmountOnExit={true}
+          >
+            {tabs}
+          </Tabs>
+        </div>
+      </div>
     );
   }
 }
