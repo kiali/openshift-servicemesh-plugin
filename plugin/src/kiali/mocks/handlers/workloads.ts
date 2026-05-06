@@ -131,7 +131,16 @@ const generateMockMetrics = (direction: string): Record<string, unknown> => {
 };
 
 // Generate mock DashboardModel
-const workloadNames = ['productpage-v1', 'reviews-v2', 'ratings-v1', 'details-v1'];
+const workloadNames = [
+  'productpage-v1',
+  'reviews-v2',
+  'ratings-v1',
+  'details-v1',
+  'reviews-v3',
+  'gateway-istio',
+  'sleep',
+  'httpbin'
+];
 
 const generateRandomSeries = (
   metricName: string,
@@ -142,7 +151,7 @@ const generateRandomSeries = (
   stat?: string
 ): Array<Record<string, unknown>> => {
   const hash = metricName.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const count = 1 + (hash % 4);
+  const count = 1 + (hash % workloadNames.length);
 
   return workloadNames.slice(0, count).map((wl, i) => ({
     datapoints: generateDatapoints(baseValue * (1 + i * 0.15), variance),
@@ -416,21 +425,27 @@ const createMockWorkloadListItem = (
   const isNotReady = healthStatus === 'notready';
   const isUnhealthy = healthStatus === 'unhealthy';
 
+  const ambientEnabled = getScenarioConfig().ambientEnabled;
+  const isZtunnel = ambientEnabled && name === 'ztunnel';
+  const isWaypoint = ambientEnabled && name === 'waypoint';
+
   return {
     name,
     namespace,
     cluster,
-    gvk: deploymentGVK,
+    gvk: isZtunnel ? { Group: 'apps', Kind: 'DaemonSet', Version: 'v1' } : deploymentGVK,
     instanceType: InstanceType.Workload,
-    istioSidecar: true,
-    isAmbient: false,
+    istioSidecar: !isZtunnel,
+    isAmbient: ambientEnabled && !namespace.includes('istio-system'),
     isGateway: false,
-    isWaypoint: false,
-    isZtunnel: false,
+    isWaypoint,
+    isZtunnel,
     istioReferences: [],
     labels: {
       app,
-      version
+      version,
+      ...(isWaypoint ? { 'istio.io/waypoint-for': 'all' } : {}),
+      ...(isZtunnel ? { 'sidecar.istio.io/inject': 'false' } : {})
     },
     appLabel: true,
     versionLabel: true,
@@ -602,7 +617,9 @@ const workloadDefinitions: Record<string, Array<{ app: string; name: string; ver
   ],
   'istio-system': [
     { name: 'istiod', app: 'istiod', version: 'default' },
-    { name: 'istio-ingressgateway', app: 'istio-ingressgateway', version: 'default' }
+    { name: 'istio-ingressgateway', app: 'istio-ingressgateway', version: 'default' },
+    { name: 'ztunnel', app: 'ztunnel', version: 'default' },
+    { name: 'waypoint', app: 'waypoint', version: 'default' }
   ],
   'travel-agency': [
     { name: 'travels-v1', app: 'travels', version: 'v1' },
@@ -897,13 +914,21 @@ export const workloadHandlers = [
         }
       };
 
+      const istioContainers = found.isZtunnel ? [] : [{ name: 'istio-proxy', image: 'docker.io/istio/proxyv2:1.20.0' }];
+      const istioInitContainers = found.isZtunnel
+        ? []
+        : [{ name: 'istio-init', image: 'docker.io/istio/proxyv2:1.20.0' }];
+      const runtimes = found.isZtunnel
+        ? []
+        : [{ name: 'envoy', dashboardRefs: [{ template: 'envoy', title: 'Envoy Metrics' }] }];
+
       return HttpResponse.json({
         ...found,
         createdAt: new Date().toISOString(),
         resourceVersion: '12345',
-        type: 'Deployment',
-        istioInjectionAnnotation: true,
-        podCount: 1,
+        type: found.isZtunnel ? 'DaemonSet' : 'Deployment',
+        istioInjectionAnnotation: !found.isZtunnel,
+        podCount: found.isZtunnel ? 3 : 1,
         annotations: {},
         healthAnnotations: {},
         additionalDetails: [],
@@ -913,9 +938,9 @@ export const workloadHandlers = [
             name: `${workload}-abc123`,
             labels: found.labels,
             createdAt: new Date().toISOString(),
-            createdBy: [{ name: workload as string, kind: 'Deployment' }],
-            istioContainers: [{ name: 'istio-proxy', image: 'docker.io/istio/proxyv2:1.20.0' }],
-            istioInitContainers: [{ name: 'istio-init', image: 'docker.io/istio/proxyv2:1.20.0' }],
+            createdBy: [{ name: workload as string, kind: found.isZtunnel ? 'DaemonSet' : 'Deployment' }],
+            istioContainers,
+            istioInitContainers,
             status: 'Running',
             statusMessage: '',
             statusReason: '',
@@ -926,9 +951,23 @@ export const workloadHandlers = [
           }
         ],
         services: [createMockServiceListItem(found.labels.app, namespace as string)],
-        runtimes: [],
+        runtimes,
         validations: workloadValidations,
-        waypointWorkloads: []
+        waypointServices: found.isWaypoint
+          ? [
+              { name: 'productpage', namespace: 'bookinfo' },
+              { name: 'reviews', namespace: 'bookinfo' },
+              { name: 'ratings', namespace: 'bookinfo' },
+              { name: 'details', namespace: 'bookinfo' }
+            ]
+          : [],
+        waypointWorkloads: found.isWaypoint
+          ? [
+              { name: 'reviews-v1', namespace: 'bookinfo' },
+              { name: 'ratings-v1', namespace: 'bookinfo' },
+              { name: 'productpage-v1', namespace: 'bookinfo' }
+            ]
+          : []
       });
     }
 
@@ -1171,6 +1210,21 @@ export const workloadHandlers = [
     return HttpResponse.json(generateMockDashboard('App', direction));
   }),
 
+  // Custom dashboard (used by Envoy metrics sub-tab with template=envoy, and any workload with custom dashboards)
+  http.get('*/api/namespaces/:namespace/customdashboard/:template', ({ params, request }) => {
+    const { template } = params;
+    const url = new URL(request.url);
+    const direction = url.searchParams.get('direction') || 'inbound';
+    return HttpResponse.json(generateMockDashboard(String(template), direction));
+  }),
+
+  // Ztunnel dashboard (ambient mesh metrics)
+  http.get('*/api/namespaces/:namespace/ztunnel/:controlPlane/dashboard', ({ request }) => {
+    const url = new URL(request.url);
+    const direction = url.searchParams.get('direction') || 'inbound';
+    return HttpResponse.json(generateMockDashboard('Ztunnel', direction));
+  }),
+
   // Clusters metrics
   http.get('*/api/clusters/metrics', () => {
     return HttpResponse.json(generateMockMetrics('inbound'));
@@ -1362,6 +1416,139 @@ export const workloadHandlers = [
     return HttpResponse.json({});
   }),
 
+  // Pod ztunnel config dump
+  http.get('*/api/namespaces/:namespace/pods/:pod/config_dump_ztunnel', () => {
+    return HttpResponse.json({
+      services: [
+        {
+          name: 'productpage',
+          namespace: 'bookinfo',
+          hostname: 'productpage.bookinfo.svc.cluster.local',
+          vips: ['10.96.10.1'],
+          ports: { http: 9080 },
+          endpoints: {
+            'uid-productpage-v1': { workloadUid: 'uid-productpage-v1', status: 'Healthy', port: { http: 9080 } }
+          },
+          subjectAltNames: ['spiffe://cluster.local/ns/bookinfo/sa/bookinfo-productpage'],
+          ipFamilies: 'IPv4',
+          waypoint: { destination: '', hboneMtlsPort: 0 }
+        },
+        {
+          name: 'reviews',
+          namespace: 'bookinfo',
+          hostname: 'reviews.bookinfo.svc.cluster.local',
+          vips: ['10.96.10.2'],
+          ports: { http: 9080 },
+          endpoints: {
+            'uid-reviews-v1': { workloadUid: 'uid-reviews-v1', status: 'Healthy', port: { http: 9080 } },
+            'uid-reviews-v2': { workloadUid: 'uid-reviews-v2', status: 'Healthy', port: { http: 9080 } },
+            'uid-reviews-v3': { workloadUid: 'uid-reviews-v3', status: 'Healthy', port: { http: 9080 } }
+          },
+          subjectAltNames: ['spiffe://cluster.local/ns/bookinfo/sa/bookinfo-reviews'],
+          ipFamilies: 'IPv4',
+          waypoint: { destination: 'waypoint.istio-system.svc.cluster.local', hboneMtlsPort: 15008 }
+        },
+        {
+          name: 'ratings',
+          namespace: 'bookinfo',
+          hostname: 'ratings.bookinfo.svc.cluster.local',
+          vips: ['10.96.10.3'],
+          ports: { http: 9080 },
+          endpoints: {
+            'uid-ratings-v1': { workloadUid: 'uid-ratings-v1', status: 'Healthy', port: { http: 9080 } }
+          },
+          subjectAltNames: ['spiffe://cluster.local/ns/bookinfo/sa/bookinfo-ratings'],
+          ipFamilies: 'IPv4',
+          waypoint: { destination: '', hboneMtlsPort: 0 }
+        },
+        {
+          name: 'details',
+          namespace: 'bookinfo',
+          hostname: 'details.bookinfo.svc.cluster.local',
+          vips: ['10.96.10.4'],
+          ports: { http: 9080 },
+          endpoints: {
+            'uid-details-v1': { workloadUid: 'uid-details-v1', status: 'Healthy', port: { http: 9080 } }
+          },
+          subjectAltNames: ['spiffe://cluster.local/ns/bookinfo/sa/bookinfo-details'],
+          ipFamilies: 'IPv4',
+          waypoint: { destination: '', hboneMtlsPort: 0 }
+        }
+      ],
+      workloads: [
+        {
+          name: 'productpage-v1-abc123',
+          namespace: 'bookinfo',
+          workloadName: 'productpage-v1',
+          workloadType: 'deployment',
+          canonicalName: 'productpage',
+          canonicalRevision: 'v1',
+          node: 'node-1',
+          status: 'Healthy',
+          protocol: 'HBONE',
+          networkMode: 'ztunnel',
+          clusterId: 'Kubernetes',
+          trustDomain: 'cluster.local',
+          serviceAccount: 'bookinfo-productpage',
+          uid: 'uid-productpage-v1',
+          workloadIps: ['10.244.0.10'],
+          services: ['bookinfo/productpage']
+        },
+        {
+          name: 'reviews-v1-def456',
+          namespace: 'bookinfo',
+          workloadName: 'reviews-v1',
+          workloadType: 'deployment',
+          canonicalName: 'reviews',
+          canonicalRevision: 'v1',
+          node: 'node-1',
+          status: 'Healthy',
+          protocol: 'HBONE',
+          networkMode: 'ztunnel',
+          clusterId: 'Kubernetes',
+          trustDomain: 'cluster.local',
+          serviceAccount: 'bookinfo-reviews',
+          uid: 'uid-reviews-v1',
+          workloadIps: ['10.244.0.11'],
+          services: ['bookinfo/reviews']
+        },
+        {
+          name: 'ratings-v1-ghi789',
+          namespace: 'bookinfo',
+          workloadName: 'ratings-v1',
+          workloadType: 'deployment',
+          canonicalName: 'ratings',
+          canonicalRevision: 'v1',
+          node: 'node-2',
+          status: 'Healthy',
+          protocol: 'HBONE',
+          networkMode: 'ztunnel',
+          clusterId: 'Kubernetes',
+          trustDomain: 'cluster.local',
+          serviceAccount: 'bookinfo-ratings',
+          uid: 'uid-ratings-v1',
+          workloadIps: ['10.244.1.10'],
+          services: ['bookinfo/ratings']
+        }
+      ],
+      policies: [],
+      certificates: [
+        {
+          identity: 'spiffe://cluster.local/ns/bookinfo/sa/bookinfo-productpage',
+          state: 'Available',
+          certChain: [
+            {
+              validFrom: new Date(Date.now() - 86400000).toISOString(),
+              expirationTime: new Date(Date.now() + 86400000 * 30).toISOString(),
+              serialNumber: 'a1b2c3d4e5f6',
+              pem: '-----BEGIN CERTIFICATE-----\nMIIC...(truncated)\n-----END CERTIFICATE-----'
+            }
+          ]
+        }
+      ]
+    });
+  }),
+
   // Pod logging endpoint
   http.get('*/api/namespaces/:namespace/pods/:pod/logging', () => {
     return HttpResponse.json({
@@ -1374,21 +1561,128 @@ export const workloadHandlers = [
   }),
 
   // Pod logs endpoint
-  http.get('*/api/namespaces/:namespace/pods/:pod/logs', () => {
-    return HttpResponse.json({
-      entries: [
-        {
-          message: '[2024-01-20T12:00:00.000Z] Mock log entry 1',
-          severity: 'INFO',
-          timestamp: '2024-01-20T12:00:00.000Z'
-        },
-        {
-          message: '[2024-01-20T12:00:01.000Z] Mock log entry 2',
-          severity: 'INFO',
-          timestamp: '2024-01-20T12:00:01.000Z'
-        }
-      ]
-    });
+  http.get('*/api/namespaces/:namespace/pods/:pod/logs', ({ request }) => {
+    const url = new URL(request.url);
+    const logType = url.searchParams.get('logType') || 'app';
+    const baseTime = Math.floor(Date.now() / 1000) - 300;
+
+    const appMessages = [
+      'Starting application server on port 9080',
+      'Connected to database cluster at mongodb:27017',
+      'Health check endpoint /health registered',
+      'Loading product catalog from cache',
+      '{"level":"info","ts":1719500000.123,"caller":"server/main.go:42","msg":"Received request","method":"GET","path":"/api/v1/products","remote_addr":"10.244.0.1:47832","latency_ms":23,"status":200}',
+      'Cache miss for key product:42, fetching from DB',
+      'Successfully retrieved 15 products in 23ms',
+      '{"level":"warn","ts":1719500015.456,"caller":"db/query.go:118","msg":"Slow query detected","query":"SELECT * FROM reviews WHERE product_id=42","duration_ms":250,"rows_scanned":15000,"rows_returned":3}',
+      'Upstream service ratings:9080 responded in 12ms',
+      'Received request for /api/v1/details?isbn=0123456789',
+      'Connection pool stats: active=3 idle=7 max=10',
+      'Slow query detected: SELECT * FROM reviews WHERE product_id=42 took 250ms',
+      'Retry attempt 1/3 for upstream service ratings',
+      '{"level":"error","ts":1719500045.789,"caller":"circuit/breaker.go:67","msg":"Circuit breaker tripped","service":"ratings","consecutive_failures":5,"state":"OPEN","half_open_after":"30s","last_error":"connection refused"}',
+      'Request /api/v1/products completed in 145ms',
+      'GC pause: 12ms (young generation)',
+      'Received SIGTERM, starting graceful shutdown',
+      'Draining connections, 3 active requests remaining',
+      'All connections drained, shutting down',
+      'Application server stopped'
+    ];
+
+    const severities = [
+      'INFO',
+      'INFO',
+      'INFO',
+      'INFO',
+      'INFO',
+      'INFO',
+      'INFO',
+      'WARN',
+      'INFO',
+      'INFO',
+      'INFO',
+      'WARN',
+      'WARN',
+      'ERROR',
+      'INFO',
+      'INFO',
+      'INFO',
+      'INFO',
+      'INFO',
+      'INFO'
+    ];
+
+    const proxyAccessLog = {
+      authority: 'productpage:9080',
+      bytes_received: '0',
+      bytes_sent: '5765',
+      downstream_local: '10.244.0.15:9080',
+      downstream_remote: '10.244.0.1:47832',
+      duration: '23',
+      forwarded_for: '-',
+      method: 'GET',
+      protocol: 'HTTP/1.1',
+      request_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      requested_server: '-',
+      response_flags: '-',
+      route_name: 'default',
+      status_code: '200',
+      tcp_service_time: '-',
+      timestamp: new Date((baseTime + 120) * 1000).toISOString(),
+      upstream_cluster: 'inbound|9080||',
+      upstream_failure_reason: '-',
+      upstream_local: '127.0.0.6:46543',
+      upstream_service: '10.244.0.15:9080',
+      upstream_service_time: '22',
+      uri_param: '-',
+      uri_path: '/api/v1/products',
+      user_agent: 'Mozilla/5.0 (compatible; istio-probe/1.0)'
+    };
+
+    const proxyAccessLog503 = {
+      ...proxyAccessLog,
+      status_code: '503',
+      duration: '5001',
+      response_flags: 'UF',
+      upstream_failure_reason: 'connection_termination',
+      bytes_sent: '91',
+      uri_path: '/api/v1/ratings',
+      request_id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901'
+    };
+
+    const entries =
+      logType === 'proxy'
+        ? [
+            ...[
+              'GET /api/v1/products HTTP/1.1 200 5765 23ms',
+              'GET /api/v1/reviews?product=42 HTTP/1.1 200 1234 12ms',
+              'GET /healthz/ready HTTP/1.1 200 0 1ms',
+              'GET /api/v1/details?isbn=0123456789 HTTP/1.1 200 890 8ms',
+              'GET /api/v1/ratings HTTP/1.1 503 91 5001ms',
+              'GET /api/v1/products HTTP/1.1 200 5780 19ms',
+              'GET /healthz/ready HTTP/1.1 200 0 0ms',
+              'POST /api/v1/reviews HTTP/1.1 201 234 45ms',
+              'GET /api/v1/products?page=2 HTTP/1.1 200 5102 21ms',
+              'GET /stats/prometheus HTTP/1.1 200 12456 3ms'
+            ].map((msg, i) => ({
+              message: `[${new Date((baseTime + i * 15) * 1000).toISOString()}] "${msg}"`,
+              severity: msg.includes('503') ? 'ERROR' : 'INFO',
+              timestamp: new Date((baseTime + i * 15) * 1000).toISOString(),
+              timestampUnix: baseTime + i * 15,
+              accessLog: i === 4 ? proxyAccessLog503 : i % 3 === 0 ? proxyAccessLog : undefined
+            }))
+          ]
+        : appMessages.map((msg, i) => {
+            const isJsonMsg = msg.startsWith('{');
+            return {
+              message: isJsonMsg ? msg : `[${new Date((baseTime + i * 15) * 1000).toISOString()}] ${msg}`,
+              severity: severities[i],
+              timestamp: new Date((baseTime + i * 15) * 1000).toISOString(),
+              timestampUnix: baseTime + i * 15
+            };
+          });
+
+    return HttpResponse.json({ entries, linesTruncated: false });
   }),
 
   http.get('*/api/grafana', () => {

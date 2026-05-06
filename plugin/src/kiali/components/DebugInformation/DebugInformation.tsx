@@ -4,18 +4,8 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { serverConfig } from '../../config';
 import { ComputedServerConfig } from '../../config/ServerConfig';
 import { KialiAppState } from '../../store/Store';
-import {
-	Alert,
-	AlertActionCloseButton,
-	AlertVariant,
-	Button,
-	ButtonVariant,
-	Tab
-} from '@patternfly/react-core';
-import {
-	Modal,
-	ModalVariant
-} from '@patternfly/react-core/deprecated';
+import { Alert, AlertActionCloseButton, AlertVariant, Button, ButtonVariant, Tab } from '@patternfly/react-core';
+import { Modal, ModalVariant } from '@patternfly/react-core/deprecated';
 import { aceOptions, yamlDumpOptions } from '../../types/IstioConfigDetails';
 import AceEditor from 'react-ace';
 import { ParameterizedTabs } from '../Tab/Tabs';
@@ -85,10 +75,14 @@ const tabIndex: { [tab: string]: number } = {
   perfData: 2
 };
 
+// Override basicTabStyle's flex:1 on tab content because this modal has a
+// fixed viewport — tabs should scroll internally at a fixed height rather
+// than stretching to fill the page.
 const modalStyle = kialiStyle({
   overflowY: 'hidden',
   $nest: {
     '& .pf-v6-c-tab-content': {
+      flex: '0 0 auto',
       height: '530px',
       overflowY: 'auto'
     }

@@ -1,9 +1,6 @@
 import * as React from 'react';
 import { Grid, GridItem } from '@patternfly/react-core';
-import {
-	ChartThemeColor,
-	getTheme
-} from '@patternfly/react-charts/victory';
+import { ChartThemeColor, getTheme } from '@patternfly/react-charts/victory';
 
 import { AllPromLabelsValues } from 'types/Metrics';
 import { ChartModel, DashboardModel } from 'types/Dashboards';
@@ -13,71 +10,127 @@ import { KChart } from './KChart';
 import { LineInfo, RawOrBucket } from 'types/VictoryChartInfo';
 import { BrushHandlers } from './Container';
 import { isArray } from 'lodash';
+import { kialiStyle } from 'styles/StyleUtils';
+import { ResizeHeightObserver } from 'utils/ResizeHeightObserver';
+
+const dashboardContainerStyle = kialiStyle({
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  minHeight: 0
+});
+
+const chartsGridStyle = kialiStyle({
+  rowGap: '1rem'
+});
+
+const MIN_CHART_HEIGHT = 150;
+const GRID_ROW_GAP = 16;
 
 export type Props<T extends LineInfo> = {
-  colors?: string[];
-  dashboard: DashboardModel;
-  maximizedChart?: string;
-  expandHandler: (expandedChart?: string) => void;
-  labelValues: AllPromLabelsValues;
-  labelPrettifier?: (key: string, value: string) => string;
-  onClick?: (chart: ChartModel, datum: RawOrBucket<T>) => void;
   brushHandlers?: BrushHandlers;
-  template?: string;
-  dashboardHeight: number;
+  colors?: string[];
+  customMetric?: boolean;
+  dashboard: DashboardModel;
+  labelPrettifier?: (key: string, value: string) => string;
+  labelValues: AllPromLabelsValues;
+  maximizedChart?: string;
+  onClick?: (chart: ChartModel, datum: RawOrBucket<T>) => void;
+  onExpand: (expandedChart?: string) => void;
+  overlay?: Overlay<T>;
   showSpans: boolean;
   showTrendlines?: boolean;
-  customMetric?: boolean;
-  overlay?: Overlay<T>;
+  template?: string;
   timeWindow?: [Date, Date];
 };
 
 type State = {
   maximizedChart?: string;
+  measuredHeight: number;
 };
 
 export class Dashboard<T extends LineInfo> extends React.Component<Props<T>, State> {
+  private containerRef = React.createRef<HTMLDivElement>();
+  private heightObserver: ResizeHeightObserver | null = null;
+
   constructor(props: Props<T>) {
     super(props);
     this.state = {
-      maximizedChart: props.maximizedChart
+      maximizedChart: props.maximizedChart,
+      measuredHeight: 0
     };
   }
 
-  render() {
+  componentDidMount(): void {
+    this.startObserving();
+  }
+
+  componentWillUnmount(): void {
+    this.heightObserver?.disconnect();
+    this.heightObserver = null;
+  }
+
+  // The container has flex:1 + minHeight:0 so its height is set by the
+  // parent flex layout, not by its content. Observing it is stable —
+  // changing chart content won't resize the container.
+  private startObserving(): void {
+    const el = this.containerRef.current;
+    if (!el) {
+      return;
+    }
+    if (!this.heightObserver) {
+      this.heightObserver = new ResizeHeightObserver(h => this.setState({ measuredHeight: h }));
+    }
+    this.heightObserver.observe(el);
+  }
+
+  render(): React.ReactNode {
+    let content;
+
     if (this.state.maximizedChart) {
       const chart = this.props.dashboard.charts.find(c => c.name === this.state.maximizedChart);
+
       if (chart) {
-        return this.renderChart(chart);
+        content = this.renderChart(chart);
       }
     }
 
+    if (!content) {
+      content = (
+        <Grid className={chartsGridStyle}>
+          {this.props.dashboard.charts.map(c => {
+            return (
+              <GridItem span={c.spans} key={c.name}>
+                {this.renderChart(c)}
+              </GridItem>
+            );
+          })}
+        </Grid>
+      );
+    }
+
     return (
-      <Grid>
-        {this.props.dashboard.charts.map(c => {
-          return (
-            <GridItem span={c.spans} key={c.name}>
-              {this.renderChart(c)}
-            </GridItem>
-          );
-        })}
-      </Grid>
+      <div ref={this.containerRef} className={dashboardContainerStyle}>
+        {content}
+      </div>
     );
   }
 
   private getChartHeight = (): number => {
-    if (this.state.maximizedChart) {
-      return this.props.dashboardHeight;
+    if (this.state.measuredHeight === 0) {
+      return MIN_CHART_HEIGHT;
     }
-    // Dashboards define the rows that are used
-    // Columns are defined using the spans field in the charts definition using a flex strategy
-    // When columns span the grid (12 spans) charts move to the next row
-    // By default metrics use a 2 row layout
+
+    if (this.state.maximizedChart) {
+      return Math.max(this.state.measuredHeight, MIN_CHART_HEIGHT);
+    }
+
     const rows = this.props.dashboard.rows > 0 ? this.props.dashboard.rows : 2;
-    return this.props.dashboardHeight / rows;
+    const totalGapHeight = (rows - 1) * GRID_ROW_GAP;
+    return Math.max(Math.floor((this.state.measuredHeight - totalGapHeight) / rows), MIN_CHART_HEIGHT);
   };
 
-  private renderChart(chart: ChartModel) {
+  private renderChart(chart: ChartModel): React.ReactNode {
     let colorScale = this.props.colors || getTheme(ChartThemeColor.multi).chart!.colorScale!;
     if (!isArray(colorScale)) {
       colorScale = [colorScale];
@@ -99,7 +152,7 @@ export class Dashboard<T extends LineInfo> extends React.Component<Props<T>, Sta
         showSpans={this.props.showSpans}
         showTrendline={this.props.showTrendlines}
         data={dataSupplier()}
-        onToggleMaximized={() => this.onToggleMaximized(chart.name)}
+        onToggleMaximized={() => this.handleToggleMaximized(chart.name)}
         isMaximized={this.state.maximizedChart !== undefined}
         overlay={chart.xAxis === 'series' ? undefined : this.props.overlay}
         onClick={onClick}
@@ -109,9 +162,9 @@ export class Dashboard<T extends LineInfo> extends React.Component<Props<T>, Sta
     );
   }
 
-  private onToggleMaximized = (chartKey: string): void => {
+  private handleToggleMaximized = (chartKey: string): void => {
     const maximized = this.state.maximizedChart ? undefined : chartKey;
     this.setState({ maximizedChart: maximized });
-    this.props.expandHandler(maximized);
+    this.props.onExpand(maximized);
   };
 }

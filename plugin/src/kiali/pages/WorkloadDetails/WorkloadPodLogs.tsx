@@ -44,10 +44,8 @@ import {
   TimeInSeconds,
   TimeRange
 } from '../../types/Common';
-import { RenderComponentScroll } from '../../components/Nav/Page';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { KialiIcon } from '../../config/KialiIcon';
-import screenfull, { Screenfull } from 'screenfull';
 import { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
 import { timeRangeSelector } from '../../store/Selectors';
@@ -72,11 +70,12 @@ import { infoStyle } from 'styles/IconStyle';
 import { WaypointInfo } from '../../types/Workload';
 import { istioProxyName } from './WorkloadDetailsPage';
 import AceEditor from 'react-ace';
-import { t } from 'i18next';
+import { t } from 'utils/I18nUtils';
 import { ParameterizedTabs } from 'components/Tab/Tabs';
 import { basicTabStyle } from 'styles/TabStyles';
 import { classes } from 'typestyle';
 import { istioAceEditorStyle } from 'styles/AceEditorStyle';
+import { constrainedScrollStyle, flexCardStyle, flexFillStyle, noShrinkStyle } from 'styles/FlexStyles';
 import 'ace-builds/src-noconflict/mode-json';
 
 const appContainerColors = [PFColors.Blue200, PFColors.Blue300, PFColors.Blue400, PFColors.Blue100];
@@ -129,7 +128,6 @@ interface WorkloadPodLogsState {
   containerOptions?: ContainerOption[];
   currentTab: string;
   entries: Entry[];
-  fullscreen: boolean;
   hideError?: string;
   hideLogValue: string;
   isJSONModalOpen: boolean;
@@ -186,11 +184,18 @@ const MaxLinesOptions = {
 const modalStyle = kialiStyle({
   display: 'flex',
   flexDirection: 'column',
-  width: '50%',
   height: '70%',
+  width: '50%',
   $nest: {
+    '& .pf-v6-c-modal-box__body': {
+      display: 'flex',
+      flex: 1,
+      flexDirection: 'column',
+      minHeight: 0
+    },
     '& .pf-v6-c-tab-content': {
-      height: '100%',
+      flex: 1,
+      minHeight: 0,
       overflowY: 'auto'
     }
   }
@@ -226,7 +231,11 @@ const toolbarTail = kialiStyle({
 });
 
 const logsDiv = kialiStyle({
-  marginRight: '0.5rem'
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  marginRight: '0.5rem',
+  minHeight: 0
 });
 
 const logsDisplay = kialiStyle({
@@ -262,7 +271,19 @@ const checkboxMarginStyle = kialiStyle({
 });
 
 const gridStyle = kialiStyle({
-  paddingTop: '1rem'
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  minHeight: 0,
+  paddingTop: '1rem',
+  $nest: {
+    '& > .pf-v6-l-grid__item': {
+      display: 'flex',
+      flex: 1,
+      flexDirection: 'column',
+      minHeight: 0
+    }
+  }
 });
 
 const logListStyle = kialiStyle({
@@ -327,15 +348,9 @@ const logsBackground = (enabled: boolean): React.CSSProperties => ({
   backgroundColor: enabled ? PFColors.Black1000 : PFColors.Black500
 });
 
-const logsHeight = (showToolbar: boolean, fullscreen: boolean, showMaxLinesWarning: boolean): React.CSSProperties => {
-  const toolbarHeight = showToolbar ? '0px' : '49px';
-  const maxLinesWarningHeight = showMaxLinesWarning ? '27px' : '0px';
-
-  return {
-    height: fullscreen
-      ? `calc(100vh - 130px + ${toolbarHeight} - ${maxLinesWarningHeight})`
-      : `calc(var(--kiali-details-pages-tab-content-height) - 200px + ${toolbarHeight} - ${maxLinesWarningHeight})`
-  };
+const logsFlexStyle: React.CSSProperties = {
+  flex: 1,
+  minHeight: 0
 };
 
 const tabStyle = kialiStyle({
@@ -347,9 +362,9 @@ const tabStyle = kialiStyle({
 });
 
 export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsProps, WorkloadPodLogsState> {
-  private promises: PromisesRegistry = new PromisesRegistry();
-  private podOptions: string[] = [];
   private readonly logsRef: React.RefObject<any>;
+  private podOptions: string[] = [];
+  private promises: PromisesRegistry = new PromisesRegistry();
 
   constructor(props: WorkloadPodLogsProps) {
     super(props);
@@ -365,7 +380,6 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
       accessLogModals: new Map<string, AccessLog>(),
       currentTab: defaultTab,
       entries: [],
-      fullscreen: false,
       hideLogValue: '',
       isJSONModalOpen: false,
       isTimeOptionsOpen: false,
@@ -413,8 +427,6 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
   }
 
   componentDidMount(): void {
-    const screenFullAlias = screenfull as Screenfull;
-    screenFullAlias.onchange(() => this.setState({ fullscreen: !this.state.fullscreen }));
     if (this.state.containerOptions) {
       const pod = this.props.pods[this.state.podValue!];
       this.fetchEntries(
@@ -477,14 +489,14 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
   render(): React.ReactNode {
     return (
       <>
-        <RenderComponentScroll>
+        <div className={classes(flexFillStyle, constrainedScrollStyle)}>
           {this.state.containerOptions && (
             <Grid key="logs" id="logs" className={gridStyle}>
               <GridItem span={12}>
-                <Card>
+                <Card className={flexCardStyle}>
                   <CardBody>
                     {this.state.showToolbar && (
-                      <Toolbar style={{ padding: 0, width: '100%' }}>
+                      <Toolbar className={noShrinkStyle} style={{ padding: 0, width: '100%' }}>
                         <ToolbarGroup style={{ margin: 0, marginRight: '0.5rem' }}>
                           <ToolbarItem style={{ alignSelf: 'center' }}>
                             <PFBadge badge={PFBadges.Pod} position={TooltipPosition.top} />
@@ -567,7 +579,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                                 inputClassName={colorCheck(spanColor)}
                                 label="Spans"
                                 labelClassName={spansLabelStyle}
-                                onChange={this.onTraceSpansChange}
+                                onChange={this.handleTraceSpansChange}
                                 showSpans={this.state.showSpans}
                                 traceLimit={this.state.showSpansLimit}
                               />
@@ -588,7 +600,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
 
                           <KioskElement>
                             <ToolbarItem style={{ alignSelf: 'center' }}>
-                              <TimeDurationIndicator id="time_duration" onClick={this.toggleTimeOptionsVisibility} />
+                              <TimeDurationIndicator id="time_duration" onClick={this.handleToggleTimeOptions} />
                             </ToolbarItem>
                           </KioskElement>
                         </ToolbarGroup>
@@ -603,19 +615,19 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
             </Grid>
           )}
           {this.state.loadingLogsError && <div>{this.state.loadingLogsError}</div>}
-        </RenderComponentScroll>
+        </div>
 
         <TimeDurationModal
           customDuration={true}
           isOpen={this.state.isTimeOptionsOpen}
-          onConfirm={this.toggleTimeOptionsVisibility}
-          onCancel={this.toggleTimeOptionsVisibility}
+          onConfirm={this.handleToggleTimeOptions}
+          onCancel={this.handleToggleTimeOptions}
         />
       </>
     );
   }
 
-  private onTraceSpansChange = (checked: boolean, limit: number): void => {
+  private handleTraceSpansChange = (checked: boolean, limit: number): void => {
     const urlParams = new URLSearchParams(location.getSearch());
     urlParams.set(URLParam.SHOW_SPANS, String(checked));
     if (checked) {
@@ -657,7 +669,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                       {c.displayName}
                     </span>
                   }
-                  onChange={() => this.toggleSelected(c)}
+                  onChange={() => this.handleToggleSelected(c)}
                 />
                 {c.isAmbient && i + 1 === this.state.containerOptions?.length && (
                   <>
@@ -677,7 +689,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                           ztunnel
                         </span>
                       }
-                      onChange={() => this.toggleZtunnel()}
+                      onChange={() => this.handleToggleZtunnel()}
                     />
                     <Tooltip
                       key={`al-tt-tl`}
@@ -705,7 +717,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                               waypoint
                             </span>
                           }
-                          onChange={() => this.toggleWaypoint()}
+                          onChange={() => this.handleToggleWaypoint()}
                         />
                         <Tooltip
                           key={`al-tt-tl`}
@@ -733,12 +745,12 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     }
   };
 
-  private toggleSelected = (c: ContainerOption): void => {
+  private handleToggleSelected = (c: ContainerOption): void => {
     c.isSelected = !c.isSelected;
     this.setState({ containerOptions: [...this.state.containerOptions!] });
   };
 
-  private toggleZtunnel = (): void => {
+  private handleToggleZtunnel = (): void => {
     const urlParams = new URLSearchParams(location.getSearch());
     urlParams.set(URLParam.SHOW_ZTUNNEL, String(!this.state.showZtunnel));
     router.navigate(`${location.getPathname()}?${urlParams.toString()}`, { replace: true });
@@ -746,7 +758,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     this.setState({ showZtunnel: !this.state.showZtunnel });
   };
 
-  private toggleWaypoint = (): void => {
+  private handleToggleWaypoint = (): void => {
     const urlParams = new URLSearchParams(location.getSearch());
     urlParams.set(URLParam.SHOW_WAYPOINT, String(!this.state.showWaypoint));
     router.navigate(`${location.getPathname()}?${urlParams.toString()}`, { replace: true });
@@ -754,7 +766,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     this.setState({ showWaypoint: !this.state.showWaypoint });
   };
 
-  private toggleTimeOptionsVisibility = (): void => {
+  private handleToggleTimeOptions = (): void => {
     this.setState(prevState => ({ isTimeOptionsOpen: !prevState.isTimeOptionsOpen }));
   };
 
@@ -901,15 +913,15 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     );
 
     const kebabActions = [
-      <DropdownItem key="toggleToolbar" onClick={this.toggleToolbar}>
+      <DropdownItem key="toggleToolbar" onClick={this.handleToggleToolbar}>
         {`${this.state.showToolbar ? 'Collapse' : 'Expand'} Toolbar`}
       </DropdownItem>,
 
-      <DropdownItem key="toggleRegex" onClick={this.toggleUseRegex}>
+      <DropdownItem key="toggleRegex" onClick={this.handleToggleUseRegex}>
         {`Match via ${this.state.useRegex ? 'Substring' : 'Regex'}`}
       </DropdownItem>,
 
-      <DropdownItem key="toggleTimestamps" onClick={this.toggleShowTimestamps}>
+      <DropdownItem key="toggleTimestamps" onClick={this.handleToggleTimestamps}>
         {`${this.state.showTimestamps ? 'Remove' : 'Show'} Timestamps`}
       </DropdownItem>,
 
@@ -926,7 +938,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
 
     return (
       <div key="logsDiv" id="logsDiv" className={logsDiv}>
-        <Toolbar style={{ padding: '0.25rem 0' }}>
+        <Toolbar className={noShrinkStyle} style={{ padding: '0.25rem 0' }}>
           <ToolbarGroup style={{ margin: 0 }}>
             <ToolbarItem>{this.getContainerLegend()}</ToolbarItem>
             <ToolbarItem className={copyActionStyle}>
@@ -944,7 +956,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
               <Tooltip key="fullscreen_logs" position="top" content="Expand logs full screen">
                 <Button
                   variant={ButtonVariant.link}
-                  onClick={this.toggleFullscreen}
+                  onClick={this.handleToggleFullscreen}
                   isDisabled={!this.hasEntries(this.state.entries)}
                   isInline
                 >
@@ -981,7 +993,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
         </Toolbar>
 
         {this.state.linesTruncatedContainers.length > 0 && (
-          <div style={{ marginBottom: '0.5rem' }}>
+          <div className={noShrinkStyle} style={{ marginBottom: '0.5rem' }}>
             <Alert
               variant="danger"
               isInline={true}
@@ -997,16 +1009,8 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
           key="logsText"
           id="logsText"
           className={logsDisplay}
-          // note - for some reason the callable typescript needs to be applied as "style" and
-          // not as a "className".  Otherwise the initial scroillHeight is incorrectly set
-          // (to max) and when we try to assign scrollTop to scrollHeight (above),it stays at 0
-          // and we fail to set the scroll correctly. So, don't change this!
           style={{
-            ...logsHeight(
-              this.state.showToolbar,
-              this.state.fullscreen,
-              this.state.linesTruncatedContainers.length > 0
-            ),
+            ...logsFlexStyle,
             ...logsBackground(this.hasEntries(this.state.entries))
           }}
         >
@@ -1103,7 +1107,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
           />
         )}
         <p className={previewLogLineStyle}>{this.state.jsonModalContent}</p>
-        <div style={{ height: 'calc(100% - 120px)' }}>
+        <div className={classes(flexFillStyle, constrainedScrollStyle)}>
           <ParameterizedTabs
             id="json-log-details-tabs"
             className={classes(basicTabStyle, tabStyle)}
@@ -1181,15 +1185,15 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     this.setState({ accessLogModals: accessLogModals });
   };
 
-  private toggleShowTimestamps = (): void => {
+  private handleToggleTimestamps = (): void => {
     this.setState({ showTimestamps: !this.state.showTimestamps, kebabOpen: false });
   };
 
-  private toggleToolbar = (): void => {
+  private handleToggleToolbar = (): void => {
     this.setState({ showToolbar: !this.state.showToolbar, kebabOpen: false });
   };
 
-  private toggleUseRegex = (): void => {
+  private handleToggleUseRegex = (): void => {
     this.setState({ useRegex: !this.state.useRegex, kebabOpen: false });
   };
 
@@ -1321,19 +1325,14 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
     });
   };
 
-  private toggleFullscreen = (): void => {
-    const screenFullAlias = screenfull as Screenfull; // this casting was necessary
-
-    if (screenFullAlias.isFullscreen) {
-      screenFullAlias.exit();
+  private handleToggleFullscreen = (): void => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
     } else {
-      const element = document.getElementById('logs');
-
-      if (screenFullAlias.isEnabled) {
-        if (element) {
-          screenFullAlias.request(element);
-        }
-      }
+      document
+        .getElementById('logs')
+        ?.requestFullscreen()
+        .catch(() => {});
     }
   };
 
