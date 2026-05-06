@@ -8,9 +8,10 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "yarn clean && sh -ac '. ./.env; NODE_ENV=production yarn ts-node node_modules/.bin/webpack'",
-    "build:dev": "yarn clean && sh -ac '. ./.env; NODE_ENV=development yarn ts-node node_modules/.bin/webpack'",
-    "start": "sh -ac '. ./.env; NODE_ENV=development yarn ts-node node_modules/.bin/webpack serve'",
+    "build": "yarn clean && sh -ac '. ./.env; yarn i18n && NODE_ENV=production rspack build -c rspack.config.ts'",
+    "build:dev": "yarn clean && sh -ac '. ./.env; yarn i18n && NODE_ENV=development rspack build -c rspack.config.ts'",
+    "postinstall": "node scripts/patch-rspack-compat.js",
+    "start": "sh -ac '. ./.env; yarn i18n && NODE_ENV=development rspack serve -c rspack.config.ts'",
     "start-console": "./start-console.sh",
     "mock-server:build": "ts-node -O '{\"module\":\"commonjs\"}' mock-server/build.ts",
     "mock-server": "yarn mock-server:build && node mock-server/bootstrap.js",
@@ -25,7 +26,7 @@
     "i18n": "yarn i18n:kiali && yarn i18n:openshift",
     "i18n:kiali": "i18next 'src/kiali/**/*.{ts,tsx}' -o 'src/kiali/locales/$LOCALE/$NAMESPACE.json' -c './i18next-parser.config.ts' --silent",
     "i18n:openshift": "i18next 'src/openshift/**/*.{ts,tsx}' -o 'src/openshift/locales/$LOCALE/$NAMESPACE.json' -c './i18next-parser.config.ts' --silent",
-    "ts-node": "yarn i18n && ts-node -O '{\"module\":\"commonjs\"}'",
+    "ts-node": "ts-node -O '{\"module\":\"commonjs\"}'",
     "test": "jest --config jest.config.ts",
     "lint": "eslint --ext ts,tsx src/openshift",
     "lint:precommit": "if git diff --name-only HEAD | grep -E '\\.tsx?$'; then npm run lint; else true; fi",
@@ -81,10 +82,12 @@
     "visibilityjs": "2.0.2"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@badeball/cypress-cucumber-preprocessor": "^20.1.2",
     "@bahmutov/cypress-esbuild-preprocessor": "^2.2.0",
     "@openshift-console/dynamic-plugin-sdk-webpack": "4.19.0",
+    "@rspack/cli": "^2.0.2",
+    "@rspack/core": "^2.0.2",
+    "@rspack/dev-server": "^2.0.1",
     "@svgr/webpack": "^8.1.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^14.3.1",
@@ -104,12 +107,9 @@
     "@types/react-router-dom": "^5.2.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/react-virtualized": "9.x",
-    "@types/webpack-dev-server": "^4.5.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "axios-mock-adapter": "^1.22.0",
-    "babel-loader": "^9.1.2",
-    "babel-preset-react-app": "^10.0.1",
     "css-loader": "^6.5.1",
     "cypress": "^13.6.1",
     "cypress-multi-reporters": "^1.6.0",
@@ -117,7 +117,6 @@
     "eslint-config-react-app": "^7.0.1",
     "express": "^4.21.0",
     "file-loader": "^6.2.0",
-    "fork-ts-checker-webpack-plugin": "^8.0.0",
     "husky": "^8.0.3",
     "i18next-parser": "^9.0.1",
     "jest": "^30.3.0",
@@ -128,7 +127,6 @@
     "merge-jsons-webpack-plugin": "^2.0.1",
     "mocha-junit-reporter": "^2.2.1",
     "msw": "^2.12.7",
-    "node-polyfill-webpack-plugin": "^2.0.1",
     "prettier": "^2.4.1",
     "pretty-quick": "^3.1.3",
     "redux-mock-store": "1.5.4",
@@ -138,17 +136,12 @@
     "style-loader": "^3.3.1",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.4.0",
-    "tsconfig-paths-webpack-plugin": "^4.0.1",
-    "typescript": "^5.9.0",
-    "webpack": "^5.104.1",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.2.1"
+    "typescript": "^5.9.0"
   },
   "resolutions": {
     "esbuild": "^0.25.2",
     "react-markdown": "^8.0.7",
-    "unist-util-visit-parents": "^5.1.3",
-    "webpack": "^5.104.1"
+    "unist-util-visit-parents": "^5.1.3"
   },
   "engines": {
     "node": ">=24.0.0"

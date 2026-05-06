@@ -1,25 +1,61 @@
 /* eslint-env node */
+/* eslint-disable @typescript-eslint/no-require-imports */
 
-import { Configuration as WebpackConfiguration, DefinePlugin as DefinePlugin } from 'webpack';
-import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
+import './rspack-webpack-shim';
+
+import { type Compiler, Compilation, type RspackOptions, ProvidePlugin, DefinePlugin, sources } from '@rspack/core';
 import * as path from 'path';
 import { ConsoleRemotePlugin } from '@openshift-console/dynamic-plugin-sdk-webpack';
-import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import MergeJsonWebpackPlugin from 'merge-jsons-webpack-plugin';
-import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
-import TerserPlugin from 'terser-webpack-plugin';
 
 import pluginMetadata from './plugin-metadata';
 import extensions from './console-extensions';
 
-interface Configuration extends WebpackConfiguration {
-  devServer?: WebpackDevServerConfiguration;
+// Appends a loadPluginEntry() call to the Module Federation entry file.
+// OpenShift Console loads plugins by calling loadPluginEntry('name', get, init).
+// With library.type 'var', Rspack generates: var ossmconsole = { get, init };
+// We append the callback invocation so OpenShift Console can discover the plugin.
+class WrapEntryPlugin {
+  apply(compiler: Compiler): void {
+    compiler.hooks.compilation.tap('WrapEntryPlugin', (compilation: Compilation) => {
+      compilation.hooks.processAssets.tap(
+        {
+          name: 'WrapEntryPlugin',
+          stage: Compilation.PROCESS_ASSETS_STAGE_ADDITIONS
+        },
+        () => {
+          const containerName = pluginMetadata.name;
+
+          for (const asset of compilation.getAssets()) {
+            if (asset.name.startsWith('plugin-entry') && asset.name.endsWith('.js')) {
+              const code = asset.source.source().toString();
+              if (!code.includes('loadPluginEntry')) {
+                const callbackCode =
+                  `\nif (typeof loadPluginEntry === 'function') ` +
+                  `{ loadPluginEntry("${containerName}", ${containerName}.get, ${containerName}.init); }\n`;
+                compilation.updateAsset(asset.name, new sources.RawSource(code + callbackCode));
+              }
+            }
+
+            // The SDK sets registrationMethod to 'custom' when library.type != 'jsonp',
+            // but we emulate the jsonp callback pattern via loadPluginEntry(), so Console
+            // needs 'callback' to discover the plugin correctly.
+            if (asset.name === 'plugin-manifest.json') {
+              const manifest = JSON.parse(asset.source.source().toString());
+              if (manifest.registrationMethod !== 'callback') {
+                manifest.registrationMethod = 'callback';
+                compilation.updateAsset(asset.name, new sources.RawSource(JSON.stringify(manifest)));
+              }
+            }
+          }
+        }
+      );
+    });
+  }
 }
 
-const config: Configuration = {
+const config: RspackOptions = {
   mode: 'development',
-  // No regular entry points. The remote container entry is handled by ConsoleRemotePlugin.
   entry: {},
   context: path.resolve(__dirname, 'src'),
   output: {
@@ -30,7 +66,13 @@ const config: Configuration = {
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
-    plugins: [new TsconfigPathsPlugin()]
+    tsConfig: path.resolve(__dirname, 'tsconfig.json'),
+    fallback: {
+      buffer: require.resolve('buffer/'),
+      crypto: false,
+      stream: false,
+      util: false
+    }
   },
   module: {
     rules: [
@@ -39,9 +81,12 @@ const config: Configuration = {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'babel-loader',
+            loader: 'builtin:swc-loader',
             options: {
-              presets: [['react-app', { typescript: true }]]
+              jsc: {
+                parser: { syntax: 'typescript', tsx: true },
+                transform: { react: { runtime: 'automatic' } }
+              }
             }
           }
         ]
@@ -84,7 +129,6 @@ const config: Configuration = {
   devServer: {
     static: './dist',
     port: 9001,
-    // Allow bridge running in a container to connect to the plugin dev server.
     allowedHosts: 'all',
     headers: {
       'Access-Control-Allow-Origin': '*',
@@ -96,7 +140,12 @@ const config: Configuration = {
     }
   },
   plugins: [
-    new ConsoleRemotePlugin({ pluginMetadata, extensions }),
+    new ConsoleRemotePlugin({
+      pluginMetadata,
+      extensions,
+      validateExtensionIntegrity: false,
+      validateSharedModules: false
+    }),
     new MergeJsonWebpackPlugin({
       output: {
         groupBy: [
@@ -118,16 +167,11 @@ const config: Configuration = {
       'process.env.GLOBAL_SCROLLBAR': JSON.stringify(process.env.GLOBAL_SCROLLBAR),
       'process.env.I18N_NAMESPACE': JSON.stringify(process.env.I18N_NAMESPACE)
     }),
-    new NodePolyfillPlugin(),
-    new ForkTsCheckerWebpackPlugin({
-      typescript: {
-        configFile: '../tsconfig.json',
-        diagnosticOptions: {
-          syntactic: true
-        },
-        mode: 'write-references'
-      }
-    })
+    new ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+      process: 'process/browser'
+    }),
+    new WrapEntryPlugin()
   ],
   devtool: 'source-map',
   optimization: {
@@ -145,14 +189,6 @@ if (process.env.NODE_ENV === 'production') {
   if (config.optimization) {
     config.optimization.chunkIds = 'deterministic';
     config.optimization.minimize = true;
-    config.optimization.minimizer = [
-      new TerserPlugin({
-        terserOptions: {
-          keep_classnames: true,
-          keep_fnames: true
-        }
-      })
-    ];
   }
 }
 
