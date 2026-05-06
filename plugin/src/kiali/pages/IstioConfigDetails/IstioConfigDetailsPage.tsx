@@ -20,12 +20,13 @@ import {
   parseYamlValidations
 } from '../../types/AceValidations';
 import { IstioActionDropdown } from '../../components/IstioActions/IstioActionsDropdown';
-import { RenderComponentScroll } from '../../components/Nav/Page';
 import { IstioActionButtons } from '../../components/IstioActions/IstioActionsButtons';
 import { HistoryManager, router } from '../../app/History';
 import { Paths } from '../../config';
 import { getIstioObject, mergeJsonPatch } from '../../utils/IstioConfigUtils';
 import { kialiStyle } from 'styles/StyleUtils';
+import { classes } from 'typestyle';
+import { constrainedScrollStyle, flexFillStyle, noShrinkStyle } from 'styles/FlexStyles';
 import { ParameterizedTabs, activeTab } from '../../components/Tab/Tabs';
 import {
   Drawer,
@@ -54,14 +55,27 @@ import { Theme } from 'types/Common';
 import { ApiError, ApiResponse } from 'types/Api';
 import { dump, loadAll } from 'js-yaml';
 import { setAIContext } from 'helpers/ChatAI';
+import { ResizeHeightObserver } from 'utils/ResizeHeightObserver';
 
 const editorDrawer = kialiStyle({
-  margin: 0
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  margin: 0,
+  minHeight: 0
+});
+
+const editorAreaStyle = kialiStyle({
+  display: 'flex',
+  flex: 1,
+  flexDirection: 'column',
+  minHeight: '200px'
 });
 
 interface IstioConfigDetailsState {
   cluster?: string;
   currentTab: string;
+  editorHeight: number;
   error?: ErrorMsg;
   isExpanded: boolean;
   isModified: boolean;
@@ -99,6 +113,9 @@ type IstioConfigDetailsProps = ReduxProps &
 class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetailsProps, IstioConfigDetailsState> {
   aceEditorRef: React.RefObject<AceEditor>;
   drawerRef: React.RefObject<IstioConfigDetails>;
+  private editorContainerRef = React.createRef<HTMLDivElement>();
+  private heightObserver = new ResizeHeightObserver(h => this.setState({ editorHeight: h }));
+  private isObserving = false;
   promptTo: string;
   timerId: number;
 
@@ -108,6 +125,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
 
     this.state = {
       cluster: cluster,
+      editorHeight: 0,
       isModified: false,
       isRemoved: false,
       currentTab: activeTab(tabName, this.defaultTab()),
@@ -203,9 +221,16 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
 
   componentDidMount(): void {
     this.fetchIstioObjectDetails();
+    this.tryStartObserving();
   }
 
   componentDidUpdate(prevProps: IstioConfigDetailsProps, prevState: IstioConfigDetailsState): void {
+    // Start observing once the editor container mounts (may happen after
+    // componentDidMount if data was still loading on first render).
+    if (!this.isObserving) {
+      this.tryStartObserving();
+    }
+
     // This will ask confirmation if we want to leave page on pending changes without save
     if (this.state.isModified) {
       window.onbeforeunload = () => true;
@@ -256,9 +281,16 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
   }
 
   componentWillUnmount(): void {
-    // Reset ask confirmation flag
     window.onbeforeunload = null;
     window.clearInterval(this.timerId);
+    this.heightObserver.disconnect();
+  }
+
+  private tryStartObserving(): void {
+    if (this.editorContainerRef.current) {
+      this.heightObserver.observe(this.editorContainerRef.current);
+      this.isObserving = true;
+    }
   }
 
   backToList = (): void => {
@@ -551,6 +583,8 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
       </DrawerPanelContent>
     );
 
+    const aceHeight = Math.max(this.state.editorHeight, 200);
+
     const editor = this.state.istioObjectDetails ? (
       <div style={{ width: '100%' }}>
         <AceEditor
@@ -558,7 +592,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
           mode="yaml"
           theme={this.props.theme === Theme.DARK ? 'twilight' : 'eclipse'}
           onChange={this.onEditorChange}
-          height="calc(var(--kiali-yaml-editor-height)"
+          height={`${aceHeight}px`}
           width="100%"
           className={istioAceEditorStyle}
           wrapEnabled={true}
@@ -574,16 +608,18 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
 
     return (
       <div className={`object-drawer ${editorDrawer} ${drawerPanelStyle}`}>
-        {showCards ? (
-          <Drawer isExpanded={this.state.isExpanded} isInline={true}>
-            <DrawerContent panelContent={showCards ? panelContent : undefined}>
-              <DrawerContentBody>{editor}</DrawerContentBody>
-            </DrawerContent>
-          </Drawer>
-        ) : (
-          editor
-        )}
-        {this.renderActionButtons(showCards)}
+        <div ref={this.editorContainerRef} className={editorAreaStyle}>
+          {showCards ? (
+            <Drawer isExpanded={this.state.isExpanded} isInline={true}>
+              <DrawerContent panelContent={showCards ? panelContent : undefined}>
+                <DrawerContentBody>{editor}</DrawerContentBody>
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            editor
+          )}
+        </div>
+        <div className={noShrinkStyle}>{this.renderActionButtons(showCards)}</div>
       </div>
     );
   };
@@ -654,13 +690,13 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
             unmountOnExit={true}
           >
             <Tab key="istio-yaml" title={`YAML ${this.state.isModified ? ' * ' : ''}`} eventKey={0}>
-              <RenderComponentScroll>{this.renderEditor()}</RenderComponentScroll>
+              <div className={classes(flexFillStyle, constrainedScrollStyle)}>{this.renderEditor()}</div>
             </Tab>
           </ParameterizedTabs>
         )}
 
         {!this.state.error && isParentKiosk(this.props.kiosk) && (
-          <RenderComponentScroll>{this.renderEditor()}</RenderComponentScroll>
+          <div className={classes(flexFillStyle, constrainedScrollStyle)}>{this.renderEditor()}</div>
         )}
 
         {/* TODO Enable Prompt

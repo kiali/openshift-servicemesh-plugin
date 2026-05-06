@@ -3,13 +3,20 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { KialiDispatch } from 'types/Redux';
 import { Card, CardBody, Checkbox, Toolbar, ToolbarGroup, ToolbarItem } from '@patternfly/react-core';
-import { kialiStyle } from 'styles/StyleUtils';
+import { classes } from 'typestyle';
+import {
+  tabCardStyle,
+  constrainedScrollStyle,
+  flexCardStyle,
+  flexFillStyle,
+  noShrinkStyle,
+  scrollableContentStyle
+} from 'styles/FlexStyles';
 import * as API from 'services/Api';
 import { KialiAppState } from 'store/Store';
 import { TimeRange, evalTimeRange, TimeInMilliseconds, isEqualTimeRange, IntervalInMilliseconds } from 'types/Common';
 import { Direction, IstioMetricsOptions, Reporter } from 'types/MetricsOptions';
 import { addError } from 'utils/AlertUtils';
-import { RenderComponentScroll } from 'components/Nav/Page';
 import * as MetricsHelper from './Helper';
 import { KioskElement } from '../Kiosk/KioskElement';
 import { MetricsSettings, LabelsSettings } from '../MetricsOptions/MetricsSettings';
@@ -47,7 +54,6 @@ type MetricsState = {
   showSpans: boolean;
   showTrendlines: boolean;
   spanOverlay?: Overlay<JaegerLineInfo>;
-  tabHeight: number;
   traceLimit: number;
 };
 
@@ -82,12 +88,7 @@ type Props = ReduxStateProps & ReduxDispatchProps & IstioMetricsProps;
 // lower that the standard default, we apply it to several small charts
 const traceLimitDefault = 20;
 
-const cardStyle = kialiStyle({
-  marginTop: '1rem'
-});
-
 class IstioMetricsComponent extends React.Component<Props, MetricsState> {
-  toolbarRef: React.RefObject<HTMLDivElement>;
   options: IstioMetricsOptions;
   spanOverlay: SpanOverlay;
   static grafanaInfoPromise: Promise<GrafanaInfo | undefined> | undefined;
@@ -95,11 +96,9 @@ class IstioMetricsComponent extends React.Component<Props, MetricsState> {
 
   constructor(props: Props) {
     super(props);
-    this.toolbarRef = React.createRef<HTMLDivElement>();
     const settings = MetricsHelper.retrieveMetricsSettings(traceLimitDefault);
     this.options = this.initOptions(settings);
 
-    // Initialize active filters from URL
     this.state = {
       labelsSettings: settings.labelsSettings,
       grafanaInfo: {
@@ -109,7 +108,6 @@ class IstioMetricsComponent extends React.Component<Props, MetricsState> {
       persesInfo: {
         externalLinks: []
       },
-      tabHeight: 300,
       showSpans: settings.showSpans,
       showTrendlines: settings.showTrendlines,
       traceLimit: settings.spanLimit
@@ -341,37 +339,33 @@ class IstioMetricsComponent extends React.Component<Props, MetricsState> {
     const urlParams = new URLSearchParams(location.getSearch());
     const expandedChart = urlParams.get('expand') ?? undefined;
 
-    // 20px (card margin) + 24px (card padding) + 51px (toolbar) + 15px (toolbar padding) + 24px (card padding) + 20px (card margin)
-    const toolbarHeight = this.toolbarRef.current ? this.toolbarRef.current.clientHeight : 51;
-    const toolbarSpace = 20 + 24 + toolbarHeight + 15 + 24 + 20;
-    const dashboardHeight = this.state.tabHeight - toolbarSpace;
-
     return (
       <>
-        <RenderComponentScroll onResize={height => this.setState({ tabHeight: height })}>
-          <Card className={cardStyle}>
+        <div className={classes(flexFillStyle, constrainedScrollStyle)}>
+          <Card className={classes(flexCardStyle, tabCardStyle)}>
             <CardBody>
-              {this.renderOptionsBar()}
+              <div className={scrollableContentStyle}>
+                {this.renderOptionsBar()}
 
-              {this.state.dashboard && (
-                <Dashboard
-                  dashboard={this.state.dashboard}
-                  labelValues={MetricsHelper.convertAsPromLabels(this.state.labelsSettings)}
-                  maximizedChart={expandedChart}
-                  expandHandler={this.expandHandler}
-                  onClick={this.onClickDataPoint}
-                  labelPrettifier={MetricsHelper.prettyLabelValues}
-                  overlay={this.state.spanOverlay}
-                  showSpans={this.state.showSpans}
-                  showTrendlines={this.state.showTrendlines}
-                  dashboardHeight={dashboardHeight}
-                  timeWindow={evalTimeRange(this.props.timeRange)}
-                  brushHandlers={{ onDomainChangeEnd: (_, props) => this.onDomainChange(props.currentDomain.x) }}
-                />
-              )}
+                {this.state.dashboard && (
+                  <Dashboard
+                    dashboard={this.state.dashboard}
+                    labelValues={MetricsHelper.convertAsPromLabels(this.state.labelsSettings)}
+                    maximizedChart={expandedChart}
+                    onExpand={this.handleExpand}
+                    onClick={this.onClickDataPoint}
+                    labelPrettifier={MetricsHelper.prettyLabelValues}
+                    overlay={this.state.spanOverlay}
+                    showSpans={this.state.showSpans}
+                    showTrendlines={this.state.showTrendlines}
+                    timeWindow={evalTimeRange(this.props.timeRange)}
+                    brushHandlers={{ onDomainChangeEnd: (_, props) => this.onDomainChange(props.currentDomain.x) }}
+                  />
+                )}
+              </div>
             </CardBody>
           </Card>
-        </RenderComponentScroll>
+        </div>
 
         <TimeDurationModal
           customDuration={true}
@@ -418,7 +412,7 @@ class IstioMetricsComponent extends React.Component<Props, MetricsState> {
       !this.state.disabledFeatures?.responseTimePercentiles;
 
     return (
-      <div ref={this.toolbarRef}>
+      <div className={noShrinkStyle}>
         <Toolbar style={{ padding: 0, marginBottom: '1.25rem' }}>
           <ToolbarGroup style={{ alignItems: 'center' }}>
             <ToolbarItem>
@@ -489,7 +483,7 @@ class IstioMetricsComponent extends React.Component<Props, MetricsState> {
     );
   }
 
-  private expandHandler = (expandedChart?: string): void => {
+  private handleExpand = (expandedChart?: string): void => {
     const urlParams = new URLSearchParams(location.getSearch());
     urlParams.delete('expand');
 

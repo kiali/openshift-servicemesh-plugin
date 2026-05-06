@@ -37,14 +37,12 @@ const emptyStyle = kialiStyle({
 });
 
 const kchartStyle = kialiStyle({
-  marginBottom: '0.5rem',
   marginLeft: '1.5rem',
-  marginRight: '1.5rem',
-  marginTop: '0.5rem'
+  marginRight: '1.5rem'
 });
 
 const chartContainerStyle = kialiStyle({
-  marginTop: '1.25rem'
+  marginTop: '1.5rem'
 });
 
 type State = {

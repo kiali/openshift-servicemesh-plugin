@@ -1,11 +1,11 @@
 import { jest } from '@jest/globals';
-import { configure } from 'enzyme';
-import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
+import '@testing-library/jest-dom/jest-globals';
+import { configure } from '@testing-library/react';
 import jsdom from 'jsdom';
 
 import 'jest-canvas-mock';
 
-configure({ adapter: new Adapter() });
+configure({ testIdAttribute: 'data-test' });
 
 const JSDOM = jsdom.JSDOM;
 
@@ -16,6 +16,16 @@ if (!global.window) {
 window.SVGPathElement = () => {};
 window.customElements = () => {};
 window.customElements.define = () => {};
+
+// jsdom does not implement ResizeObserver. This stub prevents crashes but
+// never fires callbacks, so any test relying on measured heights (e.g.
+// ResizeHeightObserver consumers) must provide its own mock that triggers
+// the callback with synthetic entries.
+global.ResizeObserver = class {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+};
 
 const tFunction = (key: string, parameters: { [key: string]: string }): string => {
   const params = JSON.stringify(parameters) ?? '{}';
@@ -30,7 +40,7 @@ const i18n = {
   isInitialized: true
 };
 
-// mock i18n and react-i18n translation functions
+// Tests must not hit the real i18n backend; stub with a pass-through that returns the key.
 jest.mock('i18n', () => ({
   i18n: i18n
 }));

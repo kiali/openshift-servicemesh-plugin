@@ -1,17 +1,17 @@
 import * as React from 'react';
 import { IRow, ThProps } from '@patternfly/react-table';
 import { Workload } from 'types/Workload';
-import { Card, CardBody, Grid, GridItem, Tab, Tabs, Title, TitleSizes } from '@patternfly/react-core';
+import { Card, CardBody, Tab, Tabs, Title, TitleSizes } from '@patternfly/react-core';
+import { classes } from 'typestyle';
 import { activeTab } from '../../components/Tab/Tabs';
-import { RenderComponentScroll } from 'components/Nav/Page';
+import { tabCardStyle, constrainedScrollStyle, flexCardStyle, flexFillStyle } from 'styles/FlexStyles';
 import { location, router } from '../../app/History';
 import {
   tabName as workloadTabName,
   defaultTab as workloadDefaultTab
 } from '../../pages/WorkloadDetails/WorkloadDetailsPage';
 import { subTabStyle } from 'styles/TabStyles';
-import { kialiStyle } from '../../styles/StyleUtils';
-import { t } from 'i18next';
+import { t } from 'utils/I18nUtils';
 import { SimpleTable } from '../Table/SimpleTable';
 import { WaypointWorkloadsTable } from './WaypointWorkloadsTable';
 import { WaypointForLabel, WaypointType } from '../../types/Ambient';
@@ -25,10 +25,6 @@ const tabName = 'waypointTab';
 type WaypointConfigProps = {
   workload: Workload;
 };
-
-const fullHeightStyle = kialiStyle({
-  height: '100%'
-});
 
 export const isWaypointFor = (wk: Workload): string => {
   switch (wk.labels[WaypointForLabel]) {
@@ -125,9 +121,9 @@ export const WaypointConfig: React.FC<WaypointConfigProps> = (props: WaypointCon
   if (waypointFor === WaypointType.Service || waypointFor === WaypointType.All) {
     const servicesTab = (
       <Tab title={t('Services')} eventKey={0} key={waypointFor}>
-        <Card className={fullHeightStyle}>
+        <Card className={classes(flexCardStyle, tabCardStyle)}>
           <CardBody>
-            <div className={fullHeightStyle}>
+            <div>
               <div style={{ marginBottom: '1.25rem' }}>
                 <WaypointWorkloadsTable
                   workloads={props.workload.waypointServices ? props.workload.waypointServices : []}
@@ -145,9 +141,9 @@ export const WaypointConfig: React.FC<WaypointConfigProps> = (props: WaypointCon
   if (waypointFor === WaypointType.Workload || waypointFor === WaypointType.All) {
     const workloadsTab = (
       <Tab title={t('Workloads')} eventKey={1} key={waypointFor}>
-        <Card className={fullHeightStyle}>
+        <Card className={classes(flexCardStyle, tabCardStyle)}>
           <CardBody>
-            <div className={fullHeightStyle}>
+            <div>
               <div style={{ marginBottom: '1.25rem' }}>
                 <WaypointWorkloadsTable
                   workloads={props.workload.waypointWorkloads ? props.workload.waypointWorkloads : []}
@@ -164,9 +160,9 @@ export const WaypointConfig: React.FC<WaypointConfigProps> = (props: WaypointCon
 
   const infoTab = (
     <Tab title={t('Info')} eventKey={2} key="information">
-      <Card className={fullHeightStyle}>
+      <Card className={classes(flexCardStyle, tabCardStyle)}>
         <CardBody>
-          <div className={fullHeightStyle}>
+          <div>
             <div style={{ marginBottom: '1.25rem' }}>
               <Title
                 headingLevel="h5"
@@ -186,21 +182,18 @@ export const WaypointConfig: React.FC<WaypointConfigProps> = (props: WaypointCon
   tabs.push(infoTab);
 
   return (
-    <RenderComponentScroll>
-      <Grid>
-        <GridItem span={12}>
-          <Tabs
-            id="waypoint-details"
-            className={subTabStyle}
-            activeKey={activeKey}
-            onSelect={waypointHandleTabClick}
-            mountOnEnter={true}
-            unmountOnExit={true}
-          >
-            {tabs}
-          </Tabs>
-        </GridItem>
-      </Grid>
-    </RenderComponentScroll>
+    <div className={classes(flexFillStyle, constrainedScrollStyle)}>
+      <div className={subTabStyle}>
+        <Tabs
+          id="waypoint-details"
+          activeKey={activeKey}
+          onSelect={waypointHandleTabClick}
+          mountOnEnter={true}
+          unmountOnExit={true}
+        >
+          {tabs}
+        </Tabs>
+      </div>
+    </div>
   );
 };
