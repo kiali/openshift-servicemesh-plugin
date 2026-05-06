@@ -51,7 +51,7 @@ Then('user sees outbound metrics information', () => {
 Then('user can filter spans by app {string}', (app: string) => {
   cy.get('button#filter_select_type-toggle').click();
   cy.contains('div#filter_select_type button', 'App').click();
-  cy.get('input[placeholder="Filter by App"]').type(`${app}{enter}`);
+  cy.get('input[placeholder="Filter by App"]').click();
   clickSpanFilterOptionWithFallback(app);
 
   getCellsForCol('App / Workload').each($cell => {
@@ -70,20 +70,18 @@ Then('user can filter spans by app {string}', (app: string) => {
   cy.get('ul[role="menu"]').should('be.visible');
 });
 
-Then('user can filter spans by app {string} for waypoint traces', (app: string) => {
+Then('user can filter spans by app {string} by {string}', (app: string, waypoint: string) => {
   cy.get('button#filter_select_type-toggle').click();
   cy.contains('div#filter_select_type button', 'App').click();
-  cy.get('input[placeholder="Filter by App"]').type(`${app}{enter}`);
-  clickSpanFilterOptionWithFallback(app);
+  cy.get('input[placeholder="Filter by App"]').click();
+
+  clickSpanFilterOptionWithFallback(app, waypoint);
 
   getCellsForCol('App / Workload').each($cell => {
     const cellText = $cell.text().toLowerCase();
     const appMatches = cellText.includes(app.toLowerCase());
-    const waypointMatches = cellText.includes(WAYPOINT_FALLBACK);
-    expect(
-      appMatches || waypointMatches,
-      `Expected "${cellText}" to contain "${app}" or "${WAYPOINT_FALLBACK}"`
-    ).to.equal(true);
+    const waypointMatches = cellText.includes(waypoint.toLowerCase());
+    expect(appMatches || waypointMatches, `Expected "${cellText}" to contain "${app}" or "${waypoint}"`).to.equal(true);
   });
 
   getCellsForCol(4).first().click();
