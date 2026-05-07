@@ -204,6 +204,17 @@ Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cs
   });
 });
 
+// Translate Istio detail segments (group/version/kind/name) into the
+// OpenShift resource reference format (group~version~kind/name).
+// Input example:  "networking.istio.io/v1/VirtualService/reviews"
+// Output example: "/networking.istio.io~v1~VirtualService/reviews"
+const istioDetailToRef = (detailPath: string): string => {
+  const parts = detailPath.split('/');
+  const gvk = `${parts[0]}~${parts[1]}~${parts[2]}`;
+  const name = parts.slice(3).join('/');
+  return `/${gvk}/${name}`;
+};
+
 Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
   const webParamsIndex = visitUrl.url.indexOf('?');
   const webParams = webParamsIndex > -1 ? visitUrl.url.substring(webParamsIndex) : '';
@@ -227,9 +238,12 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
       } else if (type === 'services') {
         visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
       } else if (type === 'applications') {
+        if (!details) {
+          throw new Error('Application name is required for the applications route');
+        }
         visitUrl.url = `/k8s/ns/${namespace}/pods?label=app%3D${details}`;
       } else if (type === 'istio') {
-        const istioUrl = refForKialiIstio(details);
+        const istioUrl = istioDetailToRef(details);
 
         visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
       } else if (type === 'pods') {
