@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { shallow, mount } from 'enzyme';
+import { act, render } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router-dom-v5-compat';
 import { NamespacesPageComponent } from '../NamespacesPage';
 import { NamespaceInfo } from '../../../types/NamespaceInfo';
 import { IntervalInMilliseconds } from 'types/Common';
@@ -8,19 +9,11 @@ import * as API from '../../../services/Api';
 import { store } from '../../../store/ConfigStore';
 import { RefreshIntervalManual } from '../../../config/Config';
 import { HistoryManager } from '../../../app/History';
-import { Show } from '../../../types/Common';
 
-// NamespacesPage always renders NamespaceTrafficPolicies; mock it to keep these unit tests focused.
-jest.mock('../NamespaceTrafficPolicies', () => ({
-  NamespaceTrafficPolicies: (props: any) => <div data-test="NamespaceTrafficPolicies" {...props} />
-}));
-
-// Some badges use react-router hooks; these tests don't run under a Router.
 jest.mock('components/Badge/ControlPlaneBadge', () => ({
   ControlPlaneBadge: () => <span data-test="ControlPlaneBadge" />
 }));
 
-// DefaultSecondaryMasthead uses router via getPagePath; mock it to avoid router issues in tests.
 jest.mock('components/DefaultSecondaryMasthead/DefaultSecondaryMasthead', () => ({
   DefaultSecondaryMasthead: ({ children }: { children?: React.ReactNode }) => (
     <div data-test="DefaultSecondaryMasthead">{children}</div>
@@ -37,9 +30,7 @@ jest.mock('../../../services/Api', () => ({
   getClustersTls: jest.fn(),
   getConfigValidations: jest.fn(),
   getAllIstioConfigs: jest.fn(),
-  getGrafanaInfo: jest.fn(() => Promise.resolve({ data: {} })),
   getErrorString: jest.fn(() => ''),
-  getPersesInfo: jest.fn(() => Promise.resolve({ data: {} })),
   getControlPlanes: jest.fn(() => Promise.resolve({ data: [] }))
 }));
 
@@ -111,9 +102,7 @@ const mockNamespaces: NamespaceInfo[] = [
 
 const defaultReduxProps = {
   columnOrder: [] as string[],
-  externalServices: [],
   hiddenColumnIds: [],
-  istioAPIEnabled: true,
   kiosk: '',
   language: 'en',
   meshStatus: 'MTLS_ENABLED',
@@ -134,91 +123,106 @@ describe('NamespacesPageComponent', () => {
     (HistoryManager.getParam as jest.Mock).mockReturnValue(undefined);
     (HistoryManager.getRefresh as jest.Mock).mockReturnValue(RefreshIntervalManual);
     (API.getControlPlanes as jest.Mock).mockResolvedValue({ data: [] });
-    (API.getGrafanaInfo as jest.Mock).mockResolvedValue({ data: {} });
-    (API.getPersesInfo as jest.Mock).mockResolvedValue({ data: {} });
   });
 
   describe('Component initialization', () => {
     it('renders without crashing', () => {
-      const wrapper = shallow(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
+      const { container } = render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent {...defaultProps} />
+          </Provider>
+        </MemoryRouter>
       );
-      expect(wrapper.exists()).toBeTruthy();
+      expect(container).toBeTruthy();
     });
 
     it('initializes state correctly', () => {
-      const wrapper = shallow(<NamespacesPageComponent {...defaultProps} />);
-      const instance = wrapper.instance() as NamespacesPageComponent;
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} />
+          </Provider>
+        </MemoryRouter>
+      );
 
-      expect(instance.state.loaded).toBe(false);
-      expect(instance.state.namespaces).toEqual([]);
-      expect(instance.state.nsTarget).toBe('');
-      expect(instance.state.opTarget).toBe('');
-      expect(instance.state.kind).toBe('');
-      expect(instance.state.showTrafficPoliciesModal).toBe(false);
+      expect(ref.current!.state.loaded).toBe(false);
+      expect(ref.current!.state.namespaces).toEqual([]);
+      expect(ref.current!.state.showColumnManagement).toBe(false);
     });
   });
 
   describe('Component lifecycle', () => {
     it('calls load on mount when refresh interval is not manual', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} refreshInterval={15000} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} refreshInterval={15000} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
-      const loadSpy = jest.spyOn(instance, 'load');
+      const loadSpy = jest.spyOn(ref.current!, 'load');
 
       (HistoryManager.getRefresh as jest.Mock).mockReturnValue(15000);
-      instance.componentDidMount();
+      ref.current!.componentDidMount();
 
       expect(loadSpy).toHaveBeenCalled();
     });
 
     it('does not call load on mount when refresh interval is manual', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} refreshInterval={RefreshIntervalManual} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} refreshInterval={RefreshIntervalManual} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
-      const loadSpy = jest.spyOn(instance, 'load');
+      const loadSpy = jest.spyOn(ref.current!, 'load');
 
       (HistoryManager.getRefresh as jest.Mock).mockReturnValue(RefreshIntervalManual);
-      instance.componentDidMount();
+      ref.current!.componentDidMount();
 
       expect(loadSpy).not.toHaveBeenCalled();
     });
 
     it('calls load on update when lastRefreshAt changes', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      const firstLast = Date.now();
+      const { rerender } = render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} lastRefreshAt={firstLast} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
-      const loadSpy = jest.spyOn(instance, 'load');
+      const loadSpy = jest.spyOn(ref.current!, 'load');
 
-      wrapper.setProps({
-        children: <NamespacesPageComponent {...defaultProps} lastRefreshAt={Date.now() + 1000} />
-      });
-      wrapper.update();
+      rerender(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} lastRefreshAt={firstLast + 1000} />
+          </Provider>
+        </MemoryRouter>
+      );
 
       expect(loadSpy).toHaveBeenCalled();
     });
 
     it('cancels promises on unmount', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      const { unmount } = render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
-      const cancelAllSpy = jest.spyOn(instance['promises'], 'cancelAll');
+      const cancelAllSpy = jest.spyOn(ref.current!['promises'], 'cancelAll');
 
-      wrapper.unmount();
+      unmount();
 
       expect(cancelAllSpy).toHaveBeenCalled();
     });
@@ -247,34 +251,41 @@ describe('NamespacesPageComponent', () => {
         ]
       });
 
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} refreshInterval={15000} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} refreshInterval={15000} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
 
-      instance.load();
-      await new Promise(resolve => setTimeout(resolve, 0));
-      wrapper.update();
+      ref.current!.load();
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
 
       expect(API.getNamespaces).toHaveBeenCalled();
-      expect(instance.state.loaded).toBe(true);
-      expect(instance.state.namespaces.length).toBeGreaterThan(0);
+      expect(ref.current!.state.loaded).toBe(true);
+      expect(ref.current!.state.namespaces.length).toBeGreaterThan(0);
     });
 
     it('handles API errors gracefully', async () => {
       const error = { isCanceled: false, message: 'API Error' };
       (API.getNamespaces as jest.Mock).mockRejectedValue(error);
 
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} refreshInterval={15000} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} refreshInterval={15000} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
 
-      await instance.load();
+      await act(async () => {
+        await ref.current!.load();
+      });
 
       expect(API.getNamespaces).toHaveBeenCalled();
     });
@@ -301,14 +312,18 @@ describe('NamespacesPageComponent', () => {
         ]
       });
 
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} refreshInterval={15000} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} refreshInterval={15000} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
 
-      await instance.load();
+      await act(async () => {
+        await ref.current!.load();
+      });
 
       expect(API.getNamespaces).toHaveBeenCalled();
     });
@@ -325,20 +340,26 @@ describe('NamespacesPageComponent', () => {
 
       (API.getClustersHealth as jest.Mock).mockResolvedValue(mockHealthResponse);
 
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
 
-      instance.setState({ namespaces: mockNamespaces });
-      await instance.fetchHealth(true, {
-        id: 'namespace',
-        title: 'Name',
-        param: 'ns',
-        compare: jest.fn(),
-        isNumeric: false
+      act(() => {
+        ref.current!.setState({ namespaces: mockNamespaces });
+      });
+      await act(async () => {
+        await ref.current!.fetchHealth(true, {
+          id: 'namespace',
+          title: 'Name',
+          param: 'ns',
+          compare: jest.fn(),
+          isNumeric: false
+        });
       });
 
       expect(API.getClustersHealth).toHaveBeenCalled();
@@ -359,15 +380,27 @@ describe('NamespacesPageComponent', () => {
         ]
       });
 
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
 
-      instance.setState({ namespaces: mockNamespaces });
-      await instance.fetchTLS(true, { id: 'mtls', title: 'mTLS', param: 'mtls', compare: jest.fn(), isNumeric: false });
+      act(() => {
+        ref.current!.setState({ namespaces: mockNamespaces });
+      });
+      await act(async () => {
+        await ref.current!.fetchTLS(true, {
+          id: 'mtls',
+          title: 'mTLS',
+          param: 'mtls',
+          compare: jest.fn(),
+          isNumeric: false
+        });
+      });
 
       expect(API.getClustersTls).toHaveBeenCalled();
     });
@@ -391,20 +424,26 @@ describe('NamespacesPageComponent', () => {
         }
       });
 
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
 
-      instance.setState({ namespaces: mockNamespaces });
-      await instance.fetchValidations(true, {
-        id: 'validations',
-        title: 'Validations',
-        param: 'validations',
-        compare: jest.fn(),
-        isNumeric: false
+      act(() => {
+        ref.current!.setState({ namespaces: mockNamespaces });
+      });
+      await act(async () => {
+        await ref.current!.fetchValidations(true, {
+          id: 'validations',
+          title: 'Validations',
+          param: 'validations',
+          compare: jest.fn(),
+          isNumeric: false
+        });
       });
 
       expect(API.getConfigValidations).toHaveBeenCalled();
@@ -412,108 +451,38 @@ describe('NamespacesPageComponent', () => {
     });
   });
 
-  describe('getNamespaceActions', () => {
-    it('returns actions for non-control-plane namespace', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
-      );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
-
-      const actions = instance.getNamespaceActions(mockNamespaces[0]);
-
-      expect(actions.length).toBeGreaterThan(0);
-      expect(actions.some(a => a.title === 'Show')).toBeTruthy();
-    });
-
-    it('returns actions for control-plane namespace', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
-      );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
-
-      instance.setState({ grafanaLinks: [{ name: 'Performance', url: 'http://grafana', variables: {} }] });
-      const actions = instance.getNamespaceActions(mockNamespaces[1]);
-
-      expect(actions.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('hideTrafficManagement', () => {
-    it('resets traffic management state', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
-      );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
-
-      instance.setState({
-        showTrafficPoliciesModal: true,
-        nsTarget: 'test-namespace',
-        opTarget: 'create',
-        kind: 'policy',
-        clusterTarget: 'test-cluster'
-      });
-
-      instance.hideTrafficManagement();
-
-      expect(instance.state.showTrafficPoliciesModal).toBe(false);
-      expect(instance.state.nsTarget).toBe('');
-      expect(instance.state.opTarget).toBe('');
-      expect(instance.state.kind).toBe('');
-      expect(instance.state.clusterTarget).toBe('');
-    });
-  });
-
-  describe('show method', () => {
-    it('navigates to graph page', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
-      );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
-
-      instance.show(Show.GRAPH, 'default');
-
-      // Note: router.navigate is mocked, so we can't easily test the actual navigation
-      // but we can verify the method doesn't throw
-      expect(() => instance.show(0, 'default')).not.toThrow();
-    });
-  });
-
   describe('sort method', () => {
     it('sorts namespaces correctly', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
 
-      instance.setState({
-        namespaces: [
-          {
-            name: 'z-namespace',
-            cluster: 'test-cluster',
-            isAmbient: false,
-            isControlPlane: false,
-            labels: {},
-            annotations: {}
-          },
-          {
-            name: 'a-namespace',
-            cluster: 'test-cluster',
-            isAmbient: false,
-            isControlPlane: false,
-            labels: {},
-            annotations: {}
-          }
-        ] as NamespaceInfo[]
+      act(() => {
+        ref.current!.setState({
+          namespaces: [
+            {
+              name: 'z-namespace',
+              cluster: 'test-cluster',
+              isAmbient: false,
+              isControlPlane: false,
+              labels: {},
+              annotations: {}
+            },
+            {
+              name: 'a-namespace',
+              cluster: 'test-cluster',
+              isAmbient: false,
+              isControlPlane: false,
+              labels: {},
+              annotations: {}
+            }
+          ] as NamespaceInfo[]
+        });
       });
 
       const sortField = {
@@ -524,61 +493,46 @@ describe('NamespacesPageComponent', () => {
         isNumeric: false
       };
 
-      instance.sort(sortField, true);
+      ref.current!.sort(sortField, true);
 
-      expect(instance.state.namespaces[0].name).toBe('a-namespace');
-      expect(instance.state.namespaces[1].name).toBe('z-namespace');
+      expect(ref.current!.state.namespaces[0].name).toBe('a-namespace');
+      expect(ref.current!.state.namespaces[1].name).toBe('z-namespace');
     });
   });
 
   describe('render', () => {
     it('renders empty state when no namespaces', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      const { container } = render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
 
-      instance.setState({ loaded: true, namespaces: [] });
-      wrapper.update();
+      act(() => {
+        ref.current!.setState({ loaded: true, namespaces: [] });
+      });
 
-      // Empty state is provided via VirtualList.emptyState (PatternFly EmptyState)
-      expect(wrapper.text()).toContain('No namespaces found');
+      expect(container.textContent).toContain('No namespaces found');
     });
 
     it('renders VirtualList when namespaces exist', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
+      const ref = React.createRef<NamespacesPageComponent>();
+      const { container } = render(
+        <MemoryRouter>
+          <Provider store={store}>
+            <NamespacesPageComponent ref={ref} {...defaultProps} />
+          </Provider>
+        </MemoryRouter>
       );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
 
-      instance.setState({ loaded: true, namespaces: mockNamespaces });
-      wrapper.update();
-
-      // VirtualList is a redux-connected component (Connect(...)), so assert on a stable descendant.
-      expect(wrapper.find('Table').exists()).toBeTruthy();
-    });
-
-    it('renders NamespaceTrafficPolicies when modal is open', () => {
-      const wrapper = mount(
-        <Provider store={store}>
-          <NamespacesPageComponent {...defaultProps} />
-        </Provider>
-      );
-      const instance = wrapper.find(NamespacesPageComponent).instance() as NamespacesPageComponent;
-
-      instance.setState({
-        showTrafficPoliciesModal: true,
-        nsTarget: 'test-namespace',
-        opTarget: 'create',
-        kind: 'policy',
-        namespaces: mockNamespaces
+      act(() => {
+        ref.current!.setState({ loaded: true, namespaces: mockNamespaces });
       });
 
-      expect(wrapper.find('NamespaceTrafficPolicies').exists()).toBeTruthy();
+      expect(container.querySelector('table') || container.querySelector('[role="grid"]')).toBeInTheDocument();
     });
   });
 });
