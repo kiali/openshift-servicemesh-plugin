@@ -120,8 +120,6 @@ export const guidedTour = {
   }
 };
 
-let csrfToken: string | undefined;
-
 Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
   const user = clusterUser || Cypress.env('USERNAME');
   const password = clusterPassword || Cypress.env('PASSWD');
@@ -151,19 +149,13 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
       }
     }
   );
-
-  if (!csrfToken) {
-    // Store csrf-token value for non-GET request headers
-    cy.getCookie('csrf-token').then(cookie => {
-      csrfToken = cookie?.value;
-    });
-  }
 });
 
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
 
 Cypress.Commands.add('getColWithRowText', (rowSearchText: string, colName: string) =>
-  cy.get('tbody')
+  cy
+    .get('tbody')
     .contains('tr', rowSearchText)
     // Different selectors depending on Patternfly version
     // id="${colName}" for PF5, data-label="${colName}" for PF6
@@ -191,77 +183,84 @@ Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cs
   });
 });
 
-Cypress.Commands.add('inputValidation', (id: string, text: string, valid = true) => {
-  cy.get(`input[id="${id}"]`).type(text);
-  cy.get(`input[id="${id}"]`).should('have.attr', 'aria-invalid', `${!valid}`);
-  cy.get(`input[id="${id}"]`).clear();
-});
-
-Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cssVarName) => {
-  cy.document().then(doc => {
-    const dummy = doc.createElement('span');
-    dummy.style.setProperty(styleName, `var(${cssVarName})`);
-    doc.body.appendChild(dummy);
-
-    const evaluatedStyle = window.getComputedStyle(dummy).getPropertyValue(styleName).trim();
-    dummy.remove();
-
-    cy.wrap(subject)
-      .then($el => window.getComputedStyle($el[0]).getPropertyValue(styleName).trim())
-      .should('eq', evaluatedStyle);
-  });
-});
+// Translate Istio detail segments (group/version/kind/name) into the
+// OpenShift resource reference format (group~version~kind/name).
+// Input example:  "networking.istio.io/v1/VirtualService/reviews"
+// Output example: "/networking.istio.io~v1~VirtualService/reviews"
+const istioDetailToRef = (detailPath: string): string => {
+  const parts = detailPath.split('/');
+  if (parts.length < 4) {
+    throw new Error(`Invalid Istio detail path: "${detailPath}". Expected format: group/version/kind/name`);
+  }
+  const gvk = `${parts[0]}~${parts[1]}~${parts[2]}`;
+  const name = parts.slice(3).join('/');
+  return `/${gvk}/${name}`;
+};
 
 Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
   const webParamsIndex = visitUrl.url.indexOf('?');
   const webParams = webParamsIndex > -1 ? visitUrl.url.substring(webParamsIndex) : '';
 
-  const url = visitUrl.url.replace(Cypress.config('baseUrl') ?? '', '').split('?')[0].split('/');
+  const url = visitUrl.url
+    .replace(Cypress.config('baseUrl') ?? '', '')
+    .split('?')[0]
+    .split('/');
 
   const targetPage = url[2];
 
   if (targetPage === 'namespaces') {
     const namespace = url[3];
-    const type = url[4];
-    const details = url[5];
 
-    if (type === 'workloads') {
-      // OpenShift Console doesn't have a "generic" workloads page
-      // 99% of the cases there is a 1-to-1 mapping between Workload -> Deployment
-      // YES, we have some old DeploymentConfig workloads there, but that can be addressed later
-      visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
-    } else if (type === 'services') {
-      visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
-    } else if (type === 'istio') {
-      const istioUrl = refForKialiIstio(details);
+    if (namespace) {
+      const type = url[4];
+      const details = url.slice(5).join('/');
 
-      visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
-    } else if (type === 'pods') {
-      visitUrl.url = `/k8s/ns/${namespace}/pods/${details}/ossmconsole${webParams}`;
-    }
-  } else {
-    if (targetPage === 'graph') {
-      visitUrl.url = visitUrl.url
-        .replace('/console/graph/namespaces', '/ossmconsole/graph')
-        .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns');
-    } else if (targetPage === 'istio') {
-      visitUrl.url = '/ossmconsole/istio';
+      if (type === 'workloads') {
+        visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
+      } else if (type === 'services') {
+        visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
+      } else if (type === 'applications') {
+        if (!details) {
+          throw new Error('Application name is required for the applications route');
+        }
+        visitUrl.url = `/k8s/ns/${namespace}/pods?label=app%3D${details}`;
+      } else if (type === 'istio') {
+        const istioUrl = istioDetailToRef(details);
+
+        visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
+      } else if (type === 'pods') {
+        visitUrl.url = `/k8s/ns/${namespace}/pods/${details}/ossmconsole${webParams}`;
+      } else {
+        visitUrl.url = `/ossmconsole/namespaces/${namespace}${type ? `/${type}` : ''}${
+          details ? `/${details}` : ''
+        }${webParams}`;
+      }
     } else {
-      visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
+      visitUrl.url = `/ossmconsole/namespaces${webParams}`;
     }
+  } else if (targetPage === 'graph') {
+    visitUrl.url = visitUrl.url
+      .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns')
+      .replace('/console/graph/namespaces', '/ossmconsole/graph');
+  } else if (targetPage === 'istio') {
+    visitUrl.url = `/ossmconsole/istio${webParams}`;
+  } else {
+    visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
   }
 
   return originalFn(visitUrl);
 });
 
 Cypress.Commands.overwrite('request', (originalFn, request) => {
-  // don't overwrite specific requests to OSSMC plugin
   if (!request.url?.includes('ossmconsole')) {
     request.url = request.url?.replace('api/', 'api/proxy/plugin/ossmconsole/kiali/api/');
   }
 
   if (request.method !== 'GET') {
-    request.headers = { 'X-CSRFToken': csrfToken };
+    return cy.getCookie('csrf-token').then(cookie => {
+      request.headers = { ...request.headers, 'X-CSRFToken': cookie?.value ?? '' };
+      return originalFn(request);
+    });
   }
 
   return originalFn(request);

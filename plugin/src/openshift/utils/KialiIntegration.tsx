@@ -140,7 +140,10 @@ const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): 
 
   if (detail.startsWith('/applications')) {
     const application = detail.substring('/applications/'.length);
-    return `/k8s/ns/${namespace}/pods?labels=app%3D${application}`;
+    if (!application) {
+      return `/${OSSM_CONSOLE}/applications${webParams}`;
+    }
+    return `/k8s/ns/${namespace}/pods?label=app%3D${application}`;
   }
 
   if (detail.startsWith('/workloads')) {

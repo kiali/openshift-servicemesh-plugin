@@ -52,8 +52,12 @@ describe('resolveConsoleUrl', () => {
 
     test('should map namespace application detail to k8s pods URL', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/applications/reviews')).toEqual(
-        '/k8s/ns/bookinfo/pods?labels=app%3Dreviews'
+        '/k8s/ns/bookinfo/pods?label=app%3Dreviews'
       );
+    });
+
+    test('should fall back to applications list when application name is empty', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/applications')).toEqual('/ossmconsole/applications');
     });
 
     test('should map namespace workload detail to k8s deployment URL', () => {
