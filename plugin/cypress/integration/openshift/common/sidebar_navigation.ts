@@ -43,7 +43,8 @@ When('user navigates to the OSSMC {string} page', (hrefName: string) => {
   if (!path) {
     throw new Error(`Unknown OSSMC page: "${hrefName}". Valid pages: ${Object.keys(hrefMap).join(', ')}`);
   }
-  cy.get(`a[href*="/ossmconsole/${path}"]`)
+  cy.get('a[data-test="nav"]')
+    .contains(hrefName)
     .click()
     .then(() => {
       cy.url().should('include', `/ossmconsole/${path}`);

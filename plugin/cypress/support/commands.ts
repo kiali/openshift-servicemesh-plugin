@@ -183,33 +183,15 @@ Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cs
   });
 });
 
-Cypress.Commands.add('inputValidation', (id: string, text: string, valid = true) => {
-  cy.get(`input[id="${id}"]`).type(text);
-  cy.get(`input[id="${id}"]`).should('have.attr', 'aria-invalid', `${!valid}`);
-  cy.get(`input[id="${id}"]`).clear();
-});
-
-Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cssVarName) => {
-  cy.document().then(doc => {
-    const dummy = doc.createElement('span');
-    dummy.style.setProperty(styleName, `var(${cssVarName})`);
-    doc.body.appendChild(dummy);
-
-    const evaluatedStyle = window.getComputedStyle(dummy).getPropertyValue(styleName).trim();
-    dummy.remove();
-
-    cy.wrap(subject)
-      .then($el => window.getComputedStyle($el[0]).getPropertyValue(styleName).trim())
-      .should('eq', evaluatedStyle);
-  });
-});
-
 // Translate Istio detail segments (group/version/kind/name) into the
 // OpenShift resource reference format (group~version~kind/name).
 // Input example:  "networking.istio.io/v1/VirtualService/reviews"
 // Output example: "/networking.istio.io~v1~VirtualService/reviews"
 const istioDetailToRef = (detailPath: string): string => {
   const parts = detailPath.split('/');
+  if (parts.length < 4) {
+    throw new Error(`Invalid Istio detail path: "${detailPath}". Expected format: group/version/kind/name`);
+  }
   const gvk = `${parts[0]}~${parts[1]}~${parts[2]}`;
   const name = parts.slice(3).join('/');
   return `/${gvk}/${name}`;

@@ -56,6 +56,10 @@ describe('resolveConsoleUrl', () => {
       );
     });
 
+    test('should fall back to applications list when application name is empty', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/applications')).toEqual('/ossmconsole/applications');
+    });
+
     test('should map namespace workload detail to k8s deployment URL', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/reviews-v1')).toEqual(
         '/k8s/ns/bookinfo/deployments/reviews-v1/ossmconsole'
