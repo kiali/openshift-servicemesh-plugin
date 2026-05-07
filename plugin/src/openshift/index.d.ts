@@ -1,3 +1,5 @@
+/// <reference types="@rstest/core/globals" />
+
 declare module '*.png' {
   const src: string;
   export default src;
