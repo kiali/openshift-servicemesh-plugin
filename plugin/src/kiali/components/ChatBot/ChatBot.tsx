@@ -19,8 +19,8 @@ import { ChatBotMock } from './ChatBotMock';
 import { ContextRequest, ExtendedMessage, ProviderAI } from 'types/Chatbot';
 import { ChatBotContent } from './ChatBotContent';
 import { CHAT_HISTORY_HEADER } from 'config/Constants';
-import { ReactComponent as KialiIconLight } from '../../assets/img/kiali/icon-lightbkg.svg';
-import { ReactComponent as KialiIconDark } from '../../assets/img/kiali/icon-darkbkg.svg';
+import KialiIconLight from '../../assets/img/kiali/icon-lightbkg.svg';
+import KialiIconDark from '../../assets/img/kiali/icon-darkbkg.svg';
 import * as API from 'services/Api';
 import { saveConversation, loadConversations, loadConversation } from 'utils/ConversationStorage';
 
