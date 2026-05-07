@@ -1,7 +1,8 @@
+import type { Mock } from '@rstest/core';
 import { getGroupVersionKindForResource } from '@openshift-console/dynamic-plugin-sdk';
 import { referenceFor, referenceForObj, refForKialiIstio, istioResources } from '../IstioResources';
 
-const mockedGetGVK = getGroupVersionKindForResource as jest.Mock;
+const mockedGetGVK = getGroupVersionKindForResource as Mock;
 
 describe('referenceFor', () => {
   test('should join group~version~kind for an Istio networking resource', () => {
