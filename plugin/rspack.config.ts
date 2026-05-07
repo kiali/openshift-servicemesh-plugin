@@ -115,8 +115,9 @@ const config: RspackOptions = {
         type: 'asset/resource'
       },
       {
-        test: /\.(svg)$/,
-        use: ['@svgr/webpack', 'file-loader']
+        test: /\.svg$/,
+        use: ['@svgr/webpack'],
+        type: 'asset/resource'
       },
       {
         test: /\.m?js/,
