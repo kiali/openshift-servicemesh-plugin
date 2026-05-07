@@ -3,9 +3,9 @@ import { Tooltip, TooltipPosition } from '@patternfly/react-core';
 import { useKialiTheme } from 'utils/ThemeUtils';
 import { Theme } from 'types/Common';
 import { MTLSIconTypes } from './MTLSIconTypes';
-import { ReactComponent as FullLockIcon } from '../../assets/img/mtls/mtls-status-full.svg';
-import { ReactComponent as HollowLockIcon } from '../../assets/img/mtls/mtls-status-partial.svg';
-import { ReactComponent as InheritArrowIcon } from '../../assets/img/mtls/mtls-inherit-arrow.svg';
+import FullLockIcon from '../../assets/img/mtls/mtls-status-full.svg';
+import HollowLockIcon from '../../assets/img/mtls/mtls-status-partial.svg';
+import InheritArrowIcon from '../../assets/img/mtls/mtls-inherit-arrow.svg';
 import { LockOpenIcon } from '@patternfly/react-icons';
 
 type MTLSIconProps = {
