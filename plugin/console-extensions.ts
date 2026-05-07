@@ -19,7 +19,7 @@ const enum Page {
 
 const enum Tab {
   ISTIO = 'IstioMeshTab',
-  PROJECT = 'ProjectMeshTab',
+  NAMESPACE = 'NamespaceMeshTab',
   SERVICE = 'ServiceMeshTab',
   WORKLOAD = 'WorkloadMeshTab'
 }
@@ -48,6 +48,11 @@ const K8sResource: { [key: string]: K8sGroupVersionKind } = {
   StatefulSet: {
     group: 'apps',
     kind: 'StatefulSet',
+    version: 'v1'
+  },
+  Namespace: {
+    group: '',
+    kind: 'Namespace',
     version: 'v1'
   },
   Service: {
@@ -258,7 +263,8 @@ const extensions: EncodedExtension[] = [
   },
 
   // K8s horizontal navs - service mesh tab of k8s resources
-  horizontalNav(K8sResource.Project, Tab.PROJECT),
+  horizontalNav(K8sResource.Project, Tab.NAMESPACE),
+  horizontalNav(K8sResource.Namespace, Tab.NAMESPACE),
   horizontalNav(K8sResource.Pod, Tab.WORKLOAD),
   horizontalNav(K8sResource.Deployment, Tab.WORKLOAD),
   horizontalNav(K8sResource.DeploymentConfig, Tab.WORKLOAD),

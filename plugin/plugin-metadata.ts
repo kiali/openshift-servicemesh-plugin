@@ -15,7 +15,7 @@ const metadata: ConsolePluginBuildMetadata = {
     MeshPage: './openshift/pages/MeshPage',
     NamespacesPage: './openshift/pages/NamespacesPage',
     OverviewPage: './openshift/pages/OverviewPage',
-    ProjectMeshTab: './openshift/pages/MeshTab/ProjectMesh',
+    NamespaceMeshTab: './openshift/pages/MeshTab/ProjectMesh',
     ReduxReducer: './openshift/utils/Reducer.ts',
     ServiceMeshTab: './openshift/pages/MeshTab/ServiceMesh',
     WorkloadMeshTab: './openshift/pages/MeshTab/WorkloadMesh'
