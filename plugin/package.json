@@ -116,7 +116,6 @@
     "eslint": "^8.1.0",
     "eslint-config-react-app": "^7.0.1",
     "express": "^4.21.0",
-    "file-loader": "^6.2.0",
     "husky": "^8.0.3",
     "i18next-parser": "^9.0.1",
     "jest": "^30.3.0",
