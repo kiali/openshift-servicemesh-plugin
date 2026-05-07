@@ -4,9 +4,12 @@ const config: Config = {
   testEnvironment: 'jsdom',
   transform: {
     '^.+\\.tsx?$': [
-      'ts-jest',
+      '@swc/jest',
       {
-        tsconfig: 'tsconfig.jest.json'
+        jsc: {
+          parser: { syntax: 'typescript', tsx: true },
+          transform: { react: { runtime: 'automatic' } }
+        }
       }
     ]
   },
