@@ -5,7 +5,7 @@ import { Status, StatusKey } from '../../types/StatusState';
 import { config, kialiIconDark, kialiIconLight } from '../../config';
 import { kialiStyle } from 'styles/StyleUtils';
 import { KialiIcon } from 'config/KialiIcon';
-import { ReactComponent as IstioLogo } from '../../assets/img/mesh/istio.svg';
+import IstioLogo from '../../assets/img/mesh/istio.svg';
 import { KialiLink } from '../Link/KialiLink';
 import { PFColors } from 'components/Pf/PfColors';
 import { isControlPlaneAccessible } from '../../utils/MeshUtils';

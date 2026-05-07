@@ -18,28 +18,42 @@ import extensions from './console-extensions';
 class WrapEntryPlugin {
   apply(compiler: Compiler): void {
     compiler.hooks.compilation.tap('WrapEntryPlugin', (compilation: Compilation) => {
+      const containerName = pluginMetadata.name;
+      const pluginID = `${pluginMetadata.name}@${pluginMetadata.version}`;
+
+      // Append loadPluginEntry() call to the entry script.
+      // Runs early so the entry JS is modified before later optimisation stages.
       compilation.hooks.processAssets.tap(
         {
-          name: 'WrapEntryPlugin',
+          name: 'WrapEntryPlugin:entry',
           stage: Compilation.PROCESS_ASSETS_STAGE_ADDITIONS
         },
         () => {
-          const containerName = pluginMetadata.name;
-
           for (const asset of compilation.getAssets()) {
             if (asset.name.startsWith('plugin-entry') && asset.name.endsWith('.js')) {
               const code = asset.source.source().toString();
               if (!code.includes('loadPluginEntry')) {
                 const callbackCode =
                   `\nif (typeof loadPluginEntry === 'function') ` +
-                  `{ loadPluginEntry("${containerName}", ${containerName}.get, ${containerName}.init); }\n`;
+                  `{ loadPluginEntry("${pluginID}", ${containerName}); }\n`;
                 compilation.updateAsset(asset.name, new sources.RawSource(code + callbackCode));
               }
             }
+          }
+        }
+      );
 
-            // The SDK sets registrationMethod to 'custom' when library.type != 'jsonp',
-            // but we emulate the jsonp callback pattern via loadPluginEntry(), so Console
-            // needs 'callback' to discover the plugin correctly.
+      // Fix registrationMethod in the manifest.
+      // The SDK sets 'custom' when library.type != 'jsonp', but we emulate
+      // the jsonp callback pattern via loadPluginEntry(), so Console needs 'callback'.
+      // The manifest is generated at PROCESS_ASSETS_STAGE_ANALYSE, so we patch after that.
+      compilation.hooks.processAssets.tap(
+        {
+          name: 'WrapEntryPlugin:manifest',
+          stage: Compilation.PROCESS_ASSETS_STAGE_REPORT
+        },
+        () => {
+          for (const asset of compilation.getAssets()) {
             if (asset.name === 'plugin-manifest.json') {
               const manifest = JSON.parse(asset.source.source().toString());
               if (manifest.registrationMethod !== 'callback') {
@@ -116,8 +130,7 @@ const config: RspackOptions = {
       },
       {
         test: /\.svg$/,
-        use: ['@svgr/webpack'],
-        type: 'asset/resource'
+        use: ['@svgr/webpack']
       },
       {
         test: /\.m?js/,

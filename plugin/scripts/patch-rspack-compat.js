@@ -58,8 +58,8 @@ patchFile('@openshift/dynamic-plugin-sdk-webpack/dist/index.cjs.js', [
     label: 'use ModuleFederationPluginV1 for webpack 5 compat'
   },
   {
-    from: "type: 'jsonp'",
-    to: "type: 'var'",
+    from: ".libraryType ?? 'jsonp'",
+    to: ".libraryType ?? 'var'",
     label: "change library.type default from 'jsonp' to 'var'"
   },
   {
