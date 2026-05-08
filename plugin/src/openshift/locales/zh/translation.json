@@ -7,6 +7,8 @@
   "Istio detail error": "Istio detail error",
   "Istio object is not defined correctly": "Istio object is not defined correctly",
   "Mesh": "Mesh",
+  "Namespace detail error": "Namespace detail error",
+  "Namespace is not defined correctly": "Namespace is not defined correctly",
   "Namespace: {{namespace}}": "Namespace: {{namespace}}",
   "Namespaces": "命名空间列表",
   "Overview": "概述",

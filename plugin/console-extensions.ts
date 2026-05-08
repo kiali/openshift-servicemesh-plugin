@@ -18,10 +18,10 @@ const enum Page {
 }
 
 const enum Tab {
-  ISTIO = 'IstioMeshTab',
-  NAMESPACE = 'NamespaceMeshTab',
-  SERVICE = 'ServiceMeshTab',
-  WORKLOAD = 'WorkloadMeshTab'
+  ISTIO = 'IstioDetailsTab',
+  NAMESPACE = 'NamespaceDetailsTab',
+  SERVICE = 'ServiceDetailsTab',
+  WORKLOAD = 'WorkloadDetailsTab'
 }
 
 const K8sResource: { [key: string]: K8sGroupVersionKind } = {

@@ -4,11 +4,11 @@ import { NamespaceDetailsPage } from 'pages/NamespaceDetails/NamespaceDetailsPag
 import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ErrorPage } from 'openshift/components/ErrorPage';
-import { meshTabPageStyle } from 'openshift/styles/GlobalStyle';
+import { detailsTabPageStyle } from 'openshift/styles/GlobalStyle';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 import { useKialiTranslation } from 'utils/I18nUtils';
 
-const ProjectMeshTab: React.FC<void> = () => {
+const NamespaceDetailsTab: React.FC<void> = () => {
   const { t } = useKialiTranslation();
   const { pathname } = useLocation();
   const { name: namespace } = useParams<ResourceURLPathProps>();
@@ -24,10 +24,10 @@ const ProjectMeshTab: React.FC<void> = () => {
   }
 
   return (
-    <KialiContainer className={meshTabPageStyle}>
+    <KialiContainer className={detailsTabPageStyle}>
       <NamespaceDetailsPage namespace={namespace} />
     </KialiContainer>
   );
 };
 
-export default ProjectMeshTab;
+export default NamespaceDetailsTab;

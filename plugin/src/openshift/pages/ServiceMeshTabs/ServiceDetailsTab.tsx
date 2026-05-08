@@ -7,9 +7,9 @@ import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import { ErrorPage } from 'openshift/components/ErrorPage';
-import { meshTabPageStyle } from 'openshift/styles/GlobalStyle';
+import { detailsTabPageStyle } from 'openshift/styles/GlobalStyle';
 
-const ServiceMeshTab: React.FC<void> = () => {
+const ServiceDetailsTab: React.FC<void> = () => {
   const { t } = useKialiTranslation();
   const { pathname } = useLocation();
   const { ns, name } = useParams<ResourceURLPathProps>();
@@ -29,7 +29,7 @@ const ServiceMeshTab: React.FC<void> = () => {
     };
 
     return (
-      <KialiContainer className={meshTabPageStyle}>
+      <KialiContainer className={detailsTabPageStyle}>
         <ServiceDetailsPage serviceId={serviceId}></ServiceDetailsPage>
       </KialiContainer>
     );
@@ -38,4 +38,4 @@ const ServiceMeshTab: React.FC<void> = () => {
   }
 };
 
-export default ServiceMeshTab;
+export default ServiceDetailsTab;
