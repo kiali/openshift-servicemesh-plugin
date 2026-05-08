@@ -1,0 +1,13 @@
+{
+  "no-dupe-scenario-names": "on",
+  "no-duplicate-tags": "on",
+  "no-empty-background": "on",
+  "no-empty-file": "on",
+  "no-files-without-scenarios": "on",
+  "no-unnamed-features": "on",
+  "no-unnamed-scenarios": "on",
+  "no-scenario-outlines-without-examples": "on",
+  "no-background-only-scenario": "on",
+  "no-examples-in-scenarios": "on",
+  "keywords-in-logical-order": "on"
+}
