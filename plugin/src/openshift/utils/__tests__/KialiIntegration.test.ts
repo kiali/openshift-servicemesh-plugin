@@ -46,8 +46,8 @@ describe('resolveConsoleUrl', () => {
       expect(resolveConsoleUrl('/namespaces')).toEqual('/ossmconsole/namespaces');
     });
 
-    test('should map /namespaces/bookinfo to /ossmconsole/namespaces/bookinfo', () => {
-      expect(resolveConsoleUrl('/namespaces/bookinfo')).toEqual('/ossmconsole/namespaces/bookinfo');
+    test('should map /namespaces/bookinfo to OpenShift Project Service Mesh tab', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo')).toEqual('/k8s/cluster/projects/bookinfo/ossmconsole');
     });
 
     test('should map namespace application detail to ossmconsole application detail page', () => {
@@ -106,6 +106,16 @@ describe('resolveConsoleUrl', () => {
 
     test('should preserve query parameters', () => {
       expect(resolveConsoleUrl('/mesh?tab=overview')).toEqual('/ossmconsole/mesh?tab=overview');
+    });
+  });
+
+  describe('workloads route', () => {
+    test('should map /workloads with namespace to k8s deployments list', () => {
+      expect(resolveConsoleUrl('/workloads?namespaces=bookinfo')).toEqual('/k8s/ns/bookinfo/deployments');
+    });
+
+    test('should map /workloads without namespace to all-namespaces deployments', () => {
+      expect(resolveConsoleUrl('/workloads')).toEqual('/k8s/all-namespaces/deployments');
     });
   });
 

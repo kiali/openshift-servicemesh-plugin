@@ -109,6 +109,11 @@ const handleApplicationsRoute = ({ path, webParams }: RouteContext): string => {
   return path.replace(/^\/applications/, `/${OSSM_CONSOLE}/applications`) + webParams;
 };
 
+const handleWorkloadsRoute = ({ urlParams }: RouteContext): string => {
+  const namespace = urlParams.get('namespaces');
+  return namespace ? `/k8s/ns/${namespace}/deployments` : `/k8s/all-namespaces/deployments`;
+};
+
 const handleServicesRoute = (): string => `/k8s/all-namespaces/services`;
 
 const handleIstioRoute = ({ path, webParams }: RouteContext): string => {
@@ -143,7 +148,11 @@ const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): 
     return `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
   }
 
-  return path.replace(/^\/namespaces/, `/${OSSM_CONSOLE}/namespaces`) + webParams;
+  if (namespace) {
+    return `/k8s/cluster/projects/${namespace}/${OSSM_CONSOLE}`;
+  }
+
+  return `/${OSSM_CONSOLE}/namespaces${webParams}`;
 };
 
 const handleTracingRoute = ({ urlParams }: RouteContext): string | null => {
@@ -186,6 +195,7 @@ const routeHandlers: Array<{ handler: RouteHandler; prefix: string }> = [
   { prefix: '/graph', handler: handleGraphRoute },
   { prefix: '/mesh', handler: handleMeshRoute },
   { prefix: '/applications', handler: handleApplicationsRoute },
+  { prefix: '/workloads', handler: handleWorkloadsRoute },
   { prefix: '/services', handler: handleServicesRoute },
   { prefix: '/istio', handler: handleIstioRoute },
   { prefix: '/namespaces', handler: handleNamespacesRoute },
