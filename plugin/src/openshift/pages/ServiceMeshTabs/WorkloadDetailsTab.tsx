@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useParams, useLocation } from 'react-router-dom-v5-compat';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ErrorPage } from 'openshift/components/ErrorPage';
-import { meshTabPageStyle } from 'openshift/styles/GlobalStyle';
+import { detailsTabPageStyle } from 'openshift/styles/GlobalStyle';
 import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 import { WorkloadDetailsPage } from 'pages/WorkloadDetails/WorkloadDetailsPage';
 import * as API from 'services/Api';
@@ -27,7 +27,7 @@ const validateWorkload = async (namespace: string, workloadName: string): Promis
   }
 };
 
-const WorkloadMeshTab: React.FC<void> = () => {
+const WorkloadDetailsTab: React.FC<void> = () => {
   const { t } = useKialiTranslation();
   const { pathname } = useLocation();
   const { ns, name, plural } = useParams<ResourceURLPathProps>();
@@ -108,10 +108,10 @@ const WorkloadMeshTab: React.FC<void> = () => {
   };
 
   return (
-    <KialiContainer className={meshTabPageStyle}>
+    <KialiContainer className={detailsTabPageStyle}>
       <WorkloadDetailsPage workloadId={workloadId}></WorkloadDetailsPage>
     </KialiContainer>
   );
 };
 
-export default WorkloadMeshTab;
+export default WorkloadDetailsTab;

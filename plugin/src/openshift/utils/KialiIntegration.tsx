@@ -43,34 +43,16 @@ export interface OpenShiftPluginConfig {
 }
 
 // Get OSSMC plugin config from 'plugin-config.json' resource
-export const getPluginConfig = async (): Promise<PluginConfig> => {
-  return await new Promise((resolve, reject) => {
-    consoleFetchJSON(properties.pluginConfig)
-      .then(config => resolve(config))
-      .catch(error => reject(error));
-  });
+export const getPluginConfig = (): Promise<PluginConfig> => {
+  return consoleFetchJSON(properties.pluginConfig);
 };
 
-export const getDistributedTracingPluginManifest = async (): Promise<OpenShiftPluginConfig> => {
-  return await new Promise((resolve, reject) => {
-    consoleFetchJSON(properties.distributedTracingPluginConfig)
-      .then(config => {
-        resolve(config);
-      })
-      .catch(error => reject(error));
-  });
+export const getDistributedTracingPluginManifest = (): Promise<OpenShiftPluginConfig> => {
+  return consoleFetchJSON(properties.distributedTracingPluginConfig);
 };
 
-export const getNetobservPluginManifest = async (): Promise<OpenShiftPluginConfig> => {
-  return await new Promise((resolve, reject) => {
-    consoleFetchJSON(properties.netobservPluginConfig)
-      .then(config => {
-        resolve(config);
-      })
-      .catch(error => {
-        reject(error);
-      });
-  });
+export const getNetobservPluginManifest = (): Promise<OpenShiftPluginConfig> => {
+  return consoleFetchJSON(properties.netobservPluginConfig);
 };
 
 // Set the router basename where OSSMC page is loaded
@@ -127,6 +109,11 @@ const handleApplicationsRoute = ({ path, webParams }: RouteContext): string => {
   return path.replace(/^\/applications/, `/${OSSM_CONSOLE}/applications`) + webParams;
 };
 
+const handleWorkloadsRoute = ({ urlParams }: RouteContext): string => {
+  const namespace = urlParams.get('namespaces');
+  return namespace ? `/k8s/ns/${namespace}/deployments` : `/k8s/all-namespaces/deployments`;
+};
+
 const handleServicesRoute = (): string => `/k8s/all-namespaces/services`;
 
 const handleIstioRoute = ({ path, webParams }: RouteContext): string => {
@@ -140,10 +127,7 @@ const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): 
 
   if (detail.startsWith('/applications')) {
     const application = detail.substring('/applications/'.length);
-    if (!application) {
-      return `/${OSSM_CONSOLE}/applications${webParams}`;
-    }
-    return `/k8s/ns/${namespace}/pods?label=app%3D${application}`;
+    return `/${OSSM_CONSOLE}/namespaces/${namespace}/applications/${application}${webParams}`;
   }
 
   if (detail.startsWith('/workloads')) {
@@ -164,7 +148,11 @@ const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): 
     return `/k8s/ns/${namespace}${istioUrl}/${OSSM_CONSOLE}${webParams}`;
   }
 
-  return path.replace(/^\/namespaces/, `/${OSSM_CONSOLE}/namespaces`) + webParams;
+  if (namespace) {
+    return `/k8s/cluster/projects/${namespace}/${OSSM_CONSOLE}`;
+  }
+
+  return `/${OSSM_CONSOLE}/namespaces${webParams}`;
 };
 
 const handleTracingRoute = ({ urlParams }: RouteContext): string | null => {
@@ -192,6 +180,7 @@ const handleTracingRoute = ({ urlParams }: RouteContext): string | null => {
       return `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`;
     }
   } else {
+    // External tracing URL: full page reload is intentional since the target is outside the SPA
     const url = urlParams.get('url');
     if (url) {
       window.location.href = url;
@@ -206,6 +195,7 @@ const routeHandlers: Array<{ handler: RouteHandler; prefix: string }> = [
   { prefix: '/graph', handler: handleGraphRoute },
   { prefix: '/mesh', handler: handleMeshRoute },
   { prefix: '/applications', handler: handleApplicationsRoute },
+  { prefix: '/workloads', handler: handleWorkloadsRoute },
   { prefix: '/services', handler: handleServicesRoute },
   { prefix: '/istio', handler: handleIstioRoute },
   { prefix: '/namespaces', handler: handleNamespacesRoute },
@@ -228,6 +218,11 @@ export const resolveConsoleUrl = (kialiAction: string): string | null => {
 // The "plugin" is responsible to "navigate" to the proper page in the OpenShift Console with the proper context.
 export const useInitKialiListeners = (): void => {
   const navigate = useNavigate();
+  // Store navigate in a ref so the message listener always uses the latest
+  // function without needing it in the useEffect dependency array, avoiding
+  // unnecessary listener teardown/re-registration on every render.
+  const navigateRef = React.useRef(navigate);
+  navigateRef.current = navigate;
 
   React.useEffect(() => {
     const kialiListener = (ev: MessageEvent): void => {
@@ -238,13 +233,13 @@ export const useInitKialiListeners = (): void => {
       const consoleUrl = resolveConsoleUrl(ev.data);
 
       if (consoleUrl) {
-        setTimeout(() => navigate(consoleUrl), 0);
+        setTimeout(() => navigateRef.current(consoleUrl), 0);
       }
     };
 
     window.addEventListener('message', kialiListener);
     return () => window.removeEventListener('message', kialiListener);
-  }, [navigate]);
+  }, []);
 };
 
 export function parseTempoUrl(url: string): Observability | null {
@@ -252,20 +247,19 @@ export function parseTempoUrl(url: string): Observability | null {
   const match = url.match(regex);
 
   if (!match) {
-    // Try non tenants
-    const regexT = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-query-frontend)?\.([a-zA-Z0-9-]+)\..*(?:\/([^/]+))?/;
-    const matchT = url.match(regexT);
+    const nonTenantRegex = /https?:\/\/tempo-([a-zA-Z0-9-]+?)(?:-query-frontend)?\.([a-zA-Z0-9-]+)\..*(?:\/([^/]+))?/;
+    const nonTenantMatch = url.match(nonTenantRegex);
 
-    if (!matchT) return null;
+    if (!nonTenantMatch) return null;
     return {
-      instance: matchT[1],
-      namespace: matchT[2]
+      instance: nonTenantMatch[1] ?? '',
+      namespace: nonTenantMatch[2] ?? ''
     };
   }
 
   return {
-    instance: match[1],
-    namespace: match[2],
+    instance: match[1] ?? '',
+    namespace: match[2] ?? '',
     tenant: match[3]
   };
 }

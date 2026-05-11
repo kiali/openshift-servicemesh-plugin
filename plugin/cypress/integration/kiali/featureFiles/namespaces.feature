@@ -1,4 +1,5 @@
 @namespaces
+@ossmc
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
 
 Feature: Kiali Namespaces page
@@ -8,6 +9,13 @@ Feature: Kiali Namespaces page
   Background:
     Given user is at administrator perspective
     And user is at the "namespaces" list page
+
+  @core-2
+  @offline
+  Scenario: Namespace name links to namespace detail page
+    Then user sees the "bookinfo" namespace in the namespaces page
+    When user clicks the namespace detail link for "bookinfo"
+    Then user is on the namespace detail page for "bookinfo"
 
   @core-2
   @offline
@@ -45,8 +53,6 @@ Feature: Kiali Namespaces page
     Then the list is sorted by column "Cluster" in "descending" order
 
   @ambient
-  # TODO: Enable once OSSMC has namespaces page
-  @skip-ossmc
   Scenario: Ambient badge is visible on namespaces list
     Then user sees the "istio-system" namespace in the namespaces page
     And badge for "Ambient" is visible in the namespaces page in the namespace "istio-system"

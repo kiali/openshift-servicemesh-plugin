@@ -290,6 +290,26 @@ Then('security {string} in the graph', (action: string) => {
   });
 });
 
+Then('the lock icon font is loaded', () => {
+  cy.get('g.pf-topology__edge__tag text', { timeout: 10000 })
+    .first()
+    .then($text => {
+      const computedFont = window.getComputedStyle($text[0]).fontFamily;
+      const iconFont = computedFont
+        .split(',')
+        .map(f => f.trim().replace(/['"]/g, ''))
+        .find(f => f.includes('pficon'));
+
+      assert.isDefined(iconFont, 'Edge tag should reference a pficon font');
+
+      cy.document().then(doc => {
+        cy.wrap(doc.fonts.ready).then(() => {
+          assert.isTrue(doc.fonts.check(`1rem ${iconFont}`), `Font "${iconFont}" should be loaded`);
+        });
+      });
+    });
+});
+
 Then('{string} option {string} in the graph', (option: string, action: string) => {
   switch (option.toLowerCase()) {
     case 'missing sidecars':
@@ -477,7 +497,7 @@ Given('graph cache is enabled', () => {
 });
 
 Given('graph cache metrics are recorded', () => {
-  cy.request('api/test/metrics/graph/cache').then(resp => {
+  cy.request({ url: 'api/test/metrics/graph/cache' }).then(resp => {
     expect(resp.status).to.eq(200);
     const before = resp.body as GraphCacheMetrics;
     cy.wrap(before, { log: false }).as('graphCacheMetricsBefore');
@@ -551,7 +571,7 @@ Then('graph cache metrics should show at least {int} miss and {int} hits', (minM
   cy.get('@graphCacheMetricsBefore').then(beforeObj => {
     const before = (beforeObj as unknown) as GraphCacheMetrics;
 
-    cy.request('api/test/metrics/graph/cache').then(resp => {
+    cy.request({ url: 'api/test/metrics/graph/cache' }).then(resp => {
       expect(resp.status).to.eq(200);
       const after = resp.body as GraphCacheMetrics;
 
@@ -570,7 +590,7 @@ Given('prometheus is reported as disabled in the config', () => {
   // the /api/config call that the Kiali frontend makes on load.
   // This works in any suite (local binary, operator, Helm) without requiring
   // a server restart or CR/ConfigMap patch.
-  cy.intercept(`${Cypress.config('baseUrl')}/api/config`, request => {
+  cy.intercept('**/api/config', request => {
     request.reply(response => {
       response.body['prometheus'] = {
         ...response.body['prometheus'],
@@ -581,7 +601,7 @@ Given('prometheus is reported as disabled in the config', () => {
     });
   }).as('configWithPrometheusDisabled');
   // Visit the graph page immediately so the intercept is active for the config load
-  cy.visit(`${Cypress.config('baseUrl')}/console/graph/namespaces?refresh=0`);
+  cy.visit({ url: `${Cypress.config('baseUrl')}/console/graph/namespaces?refresh=0` });
   cy.wait('@configWithPrometheusDisabled');
 });
 

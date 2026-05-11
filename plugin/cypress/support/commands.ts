@@ -208,44 +208,61 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
 
   const targetPage = url[2];
 
-  if (targetPage === 'namespaces') {
-    const namespace = url[3];
+  switch (targetPage) {
+    case 'namespaces': {
+      const namespace = url[3];
 
-    if (namespace) {
-      const type = url[4];
-      const details = url.slice(5).join('/');
-
-      if (type === 'workloads') {
-        visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
-      } else if (type === 'services') {
-        visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
-      } else if (type === 'applications') {
-        if (!details) {
-          throw new Error('Application name is required for the applications route');
-        }
-        visitUrl.url = `/k8s/ns/${namespace}/pods?label=app%3D${details}`;
-      } else if (type === 'istio') {
-        const istioUrl = istioDetailToRef(details);
-
-        visitUrl.url = `/k8s/ns/${namespace}${istioUrl}/ossmconsole${webParams}`;
-      } else if (type === 'pods') {
-        visitUrl.url = `/k8s/ns/${namespace}/pods/${details}/ossmconsole${webParams}`;
-      } else {
-        visitUrl.url = `/ossmconsole/namespaces/${namespace}${type ? `/${type}` : ''}${
-          details ? `/${details}` : ''
-        }${webParams}`;
+      if (!namespace) {
+        // No namespace means namespaces list page
+        visitUrl.url = `/ossmconsole/namespaces${webParams}`;
+        break;
       }
-    } else {
-      visitUrl.url = `/ossmconsole/namespaces${webParams}`;
+
+      const type = url[4];
+
+      if (!type) {
+        // No type means namespace detail page, rendered as the Service Mesh tab on the OpenShift Project page
+        visitUrl.url = `/k8s/cluster/projects/${namespace}/ossmconsole${webParams}`;
+      } else {
+        const details = url.slice(5).join('/');
+
+        if (!details) {
+          throw new Error(`Resource name is required for the "${type}" route`);
+        }
+
+        switch (type) {
+          case 'workloads':
+            visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
+            break;
+          case 'services':
+            visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
+            break;
+          case 'applications':
+            visitUrl.url = `/ossmconsole/namespaces/${namespace}/applications/${details}${webParams}`;
+            break;
+          case 'istio':
+            visitUrl.url = `/k8s/ns/${namespace}${istioDetailToRef(details)}/ossmconsole${webParams}`;
+            break;
+          case 'pods':
+            visitUrl.url = `/k8s/ns/${namespace}/pods/${details}/ossmconsole${webParams}`;
+            break;
+          default:
+            throw new Error(`Unknown namespace resource type: "${type}"`);
+        }
+      }
+      break;
     }
-  } else if (targetPage === 'graph') {
-    visitUrl.url = visitUrl.url
-      .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns')
-      .replace('/console/graph/namespaces', '/ossmconsole/graph');
-  } else if (targetPage === 'istio') {
-    visitUrl.url = `/ossmconsole/istio${webParams}`;
-  } else {
-    visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
+    case 'graph':
+      visitUrl.url = visitUrl.url
+        .replace('/console/graph/node/namespaces', '/ossmconsole/graph/ns')
+        .replace('/console/graph/namespaces', '/ossmconsole/graph');
+      break;
+    case 'istio':
+      visitUrl.url = `/ossmconsole/istio${webParams}`;
+      break;
+    default:
+      visitUrl.url = visitUrl.url.replace('console/', 'ossmconsole/');
+      break;
   }
 
   return originalFn(visitUrl);

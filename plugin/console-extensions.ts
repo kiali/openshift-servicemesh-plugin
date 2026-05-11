@@ -7,6 +7,7 @@ const ADMIN = 'admin';
 const getConsoleTitle = (title: string) => `%plugin__ossmconsole~${title}%`;
 
 const enum Page {
+  APPLICATION_DETAIL = 'AppDetailsPage',
   APPLICATIONS = 'AppListPage',
   GRAPH = 'GraphPage',
   ISTIO = 'IstioConfigListPage',
@@ -17,10 +18,10 @@ const enum Page {
 }
 
 const enum Tab {
-  ISTIO = 'IstioMeshTab',
-  PROJECT = 'ProjectMeshTab',
-  SERVICE = 'ServiceMeshTab',
-  WORKLOAD = 'WorkloadMeshTab'
+  ISTIO = 'IstioDetailsTab',
+  NAMESPACE = 'NamespaceDetailsTab',
+  SERVICE = 'ServiceDetailsTab',
+  WORKLOAD = 'WorkloadDetailsTab'
 }
 
 const K8sResource: { [key: string]: K8sGroupVersionKind } = {
@@ -47,6 +48,11 @@ const K8sResource: { [key: string]: K8sGroupVersionKind } = {
   StatefulSet: {
     group: 'apps',
     kind: 'StatefulSet',
+    version: 'v1'
+  },
+  Namespace: {
+    group: '',
+    kind: 'Namespace',
     version: 'v1'
   },
   Service: {
@@ -238,6 +244,14 @@ const extensions: EncodedExtension[] = [
   },
   ...consoleRoute('namespaces', 'Namespaces', Page.NAMESPACES, [`/${OSSM_CONSOLE}/namespaces`]),
   ...consoleRoute('applications', 'Applications', Page.APPLICATIONS, [`/${OSSM_CONSOLE}/applications`]),
+  {
+    type: 'console.page/route',
+    properties: {
+      exact: true,
+      path: `/${OSSM_CONSOLE}/namespaces/:namespace/applications/:app`,
+      component: { $codeRef: Page.APPLICATION_DETAIL }
+    }
+  },
   ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [`/${OSSM_CONSOLE}/istio`]),
   {
     type: 'console.page/route',
@@ -249,7 +263,8 @@ const extensions: EncodedExtension[] = [
   },
 
   // K8s horizontal navs - service mesh tab of k8s resources
-  horizontalNav(K8sResource.Project, Tab.PROJECT),
+  horizontalNav(K8sResource.Project, Tab.NAMESPACE),
+  horizontalNav(K8sResource.Namespace, Tab.NAMESPACE),
   horizontalNav(K8sResource.Pod, Tab.WORKLOAD),
   horizontalNav(K8sResource.Deployment, Tab.WORKLOAD),
   horizontalNav(K8sResource.DeploymentConfig, Tab.WORKLOAD),

@@ -22,6 +22,6 @@ export const globalStyle = kialiStyle({
   }
 });
 
-export const meshTabPageStyle = kialiStyle({
+export const detailsTabPageStyle = kialiStyle({
   paddingTop: '0'
 });
