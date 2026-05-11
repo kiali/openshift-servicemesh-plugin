@@ -226,6 +226,10 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
       } else {
         const details = url.slice(5).join('/');
 
+        if (!details) {
+          throw new Error(`Resource name is required for the "${type}" route`);
+        }
+
         switch (type) {
           case 'workloads':
             visitUrl.url = `/k8s/ns/${namespace}/deployments/${details}/ossmconsole${webParams}`;
@@ -234,10 +238,7 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
             visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;
             break;
           case 'applications':
-            if (!details) {
-              throw new Error('Application name is required for the applications route');
-            }
-            visitUrl.url = `/k8s/ns/${namespace}/pods?label=app%3D${details}`;
+            visitUrl.url = `/ossmconsole/namespaces/${namespace}/applications/${details}${webParams}`;
             break;
           case 'istio':
             visitUrl.url = `/k8s/ns/${namespace}${istioDetailToRef(details)}/ossmconsole${webParams}`;
