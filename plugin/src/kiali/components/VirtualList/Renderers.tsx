@@ -244,9 +244,6 @@ export const item: Renderer<TResource> = (item: TResource, config: Resource, bad
     }
   }
 
-  const kioskParams =
-    config.name === 'workloads' && 'gvk' in item ? `type=${(item as WorkloadListItem).gvk.Kind}` : undefined;
-
   return (
     <Td
       role="gridcell"
@@ -255,7 +252,7 @@ export const item: Renderer<TResource> = (item: TResource, config: Resource, bad
       style={{ verticalAlign: 'middle' }}
     >
       <PFBadge badge={serviceBadge} position={TooltipPosition.top} />
-      <KialiLink key={key} to={getLink(item, config)} kioskParams={kioskParams}>
+      <KialiLink key={key} to={getLink(item, config)}>
         {item.name}
       </KialiLink>
     </Td>

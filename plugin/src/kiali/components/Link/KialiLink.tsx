@@ -9,7 +9,6 @@ type KialiLinkProps = {
   className?: string;
   dataTest?: string;
   id?: string;
-  kioskParams?: string;
   onClick?: () => void;
   style?: React.CSSProperties;
   to: string;
@@ -21,11 +20,7 @@ export const KialiLink: React.FC<KialiLinkProps> = (props: KialiLinkProps) => {
   const handleClick = (): void => {
     props.onClick?.();
     if (isParentKiosk(kiosk)) {
-      let href = props.to;
-      if (props.kioskParams) {
-        href += href.includes('?') ? `&${props.kioskParams}` : `?${props.kioskParams}`;
-      }
-      kioskNavigateAction(href);
+      kioskNavigateAction(props.to);
     }
   };
 
