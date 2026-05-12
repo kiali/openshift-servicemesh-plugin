@@ -1,5 +1,6 @@
 @app-details
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
+@ossmc
 
 Feature: Kiali App Details page
 
@@ -19,7 +20,7 @@ Feature: Kiali App Details page
   @lpinterop
   Scenario: See details for app.
     Then user sees details information for the "details" app
-    But no cluster badge for the "app" should be visible
+    Then user sees app Resources card
 
   @bookinfo-app
   @core-1

@@ -291,7 +291,14 @@ When('user navigates to the namespace detail page for {string}', function (names
 });
 
 function openNamespaceActionsMenu(): void {
-  cy.getBySel('namespace-actions-toggle').should('be.visible').click();
+  if (Cypress.env('OSSMC')) {
+    cy.intercept('**/api/namespaces/graph*').as('namespaceMinigraph');
+    cy.wait('@namespaceMinigraph');
+    cy.waitForReact();
+    cy.get('button#minigraph-toggle').should('be.visible').click();
+  } else {
+    cy.getBySel('namespace-actions-toggle').should('be.visible').click();
+  }
 }
 
 When('I override the default automatic sidecar injection policy in the namespace to enabled', function () {
@@ -398,11 +405,11 @@ Then('the sidecar of the workload should vanish', () => {
 });
 
 Then('I should see no override annotation for sidecar injection in the workload', () => {
-  cy.get('#WorkloadDescriptionCard').then($card => {
-    if ($card.find('label_more').length) {
-      cy.wrap($card).get('label_more').should('be.visible').click();
+  cy.get('[data-test=workload-labels-card]').then($card => {
+    if ($card.find('.pf-m-overflow').length) {
+      cy.wrap($card).find('.pf-m-overflow').should('be.visible').click();
     }
 
-    cy.wrap($card).get('[data-test="sidecar.istio.io/inject-label-container"').should('not.exist');
+    cy.wrap($card).find('[data-test="sidecar.istio.io/inject-label-container"]').should('not.exist');
   });
 });

@@ -1,6 +1,6 @@
 @workload-details
-@ossmc
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
+@ossmc
 
 Feature: Kiali Workload Details page
 
@@ -17,7 +17,11 @@ Feature: Kiali Workload Details page
   @lpinterop
   Scenario: See details for workload
     Then user sees details information for workload
-    But no cluster badge for the "workload" should be visible
+    Then user sees workload Resources card
+    Then user sees workload Pods card
+    Then user sees workload Istio Config card
+    Then user sees workload Labels card
+    Then user sees workload Annotations card
 
   # TODO: offline - workload health.
   @bookinfo-app
@@ -126,5 +130,5 @@ Feature: Kiali Workload Details page
   @ambient-multi-primary
   # TODO: offline - ambient support.
   Scenario: See ambient label for workload
-    Then user sees "ambient" badge
+    Then user sees "Ambient" badge
     Then the user cannot see the "missing-sidecar" badge for "details-v1" workload in "bookinfo" namespace
