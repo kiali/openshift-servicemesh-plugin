@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { Label, pluralize } from '@patternfly/react-core';
 
 import { PFColors } from 'components/Pf/PfColors';
