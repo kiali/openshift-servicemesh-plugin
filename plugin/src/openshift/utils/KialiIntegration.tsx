@@ -93,6 +93,20 @@ const parseRouteContext = (kialiAction: string): RouteContext => {
   return { path, webParams, urlParams, isNetobserv };
 };
 
+const kindToK8sResource = (kind: string): string => {
+  const mapping: Record<string, string> = {
+    CronJob: 'cronjobs',
+    DaemonSet: 'daemonsets',
+    Deployment: 'deployments',
+    DeploymentConfig: 'deploymentconfigs',
+    Job: 'jobs',
+    Pod: 'pods',
+    ReplicaSet: 'replicasets',
+    StatefulSet: 'statefulsets'
+  };
+  return mapping[kind] ?? 'deployments';
+};
+
 const handleGraphRoute = ({ path, webParams }: RouteContext): string => {
   return (
     path
@@ -121,20 +135,6 @@ const handleIstioRoute = ({ path, webParams }: RouteContext): string => {
   return path.replace(/^\/istio/, `/${OSSM_CONSOLE}/istio`) + webParams;
 };
 
-const kindToK8sResource = (kind: string): string => {
-  const mapping: Record<string, string> = {
-    CronJob: 'cronjobs',
-    DaemonSet: 'daemonsets',
-    Deployment: 'deployments',
-    DeploymentConfig: 'deploymentconfigs',
-    Job: 'jobs',
-    Pod: 'pods',
-    ReplicaSet: 'replicasets',
-    StatefulSet: 'statefulsets'
-  };
-  return mapping[kind] ?? 'deployments';
-};
-
 const handleNamespacesRoute = ({ path, webParams, urlParams, isNetobserv }: RouteContext): string => {
   const pathSegments = path.split('/');
   const namespace = pathSegments[2] ?? '';
@@ -142,11 +142,17 @@ const handleNamespacesRoute = ({ path, webParams, urlParams, isNetobserv }: Rout
 
   if (detail.startsWith('/applications')) {
     const application = detail.substring('/applications/'.length);
+    if (!application) {
+      return `/${OSSM_CONSOLE}/applications?namespaces=${namespace}`;
+    }
     return `/${OSSM_CONSOLE}/applications/${namespace}/${application}${webParams}`;
   }
 
   if (detail.startsWith('/workloads')) {
     const workload = detail.substring('/workloads/'.length);
+    if (!workload) {
+      return `/${OSSM_CONSOLE}/workloads?namespaces=${namespace}`;
+    }
     const target = isNetobserv ? NETOBSERV : OSSM_CONSOLE;
     const kind = urlParams.get('type') ?? 'Deployment';
     const k8sResource = kindToK8sResource(kind);
@@ -154,6 +160,10 @@ const handleNamespacesRoute = ({ path, webParams, urlParams, isNetobserv }: Rout
   }
 
   if (detail.startsWith('/services')) {
+    const service = detail.substring('/services/'.length);
+    if (!service) {
+      return `/${OSSM_CONSOLE}/services?namespaces=${namespace}`;
+    }
     return `/k8s/ns/${namespace}${detail}/${OSSM_CONSOLE}${webParams}`;
   }
 
