@@ -156,7 +156,9 @@ const handleNamespacesRoute = ({ path, webParams, urlParams, isNetobserv }: Rout
     const target = isNetobserv ? NETOBSERV : OSSM_CONSOLE;
     const kind = urlParams.get('type') ?? 'Deployment';
     const k8sResource = kindToK8sResource(kind);
-    return `/k8s/ns/${namespace}/${k8sResource}/${workload}/${target}${webParams}`;
+    urlParams.delete('type');
+    const cleanParams = urlParams.toString() ? `?${urlParams.toString()}` : '';
+    return `/k8s/ns/${namespace}/${k8sResource}/${workload}/${target}${cleanParams}`;
   }
 
   if (detail.startsWith('/services')) {
