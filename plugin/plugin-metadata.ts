@@ -18,7 +18,9 @@ const metadata: ConsolePluginBuildMetadata = {
     NamespaceDetailsTab: './openshift/pages/ServiceMeshTabs/NamespaceDetailsTab',
     ReduxReducer: './openshift/utils/Reducer.ts',
     ServiceDetailsTab: './openshift/pages/ServiceMeshTabs/ServiceDetailsTab',
-    WorkloadDetailsTab: './openshift/pages/ServiceMeshTabs/WorkloadDetailsTab'
+    ServiceListPage: './openshift/pages/ServiceListPage',
+    WorkloadDetailsTab: './openshift/pages/ServiceMeshTabs/WorkloadDetailsTab',
+    WorkloadListPage: './openshift/pages/WorkloadListPage'
   },
   dependencies: {
     '@console/pluginAPI': '*'

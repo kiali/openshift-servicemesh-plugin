@@ -14,7 +14,9 @@ const enum Page {
   ISTIO_NEW = 'IstioConfigNewPage',
   MESH = 'MeshPage',
   NAMESPACES = 'NamespacesPage',
-  OVERVIEW = 'OverviewPage'
+  OVERVIEW = 'OverviewPage',
+  SERVICES = 'ServiceListPage',
+  WORKLOADS = 'WorkloadListPage'
 }
 
 const enum Tab {
@@ -45,9 +47,19 @@ const K8sResource: { [key: string]: K8sGroupVersionKind } = {
     kind: 'DeploymentConfig',
     version: 'v1'
   },
+  ReplicaSet: {
+    group: 'apps',
+    kind: 'ReplicaSet',
+    version: 'v1'
+  },
   StatefulSet: {
     group: 'apps',
     kind: 'StatefulSet',
+    version: 'v1'
+  },
+  DaemonSet: {
+    group: 'apps',
+    kind: 'DaemonSet',
     version: 'v1'
   },
   Namespace: {
@@ -248,10 +260,12 @@ const extensions: EncodedExtension[] = [
     type: 'console.page/route',
     properties: {
       exact: true,
-      path: `/${OSSM_CONSOLE}/namespaces/:namespace/applications/:app`,
+      path: `/${OSSM_CONSOLE}/applications/:namespace/:app`,
       component: { $codeRef: Page.APPLICATION_DETAIL }
     }
   },
+  ...consoleRoute('services', 'Services', Page.SERVICES, [`/${OSSM_CONSOLE}/services`]),
+  ...consoleRoute('workloads', 'Workloads', Page.WORKLOADS, [`/${OSSM_CONSOLE}/workloads`]),
   ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [`/${OSSM_CONSOLE}/istio`]),
   {
     type: 'console.page/route',
@@ -268,7 +282,9 @@ const extensions: EncodedExtension[] = [
   horizontalNav(K8sResource.Pod, Tab.WORKLOAD),
   horizontalNav(K8sResource.Deployment, Tab.WORKLOAD),
   horizontalNav(K8sResource.DeploymentConfig, Tab.WORKLOAD),
+  horizontalNav(K8sResource.ReplicaSet, Tab.WORKLOAD),
   horizontalNav(K8sResource.StatefulSet, Tab.WORKLOAD),
+  horizontalNav(K8sResource.DaemonSet, Tab.WORKLOAD),
   horizontalNav(K8sResource.Service, Tab.SERVICE),
 
   // Istio horizontal navs - service mesh tab of istio resources

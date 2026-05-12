@@ -53,13 +53,12 @@ format_version: 1
 - `Background` blocks set up common preconditions (navigation, intercept registration)
 
 ### Tags
-- `@ossmc` — OSSMC-specific tests
 - `@smoke` — Smoke test suite (run first)
 - `@core-1`, `@core-2` — Core test groups
 - `@skip-ossmc` — Tests to skip in OSSMC context
 - `@bookinfo-app` — Requires bookinfo sample app deployed
 - `@ambient`, `@waypoint` — Ambient mesh tests
-- Tags are combined in Cypress run commands via `TAGS` env var (e.g., `@ossmc and @smoke`)
+- Tags are combined in Cypress run commands via `TAGS` env var (e.g., `(@core-1 or @core-2) and not @skip-ossmc`)
 
 ### Patterns
 - `cy.intercept()` to register API hooks before test actions
@@ -72,7 +71,7 @@ format_version: 1
 
 - Unit tests: Run via Jest (standard `react-scripts test` or equivalent)
 - E2E tests:
-  - Interactive: `yarn cypress` (opens Cypress UI with `@ossmc and not @skip-ossmc` filter)
+  - Interactive: `yarn cypress` (opens Cypress UI with `not @skip-ossmc` filter)
   - CI: `yarn cypress:run` (runs smoke first, then core-1/core-2)
   - JUnit output: `yarn cypress:run:junit` (for CI reporting)
   - Ambient: `yarn cypress:run:ambient` / `yarn cypress:run:ambient:junit`

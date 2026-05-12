@@ -10,7 +10,6 @@ cssRule('.pf-v6-c-tooltip ul', {
 export const globalStyle = kialiStyle({
   display: 'flex',
   flexDirection: 'column',
-  overflowY: 'auto',
   padding: '1rem 1.25rem',
   $nest: {
     '& .pf-v6-c-menu h1': {

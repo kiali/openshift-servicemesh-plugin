@@ -37,7 +37,7 @@ RUN yarn install --immutable
 RUN chgrp -R 0 $HOME && \
     chmod -R g=u $HOME
 
-ENV TEST_GROUP="@ossmc"
+ENV TEST_GROUP="@core-1 or @core-2"
 
 # Run Cypress tests.
 CMD ["yarn", "cypress:run:test-group:junit"]

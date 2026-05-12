@@ -109,31 +109,48 @@ const handleApplicationsRoute = ({ path, webParams }: RouteContext): string => {
   return path.replace(/^\/applications/, `/${OSSM_CONSOLE}/applications`) + webParams;
 };
 
-const handleWorkloadsRoute = ({ urlParams }: RouteContext): string => {
-  const namespace = urlParams.get('namespaces');
-  return namespace ? `/k8s/ns/${namespace}/deployments` : `/k8s/all-namespaces/deployments`;
+const handleWorkloadsRoute = ({ path, webParams }: RouteContext): string => {
+  return path.replace(/^\/workloads/, `/${OSSM_CONSOLE}/workloads`) + webParams;
 };
 
-const handleServicesRoute = (): string => `/k8s/all-namespaces/services`;
+const handleServicesRoute = ({ path, webParams }: RouteContext): string => {
+  return path.replace(/^\/services/, `/${OSSM_CONSOLE}/services`) + webParams;
+};
 
 const handleIstioRoute = ({ path, webParams }: RouteContext): string => {
   return path.replace(/^\/istio/, `/${OSSM_CONSOLE}/istio`) + webParams;
 };
 
-const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): string => {
+const kindToK8sResource = (kind: string): string => {
+  const mapping: Record<string, string> = {
+    CronJob: 'cronjobs',
+    DaemonSet: 'daemonsets',
+    Deployment: 'deployments',
+    DeploymentConfig: 'deploymentconfigs',
+    Job: 'jobs',
+    Pod: 'pods',
+    ReplicaSet: 'replicasets',
+    StatefulSet: 'statefulsets'
+  };
+  return mapping[kind] ?? 'deployments';
+};
+
+const handleNamespacesRoute = ({ path, webParams, urlParams, isNetobserv }: RouteContext): string => {
   const pathSegments = path.split('/');
   const namespace = pathSegments[2] ?? '';
   const detail = pathSegments.length > 3 ? `/${pathSegments.slice(3).join('/')}` : '';
 
   if (detail.startsWith('/applications')) {
     const application = detail.substring('/applications/'.length);
-    return `/${OSSM_CONSOLE}/namespaces/${namespace}/applications/${application}${webParams}`;
+    return `/${OSSM_CONSOLE}/applications/${namespace}/${application}${webParams}`;
   }
 
   if (detail.startsWith('/workloads')) {
-    const workload = detail.substring('/workloads'.length);
+    const workload = detail.substring('/workloads/'.length);
     const target = isNetobserv ? NETOBSERV : OSSM_CONSOLE;
-    return `/k8s/ns/${namespace}/deployments${workload}/${target}${webParams}`;
+    const kind = urlParams.get('type') ?? 'Deployment';
+    const k8sResource = kindToK8sResource(kind);
+    return `/k8s/ns/${namespace}/${k8sResource}/${workload}/${target}${webParams}`;
   }
 
   if (detail.startsWith('/services')) {
