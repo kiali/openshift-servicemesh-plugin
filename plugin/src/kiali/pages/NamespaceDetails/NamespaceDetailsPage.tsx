@@ -16,6 +16,7 @@ import { ErrorMsg } from 'types/ErrorMsg';
 import { connectRefresh } from 'components/Refresh/connectRefresh';
 import { HistoryManager } from 'app/History';
 import { basicTabStyle } from 'styles/TabStyles';
+import { setAIContext } from 'helpers/ChatAI';
 import { Namespace } from 'types/Namespace';
 import { MTLSStatuses, TLSStatus } from 'types/TLSStatus';
 import { ValidationStatus } from 'types/IstioObjects';
@@ -343,11 +344,19 @@ export class NamespaceDetailsPageComponent extends React.Component<NamespaceDeta
             return;
           }
 
-          this.setState({
-            nsInfo: base,
-            error: undefined,
-            cluster: effectiveCluster
-          });
+          this.setState(
+            {
+              nsInfo: base,
+              error: undefined,
+              cluster: effectiveCluster
+            },
+            () => {
+              setAIContext(
+                this.props.dispatch,
+                `Namespace Details of ${this.props.namespace}${effectiveCluster ? ` (${effectiveCluster})` : ''}`
+              );
+            }
+          );
         })
       )
       .catch(error => {

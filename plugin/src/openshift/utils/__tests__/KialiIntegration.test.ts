@@ -293,7 +293,7 @@ describe('resolveConsoleUrl', () => {
         tracingState: {
           info: {
             internalURL: 'https://tempo-sample-gateway.tempo.svc.cluster.local:8080/api/traces/v1/default'
-          }
+          } as any
         }
       });
       expect(resolveConsoleUrl('/tracing?trace=abc123')).toEqual(

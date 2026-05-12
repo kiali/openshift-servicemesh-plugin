@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { DropdownGroup, DropdownItem, Tooltip, TooltipPosition } from '@patternfly/react-core';
+import { Divider, DropdownGroup, DropdownItem, Tooltip, TooltipPosition } from '@patternfly/react-core';
 import { serverConfig } from 'config';
 import { DestinationRule, getWizardUpdateLabel, K8sHTTPRoute, K8sGRPCRoute, VirtualService } from 'types/IstioObjects';
 import { canDelete, ResourcePermissions } from 'types/Permissions';
@@ -17,7 +17,7 @@ import {
   WIZARD_TCP_TRAFFIC_SHIFTING
 } from './WizardActions';
 import { hasServiceDetailsTrafficRouting } from '../../types/ServiceInfo';
-import { groupMenuStyle, titleStyle } from 'styles/DropdownStyles';
+import { groupMenuStyle } from 'styles/DropdownStyles';
 import { kialiStyle } from 'styles/StyleUtils';
 import { t } from 'utils/I18nUtils';
 
@@ -44,9 +44,12 @@ const optionDisabledStyle = kialiStyle({
   }
 });
 
+const dividerStyle = kialiStyle({
+  paddingTop: '0.5rem'
+});
+
 export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> = (props: Props) => {
   const updateLabel = getWizardUpdateLabel(props.virtualServices, props.k8sHTTPRoutes, props.k8sGRPCRoutes);
-  const isViewOnly = serverConfig.deployment.viewOnlyMode;
 
   const hasTrafficRouting = (): boolean => {
     return hasServiceDetailsTrafficRouting(
@@ -63,12 +66,10 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
     }
   };
 
-  const getDropdownItemTooltipMessage = (isGatewayAPI: boolean, hasExistingTrafficRouting: boolean): string => {
-    if (isViewOnly && !hasExistingTrafficRouting) {
-      return t('There is no traffic routing to view for this service');
-    } else if (isViewOnly) {
+  const getDropdownItemTooltipMessage = (isGatewayAPI: boolean): string => {
+    if (serverConfig.deployment.viewOnlyMode) {
       return t('No user permission or Kiali in view-only mode');
-    } else if (hasExistingTrafficRouting) {
+    } else if (hasTrafficRouting()) {
       return t('Traffic routing already exists for this service');
     } else if (isGatewayAPI) {
       return t('K8s Gateway API is not enabled');
@@ -82,7 +83,6 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
       eventKey === WIZARD_K8S_REQUEST_ROUTING || eventKey === WIZARD_K8S_GRPC_REQUEST_ROUTING
         ? serverConfig.gatewayAPIEnabled
         : true;
-    const hasExistingTrafficRouting = hasTrafficRouting();
 
     const istioWizardKeys = [
       WIZARD_REQUEST_ROUTING,
@@ -98,9 +98,7 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
       isGatewayAPIEnabled &&
       isIstioAPIInstalled &&
       !props.isDisabled &&
-      (isViewOnly
-        ? hasExistingTrafficRouting && updateLabel === eventKey
-        : !hasExistingTrafficRouting || updateLabel === eventKey);
+      (!hasTrafficRouting() || (hasTrafficRouting() && updateLabel === eventKey));
 
     const wizardItem = (
       <DropdownItem
@@ -124,7 +122,7 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
         <Tooltip
           key={`tooltip_${eventKey}`}
           position={TooltipPosition.left}
-          content={<>{getDropdownItemTooltipMessage(!isGatewayAPIEnabled, hasExistingTrafficRouting)}</>}
+          content={<>{getDropdownItemTooltipMessage(!isGatewayAPIEnabled)}</>}
         >
           <div className={optionDisabledStyle}>{wizardItem}</div>
         </Tooltip>
@@ -133,6 +131,8 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
       return wizardItem;
     }
   });
+
+  actionItems.push(<Divider className={dividerStyle} key="actions_separator" />);
 
   const deleteDisabled = !canDelete(props.istioPermissions) || !hasTrafficRouting() || props.isDisabled;
 
@@ -157,7 +157,7 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
       <Tooltip
         key={`tooltip_${DELETE_TRAFFIC_ROUTING}`}
         position={TooltipPosition.left}
-        content={<>{getDropdownItemTooltipMessage(false, hasTrafficRouting())}</>}
+        content={<>{getDropdownItemTooltipMessage(false)}</>}
       >
         <div style={{ display: 'inline-block', cursor: 'not-allowed' }}>{deleteDropdownItem}</div>
       </Tooltip>
@@ -165,13 +165,7 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
   }
 
   actionItems.push(deleteDropdownItem);
+  const label = updateLabel === '' ? t('Create') : t('Update');
 
-  const label = isViewOnly ? t('View') : updateLabel === '' ? t('Create') : t('Update');
-
-  return (
-    <>
-      <div className={titleStyle}>{label}</div>
-      <DropdownGroup key={`group_${label}`} className={groupMenuStyle} children={actionItems} />
-    </>
-  );
+  return <DropdownGroup key={`group_${label}`} label={label} className={groupMenuStyle} children={actionItems} />;
 };

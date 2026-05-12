@@ -38,6 +38,7 @@ import { basicTabStyle } from 'styles/TabStyles';
 import { ZtunnelConfig } from '../../components/Ambient/ZtunnelConfig';
 import { WaypointConfig } from '../../components/Ambient/WaypointConfig';
 import { isGVKSupported } from '../../utils/IstioConfigUtils';
+import { setAIContext } from 'helpers/ChatAI';
 import { PFBadge, PFBadges } from '../../components/Pf/PfBadges';
 import { detailPageTitleStyle, detailTitleRowStyle, detailTitleMainStyle } from 'styles/FlexStyles';
 
@@ -139,19 +140,27 @@ class WorkloadDetailsPageComponent extends React.Component<WorkloadDetailsPagePr
           this.setState({ waypointServiceFilter: details.data.services[0].name });
         }
 
-        this.setState({
-          workload: details.data,
-          health: WorkloadHealth.fromJson(
-            this.props.workloadId.namespace,
-            this.props.workloadId.workload,
-            details.data.health,
-            {
-              rateInterval: this.props.duration,
-              hasSidecar: details.data.istioSidecar,
-              hasAmbient: details.data.isAmbient
-            }
-          )
-        });
+        this.setState(
+          {
+            workload: details.data,
+            health: WorkloadHealth.fromJson(
+              this.props.workloadId.namespace,
+              this.props.workloadId.workload,
+              details.data.health,
+              {
+                rateInterval: this.props.duration,
+                hasSidecar: details.data.istioSidecar,
+                hasAmbient: details.data.isAmbient
+              }
+            )
+          },
+          () => {
+            setAIContext(
+              this.props.dispatch,
+              `Workload Details of ${this.props.workloadId.workload} in namespace ${this.props.workloadId.namespace}`
+            );
+          }
+        );
       })
       .catch(error => {
         addError('Could not fetch Workload.', error);
@@ -260,7 +269,6 @@ class WorkloadDetailsPageComponent extends React.Component<WorkloadDetailsPagePr
               target={this.props.workloadId.workload}
               targetKind="workload"
               fromWaypoint={fromWaypoint}
-              includeAmbient={fromWaypoint || !!this.state.workload?.isAmbient}
               waypointServiceFilter={this.state.waypointServiceFilter}
             />
           </Tab>

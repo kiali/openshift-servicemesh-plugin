@@ -1908,8 +1908,8 @@ __metadata:
   linkType: hard
 
 "@cypress/request@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "@cypress/request@npm:4.0.0"
+  version: 4.0.1
+  resolution: "@cypress/request@npm:4.0.1"
   dependencies:
     aws-sign2: "npm:~0.7.0"
     aws4: "npm:^1.8.0"
@@ -1924,11 +1924,11 @@ __metadata:
     json-stringify-safe: "npm:~5.0.1"
     mime-types: "npm:~2.1.19"
     performance-now: "npm:^2.1.0"
-    qs: "npm:~6.14.1"
+    qs: "npm:^6.15.2"
     safe-buffer: "npm:^5.1.2"
     tough-cookie: "npm:^5.0.0"
     tunnel-agent: "npm:^0.6.0"
-  checksum: 10c0/f85502209aa3a4097e598bdd85b9f1c728ee2758fdbee8cafd5fe22d46ab625082df2957c166f6320adbf7698afa2871005b3dfa3dbddc676bf056144e072ebe
+  checksum: 10c0/266648f03ebf3645ccfb3f17dceb1e8ce95a456a79e7f958ee2165ef84ce5bfdbea2904fdd5b21d6301e7abeb72e35b5dec33393502501758cd20df86eb2e943
   languageName: node
   linkType: hard
 
@@ -3961,7 +3961,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rstest/core@npm:^0.9.7":
+"@rstest/core@npm:^0.9.10":
   version: 0.9.10
   resolution: "@rstest/core@npm:0.9.10"
   dependencies:
@@ -4969,17 +4969,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jsdom@npm:^21.1.6":
-  version: 21.1.7
-  resolution: "@types/jsdom@npm:21.1.7"
-  dependencies:
-    "@types/node": "npm:*"
-    "@types/tough-cookie": "npm:*"
-    parse5: "npm:^7.0.0"
-  checksum: 10c0/c0c0025adc2b193e85453eeeea168bb909f0ebad08d6552be7474a407e9c163db8f696dcf1e3cbe8cb9c9d970ba45f4386171794509c1a0fe5d1fed72c91679d
-  languageName: node
-  linkType: hard
-
 "@types/json-schema@npm:*, @types/json-schema@npm:^7.0.15, @types/json-schema@npm:^7.0.8, @types/json-schema@npm:^7.0.9":
   version: 7.0.15
   resolution: "@types/json-schema@npm:7.0.15"
@@ -5188,15 +5177,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-syntax-highlighter@npm:^15.5.13":
-  version: 15.5.13
-  resolution: "@types/react-syntax-highlighter@npm:15.5.13"
-  dependencies:
-    "@types/react": "npm:*"
-  checksum: 10c0/e3bca325b27519fb063d3370de20d311c188ec16ffc01e5bc77bdf2d7320756725ee3d0246922cd5d38b75c5065a1bc43d0194e92ecf6556818714b4ffb0967a
-  languageName: node
-  linkType: hard
-
 "@types/react-virtualized@npm:9.x":
   version: 9.21.22
   resolution: "@types/react-virtualized@npm:9.21.22"
@@ -5310,13 +5290,6 @@ __metadata:
   version: 0.2.6
   resolution: "@types/tmp@npm:0.2.6"
   checksum: 10c0/a11bfa2cd8eaa6c5d62f62a3569192d7a2c28efdc5c17af0b0551db85816b2afc8156f3ca15ac76f0b142ae1403f04f44279871424233a1f3390b2e5fc828cd0
-  languageName: node
-  linkType: hard
-
-"@types/tough-cookie@npm:*":
-  version: 4.0.5
-  resolution: "@types/tough-cookie@npm:4.0.5"
-  checksum: 10c0/68c6921721a3dcb40451543db2174a145ef915bc8bcbe7ad4e59194a0238e776e782b896c7a59f4b93ac6acefca9161fccb31d1ce3b3445cb6faa467297fb473
   languageName: node
   linkType: hard
 
@@ -11697,7 +11670,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"i18next@npm:^23.10.0, i18next@npm:^23.5.1":
+"i18next@npm:^23.10.0":
+  version: 23.16.8
+  resolution: "i18next@npm:23.16.8"
+  dependencies:
+    "@babel/runtime": "npm:^7.23.2"
+  checksum: 10c0/57d249191e8a39bbbbe190cfa2e2bb651d0198e14444fe80453d3df8d02927de3c147c77724e9ae6c72fa241898cd761e3fdcd55d053db373471f1ac084bf345
+  languageName: node
+  linkType: hard
+
+"i18next@npm:^23.5.1":
   version: 23.11.2
   resolution: "i18next@npm:23.11.2"
   dependencies:
@@ -13014,13 +12996,6 @@ __metadata:
   version: 4.5.0
   resolution: "lodash.isequal@npm:4.5.0"
   checksum: 10c0/dfdb2356db19631a4b445d5f37868a095e2402292d59539a987f134a8778c62a2810c2452d11ae9e6dcac71fc9de40a6fedcb20e2952a15b431ad8b29e50e28f
-  languageName: node
-  linkType: hard
-
-"lodash.isplainobject@npm:^4.0.6":
-  version: 4.0.6
-  resolution: "lodash.isplainobject@npm:4.0.6"
-  checksum: 10c0/afd70b5c450d1e09f32a737bed06ff85b873ecd3d3d3400458725283e3f2e0bb6bf48e67dbe7a309eb371a822b16a26cca4a63c8c52db3fc7dc9d5f9dd324cbb
   languageName: node
   linkType: hard
 
@@ -15087,7 +15062,7 @@ __metadata:
     "@patternfly/react-icons": "npm:^6.4.0"
     "@patternfly/react-table": "npm:^6.4.0"
     "@patternfly/react-topology": "npm:^6.4.0"
-    "@rstest/core": "npm:^0.9.7"
+    "@rstest/core": "npm:^0.9.10"
     "@svgr/webpack": "npm:^8.1.0"
     "@swc/core": "npm:^1.12.0"
     "@testing-library/jest-dom": "npm:^6.9.1"
@@ -15096,7 +15071,6 @@ __metadata:
     "@types/deep-freeze": "npm:^0.1.5"
     "@types/express": "npm:^4.17.21"
     "@types/js-yaml": "npm:^4.0.9"
-    "@types/jsdom": "npm:^21.1.6"
     "@types/lodash-es": "npm:4.17.x"
     "@types/node": "npm:^24.0.0"
     "@types/react": "npm:^17.0.1"
@@ -15104,7 +15078,6 @@ __metadata:
     "@types/react-dom": "npm:^17.0.1"
     "@types/react-redux": "npm:7.1.7"
     "@types/react-router-dom": "npm:^5.2.0"
-    "@types/react-syntax-highlighter": "npm:^15.5.13"
     "@types/react-virtualized": "npm:9.x"
     "@types/webpack-dev-server": "npm:^4.5.0"
     "@typescript-eslint/eslint-plugin": "npm:^7.0.0"
@@ -15155,7 +15128,6 @@ __metadata:
     react-syntax-highlighter: "npm:^16.1.0"
     react-virtualized: "npm:9.x"
     redux: "npm:4.0.1"
-    redux-mock-store: "npm:1.5.4"
     redux-persist: "npm:5.10.0"
     redux-persist-transform-filter: "npm:^0.0.22"
     redux-thunk: "npm:2.4.0"
@@ -15952,12 +15924,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"qs@npm:^6.11.0, qs@npm:~6.14.0, qs@npm:~6.14.1":
+"qs@npm:^6.11.0, qs@npm:~6.14.0":
   version: 6.14.1
   resolution: "qs@npm:6.14.1"
   dependencies:
     side-channel: "npm:^1.1.0"
   checksum: 10c0/0e3b22dc451f48ce5940cbbc7c7d9068d895074f8c969c0801ac15c1313d1859c4d738e46dc4da2f498f41a9ffd8c201bd9fb12df67799b827db94cc373d2613
+  languageName: node
+  linkType: hard
+
+"qs@npm:^6.15.2":
+  version: 6.15.2
+  resolution: "qs@npm:6.15.2"
+  dependencies:
+    side-channel: "npm:^1.1.0"
+  checksum: 10c0/e6fd5f6f0aab06d480fe9ab15cebfc4ce4235303e2f91dc69a8f7f4df1e668a61c11d1cfbabacf4295cbbeb7b670ed23db45307480726259761f98e5695e93a7
   languageName: node
   linkType: hard
 
@@ -16472,15 +16453,6 @@ __metadata:
     indent-string: "npm:^4.0.0"
     strip-indent: "npm:^3.0.0"
   checksum: 10c0/d64a6b5c0b50eb3ddce3ab770f866658a2b9998c678f797919ceb1b586bab9259b311407280bd80b804e2a7c7539b19238ae6a2a20c843f1a7fcff21d48c2eae
-  languageName: node
-  linkType: hard
-
-"redux-mock-store@npm:1.5.4":
-  version: 1.5.4
-  resolution: "redux-mock-store@npm:1.5.4"
-  dependencies:
-    lodash.isplainobject: "npm:^4.0.6"
-  checksum: 10c0/674fc7a68ffdb9a9ad50c9f987a2711387b1fc348a8ed3d07b7abd4d2560762347a9565cf9080e786d9f66012ff47f90bef244623c62136511d9b4f2411fb658
   languageName: node
   linkType: hard
 
