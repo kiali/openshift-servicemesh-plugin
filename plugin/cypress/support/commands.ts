@@ -141,28 +141,22 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
     cy.session(
       user,
       () => {
-        // Detect the OAuth origin before visiting. cy.request() follows
-        // redirects in Node.js (no CORS), so we can inspect where
-        // OpenShift sends us without triggering cross-origin errors.
-        cy.request({ url: '/', followRedirect: true }).then(resp => {
-          // Cypress stores redirects as "<status> <url>" strings (e.g.
-          // "302 https://oauth-openshift.apps.../..."), so split/pop
-          // extracts the URL part.
-          const lastRedirect = resp.redirects?.at(-1);
-          const redirectUrl = lastRedirect?.split(' ').pop() ?? Cypress.config('baseUrl')!;
-          const oauthOrigin = new URL(redirectUrl).origin;
+        cy.visit({ url: '/' });
+
+        // After visiting, detect whether the browser landed on a
+        // cross-origin OAuth page. cy.url() works regardless of the
+        // current origin in Cypress 15.
+        cy.url().then(currentUrl => {
+          const currentOrigin = new URL(currentUrl).origin;
           const baseOrigin = new URL(Cypress.config('baseUrl')!).origin;
-          const isCrossOrigin = oauthOrigin !== baseOrigin;
+          const isCrossOrigin = currentOrigin !== baseOrigin;
 
           cy.log(
-            `Login origin detection: oauth=${oauthOrigin}, base=${baseOrigin}, ` +
-              `crossOrigin=${isCrossOrigin}, redirects=${resp.redirects?.length ?? 0}`
+            `Login origin detection: current=${currentOrigin}, base=${baseOrigin}, crossOrigin=${isCrossOrigin}`
           );
 
-          cy.visit({ url: '/' });
-
           if (isCrossOrigin) {
-            cy.origin(oauthOrigin, { args: { idp, user, password } }, fillLoginForm);
+            cy.origin(currentOrigin, { args: { idp, user, password } }, fillLoginForm);
           } else {
             fillLoginForm({ idp, user, password });
           }
