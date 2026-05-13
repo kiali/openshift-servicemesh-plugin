@@ -98,6 +98,18 @@ describe('resolveConsoleUrl', () => {
       );
     });
 
+    test('should route external services to ossmconsole service detail page', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/services/host.com?type=External')).toEqual(
+        '/ossmconsole/services/bookinfo/host.com'
+      );
+    });
+
+    test('should preserve other query parameters for external services', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/services/host.com?type=External&clusterName=west')).toEqual(
+        '/ossmconsole/services/bookinfo/host.com?clusterName=west'
+      );
+    });
+
     test('should preserve query parameters on namespaces fallback', () => {
       expect(resolveConsoleUrl('/namespaces?duration=60')).toEqual('/ossmconsole/namespaces?duration=60');
     });

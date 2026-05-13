@@ -15,6 +15,7 @@ const enum Page {
   MESH = 'MeshPage',
   NAMESPACES = 'NamespacesPage',
   OVERVIEW = 'OverviewPage',
+  SERVICE_DETAIL = 'ServiceDetailsPage',
   SERVICES = 'ServiceListPage',
   WORKLOADS = 'WorkloadListPage'
 }
@@ -265,6 +266,14 @@ const extensions: EncodedExtension[] = [
     }
   },
   ...consoleRoute('services', 'Services', Page.SERVICES, [`/${OSSM_CONSOLE}/services`]),
+  {
+    type: 'console.page/route',
+    properties: {
+      exact: true,
+      path: `/${OSSM_CONSOLE}/services/:namespace/:service`,
+      component: { $codeRef: Page.SERVICE_DETAIL }
+    }
+  },
   ...consoleRoute('workloads', 'Workloads', Page.WORKLOADS, [`/${OSSM_CONSOLE}/workloads`]),
   ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [`/${OSSM_CONSOLE}/istio`]),
   {
