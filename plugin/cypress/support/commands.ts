@@ -106,74 +106,64 @@ declare global {
   }
 }
 
-interface LoginFormArgs {
-  idp?: string;
+interface LoginForm {
+  authProvider?: string;
   password: string;
-  user: string;
+  username: string;
 }
 
 function closeGuidedTour(): void {
   cy.waitForReact();
-  // wait a little bit for the guided tour modal to appear
   cy.wait(5000);
   cy.get('body').then($body => {
-    if ($body.find(`[data-test="guided-tour-modal"]`).length > 0) {
-      cy.get(`[data-test="tour-step-footer-secondary"]`).contains('Skip tour').click();
+    if ($body.find('[data-test="guided-tour-modal"]').length > 0) {
+      cy.get('[data-test="tour-step-footer-secondary"]').contains('Skip tour').click();
     }
   });
 }
 
-function fillLoginForm({ idp, user, password }: LoginFormArgs): void {
-  if (idp) {
-    cy.get('[class*="c-button"]').contains(idp).click();
+function fillLoginForm({ authProvider, username, password }: LoginForm): void {
+  if (authProvider) {
+    cy.contains(authProvider).should('be.visible').click();
   }
-  cy.get('#inputUsername').clear().type(user);
+  cy.get('#inputUsername').clear().type(username);
   cy.get('#inputPassword').clear().type(password);
   cy.get('button[type="submit"]').click();
 }
 
 Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
-  cy.env(['USERNAME', 'PASSWD', 'AUTH_PROVIDER']).then(({ USERNAME, PASSWD, AUTH_PROVIDER }) => {
-    const user = clusterUser || USERNAME;
-    const password = clusterPassword || PASSWD;
-    const idp = identityProvider || AUTH_PROVIDER;
+  const username = clusterUser || Cypress.env('USERNAME');
+  const password = clusterPassword || Cypress.env('PASSWD');
+  const idp = identityProvider || Cypress.env('AUTH_PROVIDER');
 
-    cy.session(
-      user,
-      () => {
-        cy.visit({ url: '/' });
+  // When the OAuth server is on a different origin than the console,
+  // Cypress 15 requires cy.origin() for cross-origin form interaction.
+  // Set via: CYPRESS_OCP_OAUTH_ORIGIN=https://oauth-openshift.apps-crc.testing
+  const oauthOrigin = Cypress.env('OCP_OAUTH_ORIGIN') as string | undefined;
+  const isCrossOrigin = !!oauthOrigin && oauthOrigin !== new URL(Cypress.config('baseUrl')!).origin;
 
-        // After visiting, detect whether the browser landed on a
-        // cross-origin OAuth page. cy.url() works regardless of the
-        // current origin in Cypress 15.
-        cy.url().then(currentUrl => {
-          const currentOrigin = new URL(currentUrl).origin;
-          const baseOrigin = new URL(Cypress.config('baseUrl')!).origin;
-          const isCrossOrigin = currentOrigin !== baseOrigin;
+  cy.session(
+    username,
+    () => {
+      cy.visit({ url: '/' });
 
-          cy.log(
-            `Login origin detection: current=${currentOrigin}, base=${baseOrigin}, crossOrigin=${isCrossOrigin}`
-          );
-
-          if (isCrossOrigin) {
-            cy.origin(currentOrigin, { args: { idp, user, password } }, fillLoginForm);
-          } else {
-            fillLoginForm({ idp, user, password });
-          }
-        });
-
-        cy.get("[data-test-id='dashboard']").should('be.visible');
-        closeGuidedTour();
-      },
-      {
-        cacheAcrossSpecs: true,
-        validate: () => {
-          // Make an API request that returns a 200 only when logged in
-          cy.request({ url: '/api/status' }).its('status').should('eq', 200);
-        }
+      if (isCrossOrigin) {
+        cy.url().should('include', new URL(oauthOrigin!).host);
+        cy.origin(oauthOrigin!, { args: { authProvider: idp, username, password } }, fillLoginForm);
+      } else {
+        fillLoginForm({ authProvider: idp, username, password });
       }
-    );
-  });
+
+      cy.get("[data-test-id='dashboard']").should('be.visible');
+      closeGuidedTour();
+    },
+    {
+      cacheAcrossSpecs: true,
+      validate: () => {
+        cy.request({ method: 'GET', url: '/api/status' }).its('status').should('eq', 200);
+      }
+    }
+  );
 });
 
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));

@@ -20,9 +20,13 @@ export default defineConfig({
     omitFiltered: true,
     filterSpecs: true
   },
-
+  env: {
+    // OCP_OAUTH_ORIGIN: 'https://oauth-openshift.apps-crc.testing',
+    // PASSWD: 'kiali',
+    // USERNAME: 'kiali'
+  },
   e2e: {
-    baseUrl: 'http://localhost:9000',
+    baseUrl: 'https://console-openshift-console.apps-crc.testing/',
     async setupNodeEvents(
       on: Cypress.PluginEvents,
       config: Cypress.PluginConfigOptions
