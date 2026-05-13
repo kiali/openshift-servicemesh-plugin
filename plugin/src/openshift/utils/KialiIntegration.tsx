@@ -104,7 +104,12 @@ const kindToK8sResource = (kind: string): string => {
     ReplicaSet: 'replicasets',
     StatefulSet: 'statefulsets'
   };
-  return mapping[kind] ?? 'deployments';
+  const resource = mapping[kind];
+  if (!resource) {
+    console.warn(`Unknown workload kind "${kind}", falling back to deployments`);
+    return 'deployments';
+  }
+  return resource;
 };
 
 const handleGraphRoute = ({ path, webParams }: RouteContext): string => {

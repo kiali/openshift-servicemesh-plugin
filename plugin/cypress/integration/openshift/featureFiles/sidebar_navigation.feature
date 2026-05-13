@@ -39,6 +39,18 @@ Feature: Kiali sidebar integration with OCP Console
     And user selects the "bookinfo" namespace
     Then user sees the applications list
 
+  @bookinfo-app
+  Scenario: Services page is displayed correctly
+    When user navigates to the OSSMC "Services" page
+    And user selects the "bookinfo" namespace
+    Then user sees the services list
+
+  @bookinfo-app
+  Scenario: Workloads page is displayed correctly
+    When user navigates to the OSSMC "Workloads" page
+    And user selects the "bookinfo" namespace
+    Then user sees the workloads list
+
   Scenario: Istio Config page is displayed correctly
     When user navigates to the OSSMC "Istio Config" page
     And user selects the "bookinfo" namespace

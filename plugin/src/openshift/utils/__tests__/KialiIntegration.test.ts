@@ -86,6 +86,30 @@ describe('resolveConsoleUrl', () => {
       );
     });
 
+    test('should route StatefulSet workload to statefulsets resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-sts?type=StatefulSet')).toEqual(
+        '/k8s/ns/bookinfo/statefulsets/my-sts/ossmconsole'
+      );
+    });
+
+    test('should route DaemonSet workload to daemonsets resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-ds?type=DaemonSet')).toEqual(
+        '/k8s/ns/bookinfo/daemonsets/my-ds/ossmconsole'
+      );
+    });
+
+    test('should route DeploymentConfig workload to deploymentconfigs resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-dc?type=DeploymentConfig')).toEqual(
+        '/k8s/ns/bookinfo/deploymentconfigs/my-dc/ossmconsole'
+      );
+    });
+
+    test('should fall back to deployments for unknown workload type', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-wl?type=UnknownKind')).toEqual(
+        '/k8s/ns/bookinfo/deployments/my-wl/ossmconsole'
+      );
+    });
+
     test('should map namespace service detail to k8s service URL', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/services/reviews')).toEqual(
         '/k8s/ns/bookinfo/services/reviews/ossmconsole'

@@ -1,13 +1,15 @@
 import * as React from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom-v5-compat';
 import { Breadcrumb, BreadcrumbItem } from '@patternfly/react-core';
-import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
-import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
+
 import { KialiContainer } from 'openshift/components/KialiContainer';
-import { ServiceId } from 'types/ServiceInfo';
-import { useKialiTranslation } from 'utils/I18nUtils';
+import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 import { kialiStyle } from 'styles/StyleUtils';
+import { ServiceId } from 'types/ServiceInfo';
+import { useKialiTranslation } from 'utils/I18nUtils';
+
+import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
 
 const headerStyle = kialiStyle({
   paddingBottom: '1.5rem'
