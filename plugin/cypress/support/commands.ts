@@ -124,7 +124,7 @@ function closeGuidedTour(): void {
 }
 
 function fillLoginForm({ idp, user, password }: LoginFormArgs): void {
-  if (idp != undefined) {
+  if (idp) {
     cy.get('[class*="c-button"]').contains(idp).click();
   }
   cy.get('#inputUsername').clear().type(user);
@@ -149,13 +149,19 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
           // "302 https://oauth-openshift.apps.../..."), so split/pop
           // extracts the URL part.
           const lastRedirect = resp.redirects?.at(-1);
-          const redirectUrl = lastRedirect ? lastRedirect.split(' ').pop()! : Cypress.config('baseUrl')!;
+          const redirectUrl = lastRedirect?.split(' ').pop() ?? Cypress.config('baseUrl')!;
           const oauthOrigin = new URL(redirectUrl).origin;
           const baseOrigin = new URL(Cypress.config('baseUrl')!).origin;
+          const isCrossOrigin = oauthOrigin !== baseOrigin;
+
+          cy.log(
+            `Login origin detection: oauth=${oauthOrigin}, base=${baseOrigin}, ` +
+              `crossOrigin=${isCrossOrigin}, redirects=${resp.redirects?.length ?? 0}`
+          );
 
           cy.visit({ url: '/' });
 
-          if (oauthOrigin !== baseOrigin) {
+          if (isCrossOrigin) {
             cy.origin(oauthOrigin, { args: { idp, user, password } }, fillLoginForm);
           } else {
             fillLoginForm({ idp, user, password });
@@ -212,7 +218,7 @@ Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cs
 // OpenShift resource reference format (group~version~kind/name).
 // Input example:  "networking.istio.io/v1/VirtualService/reviews"
 // Output example: "/networking.istio.io~v1~VirtualService/reviews"
-const istioDetailToRef = (detailPath: string): string => {
+function istioDetailToRef(detailPath: string): string {
   const parts = detailPath.split('/');
   if (parts.length < 4) {
     throw new Error(`Invalid Istio detail path: "${detailPath}". Expected format: group/version/kind/name`);
@@ -220,7 +226,7 @@ const istioDetailToRef = (detailPath: string): string => {
   const gvk = `${parts[0]}~${parts[1]}~${parts[2]}`;
   const name = parts.slice(3).join('/');
   return `/${gvk}/${name}`;
-};
+}
 
 Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
   const webParamsIndex = visitUrl.url.indexOf('?');
