@@ -107,18 +107,31 @@ declare global {
 }
 
 //in case guided tour appears (OCP 4.19+)
-export const guidedTour = {
-  close: () => {
-    cy.waitForReact();
-    // wait a little bit for the guided tour modal to appear
-    cy.wait(5000);
-    cy.get('body').then($body => {
-      if ($body.find(`[data-test="guided-tour-modal"]`).length > 0) {
-        cy.get(`[data-test="tour-step-footer-secondary"]`).contains('Skip tour').click();
-      }
-    });
+export function closeGuidedTour(): void {
+  cy.waitForReact();
+  // wait a little bit for the guided tour modal to appear
+  cy.wait(5000);
+  cy.get('body').then($body => {
+    if ($body.find(`[data-test="guided-tour-modal"]`).length > 0) {
+      cy.get(`[data-test="tour-step-footer-secondary"]`).contains('Skip tour').click();
+    }
+  });
+}
+
+interface LoginFormArgs {
+  idp?: string;
+  password: string;
+  user: string;
+}
+
+function fillLoginForm({ idp, user, password }: LoginFormArgs): void {
+  if (idp != undefined) {
+    cy.get('[class*="c-button"]').contains(idp).click();
   }
-};
+  cy.get('#inputUsername').clear().type(user);
+  cy.get('#inputPassword').clear().type(password);
+  cy.get('button[type="submit"]').click();
+}
 
 Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
   const user = clusterUser || Cypress.env('USERNAME');
@@ -128,18 +141,29 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
   cy.session(
     user,
     () => {
-      cy.visit({ url: '/' }).then(() => {
-        cy.log('AUTH_PROVIDER: ', typeof idp, JSON.stringify(idp));
-        if (idp != undefined) {
-          cy.get('[class*="c-button"]').contains(idp).click();
+      // Detect the OAuth origin before visiting. cy.request() follows
+      // redirects in Node.js (no CORS), so we can inspect where
+      // OpenShift sends us without triggering cross-origin errors.
+      cy.request({ url: '/', followRedirect: true }).then(resp => {
+        // Cypress stores redirects as "<status> <url>" strings (e.g.
+        // "302 https://oauth-openshift.apps.../..."), so split/pop
+        // extracts the URL part.
+        const lastRedirect = resp.redirects?.at(-1);
+        const redirectUrl = lastRedirect ? lastRedirect.split(' ').pop()! : Cypress.config('baseUrl')!;
+        const oauthOrigin = new URL(redirectUrl).origin;
+        const baseOrigin = new URL(Cypress.config('baseUrl')!).origin;
+
+        cy.visit({ url: '/' });
+
+        if (oauthOrigin !== baseOrigin) {
+          cy.origin(oauthOrigin, { args: { idp, user, password } }, fillLoginForm);
+        } else {
+          fillLoginForm({ idp, user, password });
         }
-        cy.get('#inputUsername').clear().type(user);
-        cy.get('#inputPassword').clear().type(password);
-        cy.get('button[type="submit"]').click();
-        // wait till page loading after login
-        cy.get("[data-test-id='dashboard']").should('be.visible');
-        guidedTour.close();
       });
+
+      cy.get("[data-test-id='dashboard']").should('be.visible');
+      closeGuidedTour();
     },
     {
       cacheAcrossSpecs: true,
