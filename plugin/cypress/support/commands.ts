@@ -106,8 +106,13 @@ declare global {
   }
 }
 
-//in case guided tour appears (OCP 4.19+)
-export function closeGuidedTour(): void {
+interface LoginFormArgs {
+  idp?: string;
+  password: string;
+  user: string;
+}
+
+function closeGuidedTour(): void {
   cy.waitForReact();
   // wait a little bit for the guided tour modal to appear
   cy.wait(5000);
@@ -116,12 +121,6 @@ export function closeGuidedTour(): void {
       cy.get(`[data-test="tour-step-footer-secondary"]`).contains('Skip tour').click();
     }
   });
-}
-
-interface LoginFormArgs {
-  idp?: string;
-  password: string;
-  user: string;
 }
 
 function fillLoginForm({ idp, user, password }: LoginFormArgs): void {
@@ -134,45 +133,47 @@ function fillLoginForm({ idp, user, password }: LoginFormArgs): void {
 }
 
 Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
-  const user = clusterUser || Cypress.env('USERNAME');
-  const password = clusterPassword || Cypress.env('PASSWD');
-  const idp = identityProvider || Cypress.env('AUTH_PROVIDER');
+  cy.env(['USERNAME', 'PASSWD', 'AUTH_PROVIDER']).then(({ USERNAME, PASSWD, AUTH_PROVIDER }) => {
+    const user = clusterUser || USERNAME;
+    const password = clusterPassword || PASSWD;
+    const idp = identityProvider || AUTH_PROVIDER;
 
-  cy.session(
-    user,
-    () => {
-      // Detect the OAuth origin before visiting. cy.request() follows
-      // redirects in Node.js (no CORS), so we can inspect where
-      // OpenShift sends us without triggering cross-origin errors.
-      cy.request({ url: '/', followRedirect: true }).then(resp => {
-        // Cypress stores redirects as "<status> <url>" strings (e.g.
-        // "302 https://oauth-openshift.apps.../..."), so split/pop
-        // extracts the URL part.
-        const lastRedirect = resp.redirects?.at(-1);
-        const redirectUrl = lastRedirect ? lastRedirect.split(' ').pop()! : Cypress.config('baseUrl')!;
-        const oauthOrigin = new URL(redirectUrl).origin;
-        const baseOrigin = new URL(Cypress.config('baseUrl')!).origin;
+    cy.session(
+      user,
+      () => {
+        // Detect the OAuth origin before visiting. cy.request() follows
+        // redirects in Node.js (no CORS), so we can inspect where
+        // OpenShift sends us without triggering cross-origin errors.
+        cy.request({ url: '/', followRedirect: true }).then(resp => {
+          // Cypress stores redirects as "<status> <url>" strings (e.g.
+          // "302 https://oauth-openshift.apps.../..."), so split/pop
+          // extracts the URL part.
+          const lastRedirect = resp.redirects?.at(-1);
+          const redirectUrl = lastRedirect ? lastRedirect.split(' ').pop()! : Cypress.config('baseUrl')!;
+          const oauthOrigin = new URL(redirectUrl).origin;
+          const baseOrigin = new URL(Cypress.config('baseUrl')!).origin;
 
-        cy.visit({ url: '/' });
+          cy.visit({ url: '/' });
 
-        if (oauthOrigin !== baseOrigin) {
-          cy.origin(oauthOrigin, { args: { idp, user, password } }, fillLoginForm);
-        } else {
-          fillLoginForm({ idp, user, password });
+          if (oauthOrigin !== baseOrigin) {
+            cy.origin(oauthOrigin, { args: { idp, user, password } }, fillLoginForm);
+          } else {
+            fillLoginForm({ idp, user, password });
+          }
+        });
+
+        cy.get("[data-test-id='dashboard']").should('be.visible');
+        closeGuidedTour();
+      },
+      {
+        cacheAcrossSpecs: true,
+        validate: () => {
+          // Make an API request that returns a 200 only when logged in
+          cy.request({ url: '/api/status' }).its('status').should('eq', 200);
         }
-      });
-
-      cy.get("[data-test-id='dashboard']").should('be.visible');
-      closeGuidedTour();
-    },
-    {
-      cacheAcrossSpecs: true,
-      validate: () => {
-        // Make an API request that returns a 200 only when logged in
-        cy.request({ url: '/api/status' }).its('status').should('eq', 200);
       }
-    }
-  );
+    );
+  });
 });
 
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
@@ -316,7 +317,7 @@ Cypress.Commands.add('waitForReact', (waitTimeout = 30000, reactRoot?: string) =
   const startTime = Date.now();
 
   // Use provided root, or configured rootSelector, or body as fallback
-  const rootSelector = reactRoot || Cypress.env('rootSelector') || 'body';
+  const rootSelector = reactRoot || Cypress.expose('rootSelector') || 'body';
 
   cy.log(`Waiting for page to be ready (root: ${rootSelector})...`);
 

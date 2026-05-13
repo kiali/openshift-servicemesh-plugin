@@ -13,7 +13,7 @@ export default defineConfig({
   requestTimeout: 15000,
   responseTimeout: 15000,
   fixturesFolder: 'cypress/fixtures',
-  env: {
+  expose: {
     rootSelector: '#app',
     OSSMC: true,
     cookie: false,
