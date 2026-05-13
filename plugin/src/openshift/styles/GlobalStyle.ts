@@ -16,6 +16,7 @@ export const globalStyle = kialiStyle({
       fontSize: 'var(--pf-t--global--font--size--md)'
     },
     '& :is(ul,ol):where(:not([class*="pf-v6-c-"]))': {
+      listStyle: 'none',
       paddingLeft: 0
     }
   }
