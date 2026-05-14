@@ -236,7 +236,6 @@ Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
             break;
           case 'services':
             if (visitUrl.qs?.type === 'External' || details.includes('.')) {
-              delete visitUrl.qs?.type;
               visitUrl.url = `/ossmconsole/services/${namespace}/${details}${webParams}`;
             } else {
               visitUrl.url = `/k8s/ns/${namespace}/services/${details}/ossmconsole${webParams}`;

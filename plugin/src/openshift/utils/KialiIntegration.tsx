@@ -1,11 +1,12 @@
 import * as React from 'react';
 import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { refForKialiIstio } from './IstioResources';
+
 import { setRouter } from 'app/History';
+import { store } from 'store/ConfigStore';
 
 import { distributedTracingPluginConfig, netobservPluginConfig, pluginConfig } from '../components/KialiController';
-import { store } from 'store/ConfigStore';
+import { refForKialiIstio } from './IstioResources';
 
 export const NETOBSERV = 'netflow';
 export const OSSM_CONSOLE = 'ossmconsole';
@@ -172,7 +173,6 @@ const handleNamespacesRoute = ({ path, webParams, urlParams, isNetobserv }: Rout
       return `/${OSSM_CONSOLE}/services?namespaces=${namespace}`;
     }
     if (urlParams.get('type') === 'External') {
-      urlParams.delete('type');
       const params = urlParams.toString() ? `?${urlParams.toString()}` : '';
       return `/${OSSM_CONSOLE}/services/${namespace}/${service}${params}`;
     }

@@ -104,9 +104,33 @@ describe('resolveConsoleUrl', () => {
       );
     });
 
+    test('should route CronJob workload to cronjobs resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-cj?type=CronJob')).toEqual(
+        '/k8s/ns/bookinfo/cronjobs/my-cj/ossmconsole'
+      );
+    });
+
+    test('should route Job workload to jobs resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-job?type=Job')).toEqual(
+        '/k8s/ns/bookinfo/jobs/my-job/ossmconsole'
+      );
+    });
+
+    test('should route Pod workload to pods resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-pod?type=Pod')).toEqual(
+        '/k8s/ns/bookinfo/pods/my-pod/ossmconsole'
+      );
+    });
+
     test('should fall back to deployments for unknown workload type', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-wl?type=UnknownKind')).toEqual(
         '/k8s/ns/bookinfo/deployments/my-wl/ossmconsole'
+      );
+    });
+
+    test('should preserve other query parameters when stripping workload type', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-rs?type=ReplicaSet&clusterName=west')).toEqual(
+        '/k8s/ns/bookinfo/replicasets/my-rs/ossmconsole?clusterName=west'
       );
     });
 
@@ -124,13 +148,13 @@ describe('resolveConsoleUrl', () => {
 
     test('should route external services to ossmconsole service detail page', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/services/host.com?type=External')).toEqual(
-        '/ossmconsole/services/bookinfo/host.com'
+        '/ossmconsole/services/bookinfo/host.com?type=External'
       );
     });
 
     test('should preserve other query parameters for external services', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/services/host.com?type=External&clusterName=west')).toEqual(
-        '/ossmconsole/services/bookinfo/host.com?clusterName=west'
+        '/ossmconsole/services/bookinfo/host.com?type=External&clusterName=west'
       );
     });
 

@@ -34,7 +34,7 @@ const install_demoapp = (demoapp: string): void => {
           cy.log(`${demoapp} app is either broken or not present. Installing now.`);
 
           cy.log(`Ensuring Istio distribution is downloaded.`);
-          cy.exec(`${kialiHacksPath}/download-istio.sh`, { failOnNonZeroExit: false, timeout: 300000 });
+          cy.exec(`${kialiHacksPath}/download-istio.sh`, { timeout: 300000 });
 
           cy.log(`Detecting pod architecture.`);
           cy.exec(`${kialiHacksPath}/cypress/get-node-architecture.sh`, { failOnNonZeroExit: false }).then(result => {

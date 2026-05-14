@@ -2,31 +2,16 @@ import * as React from 'react';
 import { useParams, useLocation, useSearchParams, Link } from 'react-router-dom-v5-compat';
 import { Breadcrumb, BreadcrumbItem, Title, TitleSizes } from '@patternfly/react-core';
 
-import { KialiContainer } from 'openshift/components/KialiContainer';
 import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
-import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
+import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ErrorPage } from 'openshift/components/ErrorPage';
-import { kialiStyle } from 'styles/StyleUtils';
+import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
+import { detailTitleMainStyle, detailPageTitleStyle } from 'styles/FlexStyles';
 import { ServiceId } from 'types/ServiceInfo';
 import { useKialiTranslation } from 'utils/I18nUtils';
-import { detailTitleMainStyle, detailPageTitleStyle } from 'styles/FlexStyles';
-import { PFSpacer } from 'styles/PfSpacer';
 
+import { detailHeaderStyle, detailTitleRowStyle } from '../styles/GlobalStyle';
 import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
-
-const headerStyle = kialiStyle({
-  paddingBottom: '0.5rem'
-});
-
-const detailTitleRowStyle = kialiStyle({
-  alignItems: 'center',
-  display: 'flex',
-  flexWrap: 'nowrap',
-  gap: PFSpacer.sm,
-  marginTop: '1rem',
-  minWidth: 0,
-  width: '100%'
-});
 
 const ServiceDetailsPageOSSMC: React.FC<void> = () => {
   const { t } = useKialiTranslation();
@@ -46,7 +31,7 @@ const ServiceDetailsPageOSSMC: React.FC<void> = () => {
   if (namespace && service) {
     return (
       <KialiContainer>
-        <div className={headerStyle}>
+        <div className={detailHeaderStyle}>
           <Breadcrumb>
             <BreadcrumbItem>
               <Link to="/ossmconsole/services">{t('Services')}</Link>

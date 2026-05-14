@@ -1,10 +1,28 @@
+import { PFSpacer } from 'styles/PfSpacer';
 import { kialiStyle } from 'styles/StyleUtils';
 import { cssRule } from 'typestyle';
 
-// Overwrite listStyle css value for ul in tooltip
 cssRule('.pf-v6-c-tooltip ul', {
   paddingLeft: 0,
   listStyle: 'none'
+});
+
+export const detailHeaderStyle = kialiStyle({
+  paddingBottom: '0.5rem'
+});
+
+export const detailsTabPageStyle = kialiStyle({
+  paddingTop: '0'
+});
+
+export const detailTitleRowStyle = kialiStyle({
+  alignItems: 'center',
+  display: 'flex',
+  flexWrap: 'nowrap',
+  gap: PFSpacer.sm,
+  marginTop: '1rem',
+  minWidth: 0,
+  width: '100%'
 });
 
 export const globalStyle = kialiStyle({
@@ -20,8 +38,4 @@ export const globalStyle = kialiStyle({
       paddingLeft: 0
     }
   }
-});
-
-export const detailsTabPageStyle = kialiStyle({
-  paddingTop: '0'
 });
