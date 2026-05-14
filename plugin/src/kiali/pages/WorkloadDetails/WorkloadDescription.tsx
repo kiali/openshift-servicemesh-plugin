@@ -75,7 +75,8 @@ export const WorkloadDescription: React.FC<WorkloadDescriptionProps> = (props: W
   }
 
   const apps: string[] = [];
-  const services = workload.services?.map(s => ({ isServiceEntry: s.serviceRegistry === 'External', name: s.name })) ?? [];
+  const services =
+    workload.services?.map(s => ({ isServiceEntry: s.serviceRegistry === 'External', name: s.name })) ?? [];
 
   // ignore app links for ambient infra
   if (!workload.isWaypoint && !workload.isZtunnel) {

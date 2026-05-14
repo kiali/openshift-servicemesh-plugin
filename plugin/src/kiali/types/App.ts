@@ -25,6 +25,11 @@ export interface AppWorkload {
   workloadName: string;
 }
 
+export interface ServiceItem {
+  isServiceEntry?: boolean;
+  name: string;
+}
+
 export interface App {
   cluster?: string;
   health: AppHealthResponse;
@@ -35,11 +40,6 @@ export interface App {
   runtimes: Runtime[];
   serviceNames: ServiceItem[];
   workloads: AppWorkload[];
-}
-
-export interface ServiceItem {
-  isServiceEntry?: boolean;
-  name: string;
 }
 
 export interface AppQuery {

@@ -98,7 +98,9 @@ const DetailDescriptionComponent: React.FC<Props> = (props: Props) => {
           <PFBadge badge={badge} position={TooltipPosition.top} />
         </div>
 
-        <KialiLink to={href} kioskParams={kioskParams}>{service.name}</KialiLink>
+        <KialiLink to={href} kioskParams={kioskParams}>
+          {service.name}
+        </KialiLink>
       </li>
     );
   };

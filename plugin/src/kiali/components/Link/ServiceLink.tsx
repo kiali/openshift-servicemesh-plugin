@@ -39,7 +39,13 @@ export const ServiceLink: React.FC<ServiceLinkProps> = (props: ServiceLinkProps)
   return (
     <>
       <PFBadge badge={isServiceEntry ? PFBadges.ExternalService : PFBadges.Service} position={TooltipPosition.top} />
-      <ServiceLinkItem name={name} namespace={namespace} cluster={cluster} isServiceEntry={isServiceEntry} query={query} />
+      <ServiceLinkItem
+        name={name}
+        namespace={namespace}
+        cluster={cluster}
+        isServiceEntry={isServiceEntry}
+        query={query}
+      />
     </>
   );
 };
