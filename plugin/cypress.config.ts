@@ -14,14 +14,13 @@ export default defineConfig({
   responseTimeout: 15000,
   fixturesFolder: 'cypress/fixtures',
   env: {
+    // USERNAME: 'kiali',
+    // PASSWD: 'kiali',
     cookie: false,
     filterSpecs: true,
     omitFiltered: true,
     OSSMC: true,
     rootSelector: '#app'
-    // OCP_OAUTH_ORIGIN: 'https://oauth-openshift.apps-crc.testing',
-    // PASSWD: 'kiali',
-    // USERNAME: 'kiali'
   },
   e2e: {
     baseUrl: 'https://console-openshift-console.apps-crc.testing/',
