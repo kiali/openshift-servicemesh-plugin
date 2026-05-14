@@ -13,14 +13,12 @@ export default defineConfig({
   requestTimeout: 15000,
   responseTimeout: 15000,
   fixturesFolder: 'cypress/fixtures',
-  expose: {
-    rootSelector: '#app',
-    OSSMC: true,
-    cookie: false,
-    omitFiltered: true,
-    filterSpecs: true
-  },
   env: {
+    cookie: false,
+    filterSpecs: true,
+    omitFiltered: true,
+    OSSMC: true,
+    rootSelector: '#app'
     // OCP_OAUTH_ORIGIN: 'https://oauth-openshift.apps-crc.testing',
     // PASSWD: 'kiali',
     // USERNAME: 'kiali'
@@ -47,6 +45,20 @@ export default defineConfig({
           plugins: [createEsbuildPlugin(config)]
         })
       );
+
+      config.env.AUTH_PROVIDER = config.env.AUTH_PROVIDER || 'my_htpasswd_provider';
+
+      if (config.env.ALLOW_INSECURE_KIALI_API) {
+        on('before:browser:launch', (browser, launchOptions) => {
+          if (browser.family === 'chromium') {
+            launchOptions.args.push('--ignore-certificate-errors');
+          }
+          if (browser.family === 'firefox') {
+            launchOptions.preferences['security.enterprise_roots.enabled'] = true;
+          }
+          return launchOptions;
+        });
+      }
 
       return config;
     },

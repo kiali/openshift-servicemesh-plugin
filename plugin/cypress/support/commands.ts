@@ -307,7 +307,7 @@ Cypress.Commands.add('waitForReact', (waitTimeout = 30000, reactRoot?: string) =
   const startTime = Date.now();
 
   // Use provided root, or configured rootSelector, or body as fallback
-  const rootSelector = reactRoot || Cypress.expose('rootSelector') || 'body';
+  const rootSelector = reactRoot || Cypress.env('rootSelector') || 'body';
 
   cy.log(`Waiting for page to be ready (root: ${rootSelector})...`);
 
