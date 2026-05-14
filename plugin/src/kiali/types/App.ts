@@ -33,8 +33,13 @@ export interface App {
   name: string;
   namespace: Namespace;
   runtimes: Runtime[];
-  serviceNames: string[];
+  serviceNames: ServiceItem[];
   workloads: AppWorkload[];
+}
+
+export interface ServiceItem {
+  isServiceEntry?: boolean;
+  name: string;
 }
 
 export interface AppQuery {

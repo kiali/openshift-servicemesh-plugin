@@ -1164,7 +1164,7 @@ export const workloadHandlers = [
         health: found.health,
         namespace: { name: namespace, cluster: 'cluster-default' },
         workloads: appWorkloads,
-        serviceNames: [app],
+        serviceNames: [{ name: app }],
         runtimes: []
       });
     }

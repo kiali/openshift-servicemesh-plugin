@@ -172,9 +172,8 @@ const handleNamespacesRoute = ({ path, webParams, urlParams, isNetobserv }: Rout
       return `/${OSSM_CONSOLE}/services?namespaces=${namespace}`;
     }
     if (urlParams.get('type') === 'External') {
-      urlParams.delete('type');
-      const cleanParams = urlParams.toString() ? `?${urlParams.toString()}` : '';
-      return `/${OSSM_CONSOLE}/services/${namespace}/${service}${cleanParams}`;
+      const params = urlParams.toString() ? `?${urlParams.toString()}` : '';
+      return `/${OSSM_CONSOLE}/services/${namespace}/${service}${params}`;
     }
     return `/k8s/ns/${namespace}${detail}/${OSSM_CONSOLE}${webParams}`;
   }
