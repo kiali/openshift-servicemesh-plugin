@@ -38,6 +38,10 @@ jobs:
       working-directory: plugin
       run: yarn lint
 
+    - name: Lint Gherkin
+      working-directory: plugin
+      run: yarn lint:gherkin
+
     - name: Unit tests
       working-directory: plugin
       run: yarn test

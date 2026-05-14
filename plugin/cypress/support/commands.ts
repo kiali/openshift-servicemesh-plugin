@@ -137,12 +137,20 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
   const idp = identityProvider || Cypress.env('AUTH_PROVIDER');
 
   // Cypress 15 requires cy.origin() for cross-origin form interaction.
-  // Derive the OAuth origin from the console URL (standard OCP pattern:
-  // console-openshift-console.<domain> → oauth-openshift.<domain>).
-  const baseUrl = new URL(Cypress.config('baseUrl')!);
-  const oauthOrigin = baseUrl.hostname.startsWith('console-openshift-console.')
-    ? `${baseUrl.protocol}//oauth-openshift.${baseUrl.hostname.replace('console-openshift-console.', '')}`
-    : undefined;
+  // Use CYPRESS_OAUTH_ORIGIN if set; otherwise derive from baseUrl using
+  // the standard OCP pattern (console-openshift-console.<domain> →
+  // oauth-openshift.<domain>). Non-matching hostnames stay same-origin.
+  const configBaseUrl = Cypress.config('baseUrl');
+  if (!configBaseUrl) {
+    throw new Error('Cypress baseUrl must be configured for the login command');
+  }
+  const baseUrl = new URL(configBaseUrl);
+  const explicitOAuth: string | undefined = Cypress.env('OAUTH_ORIGIN') || undefined;
+  const oauthOrigin =
+    explicitOAuth ??
+    (baseUrl.hostname.startsWith('console-openshift-console.')
+      ? `${baseUrl.protocol}//oauth-openshift.${baseUrl.hostname.replace('console-openshift-console.', '')}`
+      : undefined);
   const isCrossOrigin = !!oauthOrigin;
 
   cy.session(
