@@ -39,7 +39,6 @@ SOURCE_REPO_URL="${DEFAULT_SOURCE_REPO_URL}"
 DEFAULT_SOURCE_REF="master"
 SOURCE_REF="${DEFAULT_SOURCE_REF}"
 PULL_REQUEST=""
-SKIP_BRANCH="false"
 
 # This is to be the top-level directory of the local OSSM git repo.
 # This is where DEST_DIR should be located.
@@ -50,7 +49,6 @@ while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
     -dr|--dest-repo)     DEST_REPO="$2"         ;shift;shift ;;
-    -sb|--skip-branch)   SKIP_BRANCH="true"     ;shift ;;
     -pr|--pull-request)  PULL_REQUEST="$2"      ;shift;shift ;;
     -sr|--source-ref)    SOURCE_REF="$2"        ;shift;shift ;;
     -su|--source-url)    SOURCE_REPO_URL="$2"   ;shift;shift ;;
@@ -65,13 +63,6 @@ Valid options:
       The Kiali "${SOURCE_DIR}" content will be copied to this destination
       repo's "${DEST_DIR}" directory.
       Default: ${DEFAULT_DEST_REPO}
-
-  -sb|--skip-branch
-      Skip creating a new branch and committing. The Kiali source files will be
-      copied onto the currently checked out branch as unstaged changes.
-      Useful when you already have an OSSMC branch and want to test it
-      together with a Kiali PR.
-      Default: A new branch is created and changes are committed.
 
   -pr|--pull-request <pull request number>
       A git reference (pull request number) found in the remote source repo. This is the
@@ -190,10 +181,7 @@ EOM
 # 3. Commit the files to the local repo with a descriptive commit message.
 
 cd ${ABS_DEST_DIR}
-
-if [ "${SKIP_BRANCH}" == "false" ]; then
-  git checkout -b ${DEST_BRANCH}
-fi
+git checkout -b ${DEST_BRANCH}
 
 rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
 cp -R ${ABS_SOURCE_DIR}/* ${ABS_DEST_DIR}
@@ -210,26 +198,25 @@ cat > ${ABS_DEST_DIR}/README.md <<EOM
 ${COMMIT_MESSAGE}
 EOM
 
-if [ "${SKIP_BRANCH}" == "true" ]; then
+git add ${ABS_DEST_DIR}
+git add ${ABS_DEST_TESTS_DIR}
+
+if git diff-index --quiet HEAD --; then
+  echo "There are no changes that need to be committed."
+else
+  echo "Committing changes now."
+  git commit --quiet --signoff -m "${COMMIT_MESSAGE}"
+
+  # Completed!
+  # Tell the user what needs to be done next.
+  # This script does not automatically push the branch to the remote repo.
+  # This script will only ever touch local files so as to avoid any possibility
+  # of corrupting the remote repo.
+
+  GIT_REMOTE="$(cd ${ABS_DEST_DIR} && for r in $(git remote 2>/dev/null); do if [ "$r" != "origin" ]; then echo ${r}; break; fi; done)"
   echo
   echo "=========="
-  echo "Kiali frontend code has been copied to the current branch in the OSSMC git repo."
-  echo "Changes are left unstaged. Review them with: git status"
-else
-  git add ${ABS_DEST_DIR}
-  git add ${ABS_DEST_TESTS_DIR}
-
-  if git diff-index --quiet HEAD --; then
-    echo "There are no changes that need to be committed."
-  else
-    echo "Committing changes now."
-    git commit --quiet --signoff -m "${COMMIT_MESSAGE}"
-
-    GIT_REMOTE="$(cd ${ABS_DEST_DIR} && for r in $(git remote 2>/dev/null); do if [ "$r" != "origin" ]; then echo ${r}; break; fi; done)"
-    echo
-    echo "=========="
-    echo "Kiali frontend code has been copied to a new branch in the OSSMC git repo."
-    echo "Create a PR based on that branch:"
-    echo "cd ${ABS_DEST_DIR} && git push ${GIT_REMOTE:-<the git remote name>} ${DEST_BRANCH}"
-  fi
+  echo "Kiali frontend code has been copied to a new branch in the OSSMC git repo."
+  echo "Create a PR based on that branch:"
+  echo "cd ${ABS_DEST_DIR} && git push ${GIT_REMOTE:-<the git remote name>} ${DEST_BRANCH}"
 fi
