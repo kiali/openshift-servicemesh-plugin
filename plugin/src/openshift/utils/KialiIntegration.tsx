@@ -212,11 +212,20 @@ const handleTracingRoute = ({ urlParams }: RouteContext): string | null => {
     }
 
     if (observabilityData) {
+      const params = new URLSearchParams();
+      params.set('namespace', observabilityData.namespace);
+      params.set('name', observabilityData.instance);
+      if (observabilityData.tenant) {
+        params.set('tenant', observabilityData.tenant);
+      }
+
       const trace = urlParams.get('trace');
       if (trace && trace !== 'undefined') {
-        return `/observe/traces/${trace}?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}`;
+        return `/observe/traces/${trace}?${params.toString()}`;
       }
-      return `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`;
+      params.set('q', '{}');
+      params.set('limit', '20');
+      return `/observe/traces?${params.toString()}`;
     }
   } else {
     // External tracing URL: full page reload is intentional since the target is outside the SPA
