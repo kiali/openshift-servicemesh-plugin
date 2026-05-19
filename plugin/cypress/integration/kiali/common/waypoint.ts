@@ -457,24 +457,24 @@ Then('use_waypoint_name is enabled if tracing services contain waypoint in {stri
   });
 });
 
-Then('the user hovers in the {string} label and sees {string} in the tooltip', (label: string, text: string) => {
-  cy.get(`[data-test=workload-description-card]`).contains('span', label).trigger('mouseenter');
-  cy.get('[role="tooltip"]').should('be.visible').and('contain', text);
-  cy.get(`[data-test=workload-description-card]`).contains('span', label).trigger('mouseleave');
+Then('the user clicks the mode info icon and sees {string} in the popover', (text: string) => {
+  cy.get('[data-test="details-mode"]').find('svg').click();
+  cy.get('[role="dialog"]').should('be.visible').and('contain', text);
+  cy.get('body').click(0, 0);
 });
 
 Then("the user doesn't see a L7 link", () => {
-  cy.get('[data-test=workload-description-card]').should('not.contain', 'L7');
+  cy.get('[data-test=workload-resources-card]').should('not.contain', 'L7');
 });
 
 Then('the workload description card has no config issues', () => {
-  cy.get('[data-test=workload-description-card]').should('be.visible').and('not.contain', 'Config Issues');
+  cy.get('[data-test=workload-details-card]').should('be.visible').and('not.contain', 'Config Issues');
 });
 
 Then('the user sees the L7 {string} link', (waypoint: string) => {
-  cy.get('[data-test=workload-description-card]').should('contain', 'L7');
-  cy.get(`[data-test=waypoint-list]`).contains('span', 'L7');
-  cy.get(`[data-test=waypoint-link]`).contains('a,button', waypoint);
+  cy.get('[data-test=workload-resources-card]').should('contain', 'L7');
+  cy.get('[data-test=waypoint-link]').closest('li').find('span').contains('L7');
+  cy.get('[data-test=waypoint-link]').contains('a,button', waypoint);
 });
 
 Then('the link for the waypoint {string} should redirect to a valid workload details', (waypoint: string) => {
@@ -509,15 +509,19 @@ Then('the waypoint link points to the {string} cluster', (cluster: string) => {
   });
 });
 
-Then('the user sees the {string} option in the pod tooltip, and is {string}', (option: string, value: string) => {
-  cy.get(`[data-test=pod-info]`).trigger('mouseenter');
-  cy.get('[role="tooltip"]').should('be.visible').and('contain', option);
-  cy.get('[role="tooltip"]').should('be.visible').and('contain', value);
-  cy.get(`[data-test=pod-info]`).trigger('mouseleave');
+Then('the user sees the {string} option in the pod popover, and is {string}', (option: string, value: string) => {
+  cy.get(`[data-test=pod-info]`).first().click();
+  cy.get('[role="dialog"]').should('be.visible').and('contain', option);
+  cy.get('[role="dialog"]').should('be.visible').and('contain', value);
+  cy.get('[role="dialog"]').find('button[aria-label="Close"]').first().click();
 });
 
 Then('the user sees the {string} badge', (name: string) => {
   cy.get(`#pfbadge-${name}`).should('exist').contains(name);
+});
+
+Then('the user sees the waypoint attribute', () => {
+  cy.get('[data-test="details-waypoint"]').should('exist').and('contain', 'true');
 });
 
 Then('the proxy status is {string}', (status: string) => {
@@ -613,7 +617,11 @@ Then('the user updates the log level to {string}', (level: string) => {
 });
 
 When('user opens the namespace actions menu', () => {
-  cy.getBySel('namespace-actions-toggle').should('be.visible').click();
+  if (Cypress.env('OSSMC')) {
+    cy.get('button#minigraph-toggle', { timeout: 40000 }).should('be.visible').click();
+  } else {
+    cy.getBySel('namespace-actions-toggle').should('be.visible').click();
+  }
 });
 
 Then('the option {string} does not exist in namespace actions', (option: string) => {
@@ -624,7 +632,7 @@ Then('the option {string} does not exist in namespace actions', (option: string)
 
 When('user clicks on {string} in namespace actions', (option: string) => {
   cy.url().then(url => {
-    const namespace = url.split('/namespaces/')[1]?.split('?')[0] ?? '';
+    const namespace = url.match(/\/(projects|namespaces)\/([^/?]+)/)?.[2] ?? '';
     let selector = '';
     switch (option) {
       case 'removes auto injection':

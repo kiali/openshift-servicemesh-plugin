@@ -1,5 +1,6 @@
 @overview
-@ossmc
+# don't change first line of this file - the tag is used for the test scripts to identify the test suite
+
 Feature: New Overview - Overview cards
 
   Background:
@@ -112,7 +113,6 @@ Feature: New Overview - Overview cards
     Then Service insights card shows data tables and footer link
 
   @core-2
-  @skip-ossmc
   Scenario: Service insights footer link navigates to Services list with all namespaces and sort
     Given Service insights APIs are observed
     And user is at the "overview" page

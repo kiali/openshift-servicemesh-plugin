@@ -24,7 +24,7 @@ import { PromisesRegistry } from 'utils/CancelablePromises';
 import { ControlPlaneDonut } from '../components/ControlPlaneDonut';
 import { isParentKiosk, kioskOverviewAction } from 'components/Kiosk/KioskActions';
 import { ControlPlaneVersionBadge } from 'components/Badge/ControlPlaneVersionBadge';
-import { AmbientBadge } from 'components/Badge/AmbientBadge';
+import { ModeBadge } from 'components/Badge/ModeBadge';
 import { IstioAPIDisabledBadge } from 'components/Badge/IstioAPIDisabledBadge';
 import { PFColors } from 'components/Pf/PfColors';
 import { ValidationSummaryLink } from 'components/Link/ValidationSummaryLink';
@@ -34,6 +34,7 @@ import * as API from '../../../services/Api';
 import { IstioMetricsOptions } from 'types/MetricsOptions';
 import { computePrometheusRateParams } from 'services/Prometheus';
 import { ApiError } from 'types/Api';
+import { t } from 'utils/I18nUtils';
 import { DEGRADED, FAILURE, HEALTHY, Health, NOT_READY } from 'types/Health';
 import { router } from '../../../app/History';
 import { addDanger, addError } from '../../../utils/AlertUtils';
@@ -228,7 +229,12 @@ export class TargetPanelNamespace extends React.Component<TargetPanelNamespacePr
 
                 {this.renderStatus()}
 
-                <div style={{ height: '110px' }} />
+                {this.state.controlPlanes && (
+                  <div>
+                    {targetPanelHR}
+                    <ControlPlaneDonut controlPlanes={this.state.controlPlanes} />
+                  </div>
+                )}
               </>
             )}
 
@@ -280,10 +286,16 @@ export class TargetPanelNamespace extends React.Component<TargetPanelNamespacePr
   // object from infraData. The controlplane object has all the
   // managed namespaces that is needed by elements on this page.
   private getControlPlanes = (): ControlPlane[] | undefined => {
+    const { cluster, namespace } = this.props.target.elem.getData()!;
     const controlPlanes: ControlPlane[] | undefined = this.props.target.elem
       ?.getGraph()
       .getData()
-      .meshData.elements.nodes?.filter(node => node.data.infraType === MeshInfraType.ISTIOD)
+      .meshData.elements.nodes?.filter(
+        node =>
+          node.data.infraType === MeshInfraType.ISTIOD &&
+          node.data.cluster === cluster &&
+          node.data.namespace === namespace
+      )
       .map(node => node.data.infraData);
     return controlPlanes;
   };
@@ -370,7 +382,9 @@ export class TargetPanelNamespace extends React.Component<TargetPanelNamespacePr
         {isControlPlane && <IstioAPIDisabledBadge />}
 
         {!isControlPlane && serverConfig.ambientEnabled && ns.labels && ns.isAmbient && (
-          <AmbientBadge tooltip={tooltip ? 'labeled as part of Ambient Mesh' : undefined}></AmbientBadge>
+          <span style={{ marginLeft: '0.5rem' }}>
+            <ModeBadge mode="ambient" popoverMessage={tooltip ? t('Labeled as part of Ambient Mesh') : undefined} />
+          </span>
         )}
       </>
     );
@@ -455,7 +469,7 @@ export class TargetPanelNamespace extends React.Component<TargetPanelNamespacePr
   };
 
   private fetchNamespaceInfo = async (): Promise<void> => {
-    return API.getNamespaceInfo(this.state.targetNamespace)
+    return API.getNamespaceInfo(this.state.targetNamespace, this.state.targetCluster)
       .then(response => {
         this.setState({
           nsInfo: response.data
@@ -530,8 +544,10 @@ export class TargetPanelNamespace extends React.Component<TargetPanelNamespacePr
   };
 
   private isControlPlane = (): boolean => {
-    const namespace = this.state.targetNamespace!;
-    return isIstioNamespace(namespace);
+    if (this.state.controlPlanes && this.state.controlPlanes.length > 0) {
+      return true;
+    }
+    return isIstioNamespace(this.state.targetNamespace!);
   };
 
   private handleApiError = (message: string, error: ApiError): void => {

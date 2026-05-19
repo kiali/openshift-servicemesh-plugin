@@ -1,7 +1,7 @@
 @waypoint
-@ossmc
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
 # TODO: offline - ambient support.
+
 Feature: Kiali Waypoint related features
 
   The user should be able to see all the Waypoint features across
@@ -19,7 +19,6 @@ Feature: Kiali Waypoint related features
     And the "bookinfo-gateway-istio" tracing data is ready in the "bookinfo" namespace
     And use_waypoint_name is enabled if tracing services contain waypoint in "bookinfo"
 
-  @skip-ossmc
   Scenario: [Workload list] See the workload list of bookinfo with the correct info
     Given user is at the "workloads" list page
     When user selects the "bookinfo" namespace
@@ -33,11 +32,11 @@ Feature: Kiali Waypoint related features
 
   Scenario: [Workload details - ratings] The workload ratings is enrolled in waypoint
     Given user is at the details page for the "workload" "bookinfo/ratings-v1" located in the "" cluster
-    Then user sees "ambient" badge
+    Then user sees "Ambient" badge
     Then the user cannot see the "missing-sidecar" badge for "ratings-v1" workload in "bookinfo" namespace
-    And the user hovers in the "ambient" label and sees "L4" in the tooltip
-    And the user hovers in the "ambient" label and sees "L7" in the tooltip
-    And the user sees the "Protocol" option in the pod tooltip, and is "HBONE"
+    And the user clicks the mode info icon and sees "L4" in the popover
+    And the user clicks the mode info icon and sees "L7" in the popover
+    And the user sees the "Protocol" option in the pod popover, and is "HBONE"
     And user sees trace information
     When user selects a trace
     Then user sees trace details
@@ -47,7 +46,7 @@ Feature: Kiali Waypoint related features
 
   Scenario: [Workload details - waypoint] The workload details for a waypoint are valid
     And user is at the details page for the "workload" "bookinfo/waypoint" located in the "" cluster
-    Then the user sees the "L7" badge
+    Then the user sees the waypoint attribute
     Then the user cannot see the "missing-sidecar" badge for "waypoint" workload in "bookinfo" namespace
     And the proxy status is "info" with "RDS: IGNORED" details
     And the user can see the "K8sGateway-bookinfo-waypoint" istio config and badge "pfbadge-G"

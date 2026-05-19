@@ -1,5 +1,4 @@
 @service-details
-@ossmc
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
 
 Feature: Kiali Service Details page
@@ -28,9 +27,11 @@ Feature: Kiali Service Details page
   @lpinterop
   Scenario: See details for service
     Then sd::user sees "productpage" details information for service "v1"
+    Then sd::user sees Resources card
     Then sd::user sees Network card
     Then sd::user sees Istio Config
-    But no cluster badge for the "service" should be visible
+    Then sd::user sees Labels card
+    Then sd::user sees Annotations card
 
   @bookinfo-app
   @core-2
@@ -83,4 +84,4 @@ Feature: Kiali Service Details page
   @ambient-multi-primary
   # TODO: offline - ambient support.
   Scenario: See ambient label for service
-    Then user sees "ambient" badge for service
+    Then user sees "Ambient" badge for service

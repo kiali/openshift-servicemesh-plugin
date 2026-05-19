@@ -1,11 +1,12 @@
 import * as React from 'react';
 import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { refForKialiIstio } from './IstioResources';
+
 import { setRouter } from 'app/History';
+import { store } from 'store/ConfigStore';
 
 import { distributedTracingPluginConfig, netobservPluginConfig, pluginConfig } from '../components/KialiController';
-import { store } from 'store/ConfigStore';
+import { refForKialiIstio } from './IstioResources';
 
 export const NETOBSERV = 'netflow';
 export const OSSM_CONSOLE = 'ossmconsole';
@@ -93,6 +94,25 @@ const parseRouteContext = (kialiAction: string): RouteContext => {
   return { path, webParams, urlParams, isNetobserv };
 };
 
+const kindToK8sResource = (kind: string): string => {
+  const mapping: Record<string, string> = {
+    CronJob: 'cronjobs',
+    DaemonSet: 'daemonsets',
+    Deployment: 'deployments',
+    DeploymentConfig: 'deploymentconfigs',
+    Job: 'jobs',
+    Pod: 'pods',
+    ReplicaSet: 'replicasets',
+    StatefulSet: 'statefulsets'
+  };
+  const resource = mapping[kind];
+  if (!resource) {
+    console.warn(`Unknown workload kind "${kind}", falling back to deployments`);
+    return 'deployments';
+  }
+  return resource;
+};
+
 const handleGraphRoute = ({ path, webParams }: RouteContext): string => {
   return (
     path
@@ -109,34 +129,53 @@ const handleApplicationsRoute = ({ path, webParams }: RouteContext): string => {
   return path.replace(/^\/applications/, `/${OSSM_CONSOLE}/applications`) + webParams;
 };
 
-const handleWorkloadsRoute = ({ urlParams }: RouteContext): string => {
-  const namespace = urlParams.get('namespaces');
-  return namespace ? `/k8s/ns/${namespace}/deployments` : `/k8s/all-namespaces/deployments`;
+const handleWorkloadsRoute = ({ path, webParams }: RouteContext): string => {
+  return path.replace(/^\/workloads/, `/${OSSM_CONSOLE}/workloads`) + webParams;
 };
 
-const handleServicesRoute = (): string => `/k8s/all-namespaces/services`;
+const handleServicesRoute = ({ path, webParams }: RouteContext): string => {
+  return path.replace(/^\/services/, `/${OSSM_CONSOLE}/services`) + webParams;
+};
 
 const handleIstioRoute = ({ path, webParams }: RouteContext): string => {
   return path.replace(/^\/istio/, `/${OSSM_CONSOLE}/istio`) + webParams;
 };
 
-const handleNamespacesRoute = ({ path, webParams, isNetobserv }: RouteContext): string => {
+const handleNamespacesRoute = ({ path, webParams, urlParams, isNetobserv }: RouteContext): string => {
   const pathSegments = path.split('/');
   const namespace = pathSegments[2] ?? '';
   const detail = pathSegments.length > 3 ? `/${pathSegments.slice(3).join('/')}` : '';
 
   if (detail.startsWith('/applications')) {
     const application = detail.substring('/applications/'.length);
-    return `/${OSSM_CONSOLE}/namespaces/${namespace}/applications/${application}${webParams}`;
+    if (!application) {
+      return `/${OSSM_CONSOLE}/applications?namespaces=${namespace}`;
+    }
+    return `/${OSSM_CONSOLE}/applications/${namespace}/${application}${webParams}`;
   }
 
   if (detail.startsWith('/workloads')) {
-    const workload = detail.substring('/workloads'.length);
+    const workload = detail.substring('/workloads/'.length);
+    if (!workload) {
+      return `/${OSSM_CONSOLE}/workloads?namespaces=${namespace}`;
+    }
     const target = isNetobserv ? NETOBSERV : OSSM_CONSOLE;
-    return `/k8s/ns/${namespace}/deployments${workload}/${target}${webParams}`;
+    const kind = urlParams.get('type') ?? 'Deployment';
+    const k8sResource = kindToK8sResource(kind);
+    urlParams.delete('type');
+    const cleanParams = urlParams.toString() ? `?${urlParams.toString()}` : '';
+    return `/k8s/ns/${namespace}/${k8sResource}/${workload}/${target}${cleanParams}`;
   }
 
   if (detail.startsWith('/services')) {
+    const service = detail.substring('/services/'.length);
+    if (!service) {
+      return `/${OSSM_CONSOLE}/services?namespaces=${namespace}`;
+    }
+    if (urlParams.get('type') === 'External') {
+      const params = urlParams.toString() ? `?${urlParams.toString()}` : '';
+      return `/${OSSM_CONSOLE}/services/${namespace}/${service}${params}`;
+    }
     return `/k8s/ns/${namespace}${detail}/${OSSM_CONSOLE}${webParams}`;
   }
 
@@ -173,11 +212,20 @@ const handleTracingRoute = ({ urlParams }: RouteContext): string | null => {
     }
 
     if (observabilityData) {
+      const params = new URLSearchParams();
+      params.set('namespace', observabilityData.namespace);
+      params.set('name', observabilityData.instance);
+      if (observabilityData.tenant) {
+        params.set('tenant', observabilityData.tenant);
+      }
+
       const trace = urlParams.get('trace');
       if (trace && trace !== 'undefined') {
-        return `/observe/traces/${trace}?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}`;
+        return `/observe/traces/${trace}?${params.toString()}`;
       }
-      return `/observe/traces?namespace=${observabilityData.namespace}&name=${observabilityData.instance}&tenant=${observabilityData.tenant}&q=%7B%7D&limit=20`;
+      params.set('q', '{}');
+      params.set('limit', '20');
+      return `/observe/traces?${params.toString()}`;
     }
   } else {
     // External tracing URL: full page reload is intentional since the target is outside the SPA

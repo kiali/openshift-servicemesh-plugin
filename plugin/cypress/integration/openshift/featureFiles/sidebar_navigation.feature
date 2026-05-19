@@ -1,5 +1,4 @@
 @smoke
-@ossmc
 @core-1
 # don't change first line of this file - the tag is used for the test scripts to identify the test suite
 
@@ -39,6 +38,18 @@ Feature: Kiali sidebar integration with OCP Console
     When user navigates to the OSSMC "Applications" page
     And user selects the "bookinfo" namespace
     Then user sees the applications list
+
+  @bookinfo-app
+  Scenario: Services page is displayed correctly
+    When user navigates to the OSSMC "Services" page
+    And user selects the "bookinfo" namespace
+    Then user sees the services list
+
+  @bookinfo-app
+  Scenario: Workloads page is displayed correctly
+    When user navigates to the OSSMC "Workloads" page
+    And user selects the "bookinfo" namespace
+    Then user sees the workloads list
 
   Scenario: Istio Config page is displayed correctly
     When user navigates to the OSSMC "Istio Config" page

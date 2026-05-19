@@ -291,7 +291,6 @@ cd plugin && yarn cypress:run:ambient
 
 | Tag | Description |
 |-----|-------------|
-| `@ossmc` | OSSMC-specific tests |
 | `@smoke` | Smoke suite (runs first) |
 | `@core-1`, `@core-2` | Core test groups |
 | `@skip-ossmc` | Tests to skip in OSSMC context |
@@ -490,7 +489,7 @@ Create a `.feature` file using Gherkin syntax:
 
 ```gherkin
 # plugin/cypress/integration/openshift/my-feature.feature
-@ossmc @core-1
+@core-1
 Feature: My Feature
 
   Background:
@@ -525,7 +524,6 @@ Then('user sees the {string} element', (testId: string) => {
 
 ### Step 3: Tag Properly
 
-- Always include `@ossmc`
 - Add a suite tag (`@smoke`, `@core-1`, or `@core-2`)
 - Add `@bookinfo-app` if the test requires sample apps
 - Add `@ambient` or `@waypoint` for ambient mesh scenarios

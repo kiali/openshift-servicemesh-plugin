@@ -291,15 +291,28 @@ When('user navigates to the namespace detail page for {string}', function (names
 });
 
 function openNamespaceActionsMenu(): void {
-  cy.getBySel('namespace-actions-toggle').should('be.visible').click();
+  if (Cypress.env('OSSMC')) {
+    cy.intercept('**/api/namespaces/graph*').as('namespaceMinigraph');
+    cy.wait('@namespaceMinigraph');
+    cy.waitForReact();
+    cy.get('button#minigraph-toggle').should('be.visible').click();
+  } else {
+    cy.getBySel('namespace-actions-toggle').should('be.visible').click();
+  }
+}
+
+function confirmAndWaitForNamespacePatch(): void {
+  cy.intercept('PATCH', '**/api/namespaces/**').as('namespacePatch');
+  cy.getBySel('confirm-create').should('be.visible').click();
+  cy.wait('@namespacePatch');
+  ensureKialiFinishedLoading();
 }
 
 When('I override the default automatic sidecar injection policy in the namespace to enabled', function () {
   ensureKialiFinishedLoading();
   openNamespaceActionsMenu();
   cy.getBySel(`enable-${this.targetNamespace}-namespace-sidecar-injection`).should('be.visible').click();
-  cy.getBySel('confirm-create').should('be.visible').click();
-  ensureKialiFinishedLoading();
+  confirmAndWaitForNamespacePatch();
 });
 
 When(
@@ -310,8 +323,7 @@ When(
     cy.getBySel(`${enabledOrDisabled}-${this.targetNamespace}-namespace-sidecar-injection`)
       .should('be.visible')
       .click();
-    cy.getBySel('confirm-create').should('be.visible').click();
-    ensureKialiFinishedLoading();
+    confirmAndWaitForNamespacePatch();
   }
 );
 
@@ -319,8 +331,7 @@ When('I remove override configuration for sidecar injection in the namespace', f
   ensureKialiFinishedLoading();
   openNamespaceActionsMenu();
   cy.getBySel(`remove-${this.targetNamespace}-namespace-sidecar-injection`).should('be.visible').click();
-  cy.getBySel('confirm-create').should('be.visible').click();
-  ensureKialiFinishedLoading();
+  confirmAndWaitForNamespacePatch();
 });
 
 function switchWorkloadSidecarInjection(enableOrDisable: string): void {
@@ -398,11 +409,11 @@ Then('the sidecar of the workload should vanish', () => {
 });
 
 Then('I should see no override annotation for sidecar injection in the workload', () => {
-  cy.get('#WorkloadDescriptionCard').then($card => {
-    if ($card.find('label_more').length) {
-      cy.wrap($card).get('label_more').should('be.visible').click();
+  cy.get('[data-test=workload-labels-card]').then($card => {
+    if ($card.find('.pf-m-overflow').length) {
+      cy.wrap($card).find('.pf-m-overflow').should('be.visible').click();
     }
 
-    cy.wrap($card).get('[data-test="sidecar.istio.io/inject-label-container"').should('not.exist');
+    cy.wrap($card).find('[data-test="sidecar.istio.io/inject-label-container"]').should('not.exist');
   });
 });

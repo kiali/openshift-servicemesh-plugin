@@ -19,25 +19,31 @@ When('cypress intercept hooks for sidebar are registered', () => {
   cy.intercept(`**/api/namespaces/graph*`).as('graphNamespaces');
   cy.intercept(`**/api/mesh/graph?*`).as('meshRequest');
   cy.intercept(`**/api/clusters/apps*`).as('appsRequest');
+  cy.intercept(`**/api/clusters/services*`).as('servicesRequest');
+  cy.intercept(`**/api/clusters/workloads*`).as('workloadsRequest');
   cy.intercept(`**/api/istio/config?*`).as('istioConfigRequest');
 });
 
 Then('Service Mesh buttons are displayed', () => {
   // PF6 sets visibility:hidden on collapsed nav <li> parents, so be.visible
   // fails even when the menu is open. Using exist is intentional here.
-  ['Overview', 'Traffic Graph', 'Mesh', 'Namespaces', 'Applications', 'Istio Config'].forEach(label => {
-    cy.get('a[data-test="nav"]').contains(label).should('exist');
-  });
+  ['Overview', 'Traffic Graph', 'Mesh', 'Namespaces', 'Applications', 'Services', 'Workloads', 'Istio Config'].forEach(
+    label => {
+      cy.get('a[data-test="nav"]').contains(label).should('exist');
+    }
+  );
 });
 
 When('user navigates to the OSSMC {string} page', (hrefName: string) => {
   const hrefMap: Record<string, string> = {
-    Overview: 'overview',
-    'Traffic Graph': 'graph',
+    Applications: 'applications',
+    'Istio Config': 'istio',
     Mesh: 'mesh',
     Namespaces: 'namespaces',
-    Applications: 'applications',
-    'Istio Config': 'istio'
+    Overview: 'overview',
+    Services: 'services',
+    'Traffic Graph': 'graph',
+    Workloads: 'workloads'
   };
   const path = hrefMap[hrefName];
   if (!path) {
@@ -72,6 +78,24 @@ Then('user sees the namespaces list', () => {
 Then('user sees the applications list', () => {
   cy.url().should('include', '/ossmconsole/applications');
   cy.wait('@appsRequest').then(interception => {
+    expect(interception.response?.statusCode).to.eq(200);
+    cy.get('table').should('be.visible');
+    cy.get('table tbody tr').should('have.length.greaterThan', 0);
+  });
+});
+
+Then('user sees the services list', () => {
+  cy.url().should('include', '/ossmconsole/services');
+  cy.wait('@servicesRequest').then(interception => {
+    expect(interception.response?.statusCode).to.eq(200);
+    cy.get('table').should('be.visible');
+    cy.get('table tbody tr').should('have.length.greaterThan', 0);
+  });
+});
+
+Then('user sees the workloads list', () => {
+  cy.url().should('include', '/ossmconsole/workloads');
+  cy.wait('@workloadsRequest').then(interception => {
     expect(interception.response?.statusCode).to.eq(200);
     cy.get('table').should('be.visible');
     cy.get('table tbody tr').should('have.length.greaterThan', 0);

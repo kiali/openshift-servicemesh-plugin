@@ -52,19 +52,19 @@ describe('resolveConsoleUrl', () => {
 
     test('should map namespace application detail to ossmconsole application detail page', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/applications/reviews')).toEqual(
-        '/ossmconsole/namespaces/bookinfo/applications/reviews'
+        '/ossmconsole/applications/bookinfo/reviews'
       );
     });
 
     test('should preserve query parameters on namespace application detail', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/applications/reviews?clusterName=west')).toEqual(
-        '/ossmconsole/namespaces/bookinfo/applications/reviews?clusterName=west'
+        '/ossmconsole/applications/bookinfo/reviews?clusterName=west'
       );
     });
 
     test('should fall back to applications list when application name is empty', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/applications')).toEqual(
-        '/ossmconsole/namespaces/bookinfo/applications/'
+        '/ossmconsole/applications?namespaces=bookinfo'
       );
     });
 
@@ -74,9 +74,87 @@ describe('resolveConsoleUrl', () => {
       );
     });
 
+    test('should fall back to workloads list when workload name is empty', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads')).toEqual(
+        '/ossmconsole/workloads?namespaces=bookinfo'
+      );
+    });
+
+    test('should route workload detail to correct k8s resource type when type param is provided', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-rs?type=ReplicaSet')).toEqual(
+        '/k8s/ns/bookinfo/replicasets/my-rs/ossmconsole'
+      );
+    });
+
+    test('should route StatefulSet workload to statefulsets resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-sts?type=StatefulSet')).toEqual(
+        '/k8s/ns/bookinfo/statefulsets/my-sts/ossmconsole'
+      );
+    });
+
+    test('should route DaemonSet workload to daemonsets resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-ds?type=DaemonSet')).toEqual(
+        '/k8s/ns/bookinfo/daemonsets/my-ds/ossmconsole'
+      );
+    });
+
+    test('should route DeploymentConfig workload to deploymentconfigs resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-dc?type=DeploymentConfig')).toEqual(
+        '/k8s/ns/bookinfo/deploymentconfigs/my-dc/ossmconsole'
+      );
+    });
+
+    test('should route CronJob workload to cronjobs resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-cj?type=CronJob')).toEqual(
+        '/k8s/ns/bookinfo/cronjobs/my-cj/ossmconsole'
+      );
+    });
+
+    test('should route Job workload to jobs resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-job?type=Job')).toEqual(
+        '/k8s/ns/bookinfo/jobs/my-job/ossmconsole'
+      );
+    });
+
+    test('should route Pod workload to pods resource', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-pod?type=Pod')).toEqual(
+        '/k8s/ns/bookinfo/pods/my-pod/ossmconsole'
+      );
+    });
+
+    test('should fall back to deployments for unknown workload type', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-wl?type=UnknownKind')).toEqual(
+        '/k8s/ns/bookinfo/deployments/my-wl/ossmconsole'
+      );
+    });
+
+    test('should preserve other query parameters when stripping workload type', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads/my-rs?type=ReplicaSet&clusterName=west')).toEqual(
+        '/k8s/ns/bookinfo/replicasets/my-rs/ossmconsole?clusterName=west'
+      );
+    });
+
     test('should map namespace service detail to k8s service URL', () => {
       expect(resolveConsoleUrl('/namespaces/bookinfo/services/reviews')).toEqual(
         '/k8s/ns/bookinfo/services/reviews/ossmconsole'
+      );
+    });
+
+    test('should fall back to services list when service name is empty', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/services')).toEqual(
+        '/ossmconsole/services?namespaces=bookinfo'
+      );
+    });
+
+    test('should route external services to ossmconsole service detail page', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/services/host.com?type=External')).toEqual(
+        '/ossmconsole/services/bookinfo/host.com?type=External'
+      );
+    });
+
+    test('should preserve other query parameters for external services', () => {
+      expect(resolveConsoleUrl('/namespaces/bookinfo/services/host.com?type=External&clusterName=west')).toEqual(
+        '/ossmconsole/services/bookinfo/host.com?type=External&clusterName=west'
       );
     });
 
@@ -110,22 +188,24 @@ describe('resolveConsoleUrl', () => {
   });
 
   describe('workloads route', () => {
-    test('should map /workloads with namespace to k8s deployments list', () => {
-      expect(resolveConsoleUrl('/workloads?namespaces=bookinfo')).toEqual('/k8s/ns/bookinfo/deployments');
+    test('should map /workloads to /ossmconsole/workloads', () => {
+      expect(resolveConsoleUrl('/workloads')).toEqual('/ossmconsole/workloads');
     });
 
-    test('should map /workloads without namespace to all-namespaces deployments', () => {
-      expect(resolveConsoleUrl('/workloads')).toEqual('/k8s/all-namespaces/deployments');
+    test('should preserve query parameters on /workloads', () => {
+      expect(resolveConsoleUrl('/workloads?namespaces=bookinfo')).toEqual(
+        '/ossmconsole/workloads?namespaces=bookinfo'
+      );
     });
   });
 
   describe('services route', () => {
-    test('should map /services to /k8s/all-namespaces/services', () => {
-      expect(resolveConsoleUrl('/services')).toEqual('/k8s/all-namespaces/services');
+    test('should map /services to /ossmconsole/services', () => {
+      expect(resolveConsoleUrl('/services')).toEqual('/ossmconsole/services');
     });
 
-    test('should ignore query params on /services', () => {
-      expect(resolveConsoleUrl('/services?namespaces=foo')).toEqual('/k8s/all-namespaces/services');
+    test('should preserve query parameters on /services', () => {
+      expect(resolveConsoleUrl('/services?namespaces=foo')).toEqual('/ossmconsole/services?namespaces=foo');
     });
   });
 
@@ -219,8 +299,6 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should return null and trigger navigation when tracing plugin is not configured but url param is present', () => {
-      // The production code assigns window.location.href which jsdom cannot intercept;
-      // we verify the return value and that the branch does not throw.
       const result = resolveConsoleUrl('/tracing?url=https%3A%2F%2Fjaeger.example.com');
       expect(result).toBeNull();
     });
