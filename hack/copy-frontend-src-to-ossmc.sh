@@ -204,6 +204,12 @@ cp -R ${ABS_SOURCE_TESTS_DIR}/* ${ABS_DEST_TESTS_DIR}
 # OSSMC has its own hooks.ts file, so we remove the Kiali one
 rm ${ABS_DEST_TESTS_DIR}/common/hooks.ts
 
+# Vendored tests sit one directory level deeper than in the kiali repo
+# (integration/kiali/common/ vs integration/common/), so relative imports
+# that reach into cypress/support/ need an extra "../".
+find ${ABS_DEST_TESTS_DIR} -name '*.ts' -exec \
+  sed -i "s|../support/|../../support/|g" {} +
+
 cat > ${ABS_DEST_DIR}/README.md <<EOM
 **WARNING**: The code in this directory comes from the kiali/kiali repository and should never be modified here.
 

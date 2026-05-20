@@ -1,5 +1,5 @@
 import { Before, Given, Then } from '@badeball/cypress-cucumber-preprocessor';
-import { discoverOAuthOrigin } from '../../support/oauth-utils';
+import { discoverOAuthOrigin } from '../../../support/oauth-utils';
 
 const USERNAME = Cypress.env('USERNAME') ?? 'jenkins';
 const PASSWD = Cypress.env('PASSWD');
