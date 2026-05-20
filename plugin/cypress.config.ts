@@ -15,8 +15,6 @@ export default defineConfig({
   fixturesFolder: 'cypress/fixtures',
   env: {
     cookie: false,
-    filterSpecs: true,
-    omitFiltered: true,
     OSSMC: true,
     rootSelector: '#app'
   },
