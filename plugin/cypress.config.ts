@@ -41,8 +41,6 @@ export default defineConfig({
         })
       );
 
-      config.env.AUTH_PROVIDER = config.env.AUTH_PROVIDER || 'my_htpasswd_provider';
-
       // Chromium: fully disables TLS verification for self-signed certs.
       // Firefox: only enables the system cert store — true self-signed certs
       // may still fail; use a CA-signed cert or Chromium for those setups.
