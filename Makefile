@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 
 # Identifies the current build. Match the same version of Kiali Server and Operator.
-VERSION ?= v2.17.8
+VERSION ?= v2.17.9
 COMMIT_HASH ?= $(shell git rev-parse HEAD)
 
 # Directories based on the root project directory
