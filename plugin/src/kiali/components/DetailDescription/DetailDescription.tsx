@@ -38,6 +38,11 @@ const flowStyle = kialiStyle({
   listStyleType: 'none'
 });
 
+const emptyStyle = kialiStyle({
+  color: 'var(--pf-t--global--text--color--subtle)',
+  fontStyle: 'italic'
+});
+
 const itemStyle = kialiStyle({
   display: 'inline-flex',
   alignItems: 'center',
@@ -170,7 +175,7 @@ const DetailDescriptionComponent: React.FC<Props> = (props: Props) => {
     props.apps.filter(Boolean).forEach(name => items.push(renderAppItem(props.namespace, name)));
   }
   if (props.services && props.services.length > 0) {
-    props.services.forEach(svc => items.push(renderServiceItem(props.namespace, svc)));
+    props.services.forEach(name => items.push(renderServiceItem(props.namespace, name)));
   }
   if (props.waypointWorkloads && props.waypointWorkloads.length > 0) {
     props.waypointWorkloads.forEach(wp => items.push(renderWaypointItem(wp)));
@@ -180,7 +185,7 @@ const DetailDescriptionComponent: React.FC<Props> = (props: Props) => {
   }
 
   if (items.length === 0) {
-    return null;
+    return <span className={emptyStyle}>{t('No related resources')}</span>;
   }
 
   return <ul className={flowStyle}>{items}</ul>;
