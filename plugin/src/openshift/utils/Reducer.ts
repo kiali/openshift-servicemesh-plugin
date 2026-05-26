@@ -21,7 +21,7 @@ import { ChatAiStateReducer } from 'reducers/ChatAIState';
 
 export default combineReducers<KialiAppState, KialiAppAction>({
   authentication: LoginStateReducer,
-  chatAi: ChatAiStateReducer,
+  aiChat: ChatAiStateReducer,
   clusters: ClusterStateReducer,
   globalState: GlobalStateReducer,
   graph: GraphDataStateReducer,
