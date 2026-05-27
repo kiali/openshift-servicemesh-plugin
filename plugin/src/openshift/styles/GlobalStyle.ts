@@ -7,6 +7,23 @@ cssRule('.pf-v6-c-tooltip ul', {
   listStyle: 'none'
 });
 
+// globalStyle must be defined before the detail-level overrides so that
+// typestyle inserts its CSS rule first, allowing the overrides to win the cascade.
+export const globalStyle = kialiStyle({
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '1rem 1.25rem',
+  $nest: {
+    '& .pf-v6-c-menu h1': {
+      fontSize: 'var(--pf-t--global--font--size--md)'
+    },
+    '& :is(ul,ol):where(:not([class*="pf-v6-c-"]))': {
+      listStyle: 'none',
+      paddingLeft: 0
+    }
+  }
+});
+
 export const detailHeaderStyle = kialiStyle({
   paddingBottom: '0.5rem'
 });
@@ -23,19 +40,4 @@ export const detailTitleRowStyle = kialiStyle({
   marginTop: '1rem',
   minWidth: 0,
   width: '100%'
-});
-
-export const globalStyle = kialiStyle({
-  display: 'flex',
-  flexDirection: 'column',
-  padding: '1rem 1.25rem',
-  $nest: {
-    '& .pf-v6-c-menu h1': {
-      fontSize: 'var(--pf-t--global--font--size--md)'
-    },
-    '& :is(ul,ol):where(:not([class*="pf-v6-c-"]))': {
-      listStyle: 'none',
-      paddingLeft: 0
-    }
-  }
 });
