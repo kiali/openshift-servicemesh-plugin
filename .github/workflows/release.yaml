@@ -29,9 +29,13 @@ on:
         type: string
         required: false
 
+permissions: read-all
+
 jobs:
   initialize:
     name: Initialize
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       target_branch: ${{ github.ref_name }}
@@ -43,7 +47,7 @@ jobs:
       kiali_src_code_version: ${{ env.kiali_src_code_version }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       with:
         ref: ${{ github.event.inputs.release_branch || github.ref_name }}
 
@@ -90,7 +94,7 @@ jobs:
     - name: Determine release type
       id: release_type
       run: |
-        if [ -z ${{ github.event.inputs.release_type }} ];
+        if [ -z "${{ github.event.inputs.release_type }}" ];
         then
           DO_RELEASE=$(python minor.py)
           if [[ $DO_RELEASE == "True" ]]
@@ -208,6 +212,9 @@ jobs:
     if: ${{ needs.initialize.outputs.release_type != 'skip' && ((github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule') }}
     runs-on: ubuntu-latest
     needs: [initialize]
+    permissions:
+      contents: write  # needs to push tags and branches
+      pull-requests: write  # needs to create PRs
     env:
       RELEASE_VERSION: ${{ needs.initialize.outputs.release_version }}
       BRANCH_VERSION: ${{ needs.initialize.outputs.branch_version }}
@@ -218,7 +225,7 @@ jobs:
       RELEASE_TYPE: ${{ needs.initialize.outputs.release_type }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       with:
         ref: ${{ github.event.inputs.release_branch || github.ref_name }}
 
@@ -243,11 +250,15 @@ jobs:
       run: |
         hack/update-version-string.sh "$RELEASE_VERSION"
 
-    - name: Build and push images
-      run: |
-        docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
+    - name: Login to Quay.io
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_USER }}
+        password: ${{ secrets.QUAY_PASSWORD }}
 
-        make build-push-plugin-multi-arch
+    - name: Build and push images
+      run: make build-push-plugin-multi-arch
 
     - name: Create tag
       run: |

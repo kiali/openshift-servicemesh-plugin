@@ -41,6 +41,8 @@ on:
         required: true
 
 
+permissions: read-all
+
 jobs:
   build_and_push_cypress_tests:
     name: Generate and push ossmc cypress test docker images
@@ -56,11 +58,11 @@ jobs:
         echo "Quay organization": ${{ inputs.quay_org }}
         echo "Images tag": ${{ inputs.images_tag }}
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
       with:
         ref: ${{ inputs.release_branch }}
     - name: Login to Quay.io
-      uses: docker/login-action@v3
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_USER }}
