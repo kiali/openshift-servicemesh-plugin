@@ -43,7 +43,7 @@ jobs:
       kiali_src_code_version: ${{ env.kiali_src_code_version }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       with:
         ref: ${{ github.event.inputs.release_branch || github.ref_name }}
 
@@ -218,7 +218,7 @@ jobs:
       RELEASE_TYPE: ${{ needs.initialize.outputs.release_type }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       with:
         ref: ${{ github.event.inputs.release_branch || github.ref_name }}
 
