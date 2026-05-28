@@ -10,6 +10,8 @@ on:
     - '**/*.md'
     - '**/*.adoc'
 
+permissions: read-all
+
 jobs:
   lint_and_test:
     name: Lint and test

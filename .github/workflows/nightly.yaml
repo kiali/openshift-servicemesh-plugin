@@ -17,9 +17,13 @@ on:
         default: quay.io/kiali/ossmconsole
         required: true
 
+permissions: read-all
+
 jobs:
   initialize:
     name: Initialize
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       plugin_quay_tag: ${{ env.plugin_quay_tag }}
@@ -48,6 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ (github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule' }}
     needs: [initialize]
+    permissions:
+      contents: read
     env:
       PLUGIN_QUAY_TAG: ${{ needs.initialize.outputs.plugin_quay_tag }}
     steps:
@@ -64,8 +70,12 @@ jobs:
     - name: Print disk space after
       run: df -h
 
-    - name: Build and push plugin image
-      run: |
-        docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
+    - name: Login to Quay.io
+      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_USER }}
+        password: ${{ secrets.QUAY_PASSWORD }}
 
-        make build-push-plugin-multi-arch
+    - name: Build and push plugin image
+      run: make build-push-plugin-multi-arch

@@ -9,9 +9,13 @@ on:
         default: v1.73,v2.4,v2.11,v2.17,v2.22
         type: string
 
+permissions: read-all
+
 jobs:
   initialize:
     name: Initialize
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       branches: ${{ env.branches }}
@@ -38,6 +42,8 @@ jobs:
 
   release_tag:
     needs: [initialize]
+    permissions:
+      contents: write  # needs to push and delete tags
     runs-on: ubuntu-latest
     strategy:
       # Allow other branches to continue even if one of the branches failed

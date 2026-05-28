@@ -9,9 +9,13 @@ on:
         default: v1.73,v2.4,v2.11
         type: string
 
+permissions: read-all
+
 jobs:
   initialize:
     name: Initialize
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       branches: ${{ env.branches }}
@@ -38,6 +42,8 @@ jobs:
 
   copy_kiali:
     needs: [initialize]
+    permissions:
+      contents: write  # needs to push commits to branches
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -41,6 +41,8 @@ on:
         required: true
 
 
+permissions: read-all
+
 jobs:
   build_and_push_cypress_tests:
     name: Generate and push ossmc cypress test docker images
