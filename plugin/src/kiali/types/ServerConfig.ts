@@ -2,15 +2,7 @@ import { ChatAIConfig } from './Chatbot';
 import { DurationInSeconds } from './Common';
 import { MeshCluster } from './Mesh';
 
-export type IstioLabelKey =
-  | 'ambientNamespaceLabel'
-  | 'ambientNamespaceLabelValue'
-  | 'ambientWaypointGatewayLabel'
-  | 'ambientWaypointLabel'
-  | 'ambientWaypointLabelValue'
-  | 'appLabelName'
-  | 'injectionLabelName'
-  | 'injectionLabelRev'
+export type IstioLabelKey = 'appLabelName'
   | 'versionLabelName';
 
 interface DeploymentConfig {
@@ -180,7 +172,7 @@ export interface ServerConfig {
   healthConfig: HealthConfig;
   ignoreHomeCluster: boolean;
   installationTag?: string;
-  istioAPIInstalled: false;
+  istioAPIInstalled: boolean;
   istioAnnotations: IstioAnnotations;
   istioGatewayInstalled: boolean;
   istioIdentityDomain: string;

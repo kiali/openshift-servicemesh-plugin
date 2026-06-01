@@ -7,6 +7,7 @@ import { AuthInfo, getCSRFToken } from '../types/Auth';
 import { DurationInSeconds, HTTP_VERBS, Password, TimeInSeconds, UserName } from '../types/Common';
 import { DashboardModel } from 'types/Dashboards';
 import { GrafanaInfo } from '../types/GrafanaInfo';
+import { ChatSessionUsageMetric } from '../types/Chatbot';
 import { GraphDefinition, GraphElementsQuery, NodeParamsType, NodeType } from '../types/Graph';
 import {
   AppHealth,
@@ -78,7 +79,6 @@ import {
   WorkloadQuery,
   WorkloadUpdateQuery
 } from '../types/Workload';
-import { CertsInfo } from 'types/CertsInfo';
 import { ApiError, ApiResponse } from 'types/Api';
 import { healthComputeDurationValidSeconds } from '../utils/HealthComputeDuration';
 import { getGVKTypeString } from '../utils/IstioConfigUtils';
@@ -159,7 +159,8 @@ const newRequest = <P>(
     url: apiProxy ? `${apiProxy}/${url}` : url,
     data: requestData,
     headers: getHeaders(method, false) as AxiosHeaders,
-    params: queryParams
+    params: queryParams,
+    withCredentials: true
   });
 };
 
@@ -320,10 +321,6 @@ export const getOutboundTrafficPolicyMode = (): Promise<ApiResponse<OutboundTraf
 
 export const getIstioStatus = (): Promise<ApiResponse<ComponentStatus[]>> => {
   return newRequest<ComponentStatus[]>(HTTP_VERBS.GET, urls.istioStatus(), {}, {});
-};
-
-export const getIstioCertsInfo = (): Promise<ApiResponse<CertsInfo[]>> => {
-  return newRequest<CertsInfo[]>(HTTP_VERBS.GET, urls.istioCertsInfo(), {}, {});
 };
 
 export const getIstiodResourceThresholds = (): Promise<ApiResponse<IstiodResourceThresholds>> => {
@@ -1559,8 +1556,17 @@ export const postChatAI = (
     method: HTTP_VERBS.POST,
     headers: headers as HeadersInit,
     body: JSON.stringify(chatRequest),
-    signal: signal
+    signal: signal,
+    credentials: 'include'
   });
+};
+
+export const deleteChatConversations = (conversationIDs: string): Promise<ApiResponse<Record<string, string>>> => {
+  return newRequest<Record<string, string>>(HTTP_VERBS.DELETE, urls.chatDeleteConversations, { conversationIDs }, {});
+};
+
+export const getChatSessionUsage = (): Promise<ApiResponse<ChatSessionUsageMetric[]>> => {
+  return newRequest<ChatSessionUsageMetric[]>(HTTP_VERBS.GET, urls.chatSessionUsage, { _ts: Date.now() }, {});
 };
 
 export const getOverviewAppRates = (): Promise<
