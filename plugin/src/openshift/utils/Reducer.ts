@@ -7,7 +7,6 @@ import { HelpDropdownStateReducer } from 'reducers/HelpDropdownState';
 import { UserSettingsStateReducer } from 'reducers/UserSettingsState';
 import { MeshTlsStateReducer } from 'reducers/MeshTlsState';
 import { IstioStatusStateReducer } from 'reducers/IstioStatusState';
-import { IstioCertsInfoStateReducer } from 'reducers/IstioCertsInfoState';
 import { MetricsStatsStateReducer } from 'reducers/MetricsStatsState';
 import { TourStateReducer } from 'reducers/TourState';
 import { NamespaceStateReducer } from 'reducers/NamespaceState';
@@ -26,7 +25,6 @@ export default combineReducers<KialiAppState, KialiAppAction>({
   globalState: GlobalStateReducer,
   graph: GraphDataStateReducer,
   istioStatus: IstioStatusStateReducer,
-  istioCertsInfo: IstioCertsInfoStateReducer,
   mesh: MeshDataStateReducer,
   meshTLSStatus: MeshTlsStateReducer,
   notificationCenter: NotificationCenterReducer,

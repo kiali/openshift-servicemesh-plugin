@@ -66,6 +66,7 @@ import { Theme } from 'types/Common';
 import { ApiError, ApiResponse } from 'types/Api';
 import { dump, loadAll } from 'js-yaml';
 import { ResizeHeightObserver } from 'utils/ResizeHeightObserver';
+import { canDelete as canDeletePermission, canUpdate as canUpdatePermission } from 'types/Permissions';
 
 const editorDrawer = kialiStyle({
   display: 'flex',
@@ -309,11 +310,11 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
   };
 
   canDelete = (): boolean => {
-    return this.state.istioObjectDetails !== undefined && this.state.istioObjectDetails.permissions.delete;
+    return canDeletePermission(this.state.istioObjectDetails?.permissions);
   };
 
   canUpdate = (): boolean => {
-    return this.state.istioObjectDetails !== undefined && this.state.istioObjectDetails.permissions.update;
+    return canUpdatePermission(this.state.istioObjectDetails?.permissions);
   };
 
   onCancel = (): void => {
@@ -571,18 +572,15 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
                     workloadReferences={workloadReferences}
                     helpMessages={helpMessages}
                     selectedLine={this.state.selectedEditorLine}
-                    kiosk={this.props.kiosk}
                   />
                 )}
               </>
             )}
           </div>
 
-          {!isParentKiosk(this.props.kiosk) && (
-            <DrawerActions>
-              <DrawerCloseButton onClick={this.onDrawerClose} />
-            </DrawerActions>
-          )}
+          <DrawerActions>
+            <DrawerCloseButton onClick={this.onDrawerClose} />
+          </DrawerActions>
         </DrawerHead>
       </DrawerPanelContent>
     );
@@ -600,7 +598,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
           width="100%"
           className={istioAceEditorStyle}
           wrapEnabled={true}
-          readOnly={!this.canUpdate() || isParentKiosk(this.props.kiosk)}
+          readOnly={!this.canUpdate()}
           setOptions={aceOptions}
           value={this.state.istioObjectDetails ? yamlSource : undefined}
           annotations={editorValidations.annotations}
@@ -632,7 +630,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
     // User won't save if file has yaml errors
     const yamlErrors = !!(this.state.yamlValidations && this.state.yamlValidations.markers.length > 0);
 
-    return !isParentKiosk(this.props.kiosk) ? (
+    return (
       <IstioActionButtons
         objectName={this.props.istioConfigId.objectName}
         readOnly={!this.canUpdate()}
@@ -644,16 +642,11 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
         overview={this.state.isExpanded}
         onOverview={this.onDrawerToggle}
       />
-    ) : (
-      ''
     );
   };
 
   renderActions = (): React.ReactNode => {
-    const canDelete =
-      this.state.istioObjectDetails !== undefined &&
-      this.state.istioObjectDetails.permissions.delete &&
-      !this.state.isRemoved;
+    const canDelete = this.canDelete() && !this.state.isRemoved;
 
     const istioObject = getIstioObject(this.state.istioObjectDetails);
 
@@ -698,7 +691,7 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
 
         {this.state.error && <ErrorSection error={this.state.error} />}
 
-        {!this.state.error && !isParentKiosk(this.props.kiosk) && (
+        {!this.state.error && (
           <ParameterizedTabs
             id="basic-tabs"
             className={basicTabStyle}
@@ -717,10 +710,6 @@ class IstioConfigDetailsPageComponent extends React.Component<IstioConfigDetails
               <div className={classes(flexFillStyle, constrainedScrollStyle)}>{this.renderEditor()}</div>
             </Tab>
           </ParameterizedTabs>
-        )}
-
-        {!this.state.error && isParentKiosk(this.props.kiosk) && (
-          <div className={classes(flexFillStyle, constrainedScrollStyle)}>{this.renderEditor()}</div>
         )}
 
         {/* TODO Enable Prompt
@@ -748,4 +737,5 @@ const mapStateToProps = (state: KialiAppState): ReduxProps => ({
   theme: state.globalState.theme
 });
 
+export { IstioConfigDetailsPageComponent };
 export const IstioConfigDetailsPage = connect(mapStateToProps)(IstioConfigDetailsPageComponent);

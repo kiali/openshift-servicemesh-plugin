@@ -67,7 +67,10 @@ const generateChatAIConfig = (): ChatAIConfig => {
     return {
       enabled: false,
       providers: [],
-      defaultProvider: ''
+      defaultProvider: '',
+      store: {
+        enabled: false
+      }
     };
   }
   return {
@@ -84,7 +87,10 @@ const generateChatAIConfig = (): ChatAIConfig => {
             model: model.model ?? ''
           })) ?? []
       })) ?? [],
-    defaultProvider: scenarioConfig.chatAI.defaultProvider ?? ''
+    defaultProvider: scenarioConfig.chatAI.defaultProvider ?? '',
+    store: {
+      enabled: scenarioConfig.chatAI.store?.enabled ?? scenarioConfig.chatAI.enabled ?? false
+    }
   };
 };
 
@@ -148,14 +154,7 @@ const generateServerConfig = (): ServerConfig => {
     istioGatewayInstalled: true,
     istioIdentityDomain: 'svc.cluster.local',
     istioLabels: {
-      ambientNamespaceLabel: 'istio.io/dataplane-mode',
-      ambientNamespaceLabelValue: 'ambient',
-      ambientWaypointGatewayLabel: 'gateway.networking.k8s.io/gateway-name',
-      ambientWaypointLabel: 'gateway.istio.io/managed',
-      ambientWaypointLabelValue: 'istio.io-mesh-controller',
       appLabelName: 'app',
-      injectionLabelName: 'istio-injection',
-      injectionLabelRev: 'istio.io/rev',
       versionLabelName: 'version'
     },
     kialiFeatureFlags: {

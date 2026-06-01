@@ -30,8 +30,6 @@ import {
 } from 'openshift/utils/KialiIntegration';
 import { MeshTlsActions } from 'actions/MeshTlsActions';
 import { TLSStatus } from 'types/TLSStatus';
-import { IstioCertsInfoActions } from 'actions/IstioCertsInfoActions';
-import { CertsInfo } from 'types/CertsInfo';
 import { store } from 'store/ConfigStore';
 import { kialiStyle } from 'styles/StyleUtils';
 import { addError } from 'utils/AlertUtils';
@@ -62,7 +60,6 @@ interface KialiControllerReduxProps {
   checkCredentials: () => void;
   setActiveNamespaces: (namespaces: Namespace[]) => void;
   setDuration: (duration: DurationInSeconds) => void;
-  setIstioCertsInfo: (istioCertsInfo: CertsInfo[]) => void;
   setLandingRoute: (route: string | undefined) => void;
   setMeshTlsStatus: (tlsStatus: TLSStatus) => void;
   setNamespaces: (namespaces: Namespace[], receivedAt: Date) => void;
@@ -320,7 +317,6 @@ const mapDispatchToProps = (dispatch: KialiDispatch): KialiControllerReduxProps 
   checkCredentials: () => dispatch(LoginThunkActions.checkCredentials()),
   setActiveNamespaces: bindActionCreators(NamespaceActions.setActiveNamespaces, dispatch),
   setDuration: bindActionCreators(UserSettingsActions.setDuration, dispatch),
-  setIstioCertsInfo: bindActionCreators(IstioCertsInfoActions.setinfo, dispatch),
   setTracingInfo: bindActionCreators(TracingActions.setInfo, dispatch),
   setLandingRoute: bindActionCreators(LoginActions.setLandingRoute, dispatch),
   setMeshTlsStatus: bindActionCreators(MeshTlsActions.setinfo, dispatch),
