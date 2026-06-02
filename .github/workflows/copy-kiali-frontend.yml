@@ -43,14 +43,14 @@ jobs:
   copy_kiali:
     needs: [initialize]
     permissions:
-      contents: write  # needs to push commits to branches
+      contents: write # needs to push commits to branches
     runs-on: ubuntu-latest
     strategy:
       matrix:
         branch: ${{fromJson(needs.initialize.outputs.branches)}}
     steps:
     - name: Checkout branch
-      uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       with:
         ref: ${{matrix.branch}}
 
