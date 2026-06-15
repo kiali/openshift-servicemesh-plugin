@@ -17,6 +17,9 @@ import { ClusterStateReducer } from 'reducers/ClusterState';
 import { TracingStateReducer } from 'reducers/TracingState';
 import { MeshDataStateReducer } from 'reducers/MeshDataState';
 import { ChatAiStateReducer } from 'reducers/ChatAIState';
+import { ServicesListStateReducer } from 'reducers/ServicesListState';
+import { AppsListStateReducer } from 'reducers/AppsListState';
+import { WorkloadsListStateReducer } from 'reducers/WorkloadsListState';
 
 export default combineReducers<KialiAppState, KialiAppAction>({
   authentication: LoginStateReducer,
@@ -31,6 +34,9 @@ export default combineReducers<KialiAppState, KialiAppAction>({
   metricsStats: MetricsStatsStateReducer,
   namespaces: NamespaceStateReducer,
   namespacesList: NamespacesListStateReducer,
+  servicesList: ServicesListStateReducer,
+  appsList: AppsListStateReducer,
+  workloadsList: WorkloadsListStateReducer,
   statusState: HelpDropdownStateReducer,
   tourState: TourStateReducer,
   tracingState: TracingStateReducer,
