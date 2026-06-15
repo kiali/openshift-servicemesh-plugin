@@ -43,3 +43,5 @@ export const rootReducer = combineReducers<KialiAppState, KialiAppAction>({
   tracingState: TracingStateReducer,
   userSettings: UserSettingsStateReducer
 });
+
+export default rootReducer;
