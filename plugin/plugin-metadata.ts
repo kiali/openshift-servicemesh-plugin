@@ -16,7 +16,7 @@ const metadata: ConsolePluginBuildMetadata = {
     NamespacesPage: './openshift/pages/NamespacesPage',
     OverviewPage: './openshift/pages/OverviewPage',
     NamespaceDetailsTab: './openshift/pages/ServiceMeshTabs/NamespaceDetailsTab',
-    ReduxReducer: './openshift/utils/Reducer.ts',
+    ReduxReducer: './kiali/reducers/index.ts',
     ServiceDetailsPage: './openshift/pages/ServiceDetailsPage',
     ServiceDetailsTab: './openshift/pages/ServiceMeshTabs/ServiceDetailsTab',
     ServiceListPage: './openshift/pages/ServiceListPage',

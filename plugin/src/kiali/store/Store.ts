@@ -74,6 +74,24 @@ export interface NamespacesListState {
   readonly hiddenColumnIds: string[];
 }
 
+/** Services list page: column visibility and order */
+export interface ServicesListState {
+  readonly columnOrder: string[];
+  readonly hiddenColumnIds: string[];
+}
+
+/** Apps list page: column visibility and order */
+export interface AppsListState {
+  readonly columnOrder: string[];
+  readonly hiddenColumnIds: string[];
+}
+
+/** Workloads list page: column visibility and order */
+export interface WorkloadsListState {
+  readonly columnOrder: string[];
+  readonly hiddenColumnIds: string[];
+}
+
 // Various pages are described here with their various sections
 export interface GraphToolbarState {
   // Toggle props
@@ -86,7 +104,6 @@ export interface GraphToolbarState {
   graphType: GraphType;
   hideValue: string;
   rankBy: RankMode[];
-  showFindHelp: boolean;
   showIdleEdges: boolean;
   showIdleNodes: boolean;
   showLegend: boolean;
@@ -142,7 +159,6 @@ export interface MeshToolbarState {
   // find props
   findValue: string;
   hideValue: string;
-  showFindHelp: boolean;
   showGateways: boolean;
   showLegend: boolean;
   showWaypoints: boolean;
@@ -213,6 +229,9 @@ export interface KialiAppState {
   metricsStats: MetricsStatsState;
   namespaces: NamespaceState;
   namespacesList: NamespacesListState;
+  servicesList: ServicesListState;
+  appsList: AppsListState;
+  workloadsList: WorkloadsListState;
   notificationCenter: NotificationCenterState;
   statusState: StatusState;
   tourState: TourState;
