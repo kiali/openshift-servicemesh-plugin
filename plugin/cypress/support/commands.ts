@@ -106,46 +106,72 @@ declare global {
   }
 }
 
-//in case guided tour appears (OCP 4.19+)
-export const guidedTour = {
-  close: () => {
-    cy.waitForReact();
-    // wait a little bit for the guided tour modal to appear
-    cy.wait(5000);
-    cy.get('body').then($body => {
-      if ($body.find(`[data-test="guided-tour-modal"]`).length > 0) {
-        cy.get(`[data-test="tour-step-footer-secondary"]`).contains('Skip tour').click();
-      }
-    });
+interface LoginForm {
+  authProvider?: string;
+  password: string;
+  username: string;
+}
+
+function closeGuidedTour(): void {
+  cy.waitForReact();
+  cy.wait(5000);
+  cy.get('body').then($body => {
+    if ($body.find('[data-test="guided-tour-modal"]').length > 0) {
+      cy.get('[data-test="tour-step-footer-secondary"]').contains('Skip tour').click();
+    }
+  });
+}
+
+function fillLoginForm({ authProvider, username, password }: LoginForm): void {
+  if (authProvider) {
+    cy.contains(authProvider).should('be.visible').click();
   }
-};
+  cy.get('#inputUsername').clear().type(username);
+  cy.get('#inputPassword').clear().type(password);
+  cy.get('button[type="submit"]').click();
+}
 
 Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
-  const user = clusterUser || Cypress.env('USERNAME');
+  const username = clusterUser || Cypress.env('USERNAME');
   const password = clusterPassword || Cypress.env('PASSWD');
   const idp = identityProvider || Cypress.env('AUTH_PROVIDER');
 
+  // Cypress 15 requires cy.origin() for cross-origin form interaction.
+  // Use CYPRESS_OAUTH_ORIGIN if set; otherwise derive from baseUrl using
+  // the standard OCP pattern (console-openshift-console.<domain> →
+  // oauth-openshift.<domain>). Non-matching hostnames stay same-origin.
+  const configBaseUrl = Cypress.config('baseUrl');
+  if (!configBaseUrl) {
+    throw new Error('Cypress baseUrl must be configured for the login command');
+  }
+  const baseUrl = new URL(configBaseUrl);
+  const explicitOAuth: string | undefined = Cypress.env('OAUTH_ORIGIN') || undefined;
+  const oauthOrigin =
+    explicitOAuth ??
+    (baseUrl.hostname.startsWith('console-openshift-console.')
+      ? `${baseUrl.protocol}//oauth-openshift.${baseUrl.hostname.replace('console-openshift-console.', '')}`
+      : undefined);
+  const isCrossOrigin = !!oauthOrigin;
+
   cy.session(
-    user,
+    username,
     () => {
-      cy.visit({ url: '/' }).then(() => {
-        cy.log('AUTH_PROVIDER: ', typeof idp, JSON.stringify(idp));
-        if (idp != undefined) {
-          cy.get('[class*="c-button"]').contains(idp).click();
-        }
-        cy.get('#inputUsername').clear().type(user);
-        cy.get('#inputPassword').clear().type(password);
-        cy.get('button[type="submit"]').click();
-        // wait till page loading after login
-        cy.get("[data-test-id='dashboard']").should('be.visible');
-        guidedTour.close();
-      });
+      cy.visit({ url: '/' });
+
+      if (isCrossOrigin) {
+        cy.url().should('include', new URL(oauthOrigin!).host);
+        cy.origin(oauthOrigin!, { args: { authProvider: idp, username, password } }, fillLoginForm);
+      } else {
+        fillLoginForm({ authProvider: idp, username, password });
+      }
+
+      cy.get("[data-test-id='dashboard']").should('be.visible');
+      closeGuidedTour();
     },
     {
       cacheAcrossSpecs: true,
       validate: () => {
-        // Make an API request that returns a 200 only when logged in
-        cy.request({ url: '/api/status' }).its('status').should('eq', 200);
+        cy.request({ method: 'GET', url: '/api/status' }).its('status').should('eq', 200);
       }
     }
   );
@@ -187,7 +213,7 @@ Cypress.Commands.add('hasCssVar', { prevSubject: true }, (subject, styleName, cs
 // OpenShift resource reference format (group~version~kind/name).
 // Input example:  "networking.istio.io/v1/VirtualService/reviews"
 // Output example: "/networking.istio.io~v1~VirtualService/reviews"
-const istioDetailToRef = (detailPath: string): string => {
+function istioDetailToRef(detailPath: string): string {
   const parts = detailPath.split('/');
   if (parts.length < 4) {
     throw new Error(`Invalid Istio detail path: "${detailPath}". Expected format: group/version/kind/name`);
@@ -195,7 +221,7 @@ const istioDetailToRef = (detailPath: string): string => {
   const gvk = `${parts[0]}~${parts[1]}~${parts[2]}`;
   const name = parts.slice(3).join('/');
   return `/${gvk}/${name}`;
-};
+}
 
 Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
   const webParamsIndex = visitUrl.url.indexOf('?');

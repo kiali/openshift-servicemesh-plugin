@@ -14,13 +14,10 @@ export default defineConfig({
   responseTimeout: 15000,
   fixturesFolder: 'cypress/fixtures',
   env: {
-    rootSelector: '#app',
-    OSSMC: true,
     cookie: false,
-    omitFiltered: true,
-    filterSpecs: true
+    OSSMC: true,
+    rootSelector: '#app'
   },
-
   e2e: {
     baseUrl: 'http://localhost:9000',
     async setupNodeEvents(
@@ -43,6 +40,21 @@ export default defineConfig({
           plugins: [createEsbuildPlugin(config)]
         })
       );
+
+      // Chromium: fully disables TLS verification for self-signed certs.
+      // Firefox: only enables the system cert store — true self-signed certs
+      // may still fail; use a CA-signed cert or Chromium for those setups.
+      if (config.env.ALLOW_INSECURE_KIALI_API) {
+        on('before:browser:launch', (browser, launchOptions) => {
+          if (browser.family === 'chromium') {
+            launchOptions.args.push('--ignore-certificate-errors');
+          }
+          if (browser.family === 'firefox') {
+            launchOptions.preferences['security.enterprise_roots.enabled'] = true;
+          }
+          return launchOptions;
+        });
+      }
 
       return config;
     },
