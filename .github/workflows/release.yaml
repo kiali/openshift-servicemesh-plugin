@@ -228,6 +228,7 @@ jobs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       with:
         ref: ${{ github.event.inputs.release_branch || github.ref_name }}
+        token: ${{ secrets.KIALI_BOT_TOKEN }}
 
     # /opt/hostedtoolcache directory is large and has tools we do not need so delete it to free up space
     - name: Print disk space before
