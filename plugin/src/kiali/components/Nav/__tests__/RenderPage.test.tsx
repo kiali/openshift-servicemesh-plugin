@@ -8,8 +8,7 @@ import { store } from 'store/ConfigStore';
 import { LoginActions } from 'actions/LoginActions';
 import { Theme } from 'types/Common';
 
-jest.mock('../RenderPage', () => {
-  (jest as any).requireActual('../RenderPage');
+rstest.mock('../RenderPage', () => {
   const React = require('react');
   return {
     RenderPage: ({ isGraph }: { isGraph: boolean }) =>
@@ -19,6 +18,10 @@ jest.mock('../RenderPage', () => {
       })
   };
 });
+
+rstest.mock('components/ChatBot/ChatBot', () => ({
+  ChatBot: () => null
+}));
 
 const session = {
   expiresOn: '2018-05-29 21:51:40.186179601 +0200 CEST m=+36039.431579761',

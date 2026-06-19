@@ -1,7 +1,17 @@
 {
   "name": "ossmconsole",
   "version": "2.29.0",
+  "description": "OpenShift Service Mesh Console Plugin for Kiali.",
+  "keywords": [
+    "istio service mesh",
+    "kiali",
+    "monitoring",
+    "observability",
+    "openshift"
+  ],
   "private": true,
+  "license": "Apache-2.0",
+  "author": "Red Hat",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kiali/openshift-servicemesh-plugin.git"
@@ -74,7 +84,6 @@
     "redux-persist": "5.10.0",
     "redux-persist-transform-filter": "^0.0.22",
     "redux-thunk": "2.4.0",
-    "refractor": "^5.0.0",
     "regression": "^2.0.1",
     "reselect": "4.0.0",
     "typesafe-actions": "^4.2.1",
@@ -86,7 +95,7 @@
     "@badeball/cypress-cucumber-preprocessor": "^24.0.1",
     "@bahmutov/cypress-esbuild-preprocessor": "^2.2.8",
     "@openshift-console/dynamic-plugin-sdk-webpack": "4.19.0",
-    "@rstest/core": "^0.9.10",
+    "@rstest/core": "^0.10.3",
     "@svgr/webpack": "^8.1.0",
     "@swc/core": "^1.12.0",
     "@testing-library/jest-dom": "^6.9.1",
@@ -111,7 +120,7 @@
     "cypress": "^15.16.0",
     "cypress-multi-reporters": "^2.0.5",
     "esbuild": "^0.27.7",
-    "eslint": "^8.1.0",
+    "eslint": "^8.57.1",
     "eslint-config-react-app": "^7.0.1",
     "express": "^4.21.0",
     "file-loader": "^6.2.0",
@@ -152,9 +161,14 @@
     "node": ">=24.0.0"
   },
   "packageManager": "yarn@4.12.0",
+  "browserslist": [
+    ">10%",
+    "last 2 versions",
+    "not dead"
+  ],
   "cypress-cucumber-preprocessor": {
-    "stepDefinitions": "cypress/integration/**/*.{js,ts}",
     "filterSpecs": true,
-    "omitFiltered": true
+    "omitFiltered": true,
+    "stepDefinitions": "cypress/integration/**/*.{js,ts}"
   }
 }

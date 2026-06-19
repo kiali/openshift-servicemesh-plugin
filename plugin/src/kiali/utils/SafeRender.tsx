@@ -7,7 +7,7 @@ export const canRender = (value: any): boolean => {
 export const renderErrorMessage = (message: string): any => {
   return (
     <>
-      <ErrorCircleOIcon /> {message + ' '}
+      <ErrorCircleOIcon /> {`${message} `}
     </>
   );
 };

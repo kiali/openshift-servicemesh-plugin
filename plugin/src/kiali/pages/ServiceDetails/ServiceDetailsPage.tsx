@@ -37,7 +37,6 @@ import { basicTabStyle } from 'styles/TabStyles';
 import { isPrometheusAvailable, serverConfig } from 'config';
 import { getGVKTypeString } from '../../utils/IstioConfigUtils';
 import { gvkType } from '../../types/IstioConfigList';
-import { setAIContext } from 'helpers/ChatAI';
 import { PFBadge, PFBadges } from '../../components/Pf/PfBadges';
 import { detailPageTitleStyle, detailTitleRowStyle, detailTitleMainStyle } from 'styles/FlexStyles';
 import { t } from 'utils/I18nUtils';
@@ -189,18 +188,10 @@ class ServiceDetailsPageComponent extends React.Component<ServiceDetailsProps, S
       this.props.duration
     )
       .then(results => {
-        this.setState(
-          {
-            serviceDetails: results,
-            validations: results.validations
-          },
-          () => {
-            setAIContext(
-              this.props.dispatch,
-              `Service Details of ${this.props.serviceId.service} in namespace ${this.props.serviceId.namespace}`
-            );
-          }
-        );
+        this.setState({
+          serviceDetails: results,
+          validations: results.validations
+        });
       })
       .catch(error => {
         addError('Could not fetch Service Details.', error);
@@ -291,6 +282,7 @@ class ServiceDetailsPageComponent extends React.Component<ServiceDetailsProps, S
             target={this.props.serviceId.service}
             targetKind={'service'}
             fromWaypoint={fromWaypoint}
+            includeAmbient={fromWaypoint || !!this.state.serviceDetails?.isAmbient}
           />
         </Tab>
       );

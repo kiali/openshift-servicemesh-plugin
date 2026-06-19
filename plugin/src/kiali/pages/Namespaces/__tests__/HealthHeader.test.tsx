@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { HealthPopoverBody, HealthPopoverHeader } from '../HealthHeader';
 
-jest.mock('utils/I18nUtils', () => ({
+rstest.mock('utils/I18nUtils', () => ({
   useKialiTranslation: () => ({
     t: (key: string) => key
   })

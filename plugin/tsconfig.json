@@ -39,6 +39,6 @@
       "utils/*": ["./kiali/utils/*"]
     }
   },
-  "exclude": ["node_modules", "build", "coverage", "src/kiali/setupTests.ts", "src/kiali/mocks/**/*"],
+  "exclude": ["src/mocks/**/*", "src/setupTests.ts"],
   "include": ["src"]
 }
