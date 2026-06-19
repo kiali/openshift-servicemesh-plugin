@@ -198,6 +198,11 @@ const istioDetailToRef = (detailPath: string): string => {
 };
 
 Cypress.Commands.overwrite('visit', (originalFn, visitUrl) => {
+  const path = new URL(visitUrl.url, Cypress.config('baseUrl')).pathname;
+  if (path.startsWith('/ossmconsole/') || path.startsWith('/k8s/')) {
+    return originalFn(visitUrl);
+  }
+
   const webParamsIndex = visitUrl.url.indexOf('?');
   const webParams = webParamsIndex > -1 ? visitUrl.url.substring(webParamsIndex) : '';
 
