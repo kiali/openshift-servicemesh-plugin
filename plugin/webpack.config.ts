@@ -42,6 +42,7 @@ const config: Configuration = {
             loader: 'swc-loader',
             options: {
               jsc: {
+                target: 'es2022',
                 parser: { syntax: 'typescript', tsx: true },
                 transform: { react: { runtime: 'automatic' } }
               }
