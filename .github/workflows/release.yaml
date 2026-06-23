@@ -2,8 +2,8 @@ name: Release
 
 on:
   schedule:
-  # Every Tuesday at 01:00 (UTC) which is the day after the server release is done. This action takes several hours to complete.
-  - cron: "00 1 * * TUE"
+  # Every Monday at 01:00 (UTC) which is the day after the server release is done. This action takes several hours to complete.
+  - cron: "00 1 * * MON"
   workflow_dispatch:
     inputs:
       release_type:
@@ -242,6 +242,17 @@ jobs:
       run: |
         git config user.email 'kiali-dev@googlegroups.com'
         git config user.name 'kiali-bot'
+
+    - name: Check Kiali release is available
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "Checking if Kiali release $RELEASE_VERSION exists..."
+        if ! gh release view "$RELEASE_VERSION" --repo kiali/kiali > /dev/null 2>&1; then
+          echo "::error::Kiali release $RELEASE_VERSION not found in kiali/kiali. The Kiali server release must complete before the OSSMC release can proceed."
+          exit 1
+        fi
+        echo "Kiali release $RELEASE_VERSION found. Proceeding with OSSMC release."
 
     - name: Copy Kiali source code
       run: |
