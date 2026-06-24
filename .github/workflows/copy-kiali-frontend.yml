@@ -1,12 +1,14 @@
 name: Copy Kiali Frontend
 
 on:
+  repository_dispatch:
+    types: [kiali-frontend-updated]
   workflow_dispatch:
     inputs:
       branches:
-        description: Branches to copy Kiali frontend (Separate branches by commas)
+        description: Branches to copy Kiali frontend (comma-separated)
         required: true
-        default: v1.73,v2.4,v2.11
+        default: v2.27,v2.22,v2.17,v2.11,v2.4
         type: string
 
 permissions: read-all
@@ -18,41 +20,34 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     outputs:
-      branches: ${{ env.branches }}
+      branches: ${{ steps.resolve.outputs.branches }}
     steps:
-    - name: Prepare script to var
-      id: script_convert
+    - name: Resolve branch list
+      id: resolve
       run: |
-        cat <<-EOF > conversor.py
-        import sys, json
-
-        branch_arg = sys.argv[1]
-        branches = branch_arg.split(',')
-
-        print(json.dumps(branches))
-        EOF
-
-    - name: Set Branch
-      id: branches
-      env:
-        BRANCHES: ${{ github.event.inputs.branches }}
-      run: |
-        BRANCHES=$(python conversor.py $BRANCHES)
-        echo "branches=$BRANCHES" >> $GITHUB_ENV
+        if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+          BRANCHES='["${{ github.event.client_payload.branch }}"]'
+        else
+          BRANCHES=$(python3 -c "import sys,json; print(json.dumps(sys.argv[1].split(',')))" "${{ github.event.inputs.branches }}")
+        fi
+        echo "branches=$BRANCHES" >> "$GITHUB_OUTPUT"
 
   copy_kiali:
     needs: [initialize]
     permissions:
-      contents: write # needs to push commits to branches
+      contents: write
     runs-on: ubuntu-latest
+    concurrency:
+      group: copy-kiali-${{ matrix.branch }}
+      cancel-in-progress: true
     strategy:
       matrix:
-        branch: ${{fromJson(needs.initialize.outputs.branches)}}
+        branch: ${{ fromJson(needs.initialize.outputs.branches) }}
     steps:
     - name: Checkout branch
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       with:
-        ref: ${{matrix.branch}}
+        ref: ${{ matrix.branch }}
 
     - name: Configure git
       run: |
@@ -61,9 +56,15 @@ jobs:
 
     - name: Copy Kiali source code
       env:
-        BRANCH: ${{matrix.branch}}
+        BRANCH: ${{ matrix.branch }}
       run: |
-        hack/copy-frontend-src-to-ossmc.sh --source-ref "$BRANCH"
+        hack/copy-frontend-src-to-ossmc.sh --source-ref "$BRANCH" --skip-branch
 
-        # Push the changes to the branch
-        git push origin $(git rev-parse HEAD):refs/heads/$BRANCH
+        git add plugin/src/kiali/ plugin/cypress/integration/kiali/
+
+        if git diff-index --quiet HEAD --; then
+          echo "No frontend changes to sync for $BRANCH"
+        else
+          git commit --signoff -m "Copy of Kiali frontend source code from $BRANCH"
+          git push origin HEAD:refs/heads/$BRANCH
+        fi
