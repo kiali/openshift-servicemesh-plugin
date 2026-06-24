@@ -39,9 +39,13 @@ const config: Configuration = {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'babel-loader',
+            loader: 'swc-loader',
             options: {
-              presets: [['react-app', { typescript: true }]]
+              jsc: {
+                target: 'es2022',
+                parser: { syntax: 'typescript', tsx: true },
+                transform: { react: { runtime: 'automatic' } }
+              }
             }
           }
         ]
