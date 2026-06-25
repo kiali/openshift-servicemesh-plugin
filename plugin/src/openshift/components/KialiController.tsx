@@ -1,17 +1,19 @@
 import * as React from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { Namespace } from 'types/Namespace';
+import type { Namespace } from 'types/Namespace';
 import { MessageType } from 'types/NotificationCenter';
-import { DurationInSeconds, IntervalInMilliseconds, PF_THEME_DARK, Theme } from 'types/Common';
-import { TracingInfo } from 'types/TracingInfo';
+import type { DurationInSeconds, IntervalInMilliseconds} from 'types/Common';
+import { PF_THEME_DARK, Theme } from 'types/Common';
+import type { TracingInfo } from 'types/TracingInfo';
 import { toGrpcRate, toHttpRate, toTcpRate, TrafficRate } from 'types/Graph';
-import { StatusKey, StatusState } from 'types/StatusState';
+import type { StatusState } from 'types/StatusState';
+import { StatusKey } from 'types/StatusState';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import * as API from 'services/Api';
 import { humanDurations, serverConfig, setServerConfig } from 'config/ServerConfig';
 import { config } from 'config';
-import { KialiDispatch } from 'types/Redux';
+import type { KialiDispatch } from 'types/Redux';
 import { NotificationCenterActions } from 'actions/NotificationCenterActions';
 import { LoginThunkActions } from 'actions/LoginThunkActions';
 import { NamespaceActions } from 'actions/NamespaceAction';
@@ -21,15 +23,17 @@ import { LoginActions } from 'actions/LoginActions';
 import { GraphToolbarActions } from 'actions/GraphToolbarActions';
 import { HelpDropdownActions } from 'actions/HelpDropdownActions';
 import { GlobalActions } from 'actions/GlobalActions';
-import {
-  getDistributedTracingPluginManifest,
-  getNetobservPluginManifest,
-  getPluginConfig,
+import type {
   OpenShiftPluginConfig,
   PluginConfig
 } from 'openshift/utils/KialiIntegration';
+import {
+  getDistributedTracingPluginManifest,
+  getNetobservPluginManifest,
+  getPluginConfig
+} from 'openshift/utils/KialiIntegration';
 import { MeshTlsActions } from 'actions/MeshTlsActions';
-import { TLSStatus } from 'types/TLSStatus';
+import type { TLSStatus } from 'types/TLSStatus';
 import { store } from 'store/ConfigStore';
 import { kialiStyle } from 'styles/StyleUtils';
 import { addError } from 'utils/AlertUtils';
@@ -40,7 +44,6 @@ declare global {
   }
 }
 
-// eslint-disable-next-line no-extend-native
 Date.prototype.toLocaleStringWithConditionalDate = function () {
   const nowDate = new Date().toLocaleDateString();
   const thisDate = this.toLocaleDateString();
@@ -91,11 +94,11 @@ let netobservPluginConfig: any;
 export { netobservPluginConfig };
 
 class KialiControllerComponent extends React.Component<KialiControllerProps> {
-  private promises = new PromisesRegistry();
-
   state = {
     loaded: false
   };
+
+  private promises = new PromisesRegistry();
 
   componentDidMount(): void {
     this.loadKiali();

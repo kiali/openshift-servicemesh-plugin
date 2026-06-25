@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { useParams, useLocation } from 'react-router-dom-v5-compat';
-import { ServiceId } from 'types/ServiceInfo';
+import type { ServiceId } from 'types/ServiceInfo';
 import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
 import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
-import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
+import type { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 import { detailsTabPageStyle } from 'openshift/styles/GlobalStyle';

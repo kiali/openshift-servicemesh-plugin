@@ -1,4 +1,5 @@
-import i18next, { i18n as I18nInstance } from 'i18next';
+import type { i18n as I18nInstance } from 'i18next';
+import i18next from 'i18next';
 import { getI18n } from 'react-i18next';
 
 // Initialize the default i18next singleton so that vendored Kiali code
