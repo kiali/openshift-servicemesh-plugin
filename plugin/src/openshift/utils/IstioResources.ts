@@ -1,7 +1,9 @@
-import {
-  getGroupVersionKindForResource,
+import type {
   K8sGroupVersionKind,
   K8sResourceCommon
+} from '@openshift-console/dynamic-plugin-sdk';
+import {
+  getGroupVersionKindForResource
 } from '@openshift-console/dynamic-plugin-sdk';
 
 export type IstioResourceType = K8sGroupVersionKind & {

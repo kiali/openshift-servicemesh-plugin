@@ -7,7 +7,7 @@ import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 import { ServiceDetailsPage } from 'pages/ServiceDetails/ServiceDetailsPage';
 import { detailTitleMainStyle, detailPageTitleStyle } from 'styles/FlexStyles';
-import { ServiceId } from 'types/ServiceInfo';
+import type { ServiceId } from 'types/ServiceInfo';
 import { useKialiTranslation } from 'utils/I18nUtils';
 
 import { detailHeaderStyle, detailTitleRowStyle } from '../styles/GlobalStyle';
