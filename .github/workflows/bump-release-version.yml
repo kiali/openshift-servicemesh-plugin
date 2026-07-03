@@ -6,14 +6,14 @@ on:
       tag_branches:
         description: Branches to bump version (Separate branches by commas)
         required: true
-        default: v1.73,v2.4,v2.11,v2.17,v2.22
+        default: v2.4,v2.11,v2.17,v2.22
         type: string
   workflow_call:
     inputs:
       tag_branches:
         description: Branches to bump version (Separate branches by commas)
         required: true
-        default: v1.73,v2.4,v2.11,v2.17,v2.22
+        default: v2.4,v2.11,v2.17,v2.22
         type: string
 
 jobs:
@@ -113,11 +113,7 @@ jobs:
           hack/update-version-string.sh "$RELEASE_VERSION"
 
           # Commit the changes
-          git add Makefile plugin/package.json
-
-          if [[ $BRANCH != "v1.73" ]]; then
-            git add plugin/plugin-metadata.ts
-          fi
+          git add Makefile plugin/package.json plugin/plugin-metadata.ts
 
           git commit -m "Bump to version $RELEASE_VERSION"
           git push origin $(git rev-parse HEAD):refs/heads/$BRANCH
