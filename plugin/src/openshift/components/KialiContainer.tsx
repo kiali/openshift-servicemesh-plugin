@@ -11,14 +11,6 @@ import ossmcCSSVariables from '../styles/variables.module.scss';
 // Load the pf-icons
 import '@patternfly/patternfly/patternfly-base.css';
 
-// Enables ACE editor YAML themes
-import 'ace-builds/src-noconflict/ace';
-import 'ace-builds/src-noconflict/mode-yaml';
-import 'ace-builds/src-noconflict/theme-eclipse';
-import 'ace-builds/src-noconflict/theme-twilight';
-
-// Enables the search box for the ACE editor
-import 'ace-builds/src-noconflict/ext-searchbox';
 import { classes } from 'typestyle';
 
 interface Props {
