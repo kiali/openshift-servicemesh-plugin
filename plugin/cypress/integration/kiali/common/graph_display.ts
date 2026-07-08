@@ -25,7 +25,8 @@ When('user graphs {string} namespaces', (namespaces: string) => {
 });
 
 When('user {string} display menu', (_action: string) => {
-  cy.get('button#display-settings').should('not.be.disabled').click();
+  ensureKialiFinishedLoading();
+  cy.get('button#display-settings').should('be.visible').and('not.be.disabled').click();
 });
 
 When('user enables {string} {string} edge labels', (radio: string, edgeLabel: string) => {
@@ -242,7 +243,7 @@ Then('idle nodes {string} in the graph', (action: string) => {
   validateInput('filterIdleNodes', action);
 
   assertGraphReady(({ nodes }) => {
-    let numNodes = select(nodes, { prop: NodeAttr.isIdle, op: 'truthy' }).length;
+    const numNodes = select(nodes, { prop: NodeAttr.isIdle, op: 'truthy' }).length;
 
     if (action === 'appear') {
       assert.isAbove(numNodes, 0);
@@ -256,7 +257,7 @@ Then('ranks {string} in the graph', (action: string) => {
   validateInput('rank', action);
 
   assertGraphReady(({ nodes }) => {
-    let numNodes = select(nodes, { prop: NodeAttr.rank, op: '>', val: '0' }).length;
+    const numNodes = select(nodes, { prop: NodeAttr.rank, op: '>', val: '0' }).length;
 
     if (action === 'appear') {
       assert.isAbove(numNodes, 0);
@@ -270,7 +271,7 @@ Then('user does not see service nodes', () => {
   validateInput('filterServiceNodes', 'do not appear');
 
   assertGraphReady(({ nodes }) => {
-    let numBoxes = selectAnd(nodes, [
+    const numBoxes = selectAnd(nodes, [
       { prop: NodeAttr.nodeType, op: '=', val: 'service' },
       { prop: NodeAttr.isOutside, op: '=', val: undefined }
     ]).length;
@@ -283,7 +284,7 @@ Then('security {string} in the graph', (action: string) => {
   validateInput('filterSecurity', action);
 
   assertGraphReady(({ edges }) => {
-    let numEdges = select(edges, { prop: EdgeAttr.isMTLS, op: '>', val: 0 }).length;
+    const numEdges = select(edges, { prop: EdgeAttr.isMTLS, op: '>', val: 0 }).length;
 
     if (action === 'appears') {
       assert.isAbove(numEdges, 0);
