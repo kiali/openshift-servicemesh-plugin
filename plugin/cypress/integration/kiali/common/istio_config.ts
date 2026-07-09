@@ -14,9 +14,9 @@ const labelsStringToJson = (labelsString: string): string => {
     labelsJson = labelsString
       .split(',')
       .map((lbl: string) => {
-        let keyValue = lbl.split('=');
-        let key = keyValue[0];
-        let value = keyValue[1];
+        const keyValue = lbl.split('=');
+        const key = keyValue[0];
+        const value = keyValue[1];
 
         return `"${key}": "${value}"`;
       })
@@ -749,6 +749,15 @@ Then(
       .should('exist');
   }
 );
+
+When('user clicks on the {string} VirtualService of the {string} namespace', (name: string, namespace: string) => {
+  cy.get(`[data-test="VirtualItem_Ns${namespace}_VirtualService_${name}"]`).find(linkSelector()).first().click();
+  ensureKialiFinishedLoading();
+});
+
+Then('the user sees the validation message {string} grouped with count {int}', (code: string, count: number) => {
+  cy.contains(`${code}`).parent().should('contain.text', `(${count})`);
+});
 
 // KIA0104 and similar scenarios delete VirtualService/bookinfo; re-apply sample networking once when
 // istio_config.feature finishes (step defs are global, so gate on basename — not wizard_istio_config.feature).

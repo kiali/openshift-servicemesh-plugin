@@ -208,7 +208,6 @@ export const Prompt = React.memo(({ scrollIntoView }: PromptProps) => {
           try {
             json = JSON.parse(line);
           } catch (error) {
-            // eslint-disable-next-line no-console
             console.error(`Failed to parse JSON string "${line}"`, error);
             continue;
           }
@@ -279,7 +278,6 @@ export const Prompt = React.memo(({ scrollIntoView }: PromptProps) => {
                 })
               );
             } else {
-              // eslint-disable-next-line no-console
               console.warn(`Unrecognized event in response stream:`, JSON.stringify(json));
             }
           }
@@ -464,3 +462,4 @@ export const Prompt = React.memo(({ scrollIntoView }: PromptProps) => {
     </div>
   );
 });
+Prompt.displayName = 'Prompt';
