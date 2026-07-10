@@ -621,6 +621,12 @@ If `plugin/src/kiali/` or `plugin/cypress/integration/kiali/` shows up with chan
 > These steps require Kiali organization membership. Skip if you don't
 > have org access.
 
+### Fork Workflow
+
+**NEVER push feature branches directly to the upstream `kiali/openshift-servicemesh-plugin` (or any `kiali/*`) repository.** Always push to the developer's personal fork and create PRs from there. Before pushing, run `git remote -v` to identify which remote is the fork (the one with the developer's username) and which is upstream (`kiali/*`). If no fork remote exists, ask the user.
+
+### Project Management
+
 Every PR must be added to the Kiali GitHub Project with the correct
 status and assignee.
 
