@@ -2,6 +2,7 @@
 
 import { Configuration as WebpackConfiguration, DefinePlugin as DefinePlugin } from 'webpack';
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
+import * as fs from 'fs';
 import * as path from 'path';
 import { ConsoleRemotePlugin } from '@openshift-console/dynamic-plugin-sdk-webpack';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
@@ -12,6 +13,13 @@ import TerserPlugin from 'terser-webpack-plugin';
 
 import pluginMetadata from './plugin-metadata';
 import extensions from './console-extensions';
+
+const discoverLocales = (): string[] =>
+  fs
+    .readdirSync(path.resolve(__dirname, 'src/kiali/locales'), { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name)
+    .sort();
 
 interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
@@ -103,20 +111,10 @@ const config: Configuration = {
     new ConsoleRemotePlugin({ pluginMetadata, extensions }),
     new MergeJsonWebpackPlugin({
       output: {
-        groupBy: [
-          {
-            pattern: '**/locales/en/translation.json',
-            fileName: 'locales/en/plugin__ossmconsole.json'
-          },
-          {
-            pattern: '**/locales/es/translation.json',
-            fileName: 'locales/es/plugin__ossmconsole.json'
-          },
-          {
-            pattern: '**/locales/zh/translation.json',
-            fileName: 'locales/zh/plugin__ossmconsole.json'
-          }
-        ]
+        groupBy: discoverLocales().map(locale => ({
+          pattern: `**/locales/${locale}/translation.json`,
+          fileName: `locales/${locale}/plugin__ossmconsole.json`
+        }))
       },
       space: 2
     }),
