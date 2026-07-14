@@ -47,7 +47,7 @@
     "eventemitter3": "4.0.7",
     "i18next": "^23.10.0",
     "i18next-http-backend": "^2.5.0",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.3.0",
     "lodash-es": "^4.18.0",
     "micro-memoize": "4.0.9",
     "moment": "^2.29.4",
@@ -114,7 +114,7 @@
     "file-loader": "^6.2.0",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
     "husky": "^8.0.3",
-    "i18next-parser": "^9.0.1",
+    "i18next-parser": "^9.4.0",
     "jest-canvas-mock": "2.2.0",
     "jest-localstorage-mock": "2.4.2",
     "junit-report-merger": "^3.0.5",
@@ -136,6 +136,7 @@
     "webpack-dev-server": "^5.0.4"
   },
   "resolutions": {
+    "js-yaml@npm:3.14.0": "npm:3.15.0",
     "webpack": "^5.94.0"
   },
   "engines": {
