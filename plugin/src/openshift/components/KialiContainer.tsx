@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Provider } from 'react-redux';
 import { store } from 'store/ConfigStore';
 import { KialiController } from '../components/KialiController';
+import { KialiErrorBoundary } from '../components/KialiErrorBoundary';
 import { NotificationAlerts } from '../components/NotificationAlerts';
 import { globalStyle as kialiStyle } from 'styles/GlobalStyle';
 import { globalStyle as ossmcStyle } from '../styles/GlobalStyle';
@@ -20,14 +21,16 @@ interface Props {
 
 export const KialiContainer: React.FC<Props> = ({ className, children }) => {
   return (
-    <Provider store={store}>
-      <NotificationAlerts />
-      <div
-        id="root"
-        className={classes(kialiStyle, ossmcStyle, kialiCSSVariables.style, ossmcCSSVariables.style, className)}
-      >
-        <KialiController>{children}</KialiController>
-      </div>
-    </Provider>
+    <KialiErrorBoundary>
+      <Provider store={store}>
+        <NotificationAlerts />
+        <div
+          id="root"
+          className={classes(kialiStyle, ossmcStyle, kialiCSSVariables.style, ossmcCSSVariables.style, className)}
+        >
+          <KialiController>{children}</KialiController>
+        </div>
+      </Provider>
+    </KialiErrorBoundary>
   );
 };

@@ -5,6 +5,7 @@ import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-serv
 import * as fs from 'fs';
 import * as path from 'path';
 import { ConsoleRemotePlugin } from '@openshift-console/dynamic-plugin-sdk-webpack';
+import CopyPlugin from 'copy-webpack-plugin';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import MergeJsonWebpackPlugin from 'merge-jsons-webpack-plugin';
@@ -98,6 +99,9 @@ const config: Configuration = {
     port: 9001,
     // Allow bridge running in a container to connect to the plugin dev server.
     allowedHosts: 'all',
+    client: {
+      overlay: { warnings: false }
+    },
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
@@ -108,7 +112,17 @@ const config: Configuration = {
     }
   },
   plugins: [
-    new ConsoleRemotePlugin({ pluginMetadata, extensions }),
+    new ConsoleRemotePlugin({
+      pluginMetadata,
+      extensions
+    }),
+    new CopyPlugin({
+      patterns: discoverLocales().map(locale => ({
+        from: path.resolve(__dirname, `src/fleet-mesh/locales/${locale}/plugin__ossm-acm.json`),
+        to: path.resolve(__dirname, `dist/locales/${locale}/plugin__ossm-acm.json`),
+        noErrorOnMissing: true
+      }))
+    }),
     new MergeJsonWebpackPlugin({
       output: {
         groupBy: discoverLocales().map(locale => ({

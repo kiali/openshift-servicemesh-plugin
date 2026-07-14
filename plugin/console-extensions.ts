@@ -1,5 +1,6 @@
 import { EncodedExtension } from '@openshift/dynamic-plugin-sdk-webpack';
 import { K8sGroupVersionKind } from '@openshift-console/dynamic-plugin-sdk';
+import { fleetMeshExtensions } from './src/fleet-mesh/fleet-mesh-extensions';
 
 const OSSM_CONSOLE = 'ossmconsole';
 const ADMIN = 'admin';
@@ -186,17 +187,26 @@ const reduxReducer: EncodedExtension = {
   }
 };
 
+const kialiAvailableFlag: EncodedExtension = {
+  type: 'console.flag',
+  properties: {
+    handler: { $codeRef: 'kialiAvailableFlag' }
+  }
+};
+
 const consoleSection: EncodedExtension = {
+  flags: { required: ['KIALI_AVAILABLE'] },
   type: 'console.navigation/section',
   properties: {
     id: OSSM_CONSOLE,
-    perspective: ADMIN,
-    name: getConsoleTitle('Service Mesh')
+    name: getConsoleTitle('Service Mesh'),
+    perspective: ADMIN
   }
 };
 
 const consoleRoute = (id: string, title: string, pageRef: string, paths: string[]): EncodedExtension[] => {
   const routes = paths.map(path => ({
+    flags: { required: ['KIALI_AVAILABLE'] },
     type: 'console.page/route',
     properties: {
       exact: true,
@@ -208,11 +218,12 @@ const consoleRoute = (id: string, title: string, pageRef: string, paths: string[
   return [
     ...routes,
     {
+      flags: { required: ['KIALI_AVAILABLE'] },
       type: 'console.navigation/href',
       properties: {
+        href: paths[0],
         id: `${OSSM_CONSOLE}_${id}`,
         name: getConsoleTitle(title),
-        href: paths[0],
         perspective: ADMIN,
         section: OSSM_CONSOLE
       }
@@ -221,6 +232,7 @@ const consoleRoute = (id: string, title: string, pageRef: string, paths: string[
 };
 
 const horizontalNav = (model: K8sGroupVersionKind, tabRef: string): EncodedExtension => ({
+  flags: { required: ['KIALI_AVAILABLE'] },
   type: 'console.tab/horizontalNav',
   properties: {
     model: model,
@@ -234,6 +246,7 @@ const horizontalNav = (model: K8sGroupVersionKind, tabRef: string): EncodedExten
 
 const extensions: EncodedExtension[] = [
   reduxReducer,
+  kialiAvailableFlag,
   consoleSection,
 
   // Console routes for each OSSMC page
@@ -248,6 +261,7 @@ const extensions: EncodedExtension[] = [
   ]),
   ...consoleRoute('mesh', 'Mesh', Page.MESH, [`/${OSSM_CONSOLE}/mesh`]),
   {
+    flags: { required: ['KIALI_AVAILABLE'] },
     type: 'console.navigation/separator',
     properties: {
       id: `${OSSM_CONSOLE}_separator`,
@@ -258,6 +272,7 @@ const extensions: EncodedExtension[] = [
   ...consoleRoute('namespaces', 'Namespaces', Page.NAMESPACES, [`/${OSSM_CONSOLE}/namespaces`]),
   ...consoleRoute('applications', 'Applications', Page.APPLICATIONS, [`/${OSSM_CONSOLE}/applications`]),
   {
+    flags: { required: ['KIALI_AVAILABLE'] },
     type: 'console.page/route',
     properties: {
       exact: true,
@@ -267,6 +282,7 @@ const extensions: EncodedExtension[] = [
   },
   ...consoleRoute('services', 'Services', Page.SERVICES, [`/${OSSM_CONSOLE}/services`]),
   {
+    flags: { required: ['KIALI_AVAILABLE'] },
     type: 'console.page/route',
     properties: {
       exact: true,
@@ -277,6 +293,7 @@ const extensions: EncodedExtension[] = [
   ...consoleRoute('workloads', 'Workloads', Page.WORKLOADS, [`/${OSSM_CONSOLE}/workloads`]),
   ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [`/${OSSM_CONSOLE}/istio`]),
   {
+    flags: { required: ['KIALI_AVAILABLE'] },
     type: 'console.page/route',
     properties: {
       exact: true,
@@ -298,6 +315,7 @@ const extensions: EncodedExtension[] = [
 
   // Istio horizontal navs - service mesh tab of istio resources
   ...istioResources.map(istioResource => ({
+    flags: { required: ['KIALI_AVAILABLE'] },
     type: 'console.tab/horizontalNav',
     properties: {
       model: istioResource,
@@ -307,7 +325,10 @@ const extensions: EncodedExtension[] = [
       },
       component: { $codeRef: Tab.ISTIO }
     }
-  }))
+  })),
+
+  // Fleet Service Mesh perspective, nav, and routes
+  ...fleetMeshExtensions
 ];
 
 export default extensions;

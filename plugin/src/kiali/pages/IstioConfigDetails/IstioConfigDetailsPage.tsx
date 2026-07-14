@@ -1,6 +1,6 @@
 import * as React from 'react';
-import type { BlockerFunction } from 'react-router-dom-v5-compat';
-import { useBlocker } from 'react-router-dom-v5-compat';
+import type { BlockerFunction } from 'react-router';
+import { useBlocker } from 'react-router';
 import type { IstioConfigDetails, IstioConfigId } from '../../types/IstioConfigDetails';
 import { yamlDumpOptions } from '../../types/IstioConfigDetails';
 import { addError, addSuccess } from '../../utils/AlertUtils';
@@ -657,7 +657,6 @@ const IstioConfigDetailsPageComponent: React.FC<IstioConfigDetailsProps> = (prop
       monacoEditorRef.current = ed;
       monacoRef.current = monaco;
       (window as any).monaco = monaco;
-      (window as any).istioConfigEditor = ed;
       cursorDisposableRef.current?.dispose();
       cursorDisposableRef.current = ed.onDidChangeCursorPosition(handleCursorChange);
       applyValidationMarkers();

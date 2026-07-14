@@ -16,7 +16,6 @@ export const useTopologyResize = (onResize: () => void): void => {
 
   useResizeDetector({
     targetRef: resizeTargetRef,
-    disableRerender: true,
     refreshMode: 'debounce',
     refreshRate: 100,
     skipOnMount: true,

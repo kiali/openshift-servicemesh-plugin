@@ -37,6 +37,7 @@ CYPRESS_TESTS_QUAY_TAG ?= ${CYPRESS_TESTS_QUAY_NAME}:${CYPRESS_TESTS_CONTAINER_V
 include make/Makefile.plugin.mk
 include make/Makefile.cluster.mk
 include make/Makefile.container.mk
+include make/Makefile.fleet-mesh.mk
 
 help:
 	@echo
@@ -45,6 +46,9 @@ help:
 	@echo
 	@echo "Cluster targets - used to manage images on the remote cluster"
 	@sed -n 's/^##//p' make/Makefile.cluster.mk | column -t -s ':' |  sed -e 's/^/ /'
+	@echo
+	@echo "Fleet Service Mesh targets - for developing the fleet-mesh plugin subtree"
+	@sed -n 's/^##//p' make/Makefile.fleet-mesh.mk | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
 
 .ensure-oc-exists:

@@ -2,6 +2,7 @@
   "compilerOptions": {
     "allowJs": true,
     "baseUrl": "src",
+    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
@@ -39,6 +40,15 @@
       "utils/*": ["./kiali/utils/*"]
     }
   },
-  "exclude": ["src/mocks/**/*", "src/setupTests.ts"],
+  "exclude": [
+    "src/mocks/**/*",
+    "src/setupTests.ts",
+    "src/__mocks__/**/*",
+    "src/fleet-mesh/__mocks__/**/*",
+    "src/fleet-mesh/**/__tests__/**/*",
+    "src/fleet-mesh/rstest-globals.d.ts",
+    "src/fleet-mesh/rstest.fleet-mesh.config.ts",
+    "src/fleet-mesh/setupTests.tsx"
+  ],
   "include": ["src"]
 }
