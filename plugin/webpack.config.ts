@@ -108,7 +108,13 @@ const config: Configuration = {
     }
   },
   plugins: [
-    new ConsoleRemotePlugin({ pluginMetadata, extensions }),
+    new ConsoleRemotePlugin({
+      pluginMetadata,
+      extensions,
+      // React 18 upgrade (#9323): skip shared-module version check until Console SDK
+      // is upgraded to 4.22+ (which also requires Redux 5 / React Router 7).
+      validateSharedModules: false
+    }),
     new MergeJsonWebpackPlugin({
       output: {
         groupBy: discoverLocales().map(locale => ({
