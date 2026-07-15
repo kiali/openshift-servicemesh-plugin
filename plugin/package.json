@@ -43,7 +43,7 @@
     "lint:precommit": "if git diff --name-only HEAD | grep -E '\\.tsx?$'; then npm run lint; else true; fi",
     "prettier": "prettier --write \"**/*.{ts,tsx,scss,json}\"",
     "prepare": "cd .. && husky plugin/.husky",
-    "pre-commit": "yarn run pretty-quick --staged --no-restage --bail --pattern ['**/*.{ts,tsx,scss,json}', '!src/kiali'] && npm run lint:precommit && npm run lint:gherkin:precommit"
+    "pre-commit": "yarn run pretty-quick --staged --no-restage --bail --pattern \"**/*.{ts,tsx,scss,json}\" && npm run lint:precommit && npm run lint:gherkin:precommit"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
