@@ -1,18 +1,19 @@
 import { ChatAIActions } from 'actions/ChatAIActions';
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { KialiAppState } from 'store/Store';
+import type { KialiAppState } from 'store/Store';
 import * as API from '../../services/Api';
 import { throttle, uniqueId } from 'lodash-es';
 import { Map as ImmutableMap } from 'immutable';
 import { useDispatch } from 'react-redux';
-import { ChatInteractionMode, ChatRequest, Prompt as ChatPrompt } from 'types/Chatbot';
+import type { ChatInteractionMode, ChatRequest, Prompt as ChatPrompt } from 'types/Chatbot';
 import { getFetchErrorMessage } from './error';
 import { MessageBar } from '@patternfly/chatbot';
 import { ToolModal } from './EntryChat/ToolModal';
 import { useLocationContext } from './hooks/useLocationContext';
 import { buildPageContext } from './PageContext';
 import { router } from 'app/History';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import {
   Button,
   ButtonVariant,
@@ -20,13 +21,12 @@ import {
   DropdownItem,
   DropdownList,
   MenuToggle,
-  MenuToggleElement,
   Tooltip
 } from '@patternfly/react-core';
 import { CommentDotsIcon, HelpIcon, WrenchIcon } from '@patternfly/react-icons';
 import { t } from 'utils/I18nUtils';
 import { DataPrompts } from './DataPrompts';
-import { useLocation } from 'react-router-dom-v5-compat';
+import { useLocation } from 'react-router';
 import { derivePromptCategory } from './promptCategory';
 
 type PromptProps = {

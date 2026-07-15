@@ -1,8 +1,9 @@
 // Action Creators allow us to create typesafe utilities for dispatching actions
-import { ActionType, createStandardAction } from 'typesafe-actions';
+import type { ActionType } from 'types/typesafeActionsLegacy';
+import { createStandardAction } from 'types/typesafeActionsLegacy';
 import { ActionKeys } from './ActionKeys';
-import { ChatAIConfig, ChatEntry, ChatInteractionMode, Tool } from 'types/Chatbot';
-import { ChatbotDisplayMode } from '@patternfly/chatbot';
+import type { ChatAIConfig, ChatEntry, ChatInteractionMode, Tool } from 'types/Chatbot';
+import type { ChatbotDisplayMode } from '@patternfly/chatbot';
 
 export const setChatAI = createStandardAction(ActionKeys.CHAT_AI_SET_CHAT_AI)<ChatAIConfig>();
 export const setConversationID = createStandardAction(ActionKeys.CHAT_AI_SET_CONVERSATION_ID)<{
