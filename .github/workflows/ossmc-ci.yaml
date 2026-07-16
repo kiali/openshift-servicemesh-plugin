@@ -16,6 +16,7 @@ jobs:
   lint_and_test:
     name: Lint and test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
     - name: Checkout code
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -32,6 +33,12 @@ jobs:
 
     - name: Install dependencies
       working-directory: plugin
+      env:
+        # Lint/unit tests do not need the Cypress browser binary; downloading it
+        # during yarn link can hang for a long time under Yarn hardened mode on
+        # public PRs.
+        CYPRESS_INSTALL_BINARY: '0'
+        HUSKY: '0'
       run: yarn install --immutable
 
     - name: Lint
