@@ -148,6 +148,7 @@
     "webpack-dev-server": "^5.2.1"
   },
   "resolutions": {
+    "dompurify": "^3.4.7",
     "esbuild": "^0.25.2",
     "immutable": "^4.3.8",
     "js-cookie": "^3.0.8",
