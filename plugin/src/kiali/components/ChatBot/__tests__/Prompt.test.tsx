@@ -26,6 +26,7 @@ rstest.mock('react-router', () => ({
 }));
 
 rstest.mock('app/History', () => ({
+  navigateApp: rstest.fn(),
   router: { navigate: rstest.fn() }
 }));
 
@@ -33,8 +34,8 @@ rstest.mock('../hooks/useLocationContext', () => ({
   useLocationContext: () => [undefined, undefined, undefined, undefined]
 }));
 
-rstest.mock('../PageContext', () => ({
-  buildPageContext: () => undefined
+rstest.mock('../hooks/useChatResourceHealth', () => ({
+  useChatResourceHealth: () => undefined
 }));
 
 rstest.mock('../EntryChat/ToolModal', () => ({
