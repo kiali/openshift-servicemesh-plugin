@@ -24,7 +24,7 @@ const metadata: ConsolePluginBuildMetadata = {
     WorkloadListPage: './openshift/pages/WorkloadListPage'
   },
   dependencies: {
-    '@console/pluginAPI': '>=4.22.0-0'
+    '@console/pluginAPI': '*'
   }
 };
 
