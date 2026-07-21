@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useLocation } from 'react-router-dom-v5-compat';
+import { useLocation } from 'react-router';
 import { AppListPage } from 'pages/AppList/AppListPage';
 import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';

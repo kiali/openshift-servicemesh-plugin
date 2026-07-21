@@ -1,6 +1,6 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import type { Mock } from '@rstest/core';
-import { Map as ImmutableMap } from 'immutable';
+import type { Map as ImmutableMap } from 'immutable';
 import { Provider } from 'react-redux';
 import { store } from 'store/ConfigStore';
 import { ChatAIActions } from 'actions/ChatAIActions';
@@ -21,11 +21,12 @@ rstest.mock('services/Api', () => ({
   getChatPrompts: rstest.fn()
 }));
 
-rstest.mock('react-router-dom-v5-compat', () => ({
+rstest.mock('react-router', () => ({
   useLocation: () => ({ pathname: '/overview' })
 }));
 
 rstest.mock('app/History', () => ({
+  navigateApp: rstest.fn(),
   router: { navigate: rstest.fn() }
 }));
 
@@ -33,8 +34,8 @@ rstest.mock('../hooks/useLocationContext', () => ({
   useLocationContext: () => [undefined, undefined, undefined, undefined]
 }));
 
-rstest.mock('../PageContext', () => ({
-  buildPageContext: () => undefined
+rstest.mock('../hooks/useChatResourceHealth', () => ({
+  useChatResourceHealth: () => undefined
 }));
 
 rstest.mock('../EntryChat/ToolModal', () => ({

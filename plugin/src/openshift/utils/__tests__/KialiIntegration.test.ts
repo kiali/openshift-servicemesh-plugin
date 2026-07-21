@@ -17,7 +17,7 @@ rstest.mock('../../components/KialiController', () => ({
   get pluginConfig() { return controllerState.pluginConfig; },
 }));
 
-rstest.mock('react-router-dom-v5-compat', () => ({
+rstest.mock('react-router', () => ({
   useNavigate: rstest.fn(),
   createBrowserRouter: rstest.fn(() => ({})),
   createHashRouter: rstest.fn(() => ({})),

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { consoleFetchJSON } from '@openshift-console/dynamic-plugin-sdk';
-import { useNavigate } from 'react-router-dom-v5-compat';
+import { useNavigate } from 'react-router';
 
 import { setRouter } from 'app/History';
 import { store } from 'store/ConfigStore';

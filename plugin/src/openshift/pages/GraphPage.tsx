@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useParams, useLocation } from 'react-router-dom-v5-compat';
+import { useParams, useLocation } from 'react-router';
 import type { GraphURLPathProps } from 'pages/Graph/GraphPage';
 import { GraphPage } from 'pages/Graph/GraphPage';
 import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
