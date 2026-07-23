@@ -1,2 +1,2 @@
-src/kiali/
-cypress/integration/kiali/
+**/src/kiali/
+**/cypress/integration/kiali/
