@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { EmptyState, EmptyStateBody, EmptyStateVariant } from '@patternfly/react-core';
+import { CubesIcon } from '@patternfly/react-icons';
 import type { Namespace } from 'types/Namespace';
 import { MessageType } from 'types/NotificationCenter';
 import type { DurationInSeconds, IntervalInMilliseconds} from 'types/Common';
@@ -13,6 +15,7 @@ import { PromisesRegistry } from 'utils/CancelablePromises';
 import * as API from 'services/Api';
 import { humanDurations, serverConfig, setServerConfig } from 'config/ServerConfig';
 import { config } from 'config';
+import { t } from 'utils/I18nUtils';
 import type { KialiDispatch } from 'types/Redux';
 import { NotificationCenterActions } from 'actions/NotificationCenterActions';
 import { LoginThunkActions } from 'actions/LoginThunkActions';
@@ -95,7 +98,8 @@ export { netobservPluginConfig };
 
 class KialiControllerComponent extends React.Component<KialiControllerProps> {
   state = {
-    loaded: false
+    loaded: false,
+    kialiReachable: true
   };
 
   private promises = new PromisesRegistry();
@@ -109,6 +113,24 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   }
 
   render(): React.ReactNode {
+    if (this.state.loaded && !this.state.kialiReachable) {
+      return (
+        <EmptyState
+          headingLevel="h1"
+          icon={CubesIcon}
+          titleText={t('Service Mesh is not configured')}
+          variant={EmptyStateVariant.lg}
+        >
+          <EmptyStateBody>
+            {t(
+              'The OpenShift Service Mesh Console plugin is installed but cannot connect to a Kiali server. ' +
+                'To use Service Mesh features, install and configure a Kiali instance using the Kiali Operator.'
+            )}
+          </EmptyStateBody>
+        </EmptyState>
+      );
+    }
+
     return this.state.loaded ? (
       <>{this.props.children}</>
     ) : (
@@ -117,27 +139,30 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   }
 
   private loadKiali = async (): Promise<void> => {
-    await this.getKialiConfig();
+    const kialiReachable = await this.getKialiConfig();
 
-    this.applyUIDefaults();
+    if (kialiReachable) {
+      this.applyUIDefaults();
+    }
     this.setDocLayout();
-    this.setState({ loaded: true });
+    this.setState({ loaded: true, kialiReachable });
   };
 
-  private getKialiConfig = async (): Promise<void> => {
+  private getKialiConfig = async (): Promise<boolean> => {
+    try {
+      const serverConfigResponse = await this.promises.register('getServerConfig', API.getServerConfig());
+      setServerConfig(serverConfigResponse.data);
+    } catch (error) {
+      console.info('Kiali server is not reachable. Service Mesh features will be unavailable.', error);
+      return false;
+    }
+
     try {
       const getNamespacesPromise = this.promises
         .register('getNamespaces', API.getNamespaces())
         .then(response => this.props.setNamespaces(response.data, new Date()))
         .catch(error => {
           addError('Error fetching namespaces.', error, true, MessageType.WARNING);
-        });
-
-      const getServerConfigPromise = this.promises
-        .register('getServerConfig', API.getServerConfig())
-        .then(response => setServerConfig(response.data))
-        .catch(error => {
-          addError('Error fetching server config.', error, true, MessageType.WARNING);
         });
 
       const getTracingInfoPromise = this.promises
@@ -164,14 +189,12 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
           console.debug(
             `Error fetching Distributed Tracing plugin configuration. (Probably is not installed) ${error}`
           );
-          // For testing the distributed tracing integration locally, assign distributedTracingPluginConfig = "plugin manifest json"
         });
       const getNetobservPluginManifestPromise = this.promises
         .register('getNetobservPluginManifestPromise', getNetobservPluginManifest())
         .then(response => (netobservPluginConfig = response))
         .catch(error => {
           console.debug(`Failed to fetch Netobserv plugin configuration (plugin is not probably installed). ${error}`);
-          // For testing the netobserv integration locally, assign netobservPluginConfig = "plugin manifest json"
         });
       API.getStatus()
         .then(response => this.processServerStatus(response.data))
@@ -181,13 +204,11 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
 
       await Promise.all([
         getNamespacesPromise,
-        getServerConfigPromise,
         getTracingInfoPromise,
         getPluginPromise,
         getDistributedTracingPluginManifestPromise,
         getNetobservPluginManifestPromise
       ]).then(() => {
-        // Set kiosk data for OSSMC
         store.dispatch(
           GlobalActions.setKioskData({
             hasExternalTracing: !!distributedTracingPluginConfig,
@@ -198,6 +219,8 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
     } catch (err) {
       console.error('Error loading kiali config', err);
     }
+
+    return true;
   };
 
   private applyUIDefaults = (): void => {
