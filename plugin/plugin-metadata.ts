@@ -11,6 +11,7 @@ const metadata: ConsolePluginBuildMetadata = {
     GraphPage: './openshift/pages/GraphPage',
     IstioConfigListPage: './openshift/pages/IstioConfigListPage',
     IstioConfigNewPage: './openshift/pages/IstioConfigNewPage',
+    IstiosPage: './openshift/pages/IstiosPage',
     IstioDetailsTab: './openshift/pages/ServiceMeshTabs/IstioDetailsTab',
     MeshPage: './openshift/pages/MeshPage',
     NamespacesPage: './openshift/pages/NamespacesPage',

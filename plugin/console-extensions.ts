@@ -12,6 +12,7 @@ const enum Page {
   GRAPH = 'GraphPage',
   ISTIO = 'IstioConfigListPage',
   ISTIO_NEW = 'IstioConfigNewPage',
+  ISTIOS = 'IstiosPage',
   MESH = 'MeshPage',
   NAMESPACES = 'NamespacesPage',
   OVERVIEW = 'OverviewPage',
@@ -255,6 +256,7 @@ const extensions: EncodedExtension[] = [
       section: OSSM_CONSOLE
     }
   },
+  ...consoleRoute('istios', 'Istios', Page.ISTIOS, [`/${OSSM_CONSOLE}/istios`]),
   ...consoleRoute('namespaces', 'Namespaces', Page.NAMESPACES, [`/${OSSM_CONSOLE}/namespaces`]),
   ...consoleRoute('applications', 'Applications', Page.APPLICATIONS, [`/${OSSM_CONSOLE}/applications`]),
   {
