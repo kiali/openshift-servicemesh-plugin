@@ -108,7 +108,10 @@ const config: Configuration = {
     }
   },
   plugins: [
-    new ConsoleRemotePlugin({ pluginMetadata, extensions }),
+    new ConsoleRemotePlugin({
+      pluginMetadata,
+      extensions
+    }),
     new MergeJsonWebpackPlugin({
       output: {
         groupBy: discoverLocales().map(locale => ({

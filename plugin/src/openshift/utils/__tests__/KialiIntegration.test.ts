@@ -4,7 +4,7 @@ import { parseTempoUrl, resolveConsoleUrl } from '../KialiIntegration';
 const controllerState = rstest.hoisted(() => ({
   distributedTracingPluginConfig: undefined as unknown,
   netobservPluginConfig: undefined as unknown,
-  pluginConfig: undefined as unknown,
+  pluginConfig: undefined as unknown
 }));
 
 const storeGetState = rstest.hoisted(() =>
@@ -12,12 +12,18 @@ const storeGetState = rstest.hoisted(() =>
 );
 
 rstest.mock('../../components/KialiController', () => ({
-  get distributedTracingPluginConfig() { return controllerState.distributedTracingPluginConfig; },
-  get netobservPluginConfig() { return controllerState.netobservPluginConfig; },
-  get pluginConfig() { return controllerState.pluginConfig; },
+  get distributedTracingPluginConfig() {
+    return controllerState.distributedTracingPluginConfig;
+  },
+  get netobservPluginConfig() {
+    return controllerState.netobservPluginConfig;
+  },
+  get pluginConfig() {
+    return controllerState.pluginConfig;
+  }
 }));
 
-rstest.mock('react-router-dom-v5-compat', () => ({
+rstest.mock('react-router', () => ({
   useNavigate: rstest.fn(),
   createBrowserRouter: rstest.fn(() => ({})),
   createHashRouter: rstest.fn(() => ({})),
@@ -83,9 +89,7 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should fall back to workloads list when workload name is empty', () => {
-      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads')).toEqual(
-        '/ossmconsole/workloads?namespaces=bookinfo'
-      );
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads')).toEqual('/ossmconsole/workloads?namespaces=bookinfo');
     });
 
     test('should route workload detail to correct k8s resource type when type param is provided', () => {
@@ -149,9 +153,7 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should fall back to services list when service name is empty', () => {
-      expect(resolveConsoleUrl('/namespaces/bookinfo/services')).toEqual(
-        '/ossmconsole/services?namespaces=bookinfo'
-      );
+      expect(resolveConsoleUrl('/namespaces/bookinfo/services')).toEqual('/ossmconsole/services?namespaces=bookinfo');
     });
 
     test('should route external services to ossmconsole service detail page', () => {
@@ -201,9 +203,7 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should preserve query parameters on /workloads', () => {
-      expect(resolveConsoleUrl('/workloads?namespaces=bookinfo')).toEqual(
-        '/ossmconsole/workloads?namespaces=bookinfo'
-      );
+      expect(resolveConsoleUrl('/workloads?namespaces=bookinfo')).toEqual('/ossmconsole/workloads?namespaces=bookinfo');
     });
   });
 
@@ -341,9 +341,9 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should map security istio detail through refForKialiIstio', () => {
-      expect(
-        resolveConsoleUrl('/namespaces/bookinfo/istio/security.istio.io/v1/AuthorizationPolicy/deny-all')
-      ).toEqual('/k8s/ns/bookinfo/security.istio.io~v1~AuthorizationPolicy/deny-all/ossmconsole');
+      expect(resolveConsoleUrl('/namespaces/bookinfo/istio/security.istio.io/v1/AuthorizationPolicy/deny-all')).toEqual(
+        '/k8s/ns/bookinfo/security.istio.io~v1~AuthorizationPolicy/deny-all/ossmconsole'
+      );
     });
   });
 

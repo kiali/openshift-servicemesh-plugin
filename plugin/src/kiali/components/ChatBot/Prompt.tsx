@@ -12,6 +12,7 @@ import { MessageBar } from '@patternfly/chatbot';
 import { ToolModal } from './EntryChat/ToolModal';
 import { useLocationContext } from './hooks/useLocationContext';
 import { router } from 'app/History';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import {
   Button,
   ButtonVariant,
@@ -21,11 +22,10 @@ import {
   MenuToggle,
   Tooltip
 } from '@patternfly/react-core';
-import type { MenuToggleElement } from '@patternfly/react-core';
 import { CommentDotsIcon, HelpIcon, WrenchIcon } from '@patternfly/react-icons';
 import { t } from 'utils/I18nUtils';
 import { DataPrompts } from './DataPrompts';
-import { useLocation } from 'react-router-dom-v5-compat';
+import { useLocation } from 'react-router';
 import { namespacesToString } from 'types/Namespace';
 import { activeNamespacesSelector } from 'store/Selectors';
 import { derivePromptCategory } from './promptCategory';
@@ -62,8 +62,10 @@ export const Prompt = React.memo(({ scrollIntoView }: PromptProps) => {
   // changes externally (e.g. welcome prompt click).
   React.useEffect(() => {
     if (textareaRef.current && textareaRef.current.value !== query) {
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')
-        ?.set;
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLTextAreaElement.prototype,
+        'value'
+      )?.set;
       nativeInputValueSetter?.call(textareaRef.current, query);
       textareaRef.current.dispatchEvent(new Event('input', { bubbles: true }));
     }
@@ -98,14 +100,14 @@ export const Prompt = React.memo(({ scrollIntoView }: PromptProps) => {
     [activeNamespaces, kind, name, namespace, istio, clusterName]
   );
   const resourceHealthStatus = useChatResourceHealth(promptContext);
-  const promptVariables = React.useMemo(() => buildPromptVariables(promptContext, resourceHealthStatus), [
-    promptContext,
-    resourceHealthStatus
-  ]);
-  const resolvedPrompts = React.useMemo(() => substitutePrompts(promptData, promptVariables), [
-    promptData,
-    promptVariables
-  ]);
+  const promptVariables = React.useMemo(
+    () => buildPromptVariables(promptContext, resourceHealthStatus),
+    [promptContext, resourceHealthStatus]
+  );
+  const resolvedPrompts = React.useMemo(
+    () => substitutePrompts(promptData, promptVariables),
+    [promptData, promptVariables]
+  );
   const pageContext = React.useMemo(
     () => buildPageContext(kind, name, namespace, istio, clusterName, resourceHealthStatus),
     [kind, name, namespace, istio, clusterName, resourceHealthStatus]
