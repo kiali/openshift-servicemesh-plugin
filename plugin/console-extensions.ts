@@ -3,6 +3,7 @@ import { K8sGroupVersionKind } from '@openshift-console/dynamic-plugin-sdk';
 
 const OSSM_CONSOLE = 'ossmconsole';
 const ADMIN = 'admin';
+const KIALI_REACHABLE = 'KIALI_REACHABLE';
 
 const getConsoleTitle = (title: string) => `%plugin__ossmconsole~${title}%`;
 
@@ -13,6 +14,7 @@ const enum Page {
   ISTIO = 'IstioConfigListPage',
   ISTIO_NEW = 'IstioConfigNewPage',
   ISTIOS = 'IstiosPage',
+  KIALIS = 'KialisPage',
   MESH = 'MeshPage',
   NAMESPACES = 'NamespacesPage',
   OVERVIEW = 'OverviewPage',
@@ -179,11 +181,21 @@ const istioResources: K8sGroupVersionKind[] = [
   }
 ];
 
+const kialiFlag: EncodedExtension = {
+  type: 'console.flag/hookProvider',
+  properties: {
+    handler: { $codeRef: 'KialiFlag.useKialiFlag' }
+  }
+};
+
 const reduxReducer: EncodedExtension = {
   type: 'console.redux-reducer',
   properties: {
     scope: 'kiali',
     reducer: { $codeRef: 'ReduxReducer' }
+  },
+  flags: {
+    required: [KIALI_REACHABLE]
   }
 };
 
@@ -196,14 +208,17 @@ const consoleSection: EncodedExtension = {
   }
 };
 
-const consoleRoute = (id: string, title: string, pageRef: string, paths: string[]): EncodedExtension[] => {
+type Flags = { required?: string[]; disallowed?: string[] };
+
+const consoleRoute = (id: string, title: string, pageRef: string, paths: string[], flags?: Flags): EncodedExtension[] => {
   const routes = paths.map(path => ({
     type: 'console.page/route',
     properties: {
       exact: true,
       path: path,
       component: { $codeRef: pageRef }
-    }
+    },
+    ...(flags && { flags })
   }));
 
   return [
@@ -216,12 +231,13 @@ const consoleRoute = (id: string, title: string, pageRef: string, paths: string[
         href: paths[0],
         perspective: ADMIN,
         section: OSSM_CONSOLE
-      }
+      },
+      ...(flags && { flags })
     }
   ];
 };
 
-const horizontalNav = (model: K8sGroupVersionKind, tabRef: string): EncodedExtension => ({
+const horizontalNav = (model: K8sGroupVersionKind, tabRef: string, flags?: Flags): EncodedExtension => ({
   type: 'console.tab/horizontalNav',
   properties: {
     model: model,
@@ -230,15 +246,19 @@ const horizontalNav = (model: K8sGroupVersionKind, tabRef: string): EncodedExten
       href: OSSM_CONSOLE
     },
     component: { $codeRef: tabRef }
-  }
+  },
+  ...(flags && { flags })
 });
 
+const kialiRequired: Flags = { required: [KIALI_REACHABLE] };
+
 const extensions: EncodedExtension[] = [
+  kialiFlag,
   reduxReducer,
   consoleSection,
 
-  // Console routes for each OSSMC page
-  ...consoleRoute('overview', 'Overview', Page.OVERVIEW, [`/${OSSM_CONSOLE}/overview`]),
+  // Kiali-dependent pages (only shown when Kiali backend is reachable)
+  ...consoleRoute('overview', 'Overview', Page.OVERVIEW, [`/${OSSM_CONSOLE}/overview`], kialiRequired),
   ...consoleRoute('graph', 'Traffic Graph', Page.GRAPH, [
     `/${OSSM_CONSOLE}/graph`,
     `/${OSSM_CONSOLE}/graph/ns/:namespace/aggregates/:aggregate/:aggregateValue`,
@@ -246,59 +266,66 @@ const extensions: EncodedExtension[] = [
     `/${OSSM_CONSOLE}/graph/ns/:namespace/applications/:app`,
     `/${OSSM_CONSOLE}/graph/ns/:namespace/services/:service`,
     `/${OSSM_CONSOLE}/graph/ns/:namespace/workloads/:workload`
-  ]),
-  ...consoleRoute('mesh', 'Mesh', Page.MESH, [`/${OSSM_CONSOLE}/mesh`]),
+  ], kialiRequired),
+  ...consoleRoute('mesh', 'Mesh', Page.MESH, [`/${OSSM_CONSOLE}/mesh`], kialiRequired),
   {
     type: 'console.navigation/separator',
     properties: {
       id: `${OSSM_CONSOLE}_separator`,
       perspective: ADMIN,
       section: OSSM_CONSOLE
-    }
+    },
+    flags: kialiRequired
   },
-  ...consoleRoute('istios', 'Istios', Page.ISTIOS, [`/${OSSM_CONSOLE}/istios`]),
-  ...consoleRoute('namespaces', 'Namespaces', Page.NAMESPACES, [`/${OSSM_CONSOLE}/namespaces`]),
-  ...consoleRoute('applications', 'Applications', Page.APPLICATIONS, [`/${OSSM_CONSOLE}/applications`]),
+  ...consoleRoute('namespaces', 'Namespaces', Page.NAMESPACES, [`/${OSSM_CONSOLE}/namespaces`], kialiRequired),
+  ...consoleRoute('applications', 'Applications', Page.APPLICATIONS, [`/${OSSM_CONSOLE}/applications`], kialiRequired),
   {
     type: 'console.page/route',
     properties: {
       exact: true,
       path: `/${OSSM_CONSOLE}/applications/:namespace/:app`,
       component: { $codeRef: Page.APPLICATION_DETAIL }
-    }
+    },
+    flags: kialiRequired
   },
-  ...consoleRoute('services', 'Services', Page.SERVICES, [`/${OSSM_CONSOLE}/services`]),
+  ...consoleRoute('services', 'Services', Page.SERVICES, [`/${OSSM_CONSOLE}/services`], kialiRequired),
   {
     type: 'console.page/route',
     properties: {
       exact: true,
       path: `/${OSSM_CONSOLE}/services/:namespace/:service`,
       component: { $codeRef: Page.SERVICE_DETAIL }
-    }
+    },
+    flags: kialiRequired
   },
-  ...consoleRoute('workloads', 'Workloads', Page.WORKLOADS, [`/${OSSM_CONSOLE}/workloads`]),
-  ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [`/${OSSM_CONSOLE}/istio`]),
+  ...consoleRoute('workloads', 'Workloads', Page.WORKLOADS, [`/${OSSM_CONSOLE}/workloads`], kialiRequired),
+  ...consoleRoute('istio', 'Istio Config', Page.ISTIO, [`/${OSSM_CONSOLE}/istio`], kialiRequired),
   {
     type: 'console.page/route',
     properties: {
       exact: true,
       path: `/${OSSM_CONSOLE}/istio/new/:objectGroup/:objectVersion/:objectKind`,
       component: { $codeRef: Page.ISTIO_NEW }
-    }
+    },
+    flags: kialiRequired
   },
 
-  // K8s horizontal navs - service mesh tab of k8s resources
-  horizontalNav(K8sResource.Project, Tab.NAMESPACE),
-  horizontalNav(K8sResource.Namespace, Tab.NAMESPACE),
-  horizontalNav(K8sResource.Pod, Tab.WORKLOAD),
-  horizontalNav(K8sResource.Deployment, Tab.WORKLOAD),
-  horizontalNav(K8sResource.DeploymentConfig, Tab.WORKLOAD),
-  horizontalNav(K8sResource.ReplicaSet, Tab.WORKLOAD),
-  horizontalNav(K8sResource.StatefulSet, Tab.WORKLOAD),
-  horizontalNav(K8sResource.DaemonSet, Tab.WORKLOAD),
-  horizontalNav(K8sResource.Service, Tab.SERVICE),
+  // Always-visible pages (no Kiali dependency)
+  ...consoleRoute('istios', 'Istios', Page.ISTIOS, [`/${OSSM_CONSOLE}/istios`]),
+  ...consoleRoute('kialis', 'Kialis', Page.KIALIS, [`/${OSSM_CONSOLE}/kialis`]),
 
-  // Istio horizontal navs - service mesh tab of istio resources
+  // Kiali-dependent horizontal nav tabs
+  horizontalNav(K8sResource.Project, Tab.NAMESPACE, kialiRequired),
+  horizontalNav(K8sResource.Namespace, Tab.NAMESPACE, kialiRequired),
+  horizontalNav(K8sResource.Pod, Tab.WORKLOAD, kialiRequired),
+  horizontalNav(K8sResource.Deployment, Tab.WORKLOAD, kialiRequired),
+  horizontalNav(K8sResource.DeploymentConfig, Tab.WORKLOAD, kialiRequired),
+  horizontalNav(K8sResource.ReplicaSet, Tab.WORKLOAD, kialiRequired),
+  horizontalNav(K8sResource.StatefulSet, Tab.WORKLOAD, kialiRequired),
+  horizontalNav(K8sResource.DaemonSet, Tab.WORKLOAD, kialiRequired),
+  horizontalNav(K8sResource.Service, Tab.SERVICE, kialiRequired),
+
+  // Kiali-dependent Istio horizontal nav tabs
   ...istioResources.map(istioResource => ({
     type: 'console.tab/horizontalNav',
     properties: {
@@ -308,7 +335,8 @@ const extensions: EncodedExtension[] = [
         href: OSSM_CONSOLE
       },
       component: { $codeRef: Tab.ISTIO }
-    }
+    },
+    flags: kialiRequired
   }))
 ];
 

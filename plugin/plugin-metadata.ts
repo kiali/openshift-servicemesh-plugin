@@ -13,6 +13,8 @@ const metadata: ConsolePluginBuildMetadata = {
     IstioConfigNewPage: './openshift/pages/IstioConfigNewPage',
     IstiosPage: './openshift/pages/IstiosPage',
     IstioDetailsTab: './openshift/pages/ServiceMeshTabs/IstioDetailsTab',
+    KialiFlag: './openshift/utils/useKialiFlag',
+    KialisPage: './openshift/pages/KialisPage',
     MeshPage: './openshift/pages/MeshPage',
     NamespacesPage: './openshift/pages/NamespacesPage',
     OverviewPage: './openshift/pages/OverviewPage',
