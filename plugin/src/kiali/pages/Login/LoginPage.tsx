@@ -15,7 +15,7 @@ import {
   LoginPage as LoginNext,
   TextInput
 } from '@patternfly/react-core';
-import type { KialiAppState, LoginSession} from '../../store/Store';
+import type { KialiAppState, LoginSession } from '../../store/Store';
 import { LoginStatus } from '../../store/Store';
 import { AuthStrategy } from '../../types/Auth';
 import { authenticationConfig, kialiLogoDark } from '../../config';
@@ -223,7 +223,7 @@ export class LoginPageComponent extends React.Component<LoginProps, LoginState> 
       </>
     );
 
-    let loginPane: React.ReactFragment;
+    let loginPane: React.ReactNode;
     if (authenticationConfig.strategy === AuthStrategy.token) {
       loginPane = (
         <Form data-test="login-form">

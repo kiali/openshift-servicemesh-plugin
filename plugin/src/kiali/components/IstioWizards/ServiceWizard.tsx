@@ -188,7 +188,10 @@ export class ServiceWizard extends React.Component<ServiceWizardProps, ServiceWi
   }
 
   componentDidUpdate(prevProps: ServiceWizardProps): void {
-    if (prevProps.show !== this.props.show || !this.compareWorkloads(prevProps.workloads, this.props.workloads)) {
+    // Only (re)initialize when the wizard opens/closes. Parent refreshes that change
+    // workload props while open must not wipe in-progress form or YAML preview state;
+    // React 18 makes those refreshes more likely to land mid-wizard.
+    if (prevProps.show !== this.props.show) {
       const isViewOnly = serverConfig.deployment.viewOnlyMode;
       let isMainWizardValid: boolean;
 

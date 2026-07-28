@@ -1,21 +1,23 @@
 import { render, screen } from '@testing-library/react';
 import { NavigationComponent } from '../Navigation';
 import type { ExternalServiceInfo } from '../../../types/StatusState';
-import { MemoryRouter } from 'react-router-dom-v5-compat';
+import { MemoryRouter } from 'react-router';
 import { store } from 'store/ConfigStore';
 import { Provider } from 'react-redux';
 import { LoginActions } from 'actions/LoginActions';
 import { ColorScheme } from 'types/Common';
-import * as HistoryActual from 'app/History' with { rstest: 'importActual' };
 
-rstest.mock('app/History', () => ({
-  ...HistoryActual,
-  router: {
-    state: { location: { pathname: '/overview', search: '', hash: '' } },
-    basename: '',
-    navigate: rstest.fn()
-  }
-}));
+rstest.mock('app/History', async () => {
+  const actual = await rstest.importActual('app/History');
+  return {
+    ...actual,
+    router: {
+      state: { location: { pathname: '/overview', search: '', hash: '' } },
+      basename: '',
+      navigate: rstest.fn()
+    }
+  };
+});
 
 const session = {
   expiresOn: '2018-05-29 21:51:40.186179601 +0200 CEST m=+36039.431579761',

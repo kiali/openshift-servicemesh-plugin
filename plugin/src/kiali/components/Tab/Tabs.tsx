@@ -1,6 +1,7 @@
 // Assisted-by: OpenAI Codex
 import * as React from 'react';
-import { Tabs, type TabProps } from '@patternfly/react-core';
+import type { TabProps } from '@patternfly/react-core';
+import { Tabs } from '@patternfly/react-core';
 import { classes } from 'typestyle';
 
 import { location, router } from '../../app/History';
@@ -13,6 +14,7 @@ import { CustomTimeTabsProvider } from './CustomTimeTabs';
 type TabsProps = {
   actionsToolbar?: React.ReactNode;
   activeTab: string;
+  children?: React.ReactNode;
   className?: string;
   customTimeTabs?: string[];
   defaultTab: string;

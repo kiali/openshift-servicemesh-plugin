@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useParams, useLocation } from 'react-router-dom-v5-compat';
+import { useParams, useLocation } from 'react-router';
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 import { detailsTabPageStyle } from 'openshift/styles/GlobalStyle';
