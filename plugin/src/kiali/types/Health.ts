@@ -367,7 +367,10 @@ export abstract class Health {
   // Optional pre-calculated status from the backend
   public backendStatus?: CalculatedHealthStatus;
 
-  constructor(public health: HealthConfig, backendStatus?: CalculatedHealthStatus) {
+  constructor(
+    public health: HealthConfig,
+    backendStatus?: CalculatedHealthStatus
+  ) {
     this.backendStatus = backendStatus;
   }
 

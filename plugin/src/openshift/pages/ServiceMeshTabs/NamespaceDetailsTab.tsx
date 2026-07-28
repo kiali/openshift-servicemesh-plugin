@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useParams, useLocation } from 'react-router-dom-v5-compat';
+import { useParams, useLocation } from 'react-router';
 import { NamespaceDetailsPage } from 'pages/NamespaceDetails/NamespaceDetailsPage';
 import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
@@ -18,9 +18,7 @@ const NamespaceDetailsTab: React.FC<void> = () => {
   useInitKialiListeners();
 
   if (!namespace) {
-    return (
-      <ErrorPage title={t('Namespace detail error')} message={t('Namespace is not defined correctly')} />
-    );
+    return <ErrorPage title={t('Namespace detail error')} message={t('Namespace is not defined correctly')} />;
   }
 
   return (
