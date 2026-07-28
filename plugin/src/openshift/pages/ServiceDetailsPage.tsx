@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useParams, useLocation, useSearchParams, Link } from 'react-router-dom-v5-compat';
+import { useParams, useLocation, useSearchParams, Link } from 'react-router';
 import { Breadcrumb, BreadcrumbItem, Title, TitleSizes } from '@patternfly/react-core';
 
 import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
