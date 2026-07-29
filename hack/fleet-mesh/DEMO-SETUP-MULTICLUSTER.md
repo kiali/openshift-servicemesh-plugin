@@ -266,6 +266,9 @@ podman login --tls-verify=false \
   -p $(oc --context=my-hub whoami -t) \
   ${REGISTRY}
 
+# The Makefile has no --context flag of its own; it always operates against
+# whatever your current oc/kubeconfig context is, so switch to the hub first.
+oc config use-context my-hub
 make fleet-mesh-cluster-deploy
 ```
 
