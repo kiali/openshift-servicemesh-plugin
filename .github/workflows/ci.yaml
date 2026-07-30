@@ -61,6 +61,16 @@ jobs:
       with:
         ref: ${{ inputs.build_branch }}
 
+    # ubuntu-latest ships a crun too old for OCI specs from current ubi9/nodejs-24
+    # (podman fails with "unknown version specified"). Keep podman; upgrade crun only.
+    - name: Upgrade crun for podman
+      run: |
+        CRUN_VERSION=1.21
+        curl -fsSL -o /tmp/crun "https://github.com/containers/crun/releases/download/${CRUN_VERSION}/crun-${CRUN_VERSION}-linux-amd64"
+        sudo install -m 755 /tmp/crun /usr/local/bin/crun
+        sudo ln -sfn /usr/local/bin/crun /usr/bin/crun
+        crun --version
+
     - name: Build image
       run: |
         make -e CONTAINER_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile) build-plugin-image
