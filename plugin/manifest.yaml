@@ -153,14 +153,16 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
-apiVersion: console.openshift.io/v1alpha1
+apiVersion: console.openshift.io/v1
 kind: ConsolePlugin
 metadata:
   name: ossmconsole
 spec:
+  backend:
+    service:
+      basePath: /
+      name: ossmconsole
+      namespace: ossmconsole
+      port: 9443
+    type: Service
   displayName: 'OpenShift Service Mesh Console'
-  service:
-    name: ossmconsole
-    namespace: ossmconsole
-    port: 9443
-    basePath: '/'

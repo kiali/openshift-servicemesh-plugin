@@ -4,7 +4,7 @@ import type { IstioConfigId } from 'types/IstioConfigDetails';
 import { IstioConfigDetailsPage } from 'pages/IstioConfigDetails/IstioConfigDetailsPage';
 import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiIntegration';
 import { KialiContainer } from 'openshift/components/KialiContainer';
-import type { ResourceURLPathProps} from 'openshift/utils/IstioResources';
+import type { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 import { istioResources } from 'openshift/utils/IstioResources';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 import { useKialiTranslation } from 'utils/I18nUtils';
