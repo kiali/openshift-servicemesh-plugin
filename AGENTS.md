@@ -41,10 +41,10 @@ In addition, `main` is the active development branch for the next release.
 ### Essential Commands
 
 ```bash
-# Prepare dev environment (requires oc login + Kiali in cluster)
+# Prepare dev environment (requires oc login; KIALI_URL is optional)
 make prepare-dev-env -e KIALI_URL=route
 
-# Run locally (two terminals)
+# Run locally (two terminals) - "make start"/"make start-console" are equivalent wrappers
 cd plugin && yarn start           # Plugin dev server on http://localhost:9001
 cd plugin && yarn start-console   # Console on http://localhost:9000
 
@@ -66,6 +66,10 @@ make deploy-plugin enable-plugin
 # Lint and format
 cd plugin && yarn lint            # ESLint (src/openshift only)
 cd plugin && yarn prettier        # Prettier
+
+# Type check and unit test (or: make typecheck / make test)
+cd plugin && yarn tsc --noEmit
+cd plugin && yarn test
 
 # Run Cypress E2E tests
 cd plugin && yarn cypress         # Interactive (GUI)
@@ -99,9 +103,10 @@ openshift-servicemesh-plugin/
 │   ├── download-hack-scripts.sh        # Download Kiali hack/istio scripts
 │   └── update-version-string.sh        # Bump version across files
 ├── make/                        # Included Makefiles
-│   ├── Makefile.plugin.mk       # Plugin build, deploy, dev-env targets
-│   ├── Makefile.cluster.mk      # Cluster image push targets
-│   └── Makefile.container.mk    # Cypress test image build
+│   ├── Makefile.plugin.mk       # Plugin build, package, and quick-deploy targets
+│   ├── Makefile.cluster.mk      # Cluster image push/deploy targets
+│   ├── Makefile.container.mk    # Cypress test image build
+│   └── Makefile.test.mk         # Local dev loop and test targets
 └── plugin/                      # Main application
     ├── package.json             # Dependencies, scripts, engine constraints
     ├── tsconfig.json            # TypeScript config with path aliases
@@ -348,6 +353,7 @@ Requires an OpenShift cluster with Kiali deployed. Kiali must use `auth.strategy
 
 ```bash
 # 1. Prepare environment (installs deps, prints KIALI_URL commands)
+# KIALI_URL is optional - omit it to use the console bridge's default (http://localhost:20001)
 make prepare-dev-env -e KIALI_URL=route
 # Or with explicit URL:
 make prepare-dev-env -e KIALI_URL=https://<kiali-host>
@@ -598,17 +604,19 @@ If `plugin/src/kiali/` or `plugin/cypress/integration/kiali/` shows up with chan
 |------|---------|
 | Install dependencies | `cd plugin && yarn install` |
 | Build | `cd plugin && yarn build` |
-| Dev server | `cd plugin && yarn start` |
-| Console bridge | `cd plugin && yarn start-console` |
+| Dev server | `make start` (or: `cd plugin && yarn start`) |
+| Console bridge | `make start-console` (or: `cd plugin && yarn start-console`) |
 | Mock server | `cd plugin && yarn mock-server` |
 | Lint | `cd plugin && yarn lint` |
 | Format | `cd plugin && yarn prettier` |
+| Type check | `make typecheck` (or: `cd plugin && yarn tsc --noEmit`) |
+| Unit tests | `make test` (or: `cd plugin && yarn test`) |
 | Extract i18n strings | `cd plugin && yarn i18n` |
 | Cypress (interactive) | `cd plugin && yarn cypress` |
 | Cypress (headless) | `cd plugin && yarn cypress:run` |
 | Cypress (JUnit) | `cd plugin && yarn cypress:run:junit` |
 | Container image build | `make build-plugin-image` |
-| Deploy to cluster | `make deploy-plugin enable-plugin` |
+| Deploy to cluster (quay.io latest image) | `make deploy-plugin enable-plugin` |
 | Undeploy | `make undeploy-plugin` |
 | Sync Kiali frontend | `hack/copy-frontend-src-to-ossmc.sh` |
 | Bump version | `hack/update-version-string.sh vX.Y.Z` |

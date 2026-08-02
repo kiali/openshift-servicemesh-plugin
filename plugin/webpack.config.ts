@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 import { Configuration as WebpackConfiguration, DefinePlugin as DefinePlugin } from 'webpack';
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
 import * as fs from 'fs';
@@ -44,7 +42,10 @@ const config: Configuration = {
       'monaco-editor$': path.resolve(__dirname, 'node_modules/monaco-editor/esm/vs/editor/editor.api.js')
     },
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
-    plugins: [new TsconfigPathsPlugin()]
+    // tsconfig.json intentionally omits baseUrl (deprecated in TS 6.0, removed in TS 7.0), but
+    // tsconfig-paths-webpack-plugin still requires one to resolve the "paths" entries below, so
+    // it's supplied here as a plugin option instead of reintroducing it into tsconfig.json.
+    plugins: [new TsconfigPathsPlugin({ baseUrl: __dirname })]
   },
   module: {
     rules: [
@@ -111,6 +112,9 @@ const config: Configuration = {
     port: 9001,
     // Allow bridge running in a container to connect to the plugin dev server.
     allowedHosts: 'all',
+    client: {
+      overlay: { warnings: false }
+    },
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
@@ -121,7 +125,10 @@ const config: Configuration = {
     }
   },
   plugins: [
-    new ConsoleRemotePlugin({ pluginMetadata, extensions }),
+    new ConsoleRemotePlugin({
+      pluginMetadata,
+      extensions
+    }),
     new MergeJsonWebpackPlugin({
       output: {
         groupBy: discoverLocales().map(locale => ({
