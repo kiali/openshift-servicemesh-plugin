@@ -11,8 +11,8 @@ import { NotificationAlerts } from '../components/NotificationAlerts';
 import { globalStyle as ossmcStyle } from '../styles/GlobalStyle';
 import ossmcCSSVariables from '../styles/variables.module.scss';
 
-import '@patternfly/patternfly/patternfly-base.css';
 // Load the pf-icons
+import '@patternfly/patternfly/patternfly-base.css';
 
 // Configure @monaco-editor/react to use the locally bundled monaco-editor before any page
 // can render an editor. See MonacoSetup.ts for details.
