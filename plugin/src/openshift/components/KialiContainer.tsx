@@ -1,17 +1,18 @@
 import * as React from 'react';
 import { Provider } from 'react-redux';
+import { classes } from 'typestyle';
+
 import { store } from 'store/ConfigStore';
+import { globalStyle as kialiStyle } from 'styles/GlobalStyle';
+import kialiCSSVariables from 'styles/variables.module.scss';
+
 import { KialiController } from '../components/KialiController';
 import { NotificationAlerts } from '../components/NotificationAlerts';
-import { globalStyle as kialiStyle } from 'styles/GlobalStyle';
 import { globalStyle as ossmcStyle } from '../styles/GlobalStyle';
-import kialiCSSVariables from 'styles/variables.module.scss';
 import ossmcCSSVariables from '../styles/variables.module.scss';
 
-// Load the pf-icons
 import '@patternfly/patternfly/patternfly-base.css';
-
-import { classes } from 'typestyle';
+// Load the pf-icons
 
 // Configure @monaco-editor/react to use the locally bundled monaco-editor before any page
 // can render an editor. See MonacoSetup.ts for details.
