@@ -13,6 +13,10 @@ import '@patternfly/patternfly/patternfly-base.css';
 
 import { classes } from 'typestyle';
 
+// Configure @monaco-editor/react to use the locally bundled monaco-editor before any page
+// can render an editor. See MonacoSetup.ts for details.
+import '../utils/MonacoSetup';
+
 interface Props {
   children: React.ReactNode;
   className?: string;

@@ -37,6 +37,12 @@ const config: Configuration = {
     assetModuleFilename: 'static/media/[name].[hash][ext]'
   },
   resolve: {
+    alias: {
+      // Redirect to the worker-free editor.api entry point so @monaco-editor/react uses the
+      // bundled monaco-editor instead of fetching worker scripts from cdn.jsdelivr.net at
+      // runtime. See src/openshift/utils/MonacoSetup.ts for the matching loader configuration.
+      'monaco-editor$': path.resolve(__dirname, 'node_modules/monaco-editor/esm/vs/editor/editor.api.js')
+    },
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     plugins: [new TsconfigPathsPlugin()]
   },
