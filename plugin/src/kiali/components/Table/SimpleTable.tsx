@@ -119,11 +119,22 @@ export const SimpleTable: React.FC<SimpleTableProps> = (props: SimpleTableProps)
         {props.rows.length > 0 ? (
           props.rows.map((row, rowIndex) => (
             <Tr key={row.key ?? `row_${rowIndex}`} className={row.className}>
-              {row.cells?.map((cell: React.ReactNode, colIndex: number) => (
-                <Td key={`cell_${rowIndex}_${colIndex}`} dataLabel={props.columns[colIndex].title} className={tdStyle}>
-                  {cell}
-                </Td>
-              ))}
+              {row.cells?.map((cell, colIndex: number) => {
+                const cellContent =
+                  typeof cell === 'object' && cell !== null && 'title' in cell
+                    ? (cell as { title: React.ReactNode }).title
+                    : (cell as React.ReactNode);
+
+                return (
+                  <Td
+                    key={`cell_${rowIndex}_${colIndex}`}
+                    dataLabel={props.columns[colIndex].title}
+                    className={tdStyle}
+                  >
+                    {cellContent}
+                  </Td>
+                );
+              })}
 
               {getActionToggle(row, rowIndex)}
             </Tr>

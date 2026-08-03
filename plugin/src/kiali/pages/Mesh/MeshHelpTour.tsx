@@ -42,7 +42,7 @@ export const MeshTourStops: { [name: string]: TourStopInfo } = {
   },
   Shortcuts: {
     name: t('Shortcuts'),
-    htmlDescription: MeshShortcuts,
+    htmlDescription: MeshShortcuts(),
     position: PopoverPosition.leftStart
   },
   TargetPanel: {

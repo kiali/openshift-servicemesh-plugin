@@ -192,17 +192,21 @@ class GraphToolbarComponent extends React.PureComponent<GraphToolbarProps> {
   }
 
   render(): React.ReactNode {
+    // Prefer URL over Redux for first paint: setNode runs in GraphPage.componentDidMount,
+    // so Redux can lag one frame behind a node-graph route.
+    const isNodeGraph = !!this.props.node || location.getPathname().includes('/graph/node');
+
     return (
       <>
         <GraphSecondaryMasthead
           disabled={this.props.disabled}
           graphType={this.props.graphType}
-          isNodeGraph={!!this.props.node}
+          isNodeGraph={isNodeGraph}
           onGraphTypeChange={this.props.setGraphType}
         />
         <Toolbar style={{ paddingTop: '1rem', width: '100%' }}>
           <ToolbarGroup aria-label="graph settings" style={{ margin: 0, alignItems: 'flex-start' }}>
-            {this.props.node && (
+            {isNodeGraph && (
               <ToolbarItem style={{ margin: 0 }}>
                 <Tooltip key={'graph-tour-help-ot'} position={TooltipPosition.right} content={t('Back to full graph')}>
                   <Button variant={ButtonVariant.link} onClick={this.handleNamespaceReturn}>

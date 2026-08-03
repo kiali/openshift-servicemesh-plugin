@@ -65,7 +65,7 @@ export const GraphTourStops: { [name: string]: TourStopInfo } = {
   },
   Shortcuts: {
     name: t('Shortcuts'),
-    htmlDescription: GraphShortcuts,
+    htmlDescription: GraphShortcuts(),
     position: PopoverPosition.leftStart
   },
   SidePanel: {

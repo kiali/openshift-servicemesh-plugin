@@ -364,7 +364,7 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
         }
       }
 
-      router.navigate(`${location.getPathname()}?&{urlParams.toString()}`, { replace: true });
+      router.navigate(`${location.getPathname()}?${urlParams.toString()}`, { replace: true });
     }
   };
 

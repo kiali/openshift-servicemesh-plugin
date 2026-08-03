@@ -108,16 +108,17 @@ const StyleGroupComponent: React.FC<StyleGroupProps> = ({
 
   const boxRef = React.useRef<Rect | null>(null);
   boxRef.current = element.getBounds();
+  const boxBounds = boxRef.current;
 
   return (
     <g style={{ opacity: opacity }} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-      {data.isFocus && (
+      {data.isFocus && boxBounds && (
         <rect
           className={focusOverlayStyle}
-          x={boxRef.current.x}
-          y={boxRef.current.y}
-          width={boxRef.current.width}
-          height={boxRef.current.height}
+          x={boxBounds.x}
+          y={boxBounds.y}
+          width={boxBounds.width}
+          height={boxBounds.height}
         />
       )}
       <DefaultGroup
