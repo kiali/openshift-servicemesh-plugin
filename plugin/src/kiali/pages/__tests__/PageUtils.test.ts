@@ -1,4 +1,13 @@
-import { buildMetadataPatch, buildWorkloadMetadataPatch, navigateToFilteredList } from '../PageUtils';
+import {
+  buildMetadataPatch,
+  buildWorkloadAnnotationsPatch,
+  buildWorkloadMetadataPatch,
+  getWorkloadAnnotations,
+  hasAnnotationsChanged,
+  LAST_APPLIED_ANNOTATION,
+  preserveHiddenAnnotations,
+  navigateToFilteredList
+} from '../PageUtils';
 
 const mockResetFilters = jest.fn();
 const mockNavigate = jest.fn();
@@ -72,6 +81,168 @@ describe('buildMetadataPatch', () => {
     expect(result).toEqual({
       metadata: { labels: {} }
     });
+  });
+
+  it('preserves empty string values in the patch', () => {
+    const original = { app: 'ratings' };
+    const updated = { app: 'ratings', enabled: '' };
+    const result = JSON.parse(buildMetadataPatch('annotations', original, updated));
+    expect(result).toEqual({
+      metadata: { annotations: { app: 'ratings', enabled: '' } }
+    });
+  });
+});
+
+describe('preserveHiddenAnnotations', () => {
+  it('re-attaches last-applied-configuration on save', () => {
+    const original = {
+      [LAST_APPLIED_ANNOTATION]: '{"apiVersion":"v1"}',
+      note: 'old'
+    };
+    const updated = preserveHiddenAnnotations(original, { note: 'new' });
+    expect(updated).toEqual({
+      [LAST_APPLIED_ANNOTATION]: '{"apiVersion":"v1"}',
+      note: 'new'
+    });
+  });
+});
+
+describe('getWorkloadAnnotations', () => {
+  it('merges controller and template annotations for templated workloads', () => {
+    const annotations = getWorkloadAnnotations({
+      annotations: { 'deployment.kubernetes.io/revision': '1' },
+      gvk: { Kind: 'Deployment' },
+      templateAnnotations: { 'proxy.istio.io/config': 'tracing: {}' }
+    });
+    expect(annotations).toEqual({
+      'deployment.kubernetes.io/revision': '1',
+      'proxy.istio.io/config': 'tracing: {}'
+    });
+  });
+
+  it('prefers template values when the same key exists on controller and template', () => {
+    const annotations = getWorkloadAnnotations({
+      annotations: { note: 'controller' },
+      gvk: { Kind: 'Deployment' },
+      templateAnnotations: { note: 'template' }
+    });
+    expect(annotations).toEqual({ note: 'template' });
+  });
+
+  it('filters last-applied-configuration from display', () => {
+    const annotations = getWorkloadAnnotations({
+      annotations: {
+        [LAST_APPLIED_ANNOTATION]: '{"apiVersion":"apps/v1"}',
+        'deployment.kubernetes.io/revision': '1'
+      },
+      gvk: { Kind: 'Deployment' },
+      templateAnnotations: { 'proxy.istio.io/config': 'tracing: {}' }
+    });
+    expect(annotations).toEqual({
+      'deployment.kubernetes.io/revision': '1',
+      'proxy.istio.io/config': 'tracing: {}'
+    });
+  });
+
+  it('falls back to controller annotations when template annotations are empty', () => {
+    const annotations = getWorkloadAnnotations({
+      annotations: { note: 'controller-level' },
+      gvk: { Kind: 'Deployment' },
+      templateAnnotations: {}
+    });
+    expect(annotations).toEqual({ note: 'controller-level' });
+  });
+
+  it('returns workload annotations for non-templated kinds', () => {
+    const annotations = getWorkloadAnnotations({
+      annotations: { note: 'pod-level' },
+      gvk: { Kind: 'Pod' },
+      templateAnnotations: { ignored: 'value' }
+    });
+    expect(annotations).toEqual({ note: 'pod-level' });
+  });
+});
+
+describe('buildWorkloadAnnotationsPatch', () => {
+  const deployment = {
+    annotations: { 'deployment.kubernetes.io/revision': '1' },
+    gvk: { Kind: 'Deployment' },
+    templateAnnotations: { 'proxy.istio.io/config': 'tracing: {}' }
+  };
+
+  it('patches only the pod template when editing template annotations', () => {
+    const result = JSON.parse(
+      buildWorkloadAnnotationsPatch(deployment, {
+        'deployment.kubernetes.io/revision': '1',
+        'proxy.istio.io/config': 'tracing: { sampling: 100 }'
+      })
+    );
+    expect(result).toEqual({
+      spec: {
+        template: {
+          metadata: {
+            annotations: { 'proxy.istio.io/config': 'tracing: { sampling: 100 }' }
+          }
+        }
+      }
+    });
+  });
+
+  it('patches only controller metadata when editing controller-only annotations', () => {
+    const result = JSON.parse(
+      buildWorkloadAnnotationsPatch(deployment, {
+        'deployment.kubernetes.io/revision': '2',
+        'proxy.istio.io/config': 'tracing: {}'
+      })
+    );
+    expect(result).toEqual({
+      metadata: { annotations: { 'deployment.kubernetes.io/revision': '2' } }
+    });
+  });
+
+  it('routes new annotations to the pod template', () => {
+    const result = JSON.parse(
+      buildWorkloadAnnotationsPatch(deployment, {
+        'deployment.kubernetes.io/revision': '1',
+        'proxy.istio.io/config': 'tracing: {}',
+        note: 'demo'
+      })
+    );
+    expect(result).toEqual({
+      spec: { template: { metadata: { annotations: { note: 'demo' } } } }
+    });
+  });
+
+  it('removes deleted template annotations without touching controller metadata', () => {
+    const result = JSON.parse(
+      buildWorkloadAnnotationsPatch(deployment, {
+        'deployment.kubernetes.io/revision': '1'
+      })
+    );
+    expect(result).toEqual({
+      spec: { template: { metadata: { annotations: { 'proxy.istio.io/config': null } } } }
+    });
+  });
+
+  it('preserves empty string values in the patch', () => {
+    const result = JSON.parse(
+      buildWorkloadAnnotationsPatch(deployment, {
+        'deployment.kubernetes.io/revision': '1',
+        'proxy.istio.io/config': 'tracing: {}',
+        'sidecar.istio.io/inject': ''
+      })
+    );
+    expect(result).toEqual({
+      spec: { template: { metadata: { annotations: { 'sidecar.istio.io/inject': '' } } } }
+    });
+  });
+
+  it('returns empty object when nothing changed', () => {
+    const result = buildWorkloadAnnotationsPatch(deployment, {
+      'deployment.kubernetes.io/revision': '1',
+      'proxy.istio.io/config': 'tracing: {}'
+    });
+    expect(result).toBe('{}');
   });
 });
 
@@ -172,5 +343,59 @@ describe('navigateToFilteredList', () => {
     navigateToFilteredList('services', 'env', 'prod');
     const url: string = mockNavigate.mock.calls[0][0];
     expect(url).not.toContain('namespaces=');
+  });
+});
+
+describe('hasAnnotationsChanged', () => {
+  it('returns false when no changes are made', () => {
+    const original = { 'app.kubernetes.io/name': 'reviews', version: '1' };
+    const userVisible = { 'app.kubernetes.io/name': 'reviews', version: '1' };
+    expect(hasAnnotationsChanged(original, userVisible)).toBe(false);
+  });
+
+  it('returns false when last-applied-configuration is present but nothing else changed', () => {
+    const original = {
+      [LAST_APPLIED_ANNOTATION]: '{"big":"json"}',
+      'app.kubernetes.io/name': 'reviews'
+    };
+    const userVisible = { 'app.kubernetes.io/name': 'reviews' };
+    expect(hasAnnotationsChanged(original, userVisible)).toBe(false);
+  });
+
+  it('returns false regardless of property order', () => {
+    const original: Record<string, string> = {};
+    Object.defineProperty(original, LAST_APPLIED_ANNOTATION, { value: '{}', enumerable: true, writable: true });
+    Object.defineProperty(original, 'alpha', { value: 'a', enumerable: true, writable: true });
+    Object.defineProperty(original, 'beta', { value: 'b', enumerable: true, writable: true });
+
+    const userVisible = { beta: 'b', alpha: 'a' };
+    expect(hasAnnotationsChanged(original, userVisible)).toBe(false);
+  });
+
+  it('returns true when a value is modified', () => {
+    const original = { 'app.kubernetes.io/name': 'reviews', version: '1' };
+    const userVisible = { 'app.kubernetes.io/name': 'reviews', version: '2' };
+    expect(hasAnnotationsChanged(original, userVisible)).toBe(true);
+  });
+
+  it('returns true when an annotation is added', () => {
+    const original = { 'app.kubernetes.io/name': 'reviews' };
+    const userVisible = { 'app.kubernetes.io/name': 'reviews', newKey: 'newValue' };
+    expect(hasAnnotationsChanged(original, userVisible)).toBe(true);
+  });
+
+  it('returns true when an annotation is deleted', () => {
+    const original = { 'app.kubernetes.io/name': 'reviews', version: '1' };
+    const userVisible = { 'app.kubernetes.io/name': 'reviews' };
+    expect(hasAnnotationsChanged(original, userVisible)).toBe(true);
+  });
+
+  it('returns true when a visible annotation is modified while hidden annotation exists', () => {
+    const original = {
+      [LAST_APPLIED_ANNOTATION]: '{"big":"json"}',
+      'app.kubernetes.io/name': 'reviews'
+    };
+    const userVisible = { 'app.kubernetes.io/name': 'updated' };
+    expect(hasAnnotationsChanged(original, userVisible)).toBe(true);
   });
 });

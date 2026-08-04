@@ -1,0 +1,412 @@
+import * as React from 'react';
+import {
+  ActionGroup,
+  Alert,
+  Button,
+  List,
+  ListItem,
+  Popover,
+  TextArea,
+  TextInput,
+  Title,
+  TitleSizes,
+  Tooltip
+} from '@patternfly/react-core';
+import { Modal, ModalVariant } from '@patternfly/react-core/deprecated';
+import { Table, TableVariant, Tbody, Th, Thead, Tr } from '@patternfly/react-table';
+import { KialiIcon } from 'config/KialiIcon';
+import { PFSpacer } from 'styles/PfSpacer';
+import { kialiStyle } from 'styles/StyleUtils';
+import { t } from 'utils/I18nUtils';
+
+export interface WorkloadAnnotationsWizardProps {
+  canEdit: boolean;
+  controllerAnnotations: Record<string, string>;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (controller: Record<string, string>, template: Record<string, string>) => void;
+  templateAnnotations: Record<string, string>;
+}
+
+type Entry = [string, string];
+
+const addMoreStyle = kialiStyle({
+  marginTop: '0.5rem',
+  marginLeft: '1rem'
+});
+
+const alertStyle = kialiStyle({
+  marginTop: '1rem'
+});
+
+const sectionStyle = kialiStyle({
+  marginBottom: '1.5rem'
+});
+
+const valueCellStyle = kialiStyle({
+  overflow: 'hidden',
+  maxWidth: 0,
+  verticalAlign: 'middle'
+});
+
+const valueDisplayStyle = kialiStyle({
+  display: 'block',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap'
+});
+
+const popoverTextAreaStyle = kialiStyle({
+  fontFamily: 'var(--pf-t--global--font--family--mono)',
+  fontSize: 'var(--pf-t--global--font--size--sm)',
+  minHeight: '20rem',
+  width: '100%',
+  resize: 'vertical'
+});
+
+const toEntries = (record: Record<string, string>): Entry[] => {
+  const entries = Object.entries(record);
+  return entries.length > 0 ? entries : [['', '']];
+};
+
+const toRecord = (entries: Entry[]): Record<string, string> => {
+  const result: Record<string, string> = {};
+  for (const [key, value] of entries) {
+    if (key.length > 0) {
+      result[key] = value;
+    }
+  }
+  return result;
+};
+
+const validateSection = (entries: Entry[], sectionName: string): string[] => {
+  const errors: string[] = [];
+  const keys = entries.map(e => e[0]);
+  if (keys.some(k => k.length === 0 && entries.length > 1)) {
+    errors.push(t('Empty keys found in {{section}}.', { section: sectionName }));
+  }
+  if (keys.filter(k => k.length > 0).some((k, i, arr) => arr.indexOf(k) !== i)) {
+    errors.push(t('Duplicate keys found in {{section}}.', { section: sectionName }));
+  }
+  return errors;
+};
+
+const disabledEditorStyle = kialiStyle({
+  opacity: 0.5,
+  pointerEvents: 'none',
+  userSelect: 'none'
+});
+
+interface EditValuePopoverProps {
+  entryKey: string;
+  id: string;
+  onChange: (value: string) => void;
+  onVisibleChange?: (isVisible: boolean) => void;
+  value: string;
+}
+
+const popoverActionsStyle = kialiStyle({
+  display: 'flex',
+  gap: '0.25rem',
+  position: 'absolute',
+  top: PFSpacer.sm,
+  right: PFSpacer.md
+});
+
+const EditValuePopover: React.FC<EditValuePopoverProps> = ({ entryKey, id, onChange, onVisibleChange, value }) => {
+  const [draft, setDraft] = React.useState(value);
+  const [isVisible, setIsVisible] = React.useState(false);
+
+  const setVisible = (visible: boolean): void => {
+    setIsVisible(visible);
+    onVisibleChange?.(visible);
+  };
+
+  return (
+    <Popover
+      appendTo={() =>
+        (document.querySelector('[aria-labelledby="workload-annotations-wizard-title"]') as HTMLElement) ||
+        document.body
+      }
+      headerContent={entryKey || t('Value')}
+      bodyContent={
+        <>
+          <div className={popoverActionsStyle}>
+            <Tooltip content={t('Save')} trigger="mouseenter">
+              <Button
+                variant="plain"
+                size="sm"
+                icon={<KialiIcon.Check />}
+                onClick={() => {
+                  onChange(draft);
+                  setVisible(false);
+                }}
+              />
+            </Tooltip>
+            <Tooltip content={t('Cancel')} trigger="mouseenter">
+              <Button
+                variant="plain"
+                size="sm"
+                icon={<KialiIcon.Close />}
+                onClick={() => {
+                  setDraft(value);
+                  setVisible(false);
+                }}
+              />
+            </Tooltip>
+          </div>
+          <TextArea className={popoverTextAreaStyle} id={id} onChange={(_event, v) => setDraft(v)} value={draft} />
+        </>
+      }
+      elementToFocus={`#${id}`}
+      hideOnOutsideClick={false}
+      isVisible={isVisible}
+      shouldOpen={() => {
+        setDraft(value);
+        setVisible(true);
+      }}
+      shouldClose={() => {
+        setDraft(value);
+        setVisible(false);
+      }}
+      minWidth="40rem"
+      position="left"
+      showClose={false}
+      withFocusTrap
+    >
+      <Button variant="plain" icon={<KialiIcon.PencilAlt />} size="sm" />
+    </Popover>
+  );
+};
+
+interface SectionProps {
+  canEdit: boolean;
+  entries: Entry[];
+  isDisabled?: boolean;
+  onAdd: () => void;
+  onChange: (index: number, entry: Entry) => void;
+  onRemove: (index: number) => void;
+  onValueEditVisibleChange?: (isVisible: boolean) => void;
+  sectionId: string;
+  title: string;
+}
+
+const AnnotationSection: React.FC<SectionProps> = ({
+  canEdit,
+  entries,
+  isDisabled = false,
+  onAdd,
+  onChange,
+  onRemove,
+  onValueEditVisibleChange,
+  sectionId,
+  title
+}) => (
+  <div className={sectionStyle} data-test={`${sectionId}-section`}>
+    <Title headingLevel="h3" size={TitleSizes.lg} style={{ marginBottom: '0.5rem' }}>
+      {title}
+    </Title>
+    <Table variant={TableVariant.compact}>
+      <Thead>
+        <Tr>
+          <Th dataLabel="Key">{t('Key')}</Th>
+          <Th dataLabel="Value">{t('Value')}</Th>
+          {canEdit && <Th></Th>}
+        </Tr>
+      </Thead>
+      <Tbody>
+        {entries.map(([key, value], index) =>
+          canEdit ? (
+            <Tr key={`${sectionId}_edit_${index}`}>
+              <Th width={40}>
+                <TextInput
+                  aria-invalid={key === '' || entries.filter(e => e[0] === key).length > 1}
+                  id={`${sectionId}_key_${index}`}
+                  isDisabled={isDisabled}
+                  onChange={(_event, newKey) => onChange(index, [newKey, value])}
+                  placeholder={t('Key')}
+                  type="text"
+                  value={key}
+                />
+              </Th>
+              <Th width={40} className={valueCellStyle}>
+                <span className={valueDisplayStyle}>{value}</span>
+              </Th>
+              <Th>
+                <EditValuePopover
+                  entryKey={key}
+                  id={`${sectionId}_popover_value_${index}`}
+                  onChange={v => onChange(index, [key, v])}
+                  onVisibleChange={onValueEditVisibleChange}
+                  value={value}
+                />
+                <Button
+                  variant="plain"
+                  icon={<KialiIcon.Delete />}
+                  isDisabled={isDisabled}
+                  onClick={() => onRemove(index)}
+                />
+              </Th>
+            </Tr>
+          ) : (
+            <Tr key={`${sectionId}_view_${index}`}>
+              <Th dataLabel={key}>{key}</Th>
+              <Th dataLabel={value}>{value}</Th>
+            </Tr>
+          )
+        )}
+      </Tbody>
+    </Table>
+    {canEdit && (
+      <Button
+        variant="link"
+        className={addMoreStyle}
+        data-test={`${sectionId}-add-more`}
+        icon={<KialiIcon.AddMore />}
+        isDisabled={isDisabled}
+        onClick={onAdd}
+        isInline
+      >
+        <span style={{ marginLeft: '0.25rem' }}>{t('Add more')}</span>
+      </Button>
+    )}
+  </div>
+);
+
+export const WorkloadAnnotationsWizard: React.FC<WorkloadAnnotationsWizardProps> = ({
+  canEdit,
+  controllerAnnotations,
+  isOpen,
+  onClose,
+  onSave,
+  templateAnnotations
+}) => {
+  const [controllerEntries, setControllerEntries] = React.useState<Entry[]>(() => toEntries(controllerAnnotations));
+  const [templateEntries, setTemplateEntries] = React.useState<Entry[]>(() => toEntries(templateAnnotations));
+  const [validation, setValidation] = React.useState<string[]>([]);
+  const [isEditingValue, setIsEditingValue] = React.useState(false);
+  const wasOpen = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isOpen && !wasOpen.current) {
+      setControllerEntries(toEntries(controllerAnnotations));
+      setTemplateEntries(toEntries(templateAnnotations));
+      setValidation([]);
+      setIsEditingValue(false);
+    }
+    wasOpen.current = isOpen;
+  }, [isOpen, controllerAnnotations, templateAnnotations]);
+
+  const handleClose = (): void => {
+    if (isEditingValue) {
+      return;
+    }
+    setControllerEntries(toEntries(controllerAnnotations));
+    setTemplateEntries(toEntries(templateAnnotations));
+    setValidation([]);
+    setIsEditingValue(false);
+    onClose();
+  };
+
+  const handleSave = (): void => {
+    if (isEditingValue) {
+      return;
+    }
+    const errors = [
+      ...validateSection(controllerEntries, t('Controller Annotations')),
+      ...validateSection(templateEntries, t('Pod Template Annotations'))
+    ];
+    if (errors.length > 0) {
+      setValidation(errors);
+      return;
+    }
+    setValidation([]);
+    onSave(toRecord(controllerEntries), toRecord(templateEntries));
+  };
+
+  const makeChangeHandler = (setter: React.Dispatch<React.SetStateAction<Entry[]>>) => (
+    index: number,
+    entry: Entry
+  ): void => {
+    setter(prev => prev.map((e, i) => (i === index ? entry : e)));
+  };
+
+  const makeRemoveHandler = (setter: React.Dispatch<React.SetStateAction<Entry[]>>) => (index: number): void => {
+    setter(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const makeAddHandler = (setter: React.Dispatch<React.SetStateAction<Entry[]>>) => (): void => {
+    setter(prev => [...prev, ['', '']]);
+  };
+
+  const header = (
+    <Title id="workload-annotations-wizard-title" headingLevel="h1" size={TitleSizes['2xl']}>
+      {t('Annotations')}
+    </Title>
+  );
+
+  const footer = (
+    <ActionGroup>
+      {canEdit ? (
+        <>
+          <Button variant="primary" onClick={handleSave} data-test="save-button" isDisabled={isEditingValue}>
+            {t('Save')}
+          </Button>
+          <Button variant="link" onClick={handleClose} isDisabled={isEditingValue}>
+            {t('Cancel')}
+          </Button>
+        </>
+      ) : (
+        <Button variant="primary" onClick={handleClose}>
+          {t('Close')}
+        </Button>
+      )}
+    </ActionGroup>
+  );
+
+  return (
+    <Modal
+      variant={ModalVariant.large}
+      isOpen={isOpen}
+      onClose={handleClose}
+      header={header}
+      aria-labelledby="workload-annotations-wizard-title"
+      footer={footer}
+    >
+      <div className={isEditingValue ? disabledEditorStyle : undefined}>
+        <AnnotationSection
+          canEdit={canEdit}
+          entries={controllerEntries}
+          isDisabled={isEditingValue}
+          onAdd={makeAddHandler(setControllerEntries)}
+          onChange={makeChangeHandler(setControllerEntries)}
+          onRemove={makeRemoveHandler(setControllerEntries)}
+          onValueEditVisibleChange={setIsEditingValue}
+          sectionId="controller"
+          title={t('Controller Annotations')}
+        />
+        <AnnotationSection
+          canEdit={canEdit}
+          entries={templateEntries}
+          isDisabled={isEditingValue}
+          onAdd={makeAddHandler(setTemplateEntries)}
+          onChange={makeChangeHandler(setTemplateEntries)}
+          onRemove={makeRemoveHandler(setTemplateEntries)}
+          onValueEditVisibleChange={setIsEditingValue}
+          sectionId="template"
+          title={t('Pod Template Annotations')}
+        />
+
+        {validation.length > 0 && (
+          <Alert variant="danger" className={alertStyle} isInline isExpandable title={t('An error occurred')}>
+            <List isPlain>
+              {validation.map((message, i) => (
+                <ListItem key={`validation_${i}`}>{message}</ListItem>
+              ))}
+            </List>
+          </Alert>
+        )}
+      </div>
+    </Modal>
+  );
+};

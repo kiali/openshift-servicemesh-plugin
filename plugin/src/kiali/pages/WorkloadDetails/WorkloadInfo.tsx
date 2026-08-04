@@ -16,21 +16,22 @@ import {
   Title,
   TitleSizes
 } from '@patternfly/react-core';
-import { ObjectCheck, Validations, ValidationTypes } from '../../types/IstioObjects';
-import { WorkloadHealth } from '../../types/Health';
-import { Workload } from '../../types/Workload';
+import type { ObjectCheck, Validations } from '../../types/IstioObjects';
+import { ValidationTypes } from '../../types/IstioObjects';
+import type { WorkloadHealth } from '../../types/Health';
+import type { Workload } from '../../types/Workload';
 import { activeTab } from '../../components/Tab/Tabs';
 import { detailCardStackStyle, detailGridStyle, detailLeftColumnStyle, flexFillStyle } from 'styles/FlexStyles';
 import { GraphDataSource } from '../../services/GraphDataSource';
-import { DurationInSeconds } from 'types/Common';
-import { isIstioNamespace, serverConfig, getAppLabelName, AMBIENT_WAYPOINT_GATEWAY_LABEL } from '../../config/ServerConfig';
+import type { DurationInSeconds } from 'types/Common';
 import {
-  gvkType,
-  IstioConfigList,
-  skipUnrelatedK8sGateways,
-  toIstioItems,
-  validationKey
-} from '../../types/IstioConfigList';
+  isIstioNamespace,
+  serverConfig,
+  getAppLabelName,
+  AMBIENT_WAYPOINT_GATEWAY_LABEL
+} from '../../config/ServerConfig';
+import type { IstioConfigList } from '../../types/IstioConfigList';
+import { gvkType, skipUnrelatedK8sGateways, toIstioItems, validationKey } from '../../types/IstioConfigList';
 import { WorkloadPods } from './WorkloadPods';
 import { IstioConfigCard } from '../../components/IstioConfigCard/IstioConfigCard';
 import { MiniGraphCard } from 'pages/Graph/MiniGraphCard';
@@ -50,8 +51,18 @@ import { PFBadge, PFBadges } from '../../components/Pf/PfBadges';
 import { DetailDescription } from '../../components/DetailDescription/DetailDescription';
 import { EditableAnnotationsCard } from '../../components/Label/EditableAnnotationsCard';
 import { EditableLabelsCard } from '../../components/Label/EditableLabelsCard';
+import { WorkloadAnnotationsWizard } from '../../components/IstioWizards/WorkloadAnnotationsWizard';
 import { Paths } from '../../config';
-import { navigateToFilteredList, buildWorkloadMetadataPatch } from '../PageUtils';
+import {
+  buildAnnotationsDiff,
+  filterHiddenAnnotations,
+  hasAnnotationsChanged,
+  navigateToFilteredList,
+  buildWorkloadMetadataPatch,
+  buildWorkloadAnnotationsPatch,
+  getWorkloadAnnotations,
+  isTemplatedWorkloadKind
+} from '../PageUtils';
 import { t } from 'utils/I18nUtils';
 import { addError, addSuccess } from '../../utils/AlertUtils';
 
@@ -65,6 +76,7 @@ type WorkloadInfoProps = {
 
 type WorkloadInfoState = {
   currentTab: string;
+  showAnnotationsWizard: boolean;
   validations?: Validations;
   workloadIstioConfig?: IstioConfigList;
 };
@@ -90,7 +102,8 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
   constructor(props: WorkloadInfoProps) {
     super(props);
     this.state = {
-      currentTab: activeTab(tabName, defaultTab)
+      currentTab: activeTab(tabName, defaultTab),
+      showAnnotationsWizard: false
     };
   }
 
@@ -509,8 +522,15 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
     if (!workload) {
       return;
     }
-    const original = (field === 'labels' ? workload.labels : workload.annotations) ?? {};
-    const jsonPatch = buildWorkloadMetadataPatch(field, original, updated, workload.gvk.Kind);
+    const original = (field === 'labels' ? workload.labels : getWorkloadAnnotations(workload)) ?? {};
+    const jsonPatch =
+      field === 'annotations' && isTemplatedWorkloadKind(workload.gvk.Kind)
+        ? buildWorkloadAnnotationsPatch(workload, updated)
+        : buildWorkloadMetadataPatch(field, original, updated, workload.gvk.Kind);
+
+    if (jsonPatch === '{}') {
+      return;
+    }
 
     API.updateWorkload(this.props.namespace, workload.name, workload.gvk, jsonPatch, undefined, workload.cluster)
       .then(() => {
@@ -519,6 +539,47 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
       })
       .catch(error => {
         addError(t('Could not update workload {{workload}} {{field}}', { workload: workload.name, field }), error);
+      });
+  };
+
+  private handleSaveAnnotations = (controller: Record<string, string>, template: Record<string, string>): void => {
+    const workload = this.props.workload;
+    if (!workload) {
+      return;
+    }
+
+    const controllerFull = workload.annotations ?? {};
+    const templateFull = workload.templateAnnotations ?? {};
+
+    const controllerChanged = hasAnnotationsChanged(controllerFull, controller);
+    const templateChanged = hasAnnotationsChanged(templateFull, template);
+
+    if (!controllerChanged && !templateChanged) {
+      this.setState({ showAnnotationsWizard: false });
+      return;
+    }
+
+    const patch: {
+      metadata?: { annotations: Record<string, string | null> };
+      spec?: { template: { metadata: { annotations: Record<string, string | null> } } };
+    } = {};
+
+    if (controllerChanged) {
+      patch.metadata = { annotations: buildAnnotationsDiff(controllerFull, controller) };
+    }
+    if (templateChanged) {
+      patch.spec = { template: { metadata: { annotations: buildAnnotationsDiff(templateFull, template) } } };
+    }
+
+    const jsonPatch = JSON.stringify(patch);
+    API.updateWorkload(this.props.namespace, workload.name, workload.gvk, jsonPatch, undefined, workload.cluster)
+      .then(() => {
+        addSuccess(t('Workload {{workload}} annotations updated', { workload: workload.name }));
+        this.setState({ showAnnotationsWizard: false });
+        this.props.refreshWorkload();
+      })
+      .catch(error => {
+        addError(t('Could not update workload {{workload}} annotations', { workload: workload.name }), error);
       });
   };
 
@@ -540,20 +601,33 @@ export class WorkloadInfo extends React.Component<WorkloadInfoProps, WorkloadInf
   }
 
   private renderAnnotationsCard(workload: Workload): React.ReactNode {
+    const templated = isTemplatedWorkloadKind(workload.gvk.Kind);
     return (
       <StackItem key="annotations" data-test="workload-annotations-card">
         <EditableAnnotationsCard
-          annotations={workload.annotations ?? {}}
+          annotations={getWorkloadAnnotations(workload)}
           canEdit={!serverConfig.deployment.viewOnlyMode}
+          onEditClick={templated ? () => this.setState({ showAnnotationsWizard: true }) : undefined}
           onSave={annotations => this.handleSaveMetadata('annotations', annotations)}
           prioritizeIstio
           prioritizeIstioCount
           title={t('Annotations')}
         />
+        {templated && (
+          <WorkloadAnnotationsWizard
+            canEdit={!serverConfig.deployment.viewOnlyMode}
+            controllerAnnotations={filterHiddenAnnotations(workload.annotations ?? {})}
+            isOpen={this.state.showAnnotationsWizard}
+            onClose={() => this.setState({ showAnnotationsWizard: false })}
+            onSave={this.handleSaveAnnotations}
+            templateAnnotations={filterHiddenAnnotations(workload.templateAnnotations ?? {})}
+          />
+        )}
       </StackItem>
     );
   }
 
+  /* eslint-disable-next-line @typescript-eslint/member-ordering -- render follows existing private helper layout */
   render(): React.ReactNode {
     const workload = this.props.workload;
     const pods = workload?.pods ?? [];
