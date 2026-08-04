@@ -10,7 +10,6 @@ import {
   ToolbarGroup,
   ToolbarItem,
   ToolbarContent,
-  ToolbarFilter,
   Select,
   SelectList,
   SelectOption,
@@ -642,7 +641,7 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
           {this.props.childrenFirst && this.renderChildren()}
           <ToolbarContent>
             <ToolbarGroup variant="filter-group">
-              <ToolbarFilter categoryName="">
+              <ToolbarItem>
                 <Select
                   id="filter_select_type"
                   onSelect={(_event, value) => this.selectFilterType(value as string)}
@@ -664,8 +663,8 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
                     ))}
                   </SelectList>
                 </Select>
-                {this.renderInput()}
-              </ToolbarFilter>
+              </ToolbarItem>
+              <ToolbarItem>{this.renderInput()}</ToolbarItem>
             </ToolbarGroup>
 
             <ToolbarGroup>
