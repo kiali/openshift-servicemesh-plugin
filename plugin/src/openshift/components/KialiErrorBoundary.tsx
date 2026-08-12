@@ -25,7 +25,8 @@ export class KialiErrorBoundary extends React.Component<{ children: React.ReactN
           titleText="Service Mesh Console Unavailable"
         >
           <EmptyStateBody>
-            The Kiali backend is not reachable. Service Mesh pages require a running Kiali instance on this cluster.
+            The Kiali backend is not reachable. Service Mesh pages require a running Kiali instance on this cluster. If
+            you are only using the Fleet Service Mesh perspective, you can safely ignore this section.
           </EmptyStateBody>
         </EmptyState>
       );

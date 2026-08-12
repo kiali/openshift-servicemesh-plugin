@@ -16,6 +16,7 @@ This guide provides coding standards, development workflows, and common commands
 - [Troubleshooting](#troubleshooting)
 - [Quick Command Reference](#quick-command-reference)
 - [Important Reminders](#important-reminders)
+- [Skills](#skills)
 - [Additional Resources](#additional-resources)
 
 ---
@@ -336,7 +337,11 @@ make deploy-plugin enable-plugin
 # Undeploy
 make undeploy-plugin
 
-# Build + push dev image to cluster registry
+# Build, push, and deploy a dev image in one step (no Kiali Operator needed)
+make cluster-deploy
+
+# Build + push a dev image to the cluster registry only (does not restart/redeploy -
+# pairs with the Kiali Operator flow below, or run "make restart-plugin" afterward)
 make cluster-push
 
 # Check cluster status (registry info, login commands)
@@ -611,12 +616,15 @@ If `plugin/src/kiali/` or `plugin/cypress/integration/kiali/` shows up with chan
 | Format | `cd plugin && yarn prettier` |
 | Type check | `make typecheck` (or: `cd plugin && yarn tsc --noEmit`) |
 | Unit tests | `make test` (or: `cd plugin && yarn test`) |
+| Fleet Service Mesh unit tests only | `make test-fleet-mesh` |
 | Extract i18n strings | `cd plugin && yarn i18n` |
 | Cypress (interactive) | `cd plugin && yarn cypress` |
 | Cypress (headless) | `cd plugin && yarn cypress:run` |
 | Cypress (JUnit) | `cd plugin && yarn cypress:run:junit` |
 | Container image build | `make build-plugin-image` |
 | Deploy to cluster (quay.io latest image) | `make deploy-plugin enable-plugin` |
+| Build, push, and deploy a dev image (no operator) | `make cluster-deploy` |
+| Build and push a dev image only (pairs with the operator, or `make restart-plugin`) | `make cluster-push` |
 | Undeploy | `make undeploy-plugin` |
 | Sync Kiali frontend | `hack/copy-frontend-src-to-ossmc.sh` |
 | Bump version | `hack/update-version-string.sh vX.Y.Z` |
@@ -692,6 +700,12 @@ Before submitting a PR, verify:
 8. **Comments explain "why"**: Remove any comments that restate what the code does
 9. **Import order is correct**: External → path aliases → relative, separated by blank lines
 10. **Formatting is clean**: Prettier runs automatically on commit, but verify with `yarn prettier` if in doubt
+
+---
+
+## Skills
+
+- **[Track OSSM-ACM Addon Controller Backend Issues](.claude/skills/track-ossm-acm-addon-backend-issues/SKILL.md)** — Analyze open multicluster-mesh-addon controller issues for fleet-mesh plugin impact and create or update tracking issues in kiali/openshift-servicemesh-plugin (or kiali/kiali when Kiali server code is affected). Run periodically (e.g., when new addon controller issues are filed or before sprint planning).
 
 ---
 
