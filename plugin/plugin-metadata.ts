@@ -1,4 +1,5 @@
 import { ConsolePluginBuildMetadata } from '@openshift-console/dynamic-plugin-sdk-webpack';
+import { liteModules } from './src/lite/lite-modules';
 
 const metadata: ConsolePluginBuildMetadata = {
   name: 'ossmconsole',
@@ -12,16 +13,19 @@ const metadata: ConsolePluginBuildMetadata = {
     IstioConfigListPage: './openshift/pages/IstioConfigListPage',
     IstioConfigNewPage: './openshift/pages/IstioConfigNewPage',
     IstioDetailsTab: './openshift/pages/ServiceMeshTabs/IstioDetailsTab',
+    kialiAvailableFlag: './openshift/flags/kialiAvailableFlag',
     MeshPage: './openshift/pages/MeshPage',
-    NamespacesPage: './openshift/pages/NamespacesPage',
-    OverviewPage: './openshift/pages/OverviewPage',
     NamespaceDetailsTab: './openshift/pages/ServiceMeshTabs/NamespaceDetailsTab',
+    NamespacesPage: './openshift/pages/NamespacesPage',
+    ossmcInternalTechPreviewFlag: './openshift/flags/ossmcInternalTechPreviewFlag',
+    OverviewPage: './openshift/pages/OverviewPage',
     ReduxReducer: './kiali/reducers/index.ts',
     ServiceDetailsPage: './openshift/pages/ServiceDetailsPage',
     ServiceDetailsTab: './openshift/pages/ServiceMeshTabs/ServiceDetailsTab',
     ServiceListPage: './openshift/pages/ServiceListPage',
     WorkloadDetailsTab: './openshift/pages/ServiceMeshTabs/WorkloadDetailsTab',
-    WorkloadListPage: './openshift/pages/WorkloadListPage'
+    WorkloadListPage: './openshift/pages/WorkloadListPage',
+    ...liteModules
   },
   dependencies: {
     '@console/pluginAPI': '*'

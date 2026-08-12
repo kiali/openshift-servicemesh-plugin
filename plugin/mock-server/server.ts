@@ -28,7 +28,11 @@ interface MswHandlerInfo {
 
 interface MswHandler {
   info?: MswHandlerInfo;
-  resolver?: (args: { request: globalThis.Request; params: Record<string, string>; cookies: Record<string, string> }) => Promise<globalThis.Response | object | string | null>;
+  resolver?: (args: {
+    request: globalThis.Request;
+    params: Record<string, string>;
+    cookies: Record<string, string>;
+  }) => Promise<globalThis.Response | object | string | null>;
 }
 
 type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
