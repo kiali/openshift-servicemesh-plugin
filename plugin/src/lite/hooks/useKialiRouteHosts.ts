@@ -18,7 +18,7 @@ export function __resetKialiRouteHostCache(): void {
   routeHostCache.clear();
 }
 
-// Skip the Route lookup entirely when ingress is
+// Mirrors the fleet-mesh equivalent: skip the Route lookup entirely when ingress is
 // explicitly disabled, or when web_fqdn is already set and should take priority.
 function shouldSkipRouteFetch(resource: LiteKialiResource): boolean {
   if (resource.spec?.deployment?.ingress?.enabled === false) return true;

@@ -15,6 +15,6 @@ const externalLinkIconStyle = { marginLeft: '0.25rem', verticalAlign: '-0.125em'
 // and in-cluster production builds render the same icon without that dependency.
 export const ExternalLink: FC<ExternalLinkProps> = ({ children, className, ...props }) => (
   <a className={className} rel="noopener noreferrer" target="_blank" {...props}>
-    {children} <ExternalLinkAltIcon aria-hidden style={externalLinkIconStyle} />
+    {children} <ExternalLinkAltIcon aria-hidden set="default" style={externalLinkIconStyle} />
   </a>
 );

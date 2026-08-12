@@ -1,5 +1,6 @@
 import { EncodedExtension } from '@openshift/dynamic-plugin-sdk-webpack';
 import { K8sGroupVersionKind } from '@openshift-console/dynamic-plugin-sdk';
+import { fleetMeshExtensions } from './src/fleet-mesh/fleet-mesh-extensions';
 import { liteExtensions } from './src/lite/lite-extensions';
 
 const OSSM_CONSOLE = 'ossmconsole';
@@ -194,8 +195,8 @@ const kialiAvailableFlag: EncodedExtension = {
   }
 };
 
-// Cross-cutting flag gates the lite subtree below, so it is registered here at the root
-// rather than inside lite-extensions.ts.
+// Cross-cutting flag (gates both the lite subtree below and the fleet-mesh subtree's own
+// extensions), so it is registered here at the root rather than inside either subtree file.
 const ossmcInternalTechPreviewFlag: EncodedExtension = {
   type: 'console.flag/hookProvider',
   properties: {
@@ -217,7 +218,7 @@ const consoleSection: EncodedExtension = {
 const consoleRoute = (id: string, title: string, pageRef: string, paths: string[]): EncodedExtension[] => {
   // Scoping routes to the admin perspective (in addition to the nav items below) lets the
   // Console's usePluginRoutes() auto-switch the active perspective when a route is reached
-  // while a different perspective is active. Without this, the page
+  // while a different perspective (e.g. Fleet Service Mesh) is active. Without this, the page
   // still renders correctly, but the sidebar is left showing the previous perspective's nav.
   const routes = paths.map(path => ({
     flags: { required: ['KIALI_AVAILABLE'] },
@@ -347,7 +348,10 @@ const extensions: EncodedExtension[] = [
   })),
 
   // Lite pages — unsupported tech preview, gated behind OSSMC_INTERNAL_TECH_PREVIEW (see lite-extensions.ts)
-  ...liteExtensions
+  ...liteExtensions,
+
+  // Fleet Service Mesh perspective, nav, and routes
+  ...fleetMeshExtensions
 ];
 
 export default extensions;

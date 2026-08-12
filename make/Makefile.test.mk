@@ -14,7 +14,11 @@ typecheck:
 test:
 	cd ${PLUGIN_DIR} && yarn test
 
-## start-console: Starts a local OpenShift Console instance for developing the plugin (set KIALI_URL to also test the OSSMC/Service Mesh perspective; KIALI_URL=route auto-discovers the Kiali route).
+## test-fleet-mesh: Runs unit tests scoped to the Fleet Service Mesh subtree only (excludes OSSMC/Kiali tests).
+test-fleet-mesh:
+	cd ${PLUGIN_DIR} && yarn rstest run src/fleet-mesh
+
+## start-console: Starts a local OpenShift Console instance for developing the plugin (auto port-forwards ACM/MCE so Fleet Management links work; set LOAD_ACM_PLUGINS=false to skip, and KIALI_URL to also test the OSSMC/Service Mesh perspective; KIALI_URL=route auto-discovers the Kiali route).
 start-console: .ensure-oc-login .determine-kiali-url
 	@KIALI_URL="${KIALI_URL_TO_USE}" ${PLUGIN_DIR}/start-console.sh
 
@@ -44,8 +48,11 @@ prepare-dev-env: .determine-kiali-url
 	  echo "   (Set KIALI_URL=<url> to point at a Kiali server, or KIALI_URL=route to auto-discover; omit to use the default http://localhost:20001)"; \
 	fi
 	@echo
+	@echo "For the Fleet Service Mesh perspective, switch perspectives in the console after it starts."
+	@echo
 	@echo "Overridable environment variables for 'make start-console':"
 	@echo "  KIALI_URL=<url>         Kiali endpoint for OSSMC proxy (default: http://localhost:20001)"
+	@echo "  LOAD_ACM_PLUGINS=false  Skip ACM/MCE port-forwards (Fleet Management links will not work)"
 	@echo "  CONSOLE_PORT=<port>     Local port for the console container (default: 9000)"
 	@echo "  PLUGIN_DEV_PORT=<port>  Port of the webpack dev server (default: 9001)"
 	@echo
