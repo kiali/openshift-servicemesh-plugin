@@ -122,10 +122,13 @@ metadata:
 data:
   plugin-config.json: |
     {
-      observability: {
-        instance: sample,
-        namespace: tempo,
-        tenant: default
+      "observability": {
+        "instance": "sample",
+        "namespace": "tempo",
+        "tenant": "default"
+      },
+      "internal": {
+        "techPreview": true
       }
     }
 ---

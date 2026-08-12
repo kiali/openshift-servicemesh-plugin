@@ -14,6 +14,10 @@ typecheck:
 test:
 	cd ${PLUGIN_DIR} && yarn test
 
+## lint: Runs the full linter
+lint:
+	cd ${PLUGIN_DIR} && yarn lint
+
 ## start-console: Starts a local OpenShift Console instance for developing the plugin (set KIALI_URL to also test the OSSMC/Service Mesh perspective; KIALI_URL=route auto-discovers the Kiali route).
 start-console: .ensure-oc-login .determine-kiali-url
 	@KIALI_URL="${KIALI_URL_TO_USE}" ${PLUGIN_DIR}/start-console.sh

@@ -59,7 +59,7 @@ function tsconfigPathsPlugin(): esbuild.Plugin {
         const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const filter = new RegExp(`^${escapedAlias}($|/.*)`);
 
-        build.onResolve({ filter }, (args) => {
+        build.onResolve({ filter }, args => {
           const suffix = args.path.slice(alias.length);
           const resolved = path.join(targetPath, suffix);
 
@@ -106,7 +106,7 @@ async function build() {
         '.woff': 'empty',
         '.woff2': 'empty',
         '.ttf': 'empty',
-        '.eot': 'empty',
+        '.eot': 'empty'
       },
       // Don't bundle node_modules that work fine in Node
       external: ['express'],
@@ -116,8 +116,8 @@ async function build() {
       sourcemap: true,
       // Define environment
       define: {
-        'process.env.NODE_ENV': '"development"',
-      },
+        'process.env.NODE_ENV': '"development"'
+      }
     });
     console.log('Mock server built successfully: dist/mock-server.js');
   } catch (error) {
