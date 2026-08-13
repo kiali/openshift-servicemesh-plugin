@@ -153,6 +153,7 @@
     "webpack-dev-server": "^5.2.1"
   },
   "resolutions": {
+    "browserslist": "4.28.8",
     "dompurify": "^3.4.7",
     "immutable": "^4.3.8",
     "js-cookie": "^3.0.8",
