@@ -6454,7 +6454,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"browserslist@npm:4.28.8":
+"browserslist@npm:^4.24.0, browserslist@npm:^4.24.4, browserslist@npm:^4.28.1":
   version: 4.28.8
   resolution: "browserslist@npm:4.28.8"
   dependencies:
