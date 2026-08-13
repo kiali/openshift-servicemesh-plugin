@@ -58,7 +58,14 @@ const config: Configuration = {
               }
             }
           },
-          'sass-loader'
+          {
+            loader: 'sass-loader',
+            options: {
+              sassOptions: {
+                charset: false
+              }
+            }
+          }
         ]
       },
       {
