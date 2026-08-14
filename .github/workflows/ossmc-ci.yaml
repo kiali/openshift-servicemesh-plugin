@@ -45,6 +45,10 @@ jobs:
       working-directory: plugin
       run: yarn lint
 
+    - name: Type check
+      working-directory: plugin
+      run: yarn tsc --noEmit
+
     - name: Unit tests
       working-directory: plugin
       run: yarn test

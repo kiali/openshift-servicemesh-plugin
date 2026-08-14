@@ -32,7 +32,8 @@ endif
 
 ## prepare-dev-env: Prepares the local dev environment so you can run the plugin and OpenShift console locally.
 prepare-dev-env: .determine-kiali-url
-	@cd ${PLUGIN_DIR} && yarn install
+	@cd ${PLUGIN_DIR} && CYPRESS_INSTALL_BINARY=0 HUSKY=0 yarn install
+	@mkdir -p ${PLUGIN_DIR}/dist
 	@cp ${PLUGIN_DIR}/plugin-config.json ${PLUGIN_DIR}/dist
 	@echo
 	@echo "To run the plugin and the OpenShift Console in your local dev environment, do the following:"

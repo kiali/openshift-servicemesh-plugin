@@ -40,19 +40,12 @@
     }
   },
   "exclude": [
-    "src/mocks/**/*",
-    "src/setupTests.ts",
-    "src/__mocks__/**/*",
-    "src/fleet-mesh/__mocks__/**/*",
-    "src/fleet-mesh/**/__tests__/**/*",
-    "src/fleet-mesh/rstest-globals.d.ts",
-    "src/fleet-mesh/rstest.fleet-mesh.config.ts",
-    "src/fleet-mesh/setupTests.tsx",
-    "src/lite/__mocks__/**/*",
+    "src/**/mocks/**/*",
+    "src/**/__mocks__/**/*",
     "src/lite/**/__tests__/**/*",
-    "src/lite/rstest-globals.d.ts",
-    "src/lite/rstest.lite.config.ts",
-    "src/lite/setupTests.tsx"
+    "src/fleet-mesh/**/__tests__/**/*",
+    "src/**/rstest*",
+    "src/**/setupTests.*"
   ],
   "include": ["src"]
 }

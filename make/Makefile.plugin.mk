@@ -20,7 +20,7 @@ clean-plugin:
 
 ## build-plugin: Builds the plugin.
 build-plugin:
-	cd ${PLUGIN_DIR} && yarn install && yarn build
+	cd ${PLUGIN_DIR} && CYPRESS_INSTALL_BINARY=0 HUSKY=0 yarn install && yarn build
 
 ## build-plugin-image: Builds the plugin and its container image.
 build-plugin-image:
