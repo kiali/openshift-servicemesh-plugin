@@ -1,5 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
+import { ossmConsoleGVK } from '../types/ossmconsole';
+import type { OssmConsoleResource } from '../types/ossmconsole';
+import { findActiveOssmConsole, getKialiStatusProbeKey } from '../utils/ossmConsoleUtils';
 import { probeWithRetry } from '../utils/probeWithRetry';
+
+const KIALI_AVAILABLE_FLAG = 'KIALI_AVAILABLE';
+const PROMOTED_UNAVAILABLE_PROBE_INTERVAL_MS = 15_000;
 
 // Checks whether the Kiali backend is reachable through the OSSMC proxy. Gates full-OSSMC routes
 // and nav items (Overview, Graph, etc.) but not the top-level "Service Mesh" section header.
@@ -22,15 +29,43 @@ import { probeWithRetry } from '../utils/probeWithRetry';
 // rather than reacting to the flag change directly. There is no workaround on the plugin side.
 // See https://github.com/openshift/console/issues/16922
 function useKialiAvailableFlag(setFlag: (flag: string, value: boolean) => void): void {
+  const [ossmConsoles, ossmConsolesLoaded] = useK8sWatchResource<OssmConsoleResource[]>({
+    groupVersionKind: ossmConsoleGVK,
+    isList: true,
+    namespaced: true
+  });
+
+  const kialiStatusKey = useMemo(
+    () => getKialiStatusProbeKey(ossmConsoles, ossmConsolesLoaded),
+    [ossmConsoles, ossmConsolesLoaded]
+  );
+
+  const kialiMarkedAvailable = useMemo(() => {
+    if (!ossmConsolesLoaded || !Array.isArray(ossmConsoles)) {
+      return false;
+    }
+    return findActiveOssmConsole(ossmConsoles)?.status?.kiali?.available === true;
+  }, [ossmConsoles, ossmConsolesLoaded]);
+
   useEffect(() => {
     const apiProxy = process.env.API_PROXY;
     if (!apiProxy) {
-      setFlag('KIALI_AVAILABLE', false);
+      setFlag(KIALI_AVAILABLE_FLAG, false);
       return;
     }
-    probeWithRetry(`${apiProxy}/api/status`, 'KIALI_AVAILABLE', setFlag, 3, 'application/json');
-    // eslint-disable-next-line react-hooks/exhaustive-deps, @eslint-react/exhaustive-deps -- one-shot probe on mount only
-  }, []);
+    probeWithRetry(`${apiProxy}/api/status`, KIALI_AVAILABLE_FLAG, setFlag, 3, 'application/json');
+  }, [kialiStatusKey, setFlag]);
+
+  useEffect(() => {
+    const apiProxy = process.env.API_PROXY;
+    if (!apiProxy || !kialiMarkedAvailable) {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      probeWithRetry(`${apiProxy}/api/status`, KIALI_AVAILABLE_FLAG, setFlag, 3, 'application/json');
+    }, PROMOTED_UNAVAILABLE_PROBE_INTERVAL_MS);
+    return () => window.clearInterval(interval);
+  }, [kialiMarkedAvailable, setFlag]);
 }
 
 export default useKialiAvailableFlag;

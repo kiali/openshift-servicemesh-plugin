@@ -33,6 +33,7 @@ import { kialiGVK } from '../types/kiali';
 import type { LiteOssmConsoleResource } from '../types/ossmconsole';
 import { ossmConsoleGVK } from '../types/ossmconsole';
 import { useKialiRouteHosts } from '../hooks/useKialiRouteHosts';
+import { useConnectDisconnectPending } from '../hooks/useConnectDisconnectPending';
 import { getKialiServiceTarget } from '../utils/kialiServiceTarget';
 import {
   demoteFromConsole,
@@ -41,7 +42,7 @@ import {
   isPromoted,
   promoteToConsole
 } from '../utils/ossmConsoleUtils';
-import { useLiteTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 export { getKialiServiceTarget };
 
@@ -78,7 +79,7 @@ function buildColumns(t: (key: string) => string): TableColumn<LiteKialiResource
 }
 
 const NoCrdMsg: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   return (
     <EmptyState
       headingLevel="h2"
@@ -95,7 +96,7 @@ const NoCrdMsg: FC = () => {
 };
 
 const NoKialisMsg: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   return (
     <EmptyState
       headingLevel="h2"
@@ -111,7 +112,7 @@ const NoKialisMsg: FC = () => {
 };
 
 const NoMatchMsg: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   return (
     <EmptyState variant="xs">
       <EmptyStateBody>{t('No Kiali instances match the current filter.')}</EmptyStateBody>
@@ -120,7 +121,7 @@ const NoMatchMsg: FC = () => {
 };
 
 const KialiRow: FC<RowProps<LiteKialiResource, KialiRowData>> = ({ obj, activeColumnIDs, rowData }) => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   const crName = obj.metadata?.name ?? '';
   const crNamespace = obj.metadata?.namespace ?? '';
   const { name: serviceName, namespace: serviceNamespace } = getKialiServiceTarget(obj);
@@ -134,7 +135,9 @@ const KialiRow: FC<RowProps<LiteKialiResource, KialiRowData>> = ({ obj, activeCo
         t,
         rowData.ossmConsoleStatusUnknown,
         rowData.activeOssmConsole,
-        rowData.canPatchOssmConsole
+        rowData.canPatchOssmConsole,
+        promoted ? undefined : serviceName,
+        promoted ? undefined : serviceNamespace
       )
     : null;
   const isPending = rowData?.pendingKey === promoteKey;
@@ -211,7 +214,7 @@ const KialiRow: FC<RowProps<LiteKialiResource, KialiRowData>> = ({ obj, activeCo
 };
 
 const KialisPage: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   const [resources, loaded, loadError] = useK8sWatchResource<LiteKialiResource[]>({
     groupVersionKind: kialiGVK,
     isList: true,
@@ -276,6 +279,18 @@ const KialisPage: FC = () => {
     : null;
 
   const displayAlert = alert ?? completionAlert;
+
+  const clearPendingAction = React.useCallback(() => setPendingAction(null), []);
+
+  useConnectDisconnectPending({
+    isOperationComplete,
+    isPending: activePendingAction !== null,
+    onTimeout: clearPendingAction,
+    setAlert,
+    timeoutMessage: t(
+      'Timed out waiting for Console integration to update. The operator may still be reconciling — refresh the page to check.'
+    )
+  });
 
   const handlePromote = React.useCallback(
     async (name: string, namespace: string): Promise<void> => {

@@ -28,11 +28,11 @@ import { LiteStatus } from '../components/LiteStatus';
 import { OssmOperatorMissingEmptyState } from '../components/OssmOperatorMissingEmptyState';
 import type { LiteIstioResource } from '../types/istio';
 import { istioGVK } from '../types/istio';
-import { useLiteTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { isMissingModelError } from '../../openshift/utils/watchErrors';
 
 const IstioDetailContent: FC<{ name: string }> = ({ name }) => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   const [resource, loaded, loadError] = useK8sWatchResource<LiteIstioResource>({
     groupVersionKind: istioGVK,
     name,
@@ -176,7 +176,7 @@ const IstioDetailContent: FC<{ name: string }> = ({ name }) => {
 };
 
 const IstioDetailPage: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   const { name } = useParams<{ name: string }>();
 
   if (!name) {

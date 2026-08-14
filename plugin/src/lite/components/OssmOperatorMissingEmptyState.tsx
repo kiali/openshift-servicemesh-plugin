@@ -1,13 +1,13 @@
 import type { FC } from 'react';
 import { EmptyState, EmptyStateBody, EmptyStateVariant } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
-import { useLiteTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 export const OSSM_OPERATORHUB_HREF = '/catalog/ns/openshift-operators?keyword=OpenShift+Service+Mesh';
 
 /** Shown when istios.sailoperator.io is not registered (OSSM Operator not installed). */
 export const OssmOperatorMissingEmptyState: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
 
   return (
     <EmptyState

@@ -1,21 +1,13 @@
 import { k8sPatch } from '@openshift-console/dynamic-plugin-sdk';
-import { ossmConsoleModel } from '../types/ossmconsole';
+import { ossmConsoleModel } from 'openshift/types/ossmconsole';
+import type { OssmConsoleResource } from 'openshift/types/ossmconsole';
 import type { LiteOssmConsoleResource } from '../types/ossmconsole';
+
+export { findActiveOssmConsole } from 'openshift/utils/ossmConsoleUtils';
 
 // The internal port Kiali listens on for its API. This is the port OSSM Console proxies to once
 // promoted, independent of whatever externally-facing route port a given Kiali installation uses.
 export const KIALI_PORT = 20001;
-
-// The operator only reconciles a single OSSMConsole CR per cluster (the oldest one; any others are
-// ignored), so promote/demote must target that same CR or the change will have no effect.
-export function findActiveOssmConsole(resources: LiteOssmConsoleResource[]): LiteOssmConsoleResource | null {
-  if (resources.length === 0) return null;
-  return resources.reduce((oldest, candidate) => {
-    const oldestTime = oldest.metadata?.creationTimestamp ?? '';
-    const candidateTime = candidate.metadata?.creationTimestamp ?? '';
-    return candidateTime < oldestTime ? candidate : oldest;
-  });
-}
 
 export function isPromoted(
   ossmconsole: LiteOssmConsoleResource | null,
@@ -29,11 +21,14 @@ export function isPromoted(
 // Returns why the promote/demote action cannot be used right now, or null if it is usable.
 // ossmConsoleStatusUnknown takes priority over the other checks since, when true, we genuinely
 // cannot tell whether anything is promoted or not (as opposed to confidently knowing nothing is).
+// serviceName/serviceNamespace are only checked for Connect (pass them only on the promote path).
 export function getActionUnavailableReason(
   t: (key: string) => string,
   ossmConsoleStatusUnknown: boolean,
   activeOssmConsole: LiteOssmConsoleResource | null,
-  canPatchOssmConsole: boolean
+  canPatchOssmConsole: boolean,
+  serviceName?: string,
+  serviceNamespace?: string
 ): string | null {
   if (ossmConsoleStatusUnknown) {
     return t('Unable to determine Console integration status: insufficient permissions to view OSSMConsole resources.');
@@ -43,6 +38,11 @@ export function getActionUnavailableReason(
   }
   if (!canPatchOssmConsole) {
     return t('You do not have permission to change the promoted Kiali installation.');
+  }
+  if (serviceName !== undefined && serviceNamespace !== undefined) {
+    if (!serviceName.trim() || !serviceNamespace.trim()) {
+      return t('Cannot connect: Kiali service name or namespace is not configured.');
+    }
   }
   return null;
 }
@@ -64,7 +64,7 @@ export async function promoteToConsole(
       }
     ],
     model: ossmConsoleModel,
-    resource: ossmconsole
+    resource: ossmconsole as OssmConsoleResource
   });
 }
 
@@ -81,6 +81,6 @@ export async function demoteFromConsole(ossmconsole: LiteOssmConsoleResource): P
       }
     ],
     model: ossmConsoleModel,
-    resource: ossmconsole
+    resource: ossmconsole as OssmConsoleResource
   });
 }

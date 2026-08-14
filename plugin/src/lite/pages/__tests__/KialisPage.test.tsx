@@ -318,6 +318,17 @@ describe('KialisPage', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Unable to determine Console integration status');
   });
 
+  it('disables Connect when the Kiali service namespace is not configured', async () => {
+    mockWatchResources([[makeKialiResource({ metadata: { name: 'kiali' }, spec: {} })], true, null]);
+    render(<KialisPage />);
+    const button = await screen.findByText('Connect');
+    expect(button.closest('button')).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.hover(button);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Cannot connect: Kiali service name or namespace is not configured.'
+    );
+  });
+
   describe('Kiali UI link column', () => {
     it('shows both Kiali and Console links for the active instance when a URL is available', async () => {
       rstest.mocked(k8sGet).mockResolvedValue({

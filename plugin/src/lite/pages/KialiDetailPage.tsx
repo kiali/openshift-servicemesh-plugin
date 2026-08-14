@@ -36,6 +36,7 @@ import { kialiGVK } from '../types/kiali';
 import type { LiteOssmConsoleResource } from '../types/ossmconsole';
 import { ossmConsoleGVK } from '../types/ossmconsole';
 import { getKialiServiceTarget as getServiceTarget } from '../utils/kialiServiceTarget';
+import { useConnectDisconnectPending } from '../hooks/useConnectDisconnectPending';
 import {
   demoteFromConsole,
   findActiveOssmConsole,
@@ -43,10 +44,10 @@ import {
   isPromoted,
   promoteToConsole
 } from '../utils/ossmConsoleUtils';
-import { useLiteTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, namespace }) => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   const [resource, loaded, loadError] = useK8sWatchResource<LiteKialiResource>({
     groupVersionKind: kialiGVK,
     name,
@@ -108,6 +109,18 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
 
   const displayAlert = alert ?? completionAlert;
 
+  const clearPendingIntent = React.useCallback(() => setPendingIntent(null), []);
+
+  useConnectDisconnectPending({
+    isOperationComplete,
+    isPending: activePendingIntent !== null,
+    onTimeout: clearPendingIntent,
+    setAlert,
+    timeoutMessage: t(
+      'Timed out waiting for Console integration to update. The operator may still be reconciling — refresh the page to check.'
+    )
+  });
+
   if (!loaded) {
     return (
       <PageSection>
@@ -137,7 +150,9 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
     t,
     ossmConsoleStatusUnknown,
     activeOssmConsole,
-    canPatchOssmConsole
+    canPatchOssmConsole,
+    promoted ? undefined : serviceName,
+    promoted ? undefined : serviceNamespace
   );
   const isDisabled = activePendingIntent !== null || unavailableReason !== null;
 
@@ -413,7 +428,7 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
 };
 
 const KialiDetailPage: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   const { name, namespace } = useParams<{ name: string; namespace: string }>();
 
   if (!name || !namespace) {

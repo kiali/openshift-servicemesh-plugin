@@ -1,8 +1,8 @@
 import { k8sPatch } from '@openshift-console/dynamic-plugin-sdk';
+import { findActiveOssmConsole } from 'openshift/utils/ossmConsoleUtils';
 import {
   KIALI_PORT,
   demoteFromConsole,
-  findActiveOssmConsole,
   getActionUnavailableReason,
   isPromoted,
   promoteToConsole
@@ -113,6 +113,15 @@ describe('getActionUnavailableReason', () => {
   });
 
   it('returns null when the status is known, an OSSMConsole resource exists, and the user can patch it', () => {
+    expect(getActionUnavailableReason(t, false, makeOssmConsoleResource(), true)).toBeNull();
+  });
+
+  it('returns a reason when the service target is incomplete for Connect', () => {
+    expect(getActionUnavailableReason(t, false, makeOssmConsoleResource(), true, 'kiali', '')).not.toBeNull();
+    expect(getActionUnavailableReason(t, false, makeOssmConsoleResource(), true, '', 'istio-system')).not.toBeNull();
+  });
+
+  it('does not check the service target when service args are omitted', () => {
     expect(getActionUnavailableReason(t, false, makeOssmConsoleResource(), true)).toBeNull();
   });
 });

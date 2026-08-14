@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import { Label, Tooltip } from '@patternfly/react-core';
-import { useLiteTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 interface ConsoleConnectionStatusProps {
   active: boolean;
@@ -9,7 +9,7 @@ interface ConsoleConnectionStatusProps {
 }
 
 export const ConsoleConnectionStatus: FC<ConsoleConnectionStatusProps> = ({ active, isCompact, statusUnknown }) => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
 
   if (statusUnknown) {
     return (

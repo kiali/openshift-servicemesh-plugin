@@ -19,7 +19,7 @@ import { LiteStatus } from '../components/LiteStatus';
 import { OssmOperatorMissingEmptyState } from '../components/OssmOperatorMissingEmptyState';
 import type { LiteIstioResource } from '../types/istio';
 import { istioGVK } from '../types/istio';
-import { useLiteTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { getStatusRank } from '../utils/statusUtils';
 import { isMissingModelError } from '../../openshift/utils/watchErrors';
 
@@ -46,7 +46,7 @@ function buildColumns(t: (key: string) => string): TableColumn<LiteIstioResource
 }
 
 const NoIstiosMsg: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   return (
     <EmptyState
       headingLevel="h2"
@@ -62,7 +62,7 @@ const NoIstiosMsg: FC = () => {
 };
 
 const NoMatchMsg: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   return (
     <EmptyState variant="xs">
       <EmptyStateBody>{t('No Istio control planes match the current filter.')}</EmptyStateBody>
@@ -97,7 +97,7 @@ const IstioRow: FC<RowProps<LiteIstioResource>> = ({ obj, activeColumnIDs }) => 
 );
 
 const IstiosPage: FC = () => {
-  const { t } = useLiteTranslation();
+  const { t } = useKialiTranslation();
   const [resources, loaded, loadError] = useK8sWatchResource<LiteIstioResource[]>({
     groupVersionKind: istioGVK,
     isList: true,
