@@ -27,7 +27,7 @@ import { deriveStatus } from '../utils/statusUtils';
 import { StatusDonutChart } from './StatusDonutChart';
 import type { StatusCounts } from './StatusDonutChart';
 import { cpTypeSegment } from '../utils/cpTypeSegment';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { isOssmAcmAddonMissing } from '../../openshift/utils/watchErrors';
 
 function countByStatus<T>(
@@ -154,7 +154,7 @@ function collectRecentIssues(meshes: MultiClusterMesh[], controlPlanes: Enriched
 }
 
 const OverviewPage: FC = () => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const {
     items,
     mcms,

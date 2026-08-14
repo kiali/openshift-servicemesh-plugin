@@ -10,7 +10,7 @@ import {
 } from '@patternfly/react-core';
 import type { KialiLink } from '../types/kiali';
 import { kialiStandaloneLinkLabel, ossmcLinkLabel } from '../utils/observabilityLinkLabels';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { KialiExternalLink, OssmcConsoleLink } from './ObservabilityLinks';
 
 function firstStandaloneUrl(links: KialiLink[]): string | undefined {
@@ -23,7 +23,7 @@ function firstOssmcUrl(links: KialiLink[]): string | undefined {
 
 /** Always-visible detail card with horizontal Kiali and OSSMC rows. */
 const ObservabilityCard: FC<{ links: KialiLink[] }> = ({ links }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const standaloneUrl = firstStandaloneUrl(links);
   const ossmcUrl = firstOssmcUrl(links);
 

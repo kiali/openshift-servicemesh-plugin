@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Flex, FlexItem, SearchInput, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import { useVirtualRows } from '../hooks/useVirtualRows';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 export interface CategoryLabel {
   key: string;
@@ -37,7 +37,7 @@ export function VirtualFilterTable<T>({
   searchMatch,
   searchPlaceholder
 }: VirtualFilterTableProps<T>): React.JSX.Element {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const allKey = categoryLabels[0].key;
   const [filter, setFilter] = useState(allKey);
   const [searchInput, setSearchInput] = useState('');

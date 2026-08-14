@@ -45,9 +45,18 @@ import { statusIcon } from '../utils/statusIcon';
 import { VirtualFilterTable } from './VirtualFilterTable';
 import type { CategoryLabel, VirtualFilterColumn } from './VirtualFilterTable';
 import { useVirtualRows } from '../hooks/useVirtualRows';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 const CONDITION_COL_WIDTHS = ['12%', '12%', '14%', '10%', '12%', '25%', '15%'];
+const CONDITION_COL_KEYS = [
+  'cluster',
+  'controlPlane',
+  'type',
+  'status',
+  'reason',
+  'message',
+  'lastTransition'
+] as const;
 
 const discoveredClusterRowKey = (name: string): string => name;
 const discoveredClusterSearchMatch = (name: string, query: string): boolean =>
@@ -69,7 +78,7 @@ function uniqueNetworks(planes: EnrichedControlPlane[]): string[] {
 }
 
 const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const [showAllConditions, setShowAllConditions] = useState(false);
   const [mcms] = useMultiClusterMeshes();
   const [managedClusterMap] = useManagedClusterMap();
@@ -375,8 +384,8 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
                           style={{ tableLayout: 'fixed' }}
                         >
                           <colgroup>
-                            {CONDITION_COL_WIDTHS.map(w => (
-                              <col key={`cond-col-${w}`} style={{ width: w }} />
+                            {CONDITION_COL_KEYS.map((colKey, i) => (
+                              <col key={`cond-col-${colKey}`} style={{ width: CONDITION_COL_WIDTHS[i] }} />
                             ))}
                           </colgroup>
                           <tbody className="pf-v6-c-table__tbody">
@@ -446,7 +455,7 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
 };
 
 const DiscoveredMeshDetailPage: FC = () => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const { meshID } = useParams<{ meshID: string }>();
 
   if (!meshID) {

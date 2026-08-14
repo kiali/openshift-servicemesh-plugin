@@ -38,7 +38,7 @@ import { ConditionsTable } from './ConditionsTable';
 import { MeshStatus } from './MeshStatus';
 import { CP_TYPES } from '../utils/cpTypeSegment';
 import type { CpType } from '../utils/cpTypeSegment';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import ObservabilityCard from './ObservabilityCard';
 
 interface FleetRequestError {
@@ -48,7 +48,7 @@ interface FleetRequestError {
 }
 
 const ControlPlaneDetailContent: FC<{ cluster: string; name: string; type: CpType }> = ({ cluster, name, type }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const cachedIstio = getFromEnrichmentCache(cluster, name);
   const [fetchedIstio, setFetchedIstio] = useState<Istio | null | undefined>(undefined);
   const [error, setError] = useState<unknown>(null);
@@ -264,7 +264,7 @@ const ControlPlaneDetailContent: FC<{ cluster: string; name: string; type: CpTyp
 };
 
 const ControlPlaneDetailPage: FC = () => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const { type, cluster, name } = useParams<{ cluster: string; name: string; type: string }>();
 
   if (!type || !cluster || !name || !CP_TYPES.includes(type as CpType)) {

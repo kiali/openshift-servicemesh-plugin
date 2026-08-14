@@ -43,7 +43,7 @@ import { MeshStatus } from './MeshStatus';
 import { TrustStatusCard } from './TrustStatusCard';
 import { VirtualFilterTable } from './VirtualFilterTable';
 import type { CategoryLabel, VirtualFilterColumn } from './VirtualFilterTable';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { clusterMeshStatusRowKey, clusterMeshStatusSearchMatch } from '../utils/tableCallbacks';
 
 function conditionMessage(condition: K8sCondition): string {
@@ -78,7 +78,7 @@ export const ClusterStatusSection: FC<{
   managedClustersLoaded?: boolean;
   meshConditions?: K8sCondition[];
 }> = ({ clusterStatuses, managedClusterMap, managedClustersLoaded = true, meshConditions }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
 
   const columns = useMemo<VirtualFilterColumn<ClusterMeshStatus>[]>(
     () => [
@@ -171,7 +171,7 @@ export const ClusterStatusSection: FC<{
 };
 
 const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const [mesh, loaded, loadError] = useK8sWatchResource<MultiClusterMesh>({
     groupVersionKind: multiClusterMeshGroupVersionKind,
     name,
@@ -398,7 +398,7 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
 };
 
 const MeshDetailPage: FC = () => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const { ns, name } = useParams<{ name: string; ns: string }>();
 
   if (!ns || !name) {

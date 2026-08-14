@@ -2,14 +2,14 @@ import type { FC } from 'react';
 import { Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import type { K8sCondition } from '../types/common';
 import { statusIcon } from '../utils/statusIcon';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 interface ConditionsTableProps {
   conditions: K8sCondition[];
 }
 
 export const ConditionsTable: FC<ConditionsTableProps> = ({ conditions }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   return (
     <table className="pf-v6-c-table pf-m-grid-md pf-m-compact" role="grid">
       <thead className="pf-v6-c-table__thead">

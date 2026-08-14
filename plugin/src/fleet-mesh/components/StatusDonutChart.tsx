@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { ChartDonut } from '@patternfly/react-charts/victory';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 
 export interface StatusCounts {
   degraded: number;
@@ -22,7 +22,7 @@ const colorScale = [
 ];
 
 export const StatusDonutChart = memo<StatusDonutChartProps>(({ counts, subtitle }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const total = counts.ready + counts.degraded + counts.notReady + counts.unknown;
 
   const data = useMemo(

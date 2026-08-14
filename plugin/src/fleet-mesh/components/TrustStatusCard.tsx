@@ -13,7 +13,7 @@ import type { K8sCondition } from '../types/common';
 import { clusterDetailLink } from '../utils/linkUtils';
 import { VirtualFilterTable } from './VirtualFilterTable';
 import type { CategoryLabel, VirtualFilterColumn } from './VirtualFilterTable';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { clusterMeshStatusRowKey, clusterMeshStatusSearchMatch } from '../utils/tableCallbacks';
 
 const TRUST_CATEGORY_LABELS: CategoryLabel[] = [
@@ -122,7 +122,7 @@ interface TrustStatusCardProps {
 
 /** Card displaying per-cluster certificate and ManifestWork trust distribution status for a mesh. */
 export const TrustStatusCard: FC<TrustStatusCardProps> = ({ clusterStatuses, issuerName, meshName, meshNamespace }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const hasIssuer = !!issuerName;
 
   const [certs, certsLoaded, certsError] = useK8sWatchResource<Certificate[]>(

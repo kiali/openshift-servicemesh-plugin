@@ -3,7 +3,7 @@ import { FLEET_MESH_AVAILABLE_FLAG } from './flags/constants';
 import { OSSMC_INTERNAL_TECH_PREVIEW_FLAG } from '../openshift/flags/constants';
 
 // The Console resolves %plugin__ossmconsole~Title% markers using the same locale
-// bundle shared by the rest of the OSSMC plugin (see src/fleet-mesh/utils/i18nUtils.ts).
+// bundle shared by the rest of the OSSMC plugin (plugin__ossmconsole namespace via useKialiTranslation).
 const getConsoleTitle = (title: string): string => `%plugin__ossmconsole~${title}%`;
 
 const fleetMeshAvailableFlag: EncodedExtension = {

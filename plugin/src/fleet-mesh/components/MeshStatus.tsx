@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { Label } from '@patternfly/react-core';
 import type { K8sCondition } from '../types/common';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { deriveStatus } from '../utils/statusUtils';
 
 interface MeshStatusProps {
@@ -12,7 +12,7 @@ interface MeshStatusProps {
 
 /** Renders a colored PatternFly Label reflecting the status of a K8s condition (default: "Ready"). */
 export const MeshStatus: FC<MeshStatusProps> = ({ conditions, conditionType, isCompact }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const { label, color } = deriveStatus(conditions, conditionType);
   return (
     <Label color={color} isCompact={isCompact}>

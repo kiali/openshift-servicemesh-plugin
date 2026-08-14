@@ -10,7 +10,7 @@ import { VirtualFilterTable } from './VirtualFilterTable';
 import type { CategoryLabel, VirtualFilterColumn } from './VirtualFilterTable';
 import { cpTypeSegment } from '../utils/cpTypeSegment';
 import { clusterDetailLink } from '../utils/linkUtils';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { controlPlaneLinkKey } from '../utils/kialiLinkUtils';
 import { renderObservabilityLink } from './ObservabilityLinks';
 
@@ -31,7 +31,7 @@ const ControlPlanesCard: FC<{ kialiLinks?: Map<string, KialiLink[]>; planes: Enr
   kialiLinks,
   planes
 }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const hasKialiLinks = kialiLinks && kialiLinks.size > 0;
 
   const columns = useMemo<VirtualFilterColumn<EnrichedControlPlane>[]>(() => {

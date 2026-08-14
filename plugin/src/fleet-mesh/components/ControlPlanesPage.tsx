@@ -27,7 +27,7 @@ import { cpTypeSegment } from '../utils/cpTypeSegment';
 import { clusterDetailLink } from '../utils/linkUtils';
 import { fuzzyCaseInsensitive } from '../utils/filterUtils';
 import type { RowSearchFilter } from '../utils/filterUtils';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { renderObservabilityLink } from './ObservabilityLinks';
 import { sortWithComparator } from '../utils/tableCallbacks';
 
@@ -69,7 +69,7 @@ function buildColumns(t: (key: string) => string): TableColumn<EnrichedControlPl
 }
 
 const NoControlPlanesMsg: FC = () => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   return (
     <EmptyState variant="xs">
       <EmptyStateBody>{t('No control planes discovered across the fleet.')}</EmptyStateBody>
@@ -78,7 +78,7 @@ const NoControlPlanesMsg: FC = () => {
 };
 
 const NoMatchMsg: FC = () => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   return (
     <EmptyState variant="xs">
       <EmptyStateBody>{t('No control planes match the current filter.')}</EmptyStateBody>
@@ -96,7 +96,7 @@ const ControlPlaneRow: FC<RowProps<EnrichedControlPlane, ControlPlaneRowData>> =
   activeColumnIDs,
   rowData
 }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const kialiLinks = rowData?.kialiLinkMap.get(controlPlaneLinkKey(obj.clusterName, obj.metadata.name));
   return (
     <>
@@ -188,7 +188,7 @@ function buildSearchFilters(t: (key: string) => string): RowSearchFilter<Enriche
 }
 
 const ControlPlanesPage: FC = () => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const { results: searchResults, loaded: searchLoaded, error: searchError } = useDiscoveredControlPlanes();
   const [mcms] = useMultiClusterMeshes();
   const [enrichedPlanes, , , enrichmentError] = useEnrichedControlPlanes(searchResults, mcms ?? []);

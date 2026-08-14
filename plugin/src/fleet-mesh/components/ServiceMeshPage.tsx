@@ -19,7 +19,7 @@ import { MeshStatus } from './MeshStatus';
 import { clusterSetDetailLink } from '../utils/linkUtils';
 import { fuzzyCaseInsensitive } from '../utils/filterUtils';
 import type { RowSearchFilter } from '../utils/filterUtils';
-import { useMeshTranslation } from '../utils/i18nUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
 import { sortWithComparator } from '../utils/tableCallbacks';
 import { isOssmAcmAddonMissing } from '../../openshift/utils/watchErrors';
 
@@ -74,7 +74,7 @@ function buildColumns(t: (key: string) => string): TableColumn<FleetMeshItem>[] 
 }
 
 const NoMeshesDefaultMsg: FC = () => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   return (
     <EmptyState variant="xs">
       <EmptyStateBody>{t('No managed or discovered meshes found.')}</EmptyStateBody>
@@ -83,7 +83,7 @@ const NoMeshesDefaultMsg: FC = () => {
 };
 
 const NoMatchMsg: FC = () => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   return (
     <EmptyState variant="xs">
       <EmptyStateBody>{t('No meshes match the current filter.')}</EmptyStateBody>
@@ -92,7 +92,7 @@ const NoMatchMsg: FC = () => {
 };
 
 const MeshRow: FC<RowProps<FleetMeshItem>> = ({ obj, activeColumnIDs }) => {
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const isManaged = obj.kind === 'managed';
 
   const nameContent = obj.metadata.name;
@@ -166,7 +166,7 @@ function buildSearchFilters(t: (key: string) => string): RowSearchFilter<FleetMe
 
 const ServiceMeshPage: FC = () => {
   const { items, loaded, enrichmentError, mcmsLoaded, mcmsError } = useFleetMeshItems();
-  const { t } = useMeshTranslation();
+  const { t } = useKialiTranslation();
   const ossmAcmAddonMissing = isOssmAcmAddonMissing(mcmsLoaded, mcmsError);
   const columns = useMemo(() => buildColumns(t), [t]);
   const searchFilters = useMemo(() => buildSearchFilters(t), [t]);
