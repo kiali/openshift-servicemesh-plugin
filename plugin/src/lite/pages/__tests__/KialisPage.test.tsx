@@ -380,6 +380,31 @@ describe('KialisPage', () => {
       });
     });
 
+    it('does not render a Kiali external link for a malicious web_fqdn', async () => {
+      mockWatchResources(
+        [[makeKialiResource({ spec: { server: { web_fqdn: '//evil.com' } } })], true, null],
+        [[makeOssmConsoleResource()], true, null]
+      );
+      render(<KialisPage />);
+      await waitFor(() => {
+        expect(screen.queryByRole('link', { name: 'Kiali' })).not.toBeInTheDocument();
+      });
+    });
+
+    it('does not render a Kiali external link for a malicious Route host', async () => {
+      rstest.mocked(k8sGet).mockResolvedValue({
+        apiVersion: 'route.openshift.io/v1',
+        kind: 'Route',
+        metadata: { name: 'kiali', namespace: 'istio-system' },
+        spec: { host: 'evil.com/path' }
+      });
+      mockWatchResources([[makeKialiResource()], true, null], [[makeOssmConsoleResource()], true, null]);
+      render(<KialisPage />);
+      await waitFor(() => {
+        expect(screen.queryByRole('link', { name: 'Kiali' })).not.toBeInTheDocument();
+      });
+    });
+
     it('shows a dash when not promoted and no Kiali URL can be determined', async () => {
       rstest.mocked(k8sGet).mockRejectedValue(new Error('404 Not Found'));
       mockWatchResources([[makeKialiResource()], true, null], [[makeOssmConsoleResource()], true, null]);

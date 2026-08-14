@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { ExternalLink } from '../../openshift/components/ExternalLink';
+import { buildSafeHttpsUrlFromHost } from 'openshift/utils/safeUrlUtils';
 import type { LiteKialiResource } from '../types/kiali';
 import { getKialiServiceTarget } from './kialiServiceTarget';
 
@@ -8,8 +9,7 @@ export function getKialiStandaloneUrl(obj: LiteKialiResource, routeHostMap: Map<
   const { name, namespace } = getKialiServiceTarget(obj);
   const webFqdn = obj.spec?.server?.web_fqdn?.trim();
   const routeHost = routeHostMap.get(`${namespace}/${name}`);
-  const host = webFqdn || routeHost;
-  return host ? `https://${host}` : undefined;
+  return buildSafeHttpsUrlFromHost(webFqdn) ?? buildSafeHttpsUrlFromHost(routeHost);
 }
 
 export function renderKialiObserveLinks(
