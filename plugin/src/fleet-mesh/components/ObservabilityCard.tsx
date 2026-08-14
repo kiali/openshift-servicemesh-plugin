@@ -6,7 +6,8 @@ import {
   DescriptionList,
   DescriptionListDescription,
   DescriptionListGroup,
-  DescriptionListTerm
+  DescriptionListTerm,
+  Spinner
 } from '@patternfly/react-core';
 import type { KialiLink } from '../types/kiali';
 import { kialiStandaloneLinkLabel, ossmcLinkLabel } from '../utils/observabilityLinkLabels';
@@ -22,7 +23,7 @@ function firstOssmcUrl(links: KialiLink[]): string | undefined {
 }
 
 /** Always-visible detail card with horizontal Kiali and OSSMC rows. */
-const ObservabilityCard: FC<{ links: KialiLink[] }> = ({ links }) => {
+const ObservabilityCard: FC<{ links: KialiLink[]; loaded?: boolean }> = ({ links, loaded = true }) => {
   const { t } = useKialiTranslation();
   const standaloneUrl = firstStandaloneUrl(links);
   const ossmcUrl = firstOssmcUrl(links);
@@ -33,32 +34,36 @@ const ObservabilityCard: FC<{ links: KialiLink[] }> = ({ links }) => {
         <strong>{t('Observability')}</strong>
       </CardTitle>
       <CardBody>
-        <DescriptionList isCompact isHorizontal>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              <strong>{t('Kiali')}:</strong>
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {standaloneUrl ? (
-                <KialiExternalLink href={standaloneUrl}>{kialiStandaloneLinkLabel(standaloneUrl)}</KialiExternalLink>
-              ) : (
-                t('Kiali not available')
-              )}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-          <DescriptionListGroup>
-            <DescriptionListTerm>
-              <strong>{t('OSSMC')}:</strong>
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              {ossmcUrl ? (
-                <OssmcConsoleLink url={ossmcUrl}>{ossmcLinkLabel(ossmcUrl, t('Console'))}</OssmcConsoleLink>
-              ) : (
-                t('OSSMC not available')
-              )}
-            </DescriptionListDescription>
-          </DescriptionListGroup>
-        </DescriptionList>
+        {!loaded ? (
+          <Spinner size="md" aria-label={t('Loading observability links')} />
+        ) : (
+          <DescriptionList isCompact isHorizontal>
+            <DescriptionListGroup>
+              <DescriptionListTerm>
+                <strong>{t('Kiali')}:</strong>
+              </DescriptionListTerm>
+              <DescriptionListDescription>
+                {standaloneUrl ? (
+                  <KialiExternalLink href={standaloneUrl}>{kialiStandaloneLinkLabel(standaloneUrl)}</KialiExternalLink>
+                ) : (
+                  t('Kiali not available')
+                )}
+              </DescriptionListDescription>
+            </DescriptionListGroup>
+            <DescriptionListGroup>
+              <DescriptionListTerm>
+                <strong>{t('OSSMC')}:</strong>
+              </DescriptionListTerm>
+              <DescriptionListDescription>
+                {ossmcUrl ? (
+                  <OssmcConsoleLink url={ossmcUrl}>{ossmcLinkLabel(ossmcUrl, t('Console'))}</OssmcConsoleLink>
+                ) : (
+                  t('OSSMC not available')
+                )}
+              </DescriptionListDescription>
+            </DescriptionListGroup>
+          </DescriptionList>
+        )}
       </CardBody>
     </Card>
   );

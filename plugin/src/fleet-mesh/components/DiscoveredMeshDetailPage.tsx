@@ -32,6 +32,7 @@ import { useEnrichedControlPlanes } from '../hooks/useEnrichedControlPlanes';
 import { useManagedClusterMap } from '../hooks/useManagedClusterMap';
 import { useDiscoveredKialis } from '../hooks/useDiscoveredKialis';
 import { buildKialiLinkMap, toControlPlaneLinkTargets } from '../utils/kialiLinkUtils';
+import { isObservabilityDataReady } from '../utils/observabilityReady';
 import type { EnrichedControlPlane } from '../types/istio';
 import type { K8sCondition } from '../types/common';
 import type { ClusterAvailability } from '../types/managedCluster';
@@ -81,7 +82,7 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
   const { t } = useKialiTranslation();
   const [showAllConditions, setShowAllConditions] = useState(false);
   const [mcms] = useMultiClusterMeshes();
-  const [managedClusterMap] = useManagedClusterMap();
+  const [managedClusterMap, managedClustersLoaded] = useManagedClusterMap();
   const { results: searchResults, loaded: searchLoaded, error: searchError } = useDiscoveredControlPlanes();
   const [enrichedPlanes, , enrichmentLoaded, enrichmentError] = useEnrichedControlPlanes(searchResults, mcms ?? []);
 
@@ -141,10 +142,18 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
         .map(cp => ({ cluster: cp.clusterName, namespace: cp.controlPlaneNamespace! })),
     [matchingPlanes]
   );
-  const { kialis, ossmcs } = useDiscoveredKialis(kialiScopeFilter.length > 0 ? kialiScopeFilter : undefined);
+  const {
+    kialis,
+    loaded: discoveredKialisLoaded,
+    ossmcs
+  } = useDiscoveredKialis(kialiScopeFilter.length > 0 ? kialiScopeFilter : undefined);
+  const observabilityReady = isObservabilityDataReady(managedClustersLoaded, discoveredKialisLoaded);
   const kialiLinkMap = useMemo(
-    () => buildKialiLinkMap(kialis, ossmcs, managedClusterMap, toControlPlaneLinkTargets(matchingPlanes)),
-    [kialis, managedClusterMap, matchingPlanes, ossmcs]
+    () =>
+      observabilityReady
+        ? buildKialiLinkMap(kialis, ossmcs, managedClusterMap, toControlPlaneLinkTargets(matchingPlanes))
+        : new Map(),
+    [kialis, managedClusterMap, matchingPlanes, observabilityReady, ossmcs]
   );
 
   const worstConds = useMemo(() => worstConditions(matchingPlanes).conditions, [matchingPlanes]);

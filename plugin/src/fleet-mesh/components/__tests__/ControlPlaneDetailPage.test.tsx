@@ -285,6 +285,17 @@ describe('ControlPlaneDetailPage', () => {
       rstest.mocked(useParams).mockReturnValue({ type: 'discovered', cluster: 'cluster-a', name: 'default' });
     });
 
+    it('shows a spinner in the Observability card while cluster and Kiali data are loading', async () => {
+      rstest.mocked(fleetK8sGet).mockResolvedValue(makeIstio());
+      rstest.mocked(useDiscoveredKialis).mockReturnValue({ kialis: [], loaded: false, ossmcs: [] });
+      rstest.mocked(useManagedClusterMap).mockReturnValue([new Map(), false, null]);
+      render(<ControlPlaneDetailPage />);
+      await waitFor(() => {
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Kiali not available')).not.toBeInTheDocument();
+    });
+
     it('renders Kiali hostname link when a Kiali is discovered for that CP', async () => {
       rstest.mocked(fleetK8sGet).mockResolvedValue(makeIstio());
       const kiali: DiscoveredKiali = {

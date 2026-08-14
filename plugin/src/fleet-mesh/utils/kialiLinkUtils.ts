@@ -1,5 +1,6 @@
 import type { DiscoveredKiali, DiscoveredOssmc, KialiLink } from '../types/kiali';
 import type { ManagedCluster } from '../types/managedCluster';
+import { buildSafeHttpsUrlFromHost, isSafeHttpUrl } from 'openshift/utils/safeUrlUtils';
 
 const CONSOLE_URL_CLAIM = 'consoleurl.cluster.open-cluster-management.io';
 const DEFAULT_CONTROL_PLANE_NAMESPACE = 'istio-system';
@@ -10,18 +11,6 @@ export interface ControlPlaneLinkTarget {
   clusterName: string;
   controlPlaneNamespace?: string;
   istioCrName: string;
-}
-
-// clusterClaims are self-reported by each spoke cluster's klusterlet agent, so a compromised or
-// misconfigured spoke could report a non-http(s) value (e.g. "javascript:...") for the console URL
-// claim. Reject anything that isn't a well-formed http(s) URL before it is ever used to build a link.
-function isSafeHttpUrl(value: string): boolean {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
 }
 
 export function getConsoleUrl(cluster: ManagedCluster | undefined): string | undefined {
@@ -43,11 +32,9 @@ function resolveControlPlaneNamespace(controlPlaneNamespace: string | undefined)
   return controlPlaneNamespace ?? DEFAULT_CONTROL_PLANE_NAMESPACE;
 }
 
-// Kiali operator always configures TLS termination on Routes, so https:// is safe.
+// Kiali operator always configures TLS termination on Routes, so https:// is safe when the host is validated.
 function buildStandaloneUrl(kiali: DiscoveredKiali): string | undefined {
-  if (kiali.routeHost) return `https://${kiali.routeHost}`;
-  if (kiali.webFqdn) return `https://${kiali.webFqdn}`;
-  return undefined;
+  return buildSafeHttpsUrlFromHost(kiali.routeHost) ?? buildSafeHttpsUrlFromHost(kiali.webFqdn);
 }
 
 function buildLiteKialiPath(kialiNamespace: string, kialiName: string): string {

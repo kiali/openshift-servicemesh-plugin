@@ -32,6 +32,7 @@ import { useMultiClusterMeshes } from '../hooks/useMultiClusterMeshes';
 import { useDiscoveredKialis } from '../hooks/useDiscoveredKialis';
 import { useManagedClusterMap } from '../hooks/useManagedClusterMap';
 import { resolveControlPlaneObservabilityLink } from '../utils/kialiLinkUtils';
+import { isObservabilityDataReady } from '../utils/observabilityReady';
 import { buildMcmIndex, lookupMcm } from '../utils/correlateMCM';
 import { clusterDetailLink } from '../utils/linkUtils';
 import { ConditionsTable } from './ConditionsTable';
@@ -55,7 +56,7 @@ const ControlPlaneDetailContent: FC<{ cluster: string; name: string; type: CpTyp
   const [refreshError, setRefreshError] = useState<unknown>(null);
   const [mcms] = useMultiClusterMeshes();
   const mcmIndex = useMemo(() => buildMcmIndex(mcms ?? []), [mcms]);
-  const [managedClusterMap] = useManagedClusterMap();
+  const [managedClusterMap, managedClustersLoaded] = useManagedClusterMap();
 
   const istio = fetchedIstio !== undefined ? fetchedIstio : (cachedIstio ?? null);
   const loaded = cachedIstio !== undefined || fetchedIstio !== undefined;
@@ -91,8 +92,16 @@ const ControlPlaneDetailContent: FC<{ cluster: string; name: string; type: CpTyp
 
   const cpNamespace = istio?.spec?.namespace;
   const scopeFilter = useMemo(() => (cpNamespace ? [{ cluster, namespace: cpNamespace }] : []), [cluster, cpNamespace]);
-  const { kialis, ossmcs } = useDiscoveredKialis(scopeFilter.length > 0 ? scopeFilter : undefined);
+  const {
+    kialis,
+    loaded: discoveredKialisLoaded,
+    ossmcs
+  } = useDiscoveredKialis(scopeFilter.length > 0 ? scopeFilter : undefined);
+  const observabilityReady = isObservabilityDataReady(managedClustersLoaded, discoveredKialisLoaded);
   const kialiLinks = useMemo(() => {
+    if (!observabilityReady) {
+      return [];
+    }
     const link = resolveControlPlaneObservabilityLink(
       { clusterName: cluster, controlPlaneNamespace: cpNamespace, istioCrName: name },
       kialis,
@@ -100,7 +109,7 @@ const ControlPlaneDetailContent: FC<{ cluster: string; name: string; type: CpTyp
       managedClusterMap
     );
     return link.standaloneUrl || link.ossmcUrl ? [link] : [];
-  }, [cluster, cpNamespace, kialis, managedClusterMap, name, ossmcs]);
+  }, [cluster, cpNamespace, kialis, managedClusterMap, name, observabilityReady, ossmcs]);
 
   if (!loaded) {
     return (
@@ -242,7 +251,7 @@ const ControlPlaneDetailContent: FC<{ cluster: string; name: string; type: CpTyp
           </GridItem>
 
           <GridItem span={12}>
-            <ObservabilityCard links={kialiLinks} />
+            <ObservabilityCard links={kialiLinks} loaded={observabilityReady} />
           </GridItem>
 
           {conditions.length > 0 && (

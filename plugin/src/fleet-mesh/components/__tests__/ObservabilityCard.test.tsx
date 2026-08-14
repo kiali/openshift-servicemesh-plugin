@@ -8,6 +8,12 @@ describe('ObservabilityCard', () => {
     expect(screen.getByText('Observability')).toBeInTheDocument();
   });
 
+  it('shows a spinner while observability data is loading', () => {
+    render(<ObservabilityCard links={[]} loaded={false} />);
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.queryByText('Kiali not available')).not.toBeInTheDocument();
+  });
+
   it('shows unavailable messages when no links are available', () => {
     render(<ObservabilityCard links={[]} />);
     expect(screen.getByText('Kiali not available')).toBeInTheDocument();

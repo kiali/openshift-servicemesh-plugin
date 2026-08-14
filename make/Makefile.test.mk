@@ -18,10 +18,6 @@ test:
 lint:
 	cd ${PLUGIN_DIR} && yarn lint
 
-## test-fleet-mesh: Runs unit tests scoped to the Fleet Service Mesh subtree only (excludes OSSMC/Kiali tests).
-test-fleet-mesh:
-	cd ${PLUGIN_DIR} && yarn rstest run src/fleet-mesh
-
 ## start-console: Starts a local OpenShift Console instance for developing the plugin (auto port-forwards ACM/MCE so Fleet Management links work; set LOAD_ACM_PLUGINS=false to skip, and KIALI_URL to also test the OSSMC/Service Mesh perspective; KIALI_URL=route auto-discovers the Kiali route).
 start-console: .ensure-oc-login .determine-kiali-url
 	@KIALI_URL="${KIALI_URL_TO_USE}" ${PLUGIN_DIR}/start-console.sh

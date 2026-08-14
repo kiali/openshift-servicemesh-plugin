@@ -28,11 +28,13 @@ import { clusterDetailLink } from '../utils/linkUtils';
 import { fuzzyCaseInsensitive } from '../utils/filterUtils';
 import type { RowSearchFilter } from '../utils/filterUtils';
 import { useKialiTranslation } from 'utils/I18nUtils';
-import { renderObservabilityLink } from './ObservabilityLinks';
+import { isObservabilityDataReady } from '../utils/observabilityReady';
 import { sortWithComparator } from '../utils/tableCallbacks';
+import { renderObservabilityLink } from './ObservabilityLinks';
 
 type ControlPlaneRowData = {
   kialiLinkMap: Map<string, KialiLink[]>;
+  observabilityReady: boolean;
 };
 
 const compareCpMeshID = (a: EnrichedControlPlane, b: EnrichedControlPlane): number =>
@@ -86,7 +88,12 @@ const NoMatchMsg: FC = () => {
   );
 };
 
-function renderKialiCell(links: KialiLink[] | undefined, t: (key: string) => string): React.ReactNode {
+function renderKialiCell(
+  links: KialiLink[] | undefined,
+  observabilityReady: boolean,
+  t: (key: string) => string
+): React.ReactNode {
+  if (!observabilityReady) return '-';
   if (!links || links.length === 0) return '-';
   return renderObservabilityLink(links[0], t, { kiali: 'Kiali', ossmc: 'OSSMC' });
 }
@@ -97,7 +104,9 @@ const ControlPlaneRow: FC<RowProps<EnrichedControlPlane, ControlPlaneRowData>> =
   rowData
 }) => {
   const { t } = useKialiTranslation();
-  const kialiLinks = rowData?.kialiLinkMap.get(controlPlaneLinkKey(obj.clusterName, obj.metadata.name));
+  const kialiLinks = rowData?.observabilityReady
+    ? rowData.kialiLinkMap.get(controlPlaneLinkKey(obj.clusterName, obj.metadata.name))
+    : undefined;
   return (
     <>
       <TableData id="meshID" activeColumnIDs={activeColumnIDs}>
@@ -133,7 +142,7 @@ const ControlPlaneRow: FC<RowProps<EnrichedControlPlane, ControlPlaneRowData>> =
         {obj.version ?? '-'}
       </TableData>
       <TableData id="observe" activeColumnIDs={activeColumnIDs}>
-        {renderKialiCell(kialiLinks, t)}
+        {renderKialiCell(kialiLinks, rowData?.observabilityReady ?? false, t)}
       </TableData>
       <TableData id="created" activeColumnIDs={activeColumnIDs}>
         {obj.metadata.creationTimestamp ? <Timestamp timestamp={obj.metadata.creationTimestamp} /> : '-'}
@@ -192,11 +201,15 @@ const ControlPlanesPage: FC = () => {
   const { results: searchResults, loaded: searchLoaded, error: searchError } = useDiscoveredControlPlanes();
   const [mcms] = useMultiClusterMeshes();
   const [enrichedPlanes, , , enrichmentError] = useEnrichedControlPlanes(searchResults, mcms ?? []);
-  const [managedClusterMap] = useManagedClusterMap();
-  const { kialis, ossmcs } = useDiscoveredKialis();
+  const [managedClusterMap, managedClustersLoaded] = useManagedClusterMap();
+  const { kialis, loaded: discoveredKialisLoaded, ossmcs } = useDiscoveredKialis();
+  const observabilityReady = isObservabilityDataReady(managedClustersLoaded, discoveredKialisLoaded);
   const kialiLinkMap = useMemo(
-    () => buildKialiLinkMap(kialis, ossmcs, managedClusterMap, toControlPlaneLinkTargets(enrichedPlanes)),
-    [enrichedPlanes, kialis, ossmcs, managedClusterMap]
+    () =>
+      observabilityReady
+        ? buildKialiLinkMap(kialis, ossmcs, managedClusterMap, toControlPlaneLinkTargets(enrichedPlanes))
+        : new Map<string, KialiLink[]>(),
+    [enrichedPlanes, kialis, managedClusterMap, observabilityReady, ossmcs]
   );
 
   const columns = useMemo(() => buildColumns(t), [t]);
@@ -227,7 +240,7 @@ const ControlPlanesPage: FC = () => {
             loadError={searchError ?? enrichmentError}
             columns={activeColumns}
             Row={ControlPlaneRow}
-            rowData={{ kialiLinkMap }}
+            rowData={{ kialiLinkMap, observabilityReady }}
             NoDataEmptyMsg={NoControlPlanesMsg}
             EmptyMsg={NoMatchMsg}
           />

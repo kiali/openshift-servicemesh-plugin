@@ -191,6 +191,7 @@ resolve_repos() {
   if [ -z "${MESH_ADDON_REPO}" ]; then
     local candidate
     for candidate in \
+      "${PLUGIN_REPO}/../multicluster-mesh-addon" \
       "${PLUGIN_REPO}/../../stolostron/multicluster-mesh-addon" \
       "${HOME}/source/stolostron/multicluster-mesh-addon"; do
       if [ -f "${candidate}/chart/Chart.yaml" ]; then

@@ -189,6 +189,14 @@ describe('findKialiLinks', () => {
     expect(links[0].standaloneUrl).toBeUndefined();
   });
 
+  it('rejects malicious standalone hosts', () => {
+    for (const host of ['//evil.com', 'evil.com/path', 'user@evil.com']) {
+      const kialis = [makeKiali({ routeHost: host })];
+      const links = findKialiLinks('cluster-a', 'istio-system', kialis, [], makeClusterMap());
+      expect(links[0].standaloneUrl).toBeUndefined();
+    }
+  });
+
   it('builds hub-cluster lite Kiali link as internal path', () => {
     const kialis = [makeKiali({ routeHost: 'kiali.example.com' })];
     const ossmcs = [makeOssmc()];

@@ -34,6 +34,7 @@ import { useMeshControlPlanes } from '../hooks/useMeshControlPlanes';
 import { useManagedClusterMap } from '../hooks/useManagedClusterMap';
 import { useDiscoveredKialis } from '../hooks/useDiscoveredKialis';
 import { buildKialiLinkMap, toControlPlaneLinkTargets } from '../utils/kialiLinkUtils';
+import { isObservabilityDataReady } from '../utils/observabilityReady';
 import type { ManagedCluster } from '../types/managedCluster';
 import { getClusterAvailability, availabilityColor, availabilityLabelKey } from '../types/managedCluster';
 import { clusterDetailLink, clusterSetDetailLink } from '../utils/linkUtils';
@@ -191,10 +192,18 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
     () => clusterNames.map(c => ({ cluster: c, namespace: cpNamespace })),
     [clusterNames, cpNamespace]
   );
-  const { kialis, ossmcs } = useDiscoveredKialis(kialiScopeFilter.length > 0 ? kialiScopeFilter : undefined);
+  const {
+    kialis,
+    loaded: discoveredKialisLoaded,
+    ossmcs
+  } = useDiscoveredKialis(kialiScopeFilter.length > 0 ? kialiScopeFilter : undefined);
+  const observabilityReady = isObservabilityDataReady(managedClustersLoaded, discoveredKialisLoaded);
   const kialiLinkMap = useMemo(
-    () => buildKialiLinkMap(kialis, ossmcs, managedClusterMap, toControlPlaneLinkTargets(managedPlanes)),
-    [kialis, managedClusterMap, managedPlanes, ossmcs]
+    () =>
+      observabilityReady
+        ? buildKialiLinkMap(kialis, ossmcs, managedClusterMap, toControlPlaneLinkTargets(managedPlanes))
+        : new Map(),
+    [kialis, managedClusterMap, managedPlanes, observabilityReady, ossmcs]
   );
 
   if (loadError) {

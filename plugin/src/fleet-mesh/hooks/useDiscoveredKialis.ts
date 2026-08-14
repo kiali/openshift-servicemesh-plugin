@@ -196,9 +196,9 @@ export function useDiscoveredKialis(scopeFilter?: ScopeFilter[]): {
     () =>
       ossmcItems.some(r => {
         const key = cacheKey(r.cluster, r.metadata!.name!, r.metadata!.namespace!);
-        return !ossmcCache.has(key);
+        return !ossmcCache.has(key) && matchesClusterScope(r.cluster, scopeFilter);
       }),
-    [ossmcItems]
+    [ossmcItems, scopeFilter]
   );
 
   const needsEnrichment = needsKialiEnrichment || needsOssmcEnrichment;
@@ -221,7 +221,8 @@ export function useDiscoveredKialis(scopeFilter?: ScopeFilter[]): {
       .filter(r => {
         const key = cacheKey(r.cluster, r.metadata!.name!, r.metadata!.namespace!);
         const entry = ossmcCache.get(key);
-        return !entry || now - entry.fetchedAt > CACHE_TTL_MS;
+        if (entry && now - entry.fetchedAt <= CACHE_TTL_MS) return false;
+        return matchesClusterScope(r.cluster, scopeFilter);
       })
       .map(r => ({ cluster: r.cluster, name: r.metadata!.name!, ns: r.metadata!.namespace! }));
 
@@ -287,10 +288,12 @@ export function useDiscoveredKialis(scopeFilter?: ScopeFilter[]): {
       const cached = ossmcCache.get(key)?.data;
       const fetched = fetchedOssmcs.get(key);
       const data = fetched ?? cached;
-      if (data) results.push(data);
+      if (data && matchesClusterScope(data.cluster, scopeFilter)) {
+        results.push(data);
+      }
     }
     return results;
-  }, [ossmcItems, fetchedOssmcs]);
+  }, [ossmcItems, fetchedOssmcs, scopeFilter]);
 
   return { kialis, loaded, ossmcs };
 }

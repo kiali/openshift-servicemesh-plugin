@@ -236,6 +236,34 @@ describe('useDiscoveredKialis', () => {
     expect(result.current.kialis[0].deploymentNamespace).toBe('secure-ns');
   });
 
+  it('respects scope filter for OSSMC enrichment -- only enriches OSSMC on scoped clusters', async () => {
+    const ossmcResults = [
+      makeOssmcSearchResult('cluster-a', 'ossmconsole-a', 'istio-system'),
+      makeOssmcSearchResult('cluster-b', 'ossmconsole-b', 'istio-system')
+    ];
+    rstest
+      .mocked(useFleetSearchPoll)
+      .mockImplementation(({ groupVersionKind }: { groupVersionKind: { kind?: string } }) => {
+        if (groupVersionKind.kind === 'OSSMConsole') return [ossmcResults, true, undefined, rstest.fn()];
+        return [[], true, undefined, rstest.fn()];
+      });
+
+    rstest.mocked(fleetK8sGet).mockImplementation(({ model }: { model: { kind?: string } }) => {
+      if (model.kind === 'OSSMConsole') return Promise.resolve(makeOssmcCR());
+      return Promise.reject(new Error('unexpected'));
+    });
+
+    const scope = [{ cluster: 'cluster-a', namespace: 'istio-system' }];
+    const { result } = renderHook(() => useDiscoveredKialis(scope));
+
+    await waitFor(() => {
+      expect(result.current.loaded).toBe(true);
+    });
+    expect(rstest.mocked(fleetK8sGet).mock.calls).toHaveLength(1);
+    expect(result.current.ossmcs).toHaveLength(1);
+    expect(result.current.ossmcs[0].cluster).toBe('cluster-a');
+  });
+
   it('uses module-level cache -- second mount reads from cache without re-fetching', async () => {
     const searchResults = [makeFleetSearchResult('cluster-a', 'kiali', 'istio-system')];
     rstest
