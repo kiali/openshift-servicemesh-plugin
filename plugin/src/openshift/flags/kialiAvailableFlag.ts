@@ -23,11 +23,10 @@ const PROMOTED_UNAVAILABLE_PROBE_INTERVAL_MS = 15_000;
 // typically resolves in well under a second), Console does not actually make the flag-gated
 // route/nav items usable until up to ~10-15 seconds later -- until then, the OSSMC route 404s
 // and the nav items are simply missing, with no user-visible activity in between. This is not
-// caused by anything in this plugin: it is Console core waiting for the next tick of one of its
-// own fixed-interval background polls (e.g. PollConsoleUpdates, which batch-refetches every
-// enabled plugin's plugin-manifest.json every 15s) before it re-evaluates flag-gated extensions,
-// rather than reacting to the flag change directly. There is no workaround on the plugin side.
-// See https://github.com/openshift/console/issues/16922
+// caused by anything in this plugin: Console was queuing setFeatureFlag into a ref and only
+// flushing on the next render, so async hookProvider updates waited on an unrelated re-render.
+// See Console bug: https://github.com/openshift/console/issues/16922
+// Fix is in Console PR: https://github.com/openshift/console/pull/16949
 function useKialiAvailableFlag(setFlag: (flag: string, value: boolean) => void): void {
   const [ossmConsoles, ossmConsolesLoaded] = useK8sWatchResource<OssmConsoleResource[]>({
     groupVersionKind: ossmConsoleGVK,
