@@ -359,7 +359,7 @@ const KialisPage: FC = () => {
 
   return (
     <>
-      <ListPageHeader title={t('Kiali instances')} />
+      <ListPageHeader title={t('Kialis')} />
       <ListPageBody>
         {displayAlert && (
           <Alert

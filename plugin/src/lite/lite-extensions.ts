@@ -63,7 +63,7 @@ const istiosNavItem: EncodedExtension = {
   properties: {
     href: `/${OSSM_CONSOLE}/istios`,
     id: `${OSSM_CONSOLE}_istios`,
-    name: getConsoleTitle('Istio control planes'),
+    name: getConsoleTitle('Istios'),
     perspective: ADMIN,
     section: OSSM_CONSOLE
   }
@@ -97,7 +97,7 @@ const kialisNavItem: EncodedExtension = {
   properties: {
     href: `/${OSSM_CONSOLE}/kialis`,
     id: `${OSSM_CONSOLE}_kialis`,
-    name: getConsoleTitle('Kiali instances'),
+    name: getConsoleTitle('Kialis'),
     perspective: ADMIN,
     section: OSSM_CONSOLE
   }

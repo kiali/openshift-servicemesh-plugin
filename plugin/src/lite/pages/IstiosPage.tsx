@@ -121,7 +121,7 @@ const IstiosPage: FC = () => {
 
   return (
     <>
-      <ListPageHeader title={t('Istio control planes')} />
+      <ListPageHeader title={t('Istios')} />
       <ListPageBody>
         <ListPageFilter data={staticData} hideLabelFilter loaded={loaded} onFilterChange={onFilterChange} />
         <VirtualizedTable<LiteIstioResource>

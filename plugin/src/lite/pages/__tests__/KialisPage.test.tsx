@@ -66,7 +66,7 @@ describe('KialisPage', () => {
     mockWatchResources([[], true, null]);
     render(<KialisPage />);
     await waitFor(() => {
-      expect(screen.getByText('Kiali instances')).toBeInTheDocument();
+      expect(screen.getByText('Kialis')).toBeInTheDocument();
     });
   });
 

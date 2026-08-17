@@ -10,7 +10,7 @@ describe('IstiosPage', () => {
   it('renders the page title', () => {
     rstest.mocked(useK8sWatchResource).mockReturnValue([[], true, null]);
     render(<IstiosPage />);
-    expect(screen.getByText('Istio control planes')).toBeInTheDocument();
+    expect(screen.getByText('Istios')).toBeInTheDocument();
   });
 
   it('shows loading state while resources are fetching', () => {

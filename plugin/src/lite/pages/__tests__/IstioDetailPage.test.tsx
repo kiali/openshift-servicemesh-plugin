@@ -57,7 +57,7 @@ describe('IstioDetailPage', () => {
     it('renders the breadcrumb with a link back to the list page', () => {
       rstest.mocked(useK8sWatchResource).mockReturnValue([makeIstioResource(), true, null]);
       render(<IstioDetailPage />);
-      expect(screen.getByRole('link', { name: 'Istio control planes' })).toHaveAttribute('href', '/ossmconsole/istios');
+      expect(screen.getByRole('link', { name: 'Istios' })).toHaveAttribute('href', '/ossmconsole/istios');
     });
 
     it('renders the resource name as heading', () => {

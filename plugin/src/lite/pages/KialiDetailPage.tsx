@@ -191,7 +191,7 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
       <PageSection>
         <Breadcrumb>
           <BreadcrumbItem>
-            <Link to="/ossmconsole/kialis">{t('Kiali instances')}</Link>
+            <Link to="/ossmconsole/kialis">{t('Kialis')}</Link>
           </BreadcrumbItem>
           <BreadcrumbItem isActive>{`${namespace}/${name}`}</BreadcrumbItem>
         </Breadcrumb>

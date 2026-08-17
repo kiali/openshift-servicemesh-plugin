@@ -79,7 +79,7 @@ describe('KialiDetailPage', () => {
     it('renders the breadcrumb with link to the list page', () => {
       mockWatchResources([makeKialiResource(), true, null]);
       render(<KialiDetailPage />);
-      expect(screen.getByRole('link', { name: 'Kiali instances' })).toHaveAttribute('href', '/ossmconsole/kialis');
+      expect(screen.getByRole('link', { name: 'Kialis' })).toHaveAttribute('href', '/ossmconsole/kialis');
     });
 
     it('renders the resource name as heading', () => {

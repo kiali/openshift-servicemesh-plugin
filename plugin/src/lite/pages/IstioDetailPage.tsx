@@ -76,7 +76,7 @@ const IstioDetailContent: FC<{ name: string }> = ({ name }) => {
       <PageSection>
         <Breadcrumb>
           <BreadcrumbItem>
-            <Link to="/ossmconsole/istios">{t('Istio control planes')}</Link>
+            <Link to="/ossmconsole/istios">{t('Istios')}</Link>
           </BreadcrumbItem>
           <BreadcrumbItem isActive>{name}</BreadcrumbItem>
         </Breadcrumb>
