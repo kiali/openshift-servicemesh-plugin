@@ -131,7 +131,7 @@ Before({ tags: '@shared-mesh-config' }, () => {
       }
 
       tries++;
-      cy.request({method: 'GET', url: '/api/mesh/graph'}).then(response => {
+      cy.request({ method: 'GET', url: '/api/mesh/graph' }).then(response => {
         expect(response.status).to.equal(200);
         console.log(response.body.elements.nodes.find(node => node.data.infraType === 'istiod'));
         if (
