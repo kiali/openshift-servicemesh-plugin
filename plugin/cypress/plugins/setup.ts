@@ -10,6 +10,6 @@ export async function getAuthStrategy(url: string) {
     return resp.data.strategy;
   } catch (err) {
     console.error(`ERROR: Kiali API is not reachable at ${JSON.stringify(err.config.url)}`);
-    throw new Error(`Kiali API is not reachable at ${JSON.stringify(err.config.url)}`);
+    throw new Error(`Kiali API is not reachable at ${JSON.stringify(err.config.url)}`, { cause: err });
   }
 }

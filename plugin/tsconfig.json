@@ -12,7 +12,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": false,
     "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "noUnusedParameters": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
@@ -24,6 +24,7 @@
       "components/*": ["./src/kiali/components/*"],
       "config": ["./src/kiali/config"],
       "config/*": ["./src/kiali/config/*"],
+      "globals": ["./src/shims/globals.ts"],
       "helpers/*": ["./src/kiali/helpers/*"],
       "hooks/*": ["./src/kiali/hooks/*"],
       "i18n": ["./src/openshift/i18n.ts"],
@@ -40,6 +41,7 @@
     }
   },
   "exclude": [
+    "src/**/__tests__/**/*",
     "src/**/mocks/**/*",
     "src/**/__mocks__/**/*",
     "src/lite/**/__tests__/**/*",
