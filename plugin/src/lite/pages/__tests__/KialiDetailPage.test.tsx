@@ -254,7 +254,7 @@ describe('KialiDetailPage', () => {
       fireEvent.click(screen.getByText('Disconnect'));
       await waitFor(() => screen.getByText('Disconnecting…'));
 
-      // Simulate the kiali-operator having reconciled the OSSMConsole CR back to lite mode.
+      // Simulate the kiali-operator having reconciled the OSSMConsole CR to operate without Kiali integration.
       mockWatchResources([makeKialiResource(), true, null], [[makeOssmConsoleResource()], true, null]);
       rerender(<KialiDetailPage />);
 

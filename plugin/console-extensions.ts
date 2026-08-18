@@ -346,7 +346,7 @@ const extensions: EncodedExtension[] = [
     }
   })),
 
-  // Lite pages — unsupported tech preview, gated behind OSSMC_INTERNAL_TECH_PREVIEW (see lite-extensions.ts)
+  // Istios and Kialis list pages — unsupported tech preview, gated behind OSSMC_INTERNAL_TECH_PREVIEW (see lite-extensions.ts)
   ...liteExtensions
 ];
 

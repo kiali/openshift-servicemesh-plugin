@@ -69,7 +69,7 @@ export async function promoteToConsole(
 }
 
 // Disabling auto-discovery while leaving all three service settings empty is the only combination
-// that deterministically forces lite mode -- simply clearing the service settings is not enough,
+// that deterministically forces installation without Kiali integration -- simply clearing the service settings is not enough,
 // since the operator would just auto-discover a different Kiali installation on the cluster.
 export async function demoteFromConsole(ossmconsole: LiteOssmConsoleResource): Promise<void> {
   await k8sPatch({

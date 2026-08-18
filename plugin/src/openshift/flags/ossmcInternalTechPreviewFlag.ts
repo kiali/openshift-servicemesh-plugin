@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { getPluginConfig } from '../utils/KialiIntegration';
 import { OSSMC_INTERNAL_TECH_PREVIEW_FLAG } from './constants';
 
-// True only when the OSSMConsole CR sets spec.internal.techPreview: true. Gates OSSMC-Lite off by
+// True only when the OSSMConsole CR sets spec.internal.techPreview: true. Gates Istios and Kialis list pages off by
 // default -- see the per-item gating in lite-extensions.ts.
 //
 // Registered as a console.flag/hookProvider (not console.flag): Console calls hookProvider

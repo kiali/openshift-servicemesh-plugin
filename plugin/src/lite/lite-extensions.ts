@@ -43,8 +43,8 @@ const istiosRoute: EncodedExtension = {
   }
 };
 
-// Separates the lite nav items from the full-OSSMC section above, so it should only render when
-// both the full section exists (KIALI_AVAILABLE) and the lite items below it exist (tech preview
+// Separates the Istios and Kialis list page nav items from the full-OSSMC section above, so it should only render when
+// both the full section exists (KIALI_AVAILABLE) and the list-page items below it exist (tech preview
 // enabled) -- dropping either flag would show a stray divider with nothing (relevant) below it.
 const liteSeparator: EncodedExtension = {
   flags: { required: ['KIALI_AVAILABLE', OSSMC_INTERNAL_TECH_PREVIEW_FLAG] },
