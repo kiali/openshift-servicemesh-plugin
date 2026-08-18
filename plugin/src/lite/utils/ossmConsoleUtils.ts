@@ -6,7 +6,7 @@ import type { LiteOssmConsoleResource } from '../types/ossmconsole';
 export { findActiveOssmConsole } from 'openshift/utils/ossmConsoleUtils';
 
 // The internal port Kiali listens on for its API. This is the port OSSM Console proxies to once
-// promoted, independent of whatever externally-facing route port a given Kiali installation uses.
+// connected, independent of whatever externally-facing route port a given Kiali installation uses.
 export const KIALI_PORT = 20001;
 
 export function isPromoted(
@@ -18,10 +18,10 @@ export function isPromoted(
   return !!kiali?.available && kiali.serviceName === serviceName && kiali.serviceNamespace === serviceNamespace;
 }
 
-// Returns why the promote/demote action cannot be used right now, or null if it is usable.
+// Returns why the Connect/Disconnect action cannot be used right now, or null if it is usable.
 // ossmConsoleStatusUnknown takes priority over the other checks since, when true, we genuinely
-// cannot tell whether anything is promoted or not (as opposed to confidently knowing nothing is).
-// serviceName/serviceNamespace are only checked for Connect (pass them only on the promote path).
+// cannot tell whether any Kiali is connected or not (as opposed to confidently knowing nothing is).
+// serviceName/serviceNamespace are only checked for Connect (pass them only on the Connect path).
 export function getActionUnavailableReason(
   t: (key: string) => string,
   ossmConsoleStatusUnknown: boolean,
@@ -37,7 +37,7 @@ export function getActionUnavailableReason(
     return t('No OSSMConsole resource was found on this cluster.');
   }
   if (!canPatchOssmConsole) {
-    return t('You do not have permission to change the promoted Kiali installation.');
+    return t('You do not have permission to connect or disconnect Kiali installations from Console.');
   }
   if (serviceName !== undefined && serviceNamespace !== undefined) {
     if (!serviceName.trim() || !serviceNamespace.trim()) {

@@ -100,5 +100,5 @@
   "Web FQDN": "Web FQDN",
   "Workload detail error": "Error en el detalle del workload",
   "Workload is not defined correctly": "El workload no está definido correctamente",
-  "You do not have permission to change the promoted Kiali installation.": "You do not have permission to change the promoted Kiali installation."
+  "You do not have permission to connect or disconnect Kiali installations from Console.": "You do not have permission to connect or disconnect Kiali installations from Console."
 }
