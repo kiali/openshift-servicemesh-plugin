@@ -843,7 +843,7 @@ oc --context=my-hub annotate multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
 
 ### Add a second Kiali server on the spoke
 
-To see Istios and Kialis list pages be able to demote a Kiali server and promote a different Kiali server,
+To see Istios and Kialis list pages be able to disconnect a Kiali server and connect a different Kiali server,
 install a second Kiali CR on the spoke:
 
 ```bash
