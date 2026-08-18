@@ -18,9 +18,7 @@ const NamespaceDetailsTab: React.FC<void> = () => {
   useInitKialiListeners();
 
   if (!namespace) {
-    return (
-      <ErrorPage title={t('Namespace detail error')} message={t('Namespace is not defined correctly')} />
-    );
+    return <ErrorPage title={t('Namespace detail error')} message={t('Namespace is not defined correctly')} />;
   }
 
   return (

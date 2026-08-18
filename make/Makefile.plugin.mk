@@ -20,7 +20,7 @@ clean-plugin:
 
 ## build-plugin: Builds the plugin.
 build-plugin:
-	cd ${PLUGIN_DIR} && yarn install && yarn build
+	cd ${PLUGIN_DIR} && CYPRESS_INSTALL_BINARY=0 HUSKY=0 yarn install && yarn build
 
 ## build-plugin-image: Builds the plugin and its container image.
 build-plugin-image:
@@ -61,31 +61,9 @@ disable-plugin: .ensure-oc-login
 restart-plugin: .ensure-oc-login
 	@${OC} rollout restart deployments/ossmconsole -n "$$(${OC} get deployments -l app.kubernetes.io/name=ossmconsole --all-namespaces -o jsonpath='{.items[0].metadata.namespace}')"
 
-ifeq ($(KIALI_URL),)
-.determine-kiali-url:
-	@echo "Set KIALI_URL to a valid URL or to 'route' if you want to auto-discover the Kiali OpenShift route" && exit 1
-else ifeq ($(KIALI_URL),route)
-.determine-kiali-url: .ensure-oc-login
-	@echo "Auto discovering the KIALI_URL"
-	@$(eval KIALI_URL_TO_USE = https://$(shell ${OC} get routes.route.openshift.io -l app.kubernetes.io/name=kiali --all-namespaces -o jsonpath='{.items[0].spec.host}'))
-else
-.determine-kiali-url:
-	@$(eval KIALI_URL_TO_USE = $${KIALI_URL})
-endif
-
 ## prepare-git: Prepares the local dev environment so you can git commit
 prepare-git:
 	cd ${PLUGIN_DIR} && yarn add pretty-quick
-
-## prepare-dev-env: Prepares the local dev environment so you can run the plugin and OpenShift console locally.
-prepare-dev-env: .determine-kiali-url
-	@cd ${PLUGIN_DIR} && yarn install
-	@cp ${PLUGIN_DIR}/plugin-config.json ${PLUGIN_DIR}/dist
-	@echo
-	@echo "To run the plugin and the OpenShift Console in your local dev environment, do the following:"
-	@echo "1. cd ${PLUGIN_DIR}"
-	@echo "2. Start the plugin: yarn run start"
-	@echo "3. In a second command line window, start the OpenShift Console: KIALI_URL=${KIALI_URL_TO_USE} yarn run start-console"
 
 # Ensure "docker buildx" is available and enabled. For more details, see: https://github.com/docker/buildx/blob/master/README.md
 # This does a few things:
