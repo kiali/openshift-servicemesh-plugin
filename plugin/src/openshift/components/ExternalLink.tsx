@@ -10,9 +10,6 @@ type ExternalLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
 
 const externalLinkIconStyle = { marginLeft: '0.25rem', verticalAlign: '-0.125em' } as const;
 
-// ExternalLinkAltIcon ships both default and rh-ui paths when set is omitted, which nests
-// SVGs and needs Console's pf-v6-icon-set-rh-ui CSS. Force a single path so dev webpack
-// and in-cluster production builds render the same icon without that dependency.
 export const ExternalLink: FC<ExternalLinkProps> = ({ children, className, ...props }) => (
   <a className={className} rel="noopener noreferrer" target="_blank" {...props}>
     {children} <ExternalLinkAltIcon aria-hidden style={externalLinkIconStyle} />

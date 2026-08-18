@@ -70,13 +70,22 @@ else
 	@echo "================================================================="
 endif
 
-## cluster-build-plugin-image: Builds the plugin image for development with a remote cluster
+## cluster-build-plugin-image: Builds and tags the plugin image for pushing to a remote cluster
 cluster-build-plugin-image: .prepare-cluster build-plugin-image
 	@echo Re-tag the already built plugin image
 	${DORP} tag ${PLUGIN_QUAY_TAG} ${CLUSTER_PLUGIN_TAG}
 
-## cluster-push-plugin-image: Builds then pushes the plugin container image to a remote cluster
-cluster-push-plugin-image: cluster-build-plugin-image
+.ensure-local-plugin-image:
+	@if ! ${DORP} image inspect ${PLUGIN_QUAY_TAG} >/dev/null 2>&1; then \
+	  echo "Local plugin image not found: ${PLUGIN_QUAY_TAG}"; \
+	  echo "Build it first with: make PLUGIN_IMAGE_ORG=${PLUGIN_IMAGE_ORG} build-plugin-image"; \
+	  exit 1; \
+	fi
+
+## cluster-push-existing: Re-tags and pushes an already-built local plugin image into the cluster's registry (skips yarn/webpack build), but does not restart or redeploy anything. Works no matter how the plugin was installed (operator or cluster-deploy) - run 'make restart-plugin' afterward (or wait for the operator to reconcile) to make the running pod pick up the new image.
+cluster-push-existing: .prepare-cluster .ensure-local-plugin-image
+	@echo Re-tagging existing plugin image ${PLUGIN_QUAY_TAG} as ${CLUSTER_PLUGIN_TAG}
+	${DORP} tag ${PLUGIN_QUAY_TAG} ${CLUSTER_PLUGIN_TAG}
 ifeq ($(DORP),docker)
 	@echo Pushing plugin image to remote cluster using docker: ${CLUSTER_PLUGIN_TAG}
 	docker push ${CLUSTER_PLUGIN_TAG}
@@ -85,5 +94,31 @@ else
 	podman push --tls-verify=false ${CLUSTER_PLUGIN_TAG}
 endif
 
-## cluster-push: Builds and pushes the plugin
-cluster-push: cluster-push-plugin-image
+## cluster-push: Builds and pushes the plugin image into the cluster's registry, but does not restart or redeploy anything. Works no matter how the plugin was installed (operator or cluster-deploy) - run 'make restart-plugin' afterward (or wait for the operator to reconcile) to make the running pod pick up the new image.
+cluster-push: cluster-build-plugin-image
+ifeq ($(DORP),docker)
+	@echo Pushing plugin image to remote cluster using docker: ${CLUSTER_PLUGIN_TAG}
+	docker push ${CLUSTER_PLUGIN_TAG}
+else
+	@echo Pushing plugin image to remote cluster using podman: ${CLUSTER_PLUGIN_TAG}
+	podman push --tls-verify=false ${CLUSTER_PLUGIN_TAG}
+endif
+
+.cluster-deploy-manifest: .ensure-oc-login
+	cd ${PLUGIN_DIR} && ${OC} apply -f manifest.yaml
+	${OC} set image deployment/ossmconsole \
+	  ossmconsole=image-registry.openshift-image-registry.svc:5000/${PLUGIN_NAMESPACE}/${PLUGIN_IMAGE_NAME}:${CONTAINER_VERSION} \
+	  -n ${PLUGIN_NAMESPACE}
+	${OC} rollout restart deployment/ossmconsole -n ${PLUGIN_NAMESPACE}
+	${OC} rollout status deployment/ossmconsole -n ${PLUGIN_NAMESPACE} --timeout=120s
+	$(MAKE) enable-plugin
+
+## cluster-deploy: Builds, pushes to the cluster's internal registry, and deploys, all in one step (operator-free - no quay.io and no Kiali Operator needed). Pushes into the plugin namespace so no cross-namespace pull secret is required.
+cluster-deploy: .ensure-oc-login
+	$(MAKE) PLUGIN_IMAGE_ORG=${PLUGIN_NAMESPACE} cluster-push
+	$(MAKE) .cluster-deploy-manifest
+
+## cluster-deploy-existing: Pushes an already-built local plugin image and deploys, all in one step (skips yarn/webpack build) (operator-free - same as cluster-deploy). Switch oc context first (e.g. oc config use-context my-hub).
+cluster-deploy-existing: .ensure-oc-login
+	$(MAKE) PLUGIN_IMAGE_ORG=${PLUGIN_NAMESPACE} cluster-push-existing
+	$(MAKE) .cluster-deploy-manifest

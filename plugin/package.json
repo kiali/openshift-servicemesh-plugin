@@ -24,7 +24,7 @@
     "cypress:combine:reports": "jrm cypress/results/combined-report.xml \"cypress/results/*.xml\"",
     "i18n": "yarn i18n:kiali && yarn i18n:openshift",
     "i18n:kiali": "i18next 'src/kiali/**/*.{ts,tsx}' -o 'src/kiali/locales/$LOCALE/$NAMESPACE.json' -c './i18next-parser.config.ts' --silent",
-    "i18n:openshift": "i18next 'src/openshift/**/*.{ts,tsx}' 'src/lite/**/*.{ts,tsx}' -o 'src/openshift/locales/$LOCALE/$NAMESPACE.json' -c './i18next-parser.config.ts' --silent",
+    "i18n:openshift": "i18next 'src/openshift/**/*.{ts,tsx}' 'src/lite/**/*.{ts,tsx}' 'src/fleet-mesh/**/*.{ts,tsx}' -o 'src/openshift/locales/$LOCALE/$NAMESPACE.json' -c './i18next-parser.config.ts' --silent",
     "ts-node": "yarn i18n && ts-node -O '{\"module\":\"commonjs\"}'",
     "test": "jest --config jest.config.ts",
     "lint": "eslint --ext ts,tsx src/openshift",

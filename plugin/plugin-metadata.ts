@@ -1,4 +1,5 @@
 import { ConsolePluginBuildMetadata } from '@openshift-console/dynamic-plugin-sdk-webpack';
+import { fleetMeshModules } from './src/fleet-mesh/fleet-mesh-modules';
 import { liteModules } from './src/lite/lite-modules';
 
 const metadata: ConsolePluginBuildMetadata = {
@@ -25,6 +26,7 @@ const metadata: ConsolePluginBuildMetadata = {
     ServiceListPage: './openshift/pages/ServiceListPage',
     WorkloadDetailsTab: './openshift/pages/ServiceMeshTabs/WorkloadDetailsTab',
     WorkloadListPage: './openshift/pages/WorkloadListPage',
+    ...fleetMeshModules,
     ...liteModules
   },
   dependencies: {

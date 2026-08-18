@@ -16,7 +16,7 @@ const getConsoleTitle = (title: string): string => `%plugin__ossmconsole~${title
 
 // Scoping these routes to the admin perspective (like the nav items below) lets the Console's
 // usePluginRoutes() auto-switch the active perspective when a route is reached while a
-// different perspective is active. Without this, the page still
+// different perspective (e.g. Fleet Service Mesh) is active. Without this, the page still
 // renders correctly, but the sidebar is left showing the previous perspective's nav.
 
 const liteRequiredFlags = { required: [OSSMC_INTERNAL_TECH_PREVIEW_FLAG] };
