@@ -5,11 +5,22 @@ export default defineConfig({
   globals: true,
   include: ['src/openshift/**/*.test.{ts,tsx}'],
   source: {
-    tsconfigPath: './tsconfig.json',
+    tsconfigPath: './tsconfig.json'
+  },
+  tools: {
+    swc: {
+      jsc: {
+        transform: {
+          react: {
+            runtime: 'automatic'
+          }
+        }
+      }
+    }
   },
   resolve: {
     alias: {
-      '@openshift-console/dynamic-plugin-sdk': './src/openshift/__mocks__/consoleSdkMock.ts',
-    },
-  },
+      '@openshift-console/dynamic-plugin-sdk': './src/openshift/__mocks__/consoleSdkMock.ts'
+    }
+  }
 });
