@@ -127,13 +127,13 @@ describe('getConsoleUrl', () => {
 });
 
 describe('buildLiteIstioPath', () => {
-  it('builds the lite istios detail path for an Istio CR name', () => {
+  it('builds the Istios detail path for an Istio CR name', () => {
     expect(buildLiteIstioPath('default')).toBe('/ossmconsole/istios/default');
   });
 });
 
 describe('buildSpokeLiteIstioPath', () => {
-  it('builds an absolute spoke console URL to the lite istios detail page', () => {
+  it('builds an absolute spoke console URL to the Istios detail page', () => {
     expect(buildSpokeLiteIstioPath('https://console.spoke.example.com', 'unsecure-cp')).toBe(
       'https://console.spoke.example.com/ossmconsole/istios/unsecure-cp'
     );
@@ -197,7 +197,7 @@ describe('findKialiLinks', () => {
     }
   });
 
-  it('builds hub-cluster lite Kiali link as internal path', () => {
+  it('builds hub-cluster Kialis detail link as internal path', () => {
     const kialis = [makeKiali({ routeHost: 'kiali.example.com' })];
     const ossmcs = [makeOssmc()];
     const hub = makeManagedCluster('cluster-a', { 'local-cluster': 'true' });
@@ -249,7 +249,7 @@ describe('findKialiLinks', () => {
     expect(links[0].ossmcUrl).toBe('/ossmconsole/kialis/istio-system/my-kiali');
   });
 
-  it('uses Kiali CR namespace for hub lite detail link when CR and deployment namespaces differ', () => {
+  it('uses Kiali CR namespace for hub Kialis detail link when CR and deployment namespaces differ', () => {
     const kialis = [
       makeKiali({
         crName: 'kiali',
@@ -293,7 +293,7 @@ describe('findKialiLinks', () => {
 });
 
 describe('resolveControlPlaneObservabilityLink', () => {
-  it('returns hub OSSMC-Lite istios detail when no Kiali CR exists on the hub', () => {
+  it('returns hub Istios detail page when no Kiali CR exists on the hub', () => {
     const hub = makeManagedCluster('hub', { 'local-cluster': 'true' });
     const link = resolveControlPlaneObservabilityLink(
       { clusterName: 'hub', controlPlaneNamespace: 'istio-system', istioCrName: 'default' },
@@ -330,7 +330,7 @@ describe('resolveControlPlaneObservabilityLink', () => {
     expect(link.ossmcUrl).toBeUndefined();
   });
 
-  it('returns spoke OSSMC-Lite istios detail when OSSMC is installed but no Kiali CR matches', () => {
+  it('returns spoke Istios detail page when OSSMC is installed but no Kiali CR matches', () => {
     const ossmcs = [makeOssmc({ cluster: 'spoke', kialiServiceNamespace: 'secure-ns' })];
     const spoke = makeManagedCluster('spoke', {}, [
       { name: 'consoleurl.cluster.open-cluster-management.io', value: 'https://console.spoke.example.com' }
@@ -356,7 +356,7 @@ describe('resolveControlPlaneObservabilityLink', () => {
     expect(link.ossmcUrl).toBeUndefined();
   });
 
-  it('returns spoke OSSMC-Lite istios detail when matching Kiali CR has no URL and OSSMC is not integrated', () => {
+  it('returns spoke Istios detail page when matching Kiali CR has no URL and OSSMC is not integrated', () => {
     const kialis = [makeKiali({ cluster: 'spoke', deploymentNamespace: 'unsecure-ns' })];
     const ossmcs = [makeOssmc({ cluster: 'spoke', kialiServiceNamespace: 'secure-ns' })];
     const spoke = makeManagedCluster('spoke', {}, [
@@ -394,7 +394,7 @@ describe('buildKialiLinkMap', () => {
     expect(map.size).toBe(0);
   });
 
-  it('includes hub OSSMC-Lite istios detail links when no Kiali CR exists', () => {
+  it('includes hub Istios detail page links when no Kiali CR exists', () => {
     const hub = makeManagedCluster('hub', { 'local-cluster': 'true' });
     const controlPlanes = [makeControlPlane('hub', 'default')];
     const map = buildKialiLinkMap([], [], makeClusterMap(hub), toControlPlaneLinkTargets(controlPlanes));
@@ -402,7 +402,7 @@ describe('buildKialiLinkMap', () => {
     expect(map.get('hub/default')?.[0].ossmcUrl).toBe('/ossmconsole/istios/default');
   });
 
-  it('includes spoke OSSMC-Lite istios detail links when OSSMC is installed', () => {
+  it('includes spoke Istios detail page links when OSSMC is installed', () => {
     const ossmcs = [makeOssmc({ cluster: 'spoke', kialiServiceNamespace: 'secure-ns' })];
     const spoke = makeManagedCluster('spoke', {}, [
       { name: 'consoleurl.cluster.open-cluster-management.io', value: 'https://console.spoke.example.com' }

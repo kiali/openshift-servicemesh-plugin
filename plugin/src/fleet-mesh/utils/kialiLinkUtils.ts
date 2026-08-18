@@ -65,7 +65,7 @@ function hasOssmcOnCluster(cluster: string, ossmcs: DiscoveredOssmc[]): boolean 
   return ossmcs.some(o => o.cluster === cluster);
 }
 
-// Hub: lite in-console routes avoid KIALI_AVAILABLE when navigating from fleet perspective.
+// Hub: Istios and Kialis list page in-console routes avoid KIALI_AVAILABLE when navigating from fleet perspective.
 // Spoke: OSSMC overview requires a Kiali backend integrated for this control plane row.
 function buildOssmcUrl(
   cluster: string,
@@ -127,7 +127,7 @@ export function findKialiLinks(
   });
 }
 
-/** Resolves the observability link for one control plane row, including hub and spoke OSSMC-Lite istios detail. */
+/** Resolves the observability link for one control plane row, including hub and spoke Istios and Kialis detail pages. */
 export function resolveControlPlaneObservabilityLink(
   target: ControlPlaneLinkTarget,
   kialis: DiscoveredKiali[],

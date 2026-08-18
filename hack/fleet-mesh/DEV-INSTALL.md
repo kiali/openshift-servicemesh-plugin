@@ -220,13 +220,13 @@ make cluster-push-operator operator-reload-image
 
 ## 3a. Tech preview gate
 
-Fleet Service Mesh and OSSMC-Lite are an **unsupported tech preview** — off by default in
+Fleet Service Mesh and Istios and Kialis list pages are an **unsupported tech preview** — off by default in
 production. They are gated behind a single opt-in field on the `OSSMConsole` CR:
 
 ```yaml
 spec:
   internal:
-    techPreview: true   # enables both Fleet Service Mesh AND OSSMC-Lite; omit or false disables both
+    techPreview: true   # enables both Fleet Service Mesh AND Istios and Kialis list pages; omit or false disables both
 ```
 
 The dev artifacts used by both install options in step 3 already set this to `true`, so no
@@ -251,7 +251,7 @@ Console itself can take up to ~15s longer to pick up the newly-enabled flag-gate
 routes (a known Console core polling delay, not specific to this plugin — see
 [openshift/console#16922](https://github.com/openshift/console/issues/16922)).
 
-> If you also plan to serve OSSMC-Lite links on a spoke cluster (see
+> If you also plan to serve Istios and Kialis list pages links on a spoke cluster (see
 > [DEMO-SETUP-MULTICLUSTER.md](DEMO-SETUP-MULTICLUSTER.md)), each cluster needs its own
 > `OSSMConsole` CR with `internal.techPreview: true` — enabling it on the hub has no effect on
 > spokes.

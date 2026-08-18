@@ -288,9 +288,9 @@ make cluster-deploy
 > and a local Console via `make start-console`), see the "Frontend development"
 > section in [DEV-INSTALL.md](DEV-INSTALL.md).
 
-#### Tech preview gate (Fleet Service Mesh + OSSMC-Lite)
+#### Tech preview gate (Fleet Service Mesh + Istios and Kialis list pages)
 
-Fleet Service Mesh and OSSMC-Lite are an unsupported tech preview, off by default in production
+Fleet Service Mesh and Istios and Kialis list pages are an unsupported tech preview, off by default in production
 — see [DEV-INSTALL.md — Tech preview gate](DEV-INSTALL.md#3a-tech-preview-gate) for the full
 explanation of the `spec.internal.techPreview` field. For this demo:
 
@@ -843,7 +843,7 @@ oc --context=my-hub annotate multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
 
 ### Add a second Kiali server on the spoke
 
-To see OSSMC-Lite be able to demote a Kiali server and promote a different Kiali server,
+To see Istios and Kialis list pages be able to demote a Kiali server and promote a different Kiali server,
 install a second Kiali CR on the spoke:
 
 ```bash
@@ -856,7 +856,7 @@ make OPERATOR_INSTALL_KIALI_CR_NAMESPACE=discovered-spoke-ns \
 
 ### Disable tech preview
 
-Today the Fleet Service Mesh perspective and OSSMC-Lite is disabled by default. You must enable those features by setting `internal.techPreview: true` in the OSSMConsole CR. Likewise, if OSSMC has tech preview enabled but you want to disable it (for example, to see those features hidden), set `internal.techPreview: false`.
+Today the Fleet Service Mesh perspective and Istios and Kialis list pages is disabled by default. You must enable those features by setting `internal.techPreview: true` in the OSSMConsole CR. Likewise, if OSSMC has tech preview enabled but you want to disable it (for example, to see those features hidden), set `internal.techPreview: false`.
 
 ```bash
 oc patch ossmconsole ossmconsole -n ossmconsole --type=merge -p '{"spec":{"internal":{"techPreview":false}}}'
