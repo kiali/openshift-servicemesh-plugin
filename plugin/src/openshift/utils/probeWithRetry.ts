@@ -18,7 +18,7 @@ function isDefinitiveHttpError(e: unknown): boolean {
 }
 
 // Shared one-shot probe with exponential-backoff retry for Console flag handlers.
-// kialiAvailableFlag uses this pattern.
+// Both fleetMeshAvailableFlag and kialiAvailableFlag use this pattern.
 // When expectedContentType is provided, the response must also match that MIME prefix.
 //
 // Only genuine network-level failures are retried. A definitive HTTP response -- whether
