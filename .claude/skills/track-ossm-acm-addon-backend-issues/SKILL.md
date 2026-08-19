@@ -133,18 +133,22 @@ has many issues (open lists: `sort:created-desc`; closed lists:
 `sort:updated-desc`). A tracking issue is identified by any of:
 
 - Title starts with `[fleet-mesh]`
-- Body contains `Backend issue: #NNN` or the addon controller issue URL
+- Has the `fleet-mesh` label
+- Body contains `stolostron/multicluster-mesh-addon#NNN` or the addon controller issue URL
 - Body contains `stolostron/multicluster-mesh-addon/issues/NNN`
 
 **Primary target (openshift-servicemesh-plugin):**
 
+Use the `fleet-mesh` label filter as the primary fetch — it is the most reliable
+signal and avoids scanning unrelated issues:
+
 ```
 gh issue list --repo kiali/openshift-servicemesh-plugin \
-  --search "sort:created-desc" --state open --limit 200 \
+  --label "fleet-mesh" --state open --limit 200 \
   --json number,title,body,labels,createdAt
 
 gh issue list --repo kiali/openshift-servicemesh-plugin \
-  --search "sort:updated-desc" --state closed --limit 200 \
+  --label "fleet-mesh" --state closed --limit 200 \
   --json number,title,body,labels,updatedAt
 ```
 
@@ -203,7 +207,7 @@ Before creating a tracking issue for addon controller issue #NNN, check
 1. **Title match:** Does any tracking issue title contain `#NNN` (e.g.,
    `[fleet-mesh] Addon controller #118: ...`)?
 2. **Body match:** If no title match, does any tracking issue body contain
-   `Backend issue: #NNN` or
+   `stolostron/multicluster-mesh-addon#NNN` or
    `https://github.com/stolostron/multicluster-mesh-addon/issues/NNN`?
 
 If either check finds a match, update that issue rather than creating a duplicate.
@@ -250,10 +254,9 @@ the addon controller explicitly when helpful, e.g.
 gh issue create --repo kiali/openshift-servicemesh-plugin \
   --title "[fleet-mesh] Addon controller #NNN: <short title>" \
   --label "enhancement" \
+  --label "fleet-mesh" \
   --body "$(cat <<'EOF'
-Backend issue: #NNN
-Backend repo: https://github.com/stolostron/multicluster-mesh-addon/issues/NNN
-Labels: `enhancement`
+Backend issue: stolostron/multicluster-mesh-addon#NNN
 
 **Impact:** <SEVERITY> — <one-line summary>.
 
@@ -274,6 +277,8 @@ EOF
 )"
 ```
 
+Always add `fleet-mesh` — it is the canonical label for fleet-mesh tracking issues
+in this repo and is used by the skill to efficiently list existing tracking issues.
 Add `waiting external` when the tracking issue is blocked on the addon controller
 fix. Add `requires core PR` when kiali/kiali also needs changes (and file a linked
 issue there if needed).
@@ -286,10 +291,8 @@ gh issue create --repo kiali/kiali \
   --label "enhancement" \
   --label "multi-cluster" \
   --body "$(cat <<'EOF'
-Backend issue: #NNN
-Backend repo: https://github.com/stolostron/multicluster-mesh-addon/issues/NNN
+Backend issue: stolostron/multicluster-mesh-addon#NNN
 Related OSSMC issue: <link if filed in openshift-servicemesh-plugin>
-Labels: `enhancement`, `multi-cluster`
 
 **Impact:** <SEVERITY> — <one-line summary>.
 
