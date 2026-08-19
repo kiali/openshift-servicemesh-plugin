@@ -14,7 +14,9 @@ This guide provides coding standards, development workflows, and common commands
 - [Writing New E2E Tests](#writing-new-e2e-tests)
 - [Troubleshooting](#troubleshooting)
 - [Quick Command Reference](#quick-command-reference)
+- [Creating Pull Requests](#creating-pull-requests)
 - [Important Reminders](#important-reminders)
+- [Skills](#skills)
 - [Additional Resources](#additional-resources)
 
 ---
@@ -24,17 +26,17 @@ This guide provides coding standards, development workflows, and common commands
 ### Essential Commands
 
 ```bash
-# Prepare dev environment (requires oc login + Kiali in cluster)
+# Prepare dev environment (oc login required only when using KIALI_URL=route)
 make prepare-dev-env -e KIALI_URL=route
 
-# Run locally (two terminals)
+# Run locally (two terminals) - make start / make start-console wrap the yarn commands below
 cd plugin && yarn start           # Plugin dev server on http://localhost:9001
-cd plugin && yarn start-console   # Console on http://localhost:9000
+cd plugin && yarn start-console   # Console on http://localhost:9000 (requires oc login)
 
-# Run with mock server (three terminals, no cluster needed)
+# Run with mock server (three terminals; no Kiali backend in cluster needed, but oc login is still required for the console bridge)
 cd plugin && yarn mock-server     # Mock API on http://localhost:3001
 cd plugin && yarn start           # Plugin dev server
-cd plugin && yarn start-console   # Console
+cd plugin && KIALI_URL=http://localhost:3001 yarn start-console   # Console
 
 # Build plugin
 cd plugin && yarn install && yarn build
@@ -47,12 +49,16 @@ oc login
 make deploy-plugin enable-plugin
 
 # Lint and format
-cd plugin && yarn lint            # ESLint (src/openshift only)
+cd plugin && yarn lint            # ESLint (excludes kiali server synced code)
 cd plugin && yarn prettier        # Prettier
+
+# Type check and unit test (or: make typecheck / make test)
+cd plugin && yarn tsc --noEmit
+cd plugin && yarn test
 
 # Run Cypress E2E tests
 cd plugin && yarn cypress         # Interactive (GUI)
-cd plugin && yarn cypress:run     # Headless (smoke + core)
+cd plugin && yarn cypress:run     # Headless (core-1 and core-2)
 ```
 
 ### Prerequisites
@@ -80,11 +86,13 @@ openshift-servicemesh-plugin/
 ├── hack/                        # Automation scripts
 │   ├── copy-frontend-src-to-ossmc.sh   # Sync Kiali UI to plugin/src/kiali/
 │   ├── download-hack-scripts.sh        # Download Kiali hack/istio scripts
+│   ├── fleet-mesh/                     # Fleet Service Mesh demo cluster setup scripts
 │   └── update-version-string.sh        # Bump version across files
 ├── make/                        # Included Makefiles
-│   ├── Makefile.plugin.mk       # Plugin build, deploy, dev-env targets
-│   ├── Makefile.cluster.mk      # Cluster image push targets
-│   └── Makefile.container.mk    # Cypress test image build
+│   ├── Makefile.plugin.mk       # Plugin build, package, and quick-deploy targets
+│   ├── Makefile.cluster.mk      # Cluster image push/deploy targets
+│   ├── Makefile.container.mk    # Cypress test image build
+│   └── Makefile.test.mk         # Local dev loop and test targets
 └── plugin/                      # Main application
     ├── package.json             # Dependencies, scripts, engine constraints
     ├── tsconfig.json            # TypeScript config with path aliases
@@ -93,11 +101,19 @@ openshift-servicemesh-plugin/
     ├── console-extensions.ts    # OpenShift Console extension points
     ├── plugin-metadata.ts       # Plugin version metadata
     ├── manifest.yaml            # K8s deployment manifest
-    ├── .eslintrc                # ESLint rules (src/openshift only)
+    ├── eslint.config.mjs        # ESLint rules (excludes src/kiali)
     ├── .prettierrc.json         # Prettier config
     ├── .editorconfig            # EditorConfig
     ├── src/
-    │   ├── openshift/           # ★ OSSMC-specific code (review target)
+    │   ├── fleet-mesh/          # ★ Fleet Service Mesh perspective
+    │   │   ├── components/      # OverviewPage, MeshDetailPage, ControlPlanesPage, ...
+    │   │   ├── hooks/           # useFleetMeshItems, useEnrichedControlPlanes, ...
+    │   │   ├── fleet-mesh-extensions.ts  # Console routes/nav for fleet perspective
+    │   │   └── rstest.fleet-mesh.config.ts  # Fleet-mesh unit test config (merged into root rstest)
+    │   ├── lite/                # ★ Istios/Kialis service mesh menus
+    │   │   ├── components/      # Istios/Kialis pages
+    │   │   └── lite-extensions.ts # Console routes/nav for Istios/Kialis menus
+    │   ├── openshift/           # ★ OSSMC/Kiali integration code
     │   │   ├── components/      # KialiContainer, KialiController, ErrorPage
     │   │   ├── pages/           # GraphPage, OverviewPage, IstioConfigListPage, MeshPage
     │   │   ├── styles/          # GlobalStyle, variables.module.scss
@@ -113,10 +129,15 @@ openshift-servicemesh-plugin/
 
 ### Key Boundaries
 
-- **`plugin/src/openshift/`** — OSSMC-specific integration code. This is the primary development and review target.
+In the repository tree above, `★` marks plugin-owned code you edit in this repo; `⚠` marks vendored upstream code.
+
+- **`plugin/src/openshift/`** — OSSMC/Kiali integration code. Primary development target for the Service Mesh perspective.
+- **`plugin/src/fleet-mesh/`** — Fleet Service Mesh perspective (multi-cluster meshes, control planes, ACM integration). Register routes in `fleet-mesh-extensions.ts` (imported by `console-extensions.ts`).
+- **`plugin/src/lite/`** — Istios/Kialis list pages in service mesh perspective (visible even when no Kiali is integrated with OSSMC). Register routes in `lite-extensions.ts` (imported by `console-extensions.ts`).
 - **`plugin/src/kiali/`** — Vendored copy of the Kiali UI. Synced via `hack/copy-frontend-src-to-ossmc.sh`. **Do not edit directly** — changes belong in the [kiali/kiali](https://github.com/kiali/kiali) repo.
 - **`plugin/cypress/integration/kiali/`** — Vendored Cypress tests from kiali/kiali. **Do not edit directly.**
 - **`plugin/cypress/integration/openshift/`** — OSSMC-specific E2E tests.
+- **`hack/fleet-mesh/`** — Scripts and docs for standing up a Fleet Service Mesh demo cluster (see `hack/fleet-mesh/DEV-INSTALL.md`).
 
 ---
 
@@ -130,7 +151,7 @@ openshift-servicemesh-plugin/
 2. **Explicit return types** required on functions (`@typescript-eslint/explicit-function-return-type`)
 3. **No inferrable type annotations** — don't annotate types the compiler can infer
 4. **Interface/type literal members sorted alphabetically** (`@typescript-eslint/member-ordering`)
-5. **No `var`** — use `const`/`let` (`no-var: error`)
+5. **No `var`** — use `const`/`let` (`prefer-const: error`)
 6. **Template literals** over string concatenation (`prefer-template: error`)
 7. **Arrow functions** over function expressions in callbacks (`prefer-arrow-callback: error`)
 8. **Comments explain "why", not "what"** — no comments that restate the code
@@ -234,7 +255,7 @@ Prettier and EditorConfig enforce formatting automatically via a pre-commit hook
 
 ### Linting
 
-ESLint is configured to lint only `src/openshift/`:
+ESLint lints `src/openshift/`, `src/fleet-mesh/`, `src/lite/`, and `cypress/`:
 
 ```bash
 cd plugin && yarn lint
@@ -266,10 +287,12 @@ make -e CONTAINER_VERSION=v1.0.0 build-push-plugin-multi-arch  # Multi-arch + pu
 #### Unit Tests
 
 ```bash
-# Jest tests (framework: Jest + Enzyme)
-# Test files: __tests__/ directories co-located with source
-# Naming: *.test.ts (logic), *.test.tsx (components)
+# Run the full suite
+make test
+# or: cd plugin && yarn test
 ```
+
+Unit tests for plugin-owned code are co-located under `plugin/src/` as `*.test.ts` and `*.test.tsx` files (typically in `__tests__/` directories). The suite uses Rstest and is configured in `plugin/rstest.config.ts`. Vendored `plugin/src/kiali/` tests are not included.
 
 #### E2E Tests (Cypress + Cucumber)
 
@@ -277,7 +300,7 @@ make -e CONTAINER_VERSION=v1.0.0 build-push-plugin-multi-arch  # Multi-arch + pu
 # Interactive mode
 cd plugin && yarn cypress
 
-# Headless (smoke first, then core-1/core-2)
+# Headless (core-1 and core-2)
 cd plugin && yarn cypress:run
 
 # With JUnit reporter (for CI)
@@ -291,11 +314,11 @@ cd plugin && yarn cypress:run:ambient
 
 | Tag | Description |
 |-----|-------------|
-| `@smoke` | Smoke suite (runs first) |
-| `@core-1`, `@core-2` | Core test groups |
+| `@smoke` | Smoke suite (use `TEST_GROUP="@smoke"` with `yarn cypress:run:test-group:junit`) |
+| `@core-1`, `@core-2` | Core test groups (default for `yarn cypress:run`) |
 | `@skip-ossmc` | Tests to skip in OSSMC context |
 | `@bookinfo-app` | Requires bookinfo sample app deployed |
-| `@ambient`, `@waypoint` | Ambient mesh tests |
+| `@ambient`, `@waypoint`, `@waypoint-tracing` | Ambient mesh tests (`yarn cypress:run:ambient`) |
 | `@selected` | Manual selection for debugging (temporary, remove before committing) |
 
 **Cypress environment variables:**
@@ -314,8 +337,15 @@ make deploy-plugin enable-plugin
 # Undeploy
 make undeploy-plugin
 
-# Build + push dev image to cluster registry
+# Build, push, and deploy a dev image in one step (no Kiali Operator needed)
+make cluster-deploy
+
+# Build + push a dev image to the cluster registry only (does not restart/redeploy -
+# run "make restart-plugin" afterward, or wait for the operator to reconcile)
 make cluster-push
+
+# Push an already-built local image to the cluster registry (skips yarn/webpack build; does not restart/redeploy - run "make restart-plugin" afterward)
+make cluster-push-existing
 
 # Check cluster status (registry info, login commands)
 make cluster-status
@@ -331,6 +361,7 @@ Requires an OpenShift cluster with Kiali deployed. Kiali must use `auth.strategy
 
 ```bash
 # 1. Prepare environment (installs deps, prints KIALI_URL commands)
+# KIALI_URL is optional - omit it to use the console bridge's default (http://localhost:20001)
 make prepare-dev-env -e KIALI_URL=route
 # Or with explicit URL:
 make prepare-dev-env -e KIALI_URL=https://<kiali-host>
@@ -344,9 +375,9 @@ cd plugin && yarn start-console
 
 Open http://localhost:9000 in your browser.
 
-### Local Development (with Mock Server, no cluster)
+### Local Development (with Mock Server, no Kiali backend)
 
-No cluster required. Uses MSW handlers to mock the Kiali API.
+No Kiali backend in the cluster required. Uses MSW handlers to mock the Kiali API. The console bridge still requires `oc login`.
 
 ```bash
 # 1. Start mock server (terminal 1)
@@ -415,17 +446,39 @@ hack/update-version-string.sh v2.27.0
 
 ### Adding a New Page
 
+**Service Mesh menus (with Kiali integrated)** (`plugin/src/openshift/`):
+
 1. Create the page component in `plugin/src/openshift/pages/` (functional `React.FC`, default export)
 2. Register the route in `plugin/console-extensions.ts`
 3. Add `data-test` attributes on key elements for Cypress
 4. Add i18n strings to `plugin/src/openshift/locales/*/translation.json`
 
+**Fleet Service Mesh perspective** (`plugin/src/fleet-mesh/`):
+
+1. Create the page component in `plugin/src/fleet-mesh/components/` (functional `React.FC`, default export)
+2. Register the route in `plugin/src/fleet-mesh/fleet-mesh-extensions.ts` and add a module entry in `fleet-mesh-modules.ts`
+3. Add `data-test` attributes on key elements for Cypress
+4. Add i18n strings (extracted to `plugin/src/openshift/locales/` via `yarn i18n`)
+
+**Istios/Kialis menus** (`plugin/src/lite/`):
+
+1. Create the page component under `plugin/src/lite/`
+2. Register the route in `plugin/src/lite/lite-extensions.ts` and add a module entry in `lite-modules.ts`
+3. Add i18n strings (extracted to `plugin/src/openshift/locales/` via `yarn i18n`)
+
 ### Adding a New Component
 
-1. Create in `plugin/src/openshift/components/`
-2. Use PatternFly v6 components where possible
-3. Style with `kialiStyle()` from typestyle
-4. Use `data-test` attributes for testability
+**Service Mesh menus (with Kiali integrated)** — create in `plugin/src/openshift/components/`.
+
+**Fleet Service Mesh perspective** — create in `plugin/src/fleet-mesh/components/`.
+
+**Istios/Kialis menus** — create under `plugin/src/lite/`.
+
+For all perspectives:
+
+1. Use PatternFly v6 components where possible
+2. Style with `kialiStyle()` from typestyle
+3. Use `data-test` attributes for testability
 
 ### API Calls
 
@@ -473,7 +526,7 @@ const label = t('Traffic Graph');
 import { t } from 'i18next';
 ```
 
-- OSSMC translations: `plugin/src/openshift/locales/`
+- OSSMC translations (including strings from openshift, fleet-mesh, and lite code): `plugin/src/openshift/locales/`
 - Kiali translations: `plugin/src/kiali/locales/` (vendored)
 - Extract new strings: `cd plugin && yarn i18n`
 
@@ -488,7 +541,7 @@ OSSMC-specific E2E tests live in `plugin/cypress/integration/openshift/`. Tests 
 Create a `.feature` file using Gherkin syntax:
 
 ```gherkin
-# plugin/cypress/integration/openshift/my-feature.feature
+# plugin/cypress/integration/openshift/featureFiles/my-feature.feature
 @core-1
 Feature: My Feature
 
@@ -506,7 +559,7 @@ Feature: My Feature
 Create a matching step definitions file:
 
 ```typescript
-// plugin/cypress/integration/openshift/my-feature/my-feature.ts
+// plugin/cypress/integration/openshift/common/my-feature.ts
 import { Given, When, Then } from '@badeball/cypress-cucumber-preprocessor';
 
 Given('user is at administrator perspective', () => {
@@ -526,7 +579,7 @@ Then('user sees the {string} element', (testId: string) => {
 
 - Add a suite tag (`@smoke`, `@core-1`, or `@core-2`)
 - Add `@bookinfo-app` if the test requires sample apps
-- Add `@ambient` or `@waypoint` for ambient mesh scenarios
+- Add `@ambient`, `@waypoint`, or `@waypoint-tracing` for ambient mesh scenarios
 
 ### Step 4: Run and Validate
 
@@ -538,7 +591,7 @@ cd plugin && yarn cypress
 cd plugin && yarn cypress:run
 
 # Debug a single spec (tag with @selected temporarily)
-cd plugin && yarn cypress --spec "cypress/integration/openshift/my-feature.feature"
+cd plugin && yarn cypress --spec "cypress/integration/openshift/featureFiles/my-feature.feature"
 ```
 
 ---
@@ -581,17 +634,22 @@ If `plugin/src/kiali/` or `plugin/cypress/integration/kiali/` shows up with chan
 |------|---------|
 | Install dependencies | `cd plugin && yarn install` |
 | Build | `cd plugin && yarn build` |
-| Dev server | `cd plugin && yarn start` |
-| Console bridge | `cd plugin && yarn start-console` |
+| Dev server | `make start` (or: `cd plugin && yarn start`) |
+| Console bridge | `make start-console` (or: `cd plugin && yarn start-console`) |
 | Mock server | `cd plugin && yarn mock-server` |
 | Lint | `cd plugin && yarn lint` |
 | Format | `cd plugin && yarn prettier` |
+| Type check | `make typecheck` (or: `cd plugin && yarn tsc --noEmit`) |
+| Unit tests | `make test` (or: `cd plugin && yarn test`) |
 | Extract i18n strings | `cd plugin && yarn i18n` |
 | Cypress (interactive) | `cd plugin && yarn cypress` |
 | Cypress (headless) | `cd plugin && yarn cypress:run` |
 | Cypress (JUnit) | `cd plugin && yarn cypress:run:junit` |
 | Container image build | `make build-plugin-image` |
-| Deploy to cluster | `make deploy-plugin enable-plugin` |
+| Deploy to cluster (quay.io latest image) | `make deploy-plugin enable-plugin` |
+| Build, push, and deploy a dev image (no operator) | `make cluster-deploy` |
+| Build and push a dev image only (pairs with the operator, or `make restart-plugin`) | `make cluster-push` |
+| Push an already-built dev image only (skips build; run `make restart-plugin` afterward) | `make cluster-push-existing` |
 | Undeploy | `make undeploy-plugin` |
 | Sync Kiali frontend | `hack/copy-frontend-src-to-ossmc.sh` |
 | Bump version | `hack/update-version-string.sh vX.Y.Z` |
@@ -613,6 +671,12 @@ Before submitting a PR, verify:
 8. **Comments explain "why"**: Remove any comments that restate what the code does
 9. **Import order is correct**: External → path aliases → relative, separated by blank lines
 10. **Formatting is clean**: Prettier runs automatically on commit, but verify with `yarn prettier` if in doubt
+
+---
+
+## Skills
+
+- **[Track OSSM-ACM Addon Controller Backend Issues](.claude/skills/track-ossm-acm-addon-backend-issues/SKILL.md)** — Analyze open multicluster-mesh-addon controller issues for fleet-mesh plugin impact and create or update tracking issues in kiali/openshift-servicemesh-plugin (or kiali/kiali when Kiali server code is affected). Run periodically (e.g., when new addon controller issues are filed or before sprint planning).
 
 ---
 

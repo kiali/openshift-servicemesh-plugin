@@ -5,7 +5,7 @@ import { setRouterBasename, useInitKialiListeners } from '../../utils/KialiInteg
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { ErrorPage } from 'openshift/components/ErrorPage';
 import { detailsTabPageStyle } from 'openshift/styles/GlobalStyle';
-import { ResourceURLPathProps } from 'openshift/utils/IstioResources';
+import type { ResourceURLPathProps } from 'openshift/utils/IstioResources';
 import { useKialiTranslation } from 'utils/I18nUtils';
 
 const NamespaceDetailsTab: React.FC<void> = () => {
@@ -18,9 +18,7 @@ const NamespaceDetailsTab: React.FC<void> = () => {
   useInitKialiListeners();
 
   if (!namespace) {
-    return (
-      <ErrorPage title={t('Namespace detail error')} message={t('Namespace is not defined correctly')} />
-    );
+    return <ErrorPage title={t('Namespace detail error')} message={t('Namespace is not defined correctly')} />;
   }
 
   return (

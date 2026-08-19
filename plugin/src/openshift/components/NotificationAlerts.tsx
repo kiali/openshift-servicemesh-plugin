@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { KialiAppState } from 'store/Store';
-import { NotificationGroup, NotificationMessage } from 'types/NotificationCenter';
-import { KialiDispatch } from 'types/Redux';
+import type { KialiAppState } from 'store/Store';
+import type { NotificationGroup, NotificationMessage } from 'types/NotificationCenter';
+import type { KialiDispatch } from 'types/Redux';
 import { NotificationCenterActions } from 'actions/NotificationCenterActions';
 import { NotificationAlerts as KialiNotificationAlerts } from 'components/NotificationCenter/NotificationAlerts';
 

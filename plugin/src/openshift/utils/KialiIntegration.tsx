@@ -26,6 +26,9 @@ type Observability = {
 };
 // This PluginConfig type should be mapped with the 'plugin-config.json' file
 export type PluginConfig = {
+  internal?: {
+    techPreview?: boolean;
+  };
   observability?: Observability;
 };
 

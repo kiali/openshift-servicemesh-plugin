@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-import { KialiAppState } from 'store/Store';
+import type { KialiAppState } from 'store/Store';
 import { LoginStateReducer } from 'reducers/LoginState';
 import { GlobalStateReducer } from 'reducers/GlobalState';
 import { GraphDataStateReducer } from 'reducers/GraphDataState';
@@ -12,7 +12,7 @@ import { TourStateReducer } from 'reducers/TourState';
 import { NamespaceStateReducer } from 'reducers/NamespaceState';
 import { NamespacesListStateReducer } from 'reducers/NamespacesListState';
 import { NotificationCenterReducer } from 'reducers/NotificationCenter';
-import { KialiAppAction } from 'actions/KialiAppAction';
+import type { KialiAppAction } from 'actions/KialiAppAction';
 import { ClusterStateReducer } from 'reducers/ClusterState';
 import { TracingStateReducer } from 'reducers/TracingState';
 import { MeshDataStateReducer } from 'reducers/MeshDataState';

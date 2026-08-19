@@ -37,6 +37,7 @@ CYPRESS_TESTS_QUAY_TAG ?= ${CYPRESS_TESTS_QUAY_NAME}:${CYPRESS_TESTS_CONTAINER_V
 include make/Makefile.plugin.mk
 include make/Makefile.cluster.mk
 include make/Makefile.container.mk
+include make/Makefile.test.mk
 
 help:
 	@echo
@@ -45,6 +46,9 @@ help:
 	@echo
 	@echo "Cluster targets - used to manage images on the remote cluster"
 	@sed -n 's/^##//p' make/Makefile.cluster.mk | column -t -s ':' |  sed -e 's/^/ /'
+	@echo
+	@echo "Testing targets - used to run the local dev loop and tests"
+	@sed -n 's/^##//p' make/Makefile.test.mk | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
 
 .ensure-oc-exists:

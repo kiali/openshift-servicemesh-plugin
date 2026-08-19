@@ -9,6 +9,8 @@ ADD . /usr/src/app
 WORKDIR /usr/src/app
 
 # Install dependencies and build the plugin
+ENV CYPRESS_INSTALL_BINARY=0
+ENV HUSKY=0
 RUN yarn install && yarn build
 
 FROM registry.access.redhat.com/ubi9/nginx-126

@@ -49,7 +49,9 @@ When('user navigates to the OSSMC {string} page', (hrefName: string) => {
   if (!path) {
     throw new Error(`Unknown OSSMC page: "${hrefName}". Valid pages: ${Object.keys(hrefMap).join(', ')}`);
   }
-  cy.get(`a[data-test="nav"][href*="/ossmconsole/${path}"]`)
+  // Exact path match so /ossmconsole/istio does not also hit /ossmconsole/istios.
+  cy.get('a[data-test="nav"]')
+    .filter((_, el) => (el.getAttribute('href') ?? '').split('?')[0] === `/ossmconsole/${path}`)
     .click()
     .then(() => {
       cy.url().should('include', `/ossmconsole/${path}`);
