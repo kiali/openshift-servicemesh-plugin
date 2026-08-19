@@ -28,10 +28,7 @@ const config: Configuration = {
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
-    // tsconfig.json intentionally omits baseUrl (deprecated in TS 6.0, removed in TS 7.0), but
-    // tsconfig-paths-webpack-plugin still requires one to resolve the "paths" entries below, so
-    // it's supplied here as a plugin option instead of reintroducing it into tsconfig.json.
-    plugins: [new TsconfigPathsPlugin({ baseUrl: __dirname })]
+    plugins: [new TsconfigPathsPlugin()]
   },
   module: {
     rules: [
@@ -121,6 +118,10 @@ const config: Configuration = {
           {
             pattern: '**/locales/es/translation.json',
             fileName: 'locales/es/plugin__ossmconsole.json'
+          },
+          {
+            pattern: '**/locales/ko/translation.json',
+            fileName: 'locales/ko/plugin__ossmconsole.json'
           },
           {
             pattern: '**/locales/zh/translation.json',

@@ -1,3 +1,4 @@
+import React from 'react';
 import { memo, useMemo } from 'react';
 import { ChartDonut } from '@patternfly/react-charts/victory';
 import { useKialiTranslation } from 'utils/I18nUtils';

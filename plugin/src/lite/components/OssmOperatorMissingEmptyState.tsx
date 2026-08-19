@@ -1,3 +1,4 @@
+import React from 'react';
 import type { FC } from 'react';
 import { EmptyState, EmptyStateBody, EmptyStateVariant } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';

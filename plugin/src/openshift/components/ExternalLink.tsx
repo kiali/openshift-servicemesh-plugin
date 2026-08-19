@@ -1,3 +1,4 @@
+import React from 'react';
 import type { AnchorHTMLAttributes, FC, ReactNode } from 'react';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 // Fleet/lite chunks do not load KialiContainer's PatternFly base bundle; ship icon sizing

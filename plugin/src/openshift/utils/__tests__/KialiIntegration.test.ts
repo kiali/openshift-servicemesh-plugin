@@ -1,45 +1,31 @@
-import * as actualIstioResources from '../IstioResources' with { rstest: 'importActual' };
 import { parseTempoUrl, resolveConsoleUrl } from '../KialiIntegration';
 
-const controllerState = rstest.hoisted(() => ({
-  distributedTracingPluginConfig: undefined as unknown,
-  netobservPluginConfig: undefined as unknown,
-  pluginConfig: undefined as unknown
+jest.mock('../../components/KialiController', () => ({
+  distributedTracingPluginConfig: undefined,
+  netobservPluginConfig: undefined,
+  pluginConfig: undefined
 }));
 
-const storeGetState = rstest.hoisted(() =>
-  rstest.fn(() => ({ tracingState: { info: null as Record<string, unknown> | null } }))
-);
-
-rstest.mock('../../components/KialiController', () => ({
-  get distributedTracingPluginConfig() {
-    return controllerState.distributedTracingPluginConfig;
-  },
-  get netobservPluginConfig() {
-    return controllerState.netobservPluginConfig;
-  },
-  get pluginConfig() {
-    return controllerState.pluginConfig;
-  }
+jest.mock('react-router-dom-v5-compat', () => ({
+  useNavigate: jest.fn(),
+  createBrowserRouter: jest.fn(() => ({})),
+  createHashRouter: jest.fn(() => ({})),
+  createMemoryRouter: jest.fn(() => ({}))
 }));
 
-rstest.mock('react-router-dom-v5-compat', () => ({
-  useNavigate: rstest.fn(),
-  createBrowserRouter: rstest.fn(() => ({})),
-  createHashRouter: rstest.fn(() => ({})),
-  createMemoryRouter: rstest.fn(() => ({}))
+jest.mock('app/History', () => ({
+  setRouter: jest.fn()
 }));
 
-rstest.mock('app/History', () => ({
-  setRouter: rstest.fn()
-}));
+jest.mock('../IstioResources', () => {
+  const actual = (jest as any).requireActual('../IstioResources');
+  return {
+    refForKialiIstio: jest.fn(actual.refForKialiIstio)
+  };
+});
 
-rstest.mock('../IstioResources', () => ({
-  refForKialiIstio: rstest.fn(actualIstioResources.refForKialiIstio)
-}));
-
-rstest.mock('store/ConfigStore', () => ({
-  store: { getState: storeGetState, dispatch: rstest.fn(), subscribe: rstest.fn() }
+jest.mock('store/ConfigStore', () => ({
+  store: { getState: jest.fn(() => ({ tracingState: { info: null } })), dispatch: jest.fn(), subscribe: jest.fn() }
 }));
 
 describe('resolveConsoleUrl', () => {
@@ -89,7 +75,9 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should fall back to workloads list when workload name is empty', () => {
-      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads')).toEqual('/ossmconsole/workloads?namespaces=bookinfo');
+      expect(resolveConsoleUrl('/namespaces/bookinfo/workloads')).toEqual(
+        '/ossmconsole/workloads?namespaces=bookinfo'
+      );
     });
 
     test('should route workload detail to correct k8s resource type when type param is provided', () => {
@@ -153,7 +141,9 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should fall back to services list when service name is empty', () => {
-      expect(resolveConsoleUrl('/namespaces/bookinfo/services')).toEqual('/ossmconsole/services?namespaces=bookinfo');
+      expect(resolveConsoleUrl('/namespaces/bookinfo/services')).toEqual(
+        '/ossmconsole/services?namespaces=bookinfo'
+      );
     });
 
     test('should route external services to ossmconsole service detail page', () => {
@@ -203,7 +193,9 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should preserve query parameters on /workloads', () => {
-      expect(resolveConsoleUrl('/workloads?namespaces=bookinfo')).toEqual('/ossmconsole/workloads?namespaces=bookinfo');
+      expect(resolveConsoleUrl('/workloads?namespaces=bookinfo')).toEqual(
+        '/ossmconsole/workloads?namespaces=bookinfo'
+      );
     });
   });
 
@@ -232,10 +224,15 @@ describe('resolveConsoleUrl', () => {
   });
 
   describe('tracing route', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mockController = require('../../components/KialiController') as Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mockStore = require('store/ConfigStore') as { store: { getState: jest.Mock } };
+
     afterEach(() => {
-      controllerState.distributedTracingPluginConfig = undefined;
-      controllerState.pluginConfig = undefined;
-      storeGetState.mockReturnValue({ tracingState: { info: null } });
+      mockController.distributedTracingPluginConfig = undefined;
+      mockController.pluginConfig = undefined;
+      mockStore.store.getState.mockReturnValue({ tracingState: { info: null } });
     });
 
     test('should return null when tracing plugin is not configured', () => {
@@ -243,8 +240,8 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should return observe/traces URL when tracing plugin is configured with observability', () => {
-      controllerState.distributedTracingPluginConfig = { extensions: [{}] };
-      controllerState.pluginConfig = {
+      mockController.distributedTracingPluginConfig = { extensions: [{}] };
+      mockController.pluginConfig = {
         observability: { instance: 'tempo', namespace: 'tracing', tenant: 'default' }
       };
       expect(resolveConsoleUrl('/tracing?trace=abc123')).toEqual(
@@ -253,8 +250,8 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should return trace list URL when no specific trace is requested', () => {
-      controllerState.distributedTracingPluginConfig = { extensions: [{}] };
-      controllerState.pluginConfig = {
+      mockController.distributedTracingPluginConfig = { extensions: [{}] };
+      mockController.pluginConfig = {
         observability: { instance: 'tempo', namespace: 'tracing', tenant: 'default' }
       };
       expect(resolveConsoleUrl('/tracing')).toEqual(
@@ -263,8 +260,8 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should return trace list URL when trace param is the literal string "undefined"', () => {
-      controllerState.distributedTracingPluginConfig = { extensions: [{}] };
-      controllerState.pluginConfig = {
+      mockController.distributedTracingPluginConfig = { extensions: [{}] };
+      mockController.pluginConfig = {
         observability: { instance: 'tempo', namespace: 'tracing', tenant: 'default' }
       };
       expect(resolveConsoleUrl('/tracing?trace=undefined')).toEqual(
@@ -273,23 +270,23 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should return null when plugin is configured but no observability data is available', () => {
-      controllerState.distributedTracingPluginConfig = { extensions: [{}] };
-      controllerState.pluginConfig = {};
+      mockController.distributedTracingPluginConfig = { extensions: [{}] };
+      mockController.pluginConfig = {};
       expect(resolveConsoleUrl('/tracing?trace=abc')).toBeNull();
     });
 
     test('should return null when extensions array is empty', () => {
-      controllerState.distributedTracingPluginConfig = { extensions: [] };
-      controllerState.pluginConfig = {
+      mockController.distributedTracingPluginConfig = { extensions: [] };
+      mockController.pluginConfig = {
         observability: { instance: 'tempo', namespace: 'tracing', tenant: 'default' }
       };
       expect(resolveConsoleUrl('/tracing?trace=abc')).toBeNull();
     });
 
     test('should resolve tracing URL from store when pluginConfig has no observability', () => {
-      controllerState.distributedTracingPluginConfig = { extensions: [{}] };
-      controllerState.pluginConfig = {};
-      storeGetState.mockReturnValue({
+      mockController.distributedTracingPluginConfig = { extensions: [{}] };
+      mockController.pluginConfig = {};
+      mockStore.store.getState.mockReturnValue({
         tracingState: {
           info: {
             internalURL: 'https://tempo-sample-gateway.tempo.svc.cluster.local:8080/api/traces/v1/default'
@@ -308,12 +305,15 @@ describe('resolveConsoleUrl', () => {
   });
 
   describe('netobserv route', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mockController = require('../../components/KialiController') as Record<string, unknown>;
+
     afterEach(() => {
-      controllerState.netobservPluginConfig = undefined;
+      mockController.netobservPluginConfig = undefined;
     });
 
     test('should use netflow target when netobserv plugin is configured', () => {
-      controllerState.netobservPluginConfig = { extensions: [{}] };
+      mockController.netobservPluginConfig = { extensions: [{}] };
       expect(resolveConsoleUrl('/netobserv/namespaces/bookinfo/workloads/reviews-v1')).toEqual(
         '/k8s/ns/bookinfo/deployments/reviews-v1/netflow'
       );
@@ -326,7 +326,7 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should use ossmconsole suffix for service routes even when netobserv is configured', () => {
-      controllerState.netobservPluginConfig = { extensions: [{}] };
+      mockController.netobservPluginConfig = { extensions: [{}] };
       expect(resolveConsoleUrl('/netobserv/namespaces/bookinfo/services/reviews')).toEqual(
         '/k8s/ns/bookinfo/services/reviews/ossmconsole'
       );
@@ -341,9 +341,9 @@ describe('resolveConsoleUrl', () => {
     });
 
     test('should map security istio detail through refForKialiIstio', () => {
-      expect(resolveConsoleUrl('/namespaces/bookinfo/istio/security.istio.io/v1/AuthorizationPolicy/deny-all')).toEqual(
-        '/k8s/ns/bookinfo/security.istio.io~v1~AuthorizationPolicy/deny-all/ossmconsole'
-      );
+      expect(
+        resolveConsoleUrl('/namespaces/bookinfo/istio/security.istio.io/v1/AuthorizationPolicy/deny-all')
+      ).toEqual('/k8s/ns/bookinfo/security.istio.io~v1~AuthorizationPolicy/deny-all/ossmconsole');
     });
   });
 

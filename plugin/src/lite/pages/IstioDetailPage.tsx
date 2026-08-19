@@ -1,3 +1,4 @@
+import React from 'react';
 import type { FC } from 'react';
 import { Link, useParams } from 'react-router-dom-v5-compat';
 import { ResourceLink, Timestamp, useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';

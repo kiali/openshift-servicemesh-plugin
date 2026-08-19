@@ -1,3 +1,4 @@
+import React from 'react';
 import type { FC } from 'react';
 import { Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import type { K8sCondition } from '../types/common';

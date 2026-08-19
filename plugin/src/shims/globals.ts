@@ -1,3 +1,4 @@
-// v2.27 kiali still imports Timer from 'globals' (baseUrl-era path). New tsconfig resolves the bare
-// specifier to Node types instead, so this shim preserves the intended browser timer alias.
+// Provides the Timer type used by legacy kiali vendor code that imports from 'globals'.
+// The globals npm package dropped TypeScript type exports in v14+; this shim keeps
+// the import working without requiring changes to the vendored kiali source.
 export type Timer = ReturnType<typeof setInterval>;

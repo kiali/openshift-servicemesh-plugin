@@ -44,6 +44,7 @@ declare global {
   }
 }
 
+// eslint-disable-next-line no-extend-native
 Date.prototype.toLocaleStringWithConditionalDate = function () {
   const nowDate = new Date().toLocaleDateString();
   const thisDate = this.toLocaleDateString();

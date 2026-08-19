@@ -1,3 +1,4 @@
+import React from 'react';
 import type { FC } from 'react';
 import { Label, Tooltip } from '@patternfly/react-core';
 import { useKialiTranslation } from 'utils/I18nUtils';

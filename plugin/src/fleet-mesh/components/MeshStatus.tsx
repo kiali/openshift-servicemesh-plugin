@@ -1,3 +1,4 @@
+import React from 'react';
 import type { FC } from 'react';
 import { Label } from '@patternfly/react-core';
 import type { K8sCondition } from '../types/common';
