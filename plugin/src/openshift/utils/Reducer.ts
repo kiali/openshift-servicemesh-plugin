@@ -1,3 +1,7 @@
+// Must run before ChatAIStateReducer pulls in PatternFly Chatbot/Monaco, which would
+// otherwise inherit Console's relative worker-yaml.js URL under this plugin's publicPath.
+import './MonacoEnvironmentSetup';
+
 import { combineReducers } from 'redux';
 import type { KialiAppState } from 'store/Store';
 import { LoginStateReducer } from 'reducers/LoginState';

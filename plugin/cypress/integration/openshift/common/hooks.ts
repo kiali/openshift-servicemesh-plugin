@@ -76,6 +76,15 @@ Before(() => {
     if (promise || err.message.includes('MobX')) {
       return false;
     }
+    // Console's Monaco YAML worker is resolved under this plugin's publicPath and
+    // 404s (worker-yaml.js / importScripts). That is unrelated to OSSMC ACE editors.
+    if (
+      err.message.includes('worker-yaml') ||
+      err.message.includes("Failed to execute 'importScripts'") ||
+      err.message.includes('NS_ERROR_CORRUPTED_CONTENT')
+    ) {
+      return false;
+    }
     // we still want to ensure there are no other unexpected
     // errors, so we let them fail the test
   });
