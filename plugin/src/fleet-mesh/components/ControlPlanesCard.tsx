@@ -37,12 +37,6 @@ const ControlPlanesCard: FC<{ kialiLinks?: Map<string, KialiLink[]>; planes: Enr
   const columns = useMemo<VirtualFilterColumn<EnrichedControlPlane>[]>(() => {
     const cols: VirtualFilterColumn<EnrichedControlPlane>[] = [
       {
-        key: 'cluster',
-        label: 'Cluster',
-        render: cp => <Link to={clusterDetailLink(cp.clusterName)}>{cp.clusterName}</Link>,
-        width: hasKialiLinks ? '20%' : '25%'
-      },
-      {
         key: 'name',
         label: 'Name',
         render: cp => (
@@ -55,23 +49,18 @@ const ControlPlanesCard: FC<{ kialiLinks?: Map<string, KialiLink[]>; planes: Enr
         width: hasKialiLinks ? '18%' : '20%'
       },
       {
+        key: 'cluster',
+        label: 'Cluster',
+        render: cp => <Link to={clusterDetailLink(cp.clusterName)}>{cp.clusterName}</Link>,
+        width: hasKialiLinks ? '20%' : '25%'
+      },
+      {
         key: 'namespace',
         label: 'Namespace',
         render: cp => cp.controlPlaneNamespace ?? '-',
         width: hasKialiLinks ? '15%' : '20%'
       },
-      { key: 'version', label: 'Version', render: cp => cp.version ?? '-', width: '12%' },
-      {
-        key: 'status',
-        label: 'Status',
-        render: cp =>
-          cp.status?.conditions ? (
-            <MeshStatus conditions={cp.status.conditions} conditionType="Ready" isCompact />
-          ) : (
-            <Label color="grey">{t('Unknown')}</Label>
-          ),
-        width: '15%'
-      }
+      { key: 'version', label: 'Version', render: cp => cp.version ?? '-', width: '12%' }
     ];
 
     if (hasKialiLinks) {
@@ -86,6 +75,18 @@ const ControlPlanesCard: FC<{ kialiLinks?: Map<string, KialiLink[]>; planes: Enr
         width: '20%'
       });
     }
+
+    cols.push({
+      key: 'status',
+      label: 'Status',
+      render: cp =>
+        cp.status?.conditions ? (
+          <MeshStatus conditions={cp.status.conditions} conditionType="Ready" isCompact />
+        ) : (
+          <Label color="grey">{t('Unknown')}</Label>
+        ),
+      width: '15%'
+    });
 
     return cols;
   }, [hasKialiLinks, kialiLinks, t]);
