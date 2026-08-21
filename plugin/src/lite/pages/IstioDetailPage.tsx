@@ -24,6 +24,7 @@ import {
   Title
 } from '@patternfly/react-core';
 import { LiteConditionsTable } from '../components/LiteConditionsTable';
+import { IstioRelatedCard } from '../components/IstioRelatedCard';
 import { LiteStatus } from '../components/LiteStatus';
 import { OssmOperatorMissingEmptyState } from '../components/OssmOperatorMissingEmptyState';
 import type { LiteIstioResource } from '../types/istio';
@@ -155,6 +156,10 @@ const IstioDetailContent: FC<{ name: string }> = ({ name }) => {
                 </DescriptionList>
               </CardBody>
             </Card>
+          </GridItem>
+
+          <GridItem span={5}>
+            <IstioRelatedCard activeRevisionName={status?.activeRevisionName} controlPlaneNamespace={spec?.namespace} />
           </GridItem>
 
           {conditions.length > 0 && (
