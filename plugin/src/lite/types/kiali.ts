@@ -6,6 +6,12 @@ export const kialiGVK: K8sGroupVersionKind = {
   version: 'v1alpha1'
 };
 
+export const routeGVK: K8sGroupVersionKind = {
+  group: 'route.openshift.io',
+  kind: 'Route',
+  version: 'v1'
+};
+
 export const routeModel: K8sModel = {
   abbr: 'RT',
   apiGroup: 'route.openshift.io',
@@ -26,6 +32,10 @@ export interface Route extends K8sResourceCommon {
 export interface LiteKialiResource extends K8sResourceCommon {
   spec?: {
     auth?: { strategy?: string };
+    clustering?: {
+      autodetect_secrets?: { enabled?: boolean; label?: string };
+      clusters?: Array<{ name?: string; secret_name?: string }>;
+    };
     deployment?: {
       cluster_wide_access?: boolean;
       ingress?: { enabled?: boolean };
@@ -41,7 +51,7 @@ export interface LiteKialiResource extends K8sResourceCommon {
       tracing?: { enabled?: boolean; provider?: string; url?: string };
     };
     installation_tag?: string;
-    server?: { port?: number; web_fqdn?: string };
+    server?: { port?: number; require_auth?: boolean; web_fqdn?: string };
     version?: string;
   };
   status?: {
