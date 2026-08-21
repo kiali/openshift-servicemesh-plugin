@@ -158,19 +158,19 @@ describe('KialisPage', () => {
     });
   });
 
-  it('shows Active in the Connected column for the connected Kiali instance', async () => {
+  it('shows a connected icon in the Connected column for the connected Kiali instance', async () => {
     mockWatchResources([[makeKialiResource()], true, null], [[promotedOssmConsole()], true, null]);
     render(<KialisPage />);
     await waitFor(() => {
-      expect(screen.getByText('Active')).toBeInTheDocument();
+      expect(screen.getByLabelText('Connected to Console')).toBeInTheDocument();
     });
   });
 
-  it('shows Inactive in the Connected column for non-connected Kiali instances', async () => {
+  it('shows a dash in the Connected column for non-connected Kiali instances', async () => {
     mockWatchResources([[makeKialiResource()], true, null]);
     render(<KialisPage />);
     await waitFor(() => {
-      expect(screen.getByText('Inactive')).toBeInTheDocument();
+      expect(screen.queryByLabelText('Connected to Console')).not.toBeInTheDocument();
     });
   });
 
@@ -330,7 +330,7 @@ describe('KialisPage', () => {
   });
 
   describe('Kiali UI link column', () => {
-    it('shows both Kiali and Console links for the active instance when a URL is available', async () => {
+    it('shows the Kiali external link when a URL is available for the active instance', async () => {
       rstest.mocked(k8sGet).mockResolvedValue({
         apiVersion: 'route.openshift.io/v1',
         kind: 'Route',
@@ -341,18 +341,17 @@ describe('KialisPage', () => {
       render(<KialisPage />);
       await waitFor(() => {
         expect(screen.getByRole('link', { name: 'Kiali' })).toHaveAttribute('href', 'https://kiali.apps.example.com');
-        expect(screen.getByRole('link', { name: 'Console' })).toHaveAttribute('href', '/ossmconsole/overview');
       });
+      expect(screen.queryByRole('link', { name: 'Console' })).not.toBeInTheDocument();
     });
 
-    it('links to the embedded Console overview page for the active Kiali when no standalone URL exists', async () => {
+    it('shows a dash in Observe when the active instance has no standalone URL', async () => {
       rstest.mocked(k8sGet).mockRejectedValue(new Error('404 Not Found'));
       mockWatchResources([[makeKialiResource()], true, null], [[promotedOssmConsole()], true, null]);
       render(<KialisPage />);
-      await waitFor(() => {
-        expect(screen.getByRole('link', { name: 'Console' })).toHaveAttribute('href', '/ossmconsole/overview');
-      });
+      await waitFor(() => screen.getByText('kiali'));
       expect(screen.queryByRole('link', { name: 'Kiali' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Console' })).not.toBeInTheDocument();
     });
 
     it('links directly to the standalone Kiali UI using web_fqdn when not promoted', async () => {
