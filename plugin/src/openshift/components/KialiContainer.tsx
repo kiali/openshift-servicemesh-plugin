@@ -20,6 +20,10 @@ import 'ace-builds/src-noconflict/theme-twilight';
 
 // Enables the search box for the ACE editor
 import 'ace-builds/src-noconflict/ext-searchbox';
+
+// Isolate Console/PatternFly Monaco workers from this plugin's publicPath.
+import '../utils/MonacoEnvironmentSetup';
+
 import { classes } from 'typestyle';
 
 interface Props {

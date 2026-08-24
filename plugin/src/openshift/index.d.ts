@@ -1,3 +1,11 @@
+interface MonacoEnvironment {
+  getWorker(moduleId?: string, label?: string): Worker;
+}
+
+interface Window {
+  MonacoEnvironment?: MonacoEnvironment;
+}
+
 declare module '*.png' {
   const src: string;
   export default src;
