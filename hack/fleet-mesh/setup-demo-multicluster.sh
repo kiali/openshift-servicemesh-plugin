@@ -11,7 +11,7 @@
 #   --spoke-name <name>           ACM ManagedCluster name (default: my-spoke)
 #   --install-kiali <targets>     hub, spoke, both, or none (default: spoke; install only)
 #   --install-ossmc <targets>     hub, spoke, both, or none (default: both; install only)
-#   --install-mesh-hello <bool>   Deploy mesh-hello test app on secure-mcm (default: true; install only)
+#   --install-mesh-hello <bool>   Deploy mesh-hello + secure-mcm metrics on hub/spoke (default: true; install only)
 #   --manage-acm-install <bool>   true: install/remove ACM on hub; false: assume ACM exists (default: true)
 #   --acm-channel <channel>       ACM operator channel (default: latest packagemanifest)
 #   --kiali-repo <path>           Path to kiali server repo
@@ -20,7 +20,7 @@
 #
 # Notes:
 #   - operator-create (kiali Makefile) runs operator-delete first on each target cluster.
-#   - --install-kiali / --install-ossmc / --install-mesh-hello only affect install; uninstall always removes Kiali, OSSMC, and mesh-hello.
+#   - --install-kiali / --install-ossmc / --install-mesh-hello only affect install; uninstall always removes Kiali, OSSMC, mesh-hello, and mesh observability.
 #   - Pass the same --manage-acm-install value on install and uninstall for a full round-trip.
 #   - Spoke import/deregistration is always managed; only hub ACM install/removal is gated.
 
@@ -239,7 +239,7 @@ Options:
   --spoke-name <name>           ACM ManagedCluster name (default: my-spoke)
   --install-kiali <targets>     hub, spoke, both, or none (default: spoke; install only)
   --install-ossmc <targets>     hub, spoke, both, or none (default: both; install only)
-  --install-mesh-hello <bool>   Deploy mesh-hello test app on secure-mcm (default: true; install only)
+  --install-mesh-hello <bool>   Deploy mesh-hello and secure-mcm metrics on hub/spoke (default: true; install only)
   --manage-acm-install <bool>   true: install/remove ACM on hub; false: assume ACM exists (default: true)
   --acm-channel <channel>       ACM operator channel (default: latest)
   --kiali-repo <path>           Path to kiali server repo
@@ -1007,9 +1007,11 @@ wait_for_secure_cp_istio() {
   cp_ns="${cp_ns:-secure-ns}"
 
   # mesh-hello sidecars need a signing istiod; Istio CRs are created just before verify_install.
-  wait_for "secure-cp Istio control plane healthy on hub" 600 \
-    "test \"\$(oc_hub get istio secure-cp -n ${cp_ns} -o jsonpath='{.status.state}' 2>/dev/null)\" = Healthy && \
-     test \"\$(oc_hub get istio secure-cp -n ${cp_ns} -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}' 2>/dev/null)\" = True"
+  for oc_fn in oc_hub oc_spoke; do
+    wait_for "secure-cp Istio control plane healthy on $(${oc_fn} config current-context 2>/dev/null || echo cluster)" 600 \
+      "test \"\$(${oc_fn} get istio secure-cp -n ${cp_ns} -o jsonpath='{.status.state}' 2>/dev/null)\" = Healthy && \
+       test \"\$(${oc_fn} get istio secure-cp -n ${cp_ns} -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}' 2>/dev/null)\" = True"
+  done
 }
 
 install_mesh_hello() {
@@ -1019,9 +1021,71 @@ install_mesh_hello() {
 
   wait_for_secure_cp_istio
 
-  info "=== Deploying mesh-hello test application ==="
+  info "=== Deploying mesh-hello test application on hub (${HUB_CTX}) ==="
   "${SCRIPT_DIR}/deploy-mesh-hello.sh" \
     -c "${HUB_CTX}" -m secure-mcm -n secure-mcm-ns install
+
+  info "=== Deploying mesh-hello test application on spoke (${SPOKE_CTX}) ==="
+  "${SCRIPT_DIR}/deploy-mesh-hello.sh" \
+    -c "${SPOKE_CTX}" --mcm-context "${HUB_CTX}" \
+    -m secure-mcm -n secure-mcm-ns install
+}
+
+install_mesh_observability() {
+  if [ "${INSTALL_MESH_HELLO}" != true ]; then
+    return 0
+  fi
+
+  local obs_script="${SCRIPT_DIR}/enable-mesh-observability.sh"
+  [ -f "${obs_script}" ] || error "enable-mesh-observability.sh not found: ${obs_script}"
+
+  info "=== Enabling secure-mcm metrics on hub (${HUB_CTX}) ==="
+  "${obs_script}" install \
+    --hub-context "${HUB_CTX}" \
+    --cluster-context "${HUB_CTX}" \
+    --istio-namespace "${KIALI_NAMESPACE}" \
+    --metrics-backend hub \
+    --app-namespaces secure-mcm-testapp \
+    --managed-cluster-name local-cluster
+
+  local kiali_cr_args=()
+  if cluster_selected spoke "${INSTALL_KIALI}"; then
+    kiali_cr_args=(--kiali-cr-namespace kiali-operator)
+  fi
+
+  info "=== Enabling secure-mcm metrics on spoke (${SPOKE_CTX}) ==="
+  "${obs_script}" install \
+    --hub-context "${HUB_CTX}" \
+    --cluster-context "${SPOKE_CTX}" \
+    --istio-namespace "${KIALI_NAMESPACE}" \
+    "${kiali_cr_args[@]}" \
+    --metrics-backend hub \
+    --app-namespaces secure-mcm-testapp \
+    --managed-cluster-name "${SPOKE_NAME}"
+}
+
+uninstall_mesh_observability() {
+  local obs_script="${SCRIPT_DIR}/enable-mesh-observability.sh"
+  [ -f "${obs_script}" ] || return 0
+
+  info "=== Removing secure-mcm observability from spoke (${SPOKE_CTX}) ==="
+  "${obs_script}" uninstall \
+    --hub-context "${HUB_CTX}" \
+    --cluster-context "${SPOKE_CTX}" \
+    --istio-namespace "${KIALI_NAMESPACE}" \
+    --kiali-cr-namespace kiali-operator \
+    --metrics-backend hub \
+    --app-namespaces secure-mcm-testapp \
+    --managed-cluster-name "${SPOKE_NAME}" 2>/dev/null || true
+
+  info "=== Removing secure-mcm observability from hub (${HUB_CTX}) ==="
+  "${obs_script}" uninstall \
+    --hub-context "${HUB_CTX}" \
+    --cluster-context "${HUB_CTX}" \
+    --istio-namespace "${KIALI_NAMESPACE}" \
+    --metrics-backend hub \
+    --app-namespaces secure-mcm-testapp \
+    --managed-cluster-name local-cluster 2>/dev/null || true
 }
 
 verify_install() {
@@ -1103,13 +1167,17 @@ do_install() {
   install_istio_resources
   verify_install
   install_mesh_hello
+  install_mesh_observability
   print_console_urls
 }
 
 uninstall_mesh_hello() {
-  info "=== Removing mesh-hello test application ==="
+  info "=== Removing mesh-hello test application from hub and spoke ==="
   "${SCRIPT_DIR}/deploy-mesh-hello.sh" \
     -c "${HUB_CTX}" -m secure-mcm -n secure-mcm-ns uninstall 2>/dev/null || true
+  "${SCRIPT_DIR}/deploy-mesh-hello.sh" \
+    -c "${SPOKE_CTX}" --mcm-context "${HUB_CTX}" \
+    -m secure-mcm -n secure-mcm-ns uninstall 2>/dev/null || true
 }
 
 uninstall_istio_resources() {
@@ -1280,6 +1348,7 @@ do_uninstall() {
   info "Spoke context: ${SPOKE_CTX}"
   info "manage-acm-install: ${MANAGE_ACM_INSTALL}"
 
+  uninstall_mesh_observability
   uninstall_mesh_hello
 
   uninstall_istio_resources
