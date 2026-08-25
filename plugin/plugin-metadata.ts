@@ -4,7 +4,7 @@ import { liteModules } from './src/lite/lite-modules';
 
 const metadata: ConsolePluginBuildMetadata = {
   name: 'ossmconsole',
-  version: '2.31.0',
+  version: '2.32.0',
   displayName: 'OpenShift Service Mesh Console',
   description: 'Provides Service Mesh/Istio Observability',
   exposedModules: {
