@@ -799,27 +799,46 @@ created manually — check those directly on each cluster.
 
 ## 9. (Optional) Deploy the mesh-hello test application
 
-Deploy a browser-accessible test app that shows cluster identity, cross-cluster
-connectivity, and mTLS status. On a multi-cluster setup, the frontend and backend
-pods run on the same cluster but communicate through the Istio mesh, demonstrating
-sidecar injection and mTLS.
+Deploy a browser-accessible test app that shows cluster identity, mesh connectivity,
+and mTLS status. [`deploy-mesh-hello.sh`](deploy-mesh-hello.sh) installs on **one cluster
+per invocation**; for a multi-cluster mesh, run it once on each cluster with the same
+`-m`/`-n` and a different `-c`.
+
+The setup script does this automatically when `--install-mesh-hello true` (default): it
+calls `deploy-mesh-hello.sh` on the hub, then again on the spoke, then runs
+[`enable-mesh-observability.sh`](enable-mesh-observability.sh) on both clusters with
+`--app-namespaces secure-mcm-testapp` so Kiali can graph mesh-hello traffic. On managed
+clusters the MCM CR lives on the ACM hub, so the spoke invocation passes
+`--mcm-context my-hub`. Pass `--install-mesh-hello false` to skip the app and metrics
+setup. See [ENABLE-MESH-OBSERVABILITY.md](ENABLE-MESH-OBSERVABILITY.md) for details.
+
+Manual example for the `secure-mcm` mesh:
 
 ```bash
 cd <openshift-servicemesh-plugin-repo>
 
-# Deploy into the secure-mcm mesh (with trust — shows mTLS details)
-hack/fleet-mesh/deploy-mesh-hello.sh -c my-hub -m secure-mcm -n secure-mcm-ns install
+# Cluster where the MCM CR exists (local-cluster in this demo)
+hack/fleet-mesh/deploy-mesh-hello.sh \
+  -c my-hub -m secure-mcm -n secure-mcm-ns install
+
+# Second cluster in the mesh — workloads here; MCM CR read from hub
+hack/fleet-mesh/deploy-mesh-hello.sh \
+  -c my-spoke --mcm-context my-hub \
+  -m secure-mcm -n secure-mcm-ns install
 ```
 
-This creates a `secure-mcm-testapp` namespace with Istio sidecar injection,
-deploys frontend and backend services, and prints a URL (OpenShift Route) you
-can open in your browser (e.g. `http://mesh-hello-secure-mcm-secure-mcm-testapp.apps.hub.example.com/`).
-The page auto-refreshes every 10 seconds.
+Each run creates a `secure-mcm-testapp` namespace on that cluster with frontend,
+backend, and an OpenShift Route. The page auto-refreshes every 10 seconds and shows
+the Istio `multiCluster.clusterName` for that cluster.
 
-To remove:
+To remove, run `uninstall` on each cluster the same way:
 
 ```bash
-hack/fleet-mesh/deploy-mesh-hello.sh -m secure-mcm -n secure-mcm-ns uninstall
+hack/fleet-mesh/deploy-mesh-hello.sh \
+  -c my-hub -m secure-mcm -n secure-mcm-ns uninstall
+hack/fleet-mesh/deploy-mesh-hello.sh \
+  -c my-spoke --mcm-context my-hub \
+  -m secure-mcm -n secure-mcm-ns uninstall
 ```
 
 ## Demo Tips

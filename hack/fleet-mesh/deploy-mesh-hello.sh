@@ -11,13 +11,18 @@
 # The app is injected into the Istio mesh via revision-based sidecar
 # injection. It demonstrates that the mesh is working end-to-end.
 #
-# Usage:
+# Usage (one cluster per invocation):
 #   deploy-mesh-hello.sh -c CONTEXT -m MESH_NAME -n MESH_NAMESPACE install
 #   deploy-mesh-hello.sh -c CONTEXT -m MESH_NAME -n MESH_NAMESPACE uninstall
 #
+# For a multi-cluster mesh, run install once on each cluster that should
+# run the test app (same -m/-n on each call; change -c per cluster).
+#
 # Prerequisites:
-#   - A MultiClusterMesh CR that has been reconciled (ControlPlaneReady)
+#   - A reconciled MultiClusterMesh CR (ControlPlaneReady)
 #   - oc logged in to the target cluster (or use -c/--context)
+#   - If the MCM CR is not on the target cluster, pass --mcm-context with
+#     the kube context where the CR exists (typical for ACM managed clusters)
 #
 # The app namespace is {MESH_NAME}-testapp. On OpenShift, a Route is
 # created automatically. On vanilla K8s, use port-forward.
@@ -35,7 +40,7 @@ WAIT_TIMEOUT="${WAIT_TIMEOUT:-600}"
 
 usage() {
   cat <<'USAGE'
-Deploy the mesh-hello test application into an Istio mesh.
+Deploy the mesh-hello test application into an Istio mesh on one cluster.
 
 Usage: deploy-mesh-hello.sh [OPTIONS] install|uninstall
 
@@ -44,12 +49,14 @@ Required:
   -n, --namespace NS       MultiClusterMesh CR namespace
 
 Options:
-  -c, --context CTX        Kubernetes context to use (default: current context)
+  -c, --context CTX        Cluster where workloads are created (default: current context)
+  --mcm-context CTX        Context for MultiClusterMesh lookup (default: same as -c)
   -h, --help               Show this help message
 
 Examples:
   deploy-mesh-hello.sh -m my-mesh -n mesh-system install
-  deploy-mesh-hello.sh -c my-hub -m my-mesh -n mesh-system install
+  deploy-mesh-hello.sh -c cluster-a -m secure-mcm -n secure-mcm-ns install
+  deploy-mesh-hello.sh -c cluster-b --mcm-context cluster-a -m secure-mcm -n secure-mcm-ns install
   deploy-mesh-hello.sh -m my-mesh -n mesh-system uninstall
 USAGE
 }
@@ -58,6 +65,7 @@ parse_args() {
   while [ $# -gt 0 ]; do
     case "${1}" in
       -c|--context) OC_CONTEXT="${2:?'--context requires a value'}"; shift 2 ;;
+      --mcm-context) MCM_CONTEXT="${2:?'--mcm-context requires a value'}"; shift 2 ;;
       -m|--mesh) MESH_NAME="${2:?'--mesh requires a value'}"; shift 2 ;;
       -n|--namespace) MESH_NAMESPACE="${2:?'--namespace requires a value'}"; shift 2 ;;
       -h|--help) usage; exit 0 ;;
@@ -74,32 +82,43 @@ MESH_ID=""
 CP_NAMESPACE=""
 APP_NS=""
 REVISION=""
+CLUSTER_NAME=""
 OC_CONTEXT=""
+MCM_CONTEXT=""
 
-# Wrapper: prepends --context if specified
-oc() { command oc ${OC_CONTEXT:+--context="${OC_CONTEXT}"} "$@"; }
+oc_cluster() { command oc ${OC_CONTEXT:+--context="${OC_CONTEXT}"} "$@"; }
+
+oc_mcm() {
+  local ctx="${MCM_CONTEXT:-${OC_CONTEXT}}"
+  command oc ${ctx:+--context="${ctx}"} "$@"
+}
 
 read_mesh() {
   log "Reading MultiClusterMesh ${MESH_NAMESPACE}/${MESH_NAME}"
 
-  oc get multiclustermesh "${MESH_NAME}" -n "${MESH_NAMESPACE}" &>/dev/null \
-    || die "MultiClusterMesh '${MESH_NAME}' not found in namespace '${MESH_NAMESPACE}'."
+  oc_mcm get multiclustermesh "${MESH_NAME}" -n "${MESH_NAMESPACE}" &>/dev/null \
+    || die "MultiClusterMesh '${MESH_NAME}' not found in namespace '${MESH_NAMESPACE}' (mcm context: ${MCM_CONTEXT:-${OC_CONTEXT:-current}})."
 
-  CP_NAMESPACE=$(oc get multiclustermesh "${MESH_NAME}" -n "${MESH_NAMESPACE}" \
+  CP_NAMESPACE=$(oc_mcm get multiclustermesh "${MESH_NAME}" -n "${MESH_NAMESPACE}" \
     -o jsonpath='{.spec.controlPlane.namespace}' 2>/dev/null || true)
   CP_NAMESPACE="${CP_NAMESPACE:-istio-system}"
 
   MESH_ID="${MESH_NAMESPACE}-${MESH_NAME}"
   APP_NS="${MESH_NAME}-testapp"
 
-  # IstioRevision is cluster-scoped; match by spec.namespace to find the revision
-  # serving the control plane namespace.
-  REVISION=$(oc get istiorevision -o jsonpath="{.items[?(@.spec.namespace=='${CP_NAMESPACE}')].metadata.name}" 2>/dev/null || true)
+  REVISION=$(oc_cluster get istiorevision -o jsonpath="{.items[?(@.spec.namespace=='${CP_NAMESPACE}')].metadata.name}" 2>/dev/null || true)
   if [ -z "${REVISION}" ]; then
-    die "No IstioRevision found in namespace '${CP_NAMESPACE}'. Is the Istio CR created and healthy?"
+    die "No IstioRevision found in namespace '${CP_NAMESPACE}' on target cluster. Is the Istio CR created and healthy?"
   fi
 
+  CLUSTER_NAME=$(oc_cluster get istio "${REVISION}" -n "${CP_NAMESPACE}" \
+    -o jsonpath='{.spec.values.global.multiCluster.clusterName}' 2>/dev/null || true)
+  CLUSTER_NAME="${CLUSTER_NAME:-${OC_CONTEXT:-unknown}}"
+
+  info "Target context: ${OC_CONTEXT:-current}"
+  info "MCM context: ${MCM_CONTEXT:-${OC_CONTEXT:-current}}"
   info "Mesh ID: ${MESH_ID}"
+  info "Cluster name: ${CLUSTER_NAME}"
   info "CP namespace: ${CP_NAMESPACE}"
   info "Istio revision: ${REVISION}"
   info "App namespace: ${APP_NS}"
@@ -110,9 +129,9 @@ wait_for_control_plane() {
   local elapsed=0
   while true; do
     local state ready
-    state=$(oc get istio "${REVISION}" -n "${CP_NAMESPACE}" \
+    state=$(oc_cluster get istio "${REVISION}" -n "${CP_NAMESPACE}" \
       -o jsonpath='{.status.state}' 2>/dev/null || true)
-    ready=$(oc get istio "${REVISION}" -n "${CP_NAMESPACE}" \
+    ready=$(oc_cluster get istio "${REVISION}" -n "${CP_NAMESPACE}" \
       -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || true)
     if [ "${state}" = "Healthy" ] && [ "${ready}" = "True" ]; then
       info "Control plane is healthy"
@@ -132,12 +151,12 @@ do_install() {
   local route_name="mesh-hello-${MESH_NAME}"
 
   log "Creating app namespace with Istio injection"
-  oc create namespace "${APP_NS}" --dry-run=client -o yaml | oc apply -f -
-  oc label namespace "${APP_NS}" "istio.io/rev=${REVISION}" --overwrite
-  oc label namespace "${APP_NS}" "istio-injection-" 2>/dev/null || true
+  oc_cluster create namespace "${APP_NS}" --dry-run=client -o yaml | oc_cluster apply -f -
+  oc_cluster label namespace "${APP_NS}" "istio.io/rev=${REVISION}" --overwrite
+  oc_cluster label namespace "${APP_NS}" "istio-injection-" 2>/dev/null || true
 
   log "Deploying mesh-hello application"
-  oc apply -n "${APP_NS}" -f - <<'PYEOF'
+  oc_cluster apply -n "${APP_NS}" -f - <<'PYEOF'
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -318,7 +337,7 @@ data:
 PYEOF
 
   info "Deploying frontend..."
-  oc apply -n "${APP_NS}" -f - <<EOF
+  oc_cluster apply -n "${APP_NS}" -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -347,9 +366,7 @@ spec:
         - name: BACKEND_URL
           value: "${backend_url}"
         - name: CLUSTER_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
+          value: "${CLUSTER_NAME}"
         - name: MESH_ID
           value: "${MESH_ID}"
         - name: POD_NAME
@@ -385,7 +402,7 @@ spec:
 EOF
 
   info "Deploying backend..."
-  oc apply -n "${APP_NS}" -f - <<EOF
+  oc_cluster apply -n "${APP_NS}" -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -412,9 +429,7 @@ spec:
         - name: APP_MODE
           value: "backend"
         - name: CLUSTER_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
+          value: "${CLUSTER_NAME}"
         - name: MESH_ID
           value: "${MESH_ID}"
         - name: POD_NAME
@@ -449,10 +464,9 @@ spec:
     targetPort: 8080
 EOF
 
-  # Create Route on OpenShift
-  if oc api-resources --api-group=route.openshift.io --no-headers 2>/dev/null | grep -q routes; then
-    if ! oc get route "${route_name}" -n "${APP_NS}" &>/dev/null; then
-      oc expose svc mesh-hello -n "${APP_NS}" --name="${route_name}" \
+  if oc_cluster api-resources --api-group=route.openshift.io --no-headers 2>/dev/null | grep -q routes; then
+    if ! oc_cluster get route "${route_name}" -n "${APP_NS}" &>/dev/null; then
+      oc_cluster expose svc mesh-hello -n "${APP_NS}" --name="${route_name}" \
         || die "Failed to create Route"
     fi
   fi
@@ -461,9 +475,9 @@ EOF
   local elapsed=0
   while true; do
     local fe_ready be_ready
-    fe_ready=$(oc get deploy mesh-hello -n "${APP_NS}" \
+    fe_ready=$(oc_cluster get deploy mesh-hello -n "${APP_NS}" \
       -o jsonpath='{.status.availableReplicas}' 2>/dev/null || true)
-    be_ready=$(oc get deploy mesh-hello-backend -n "${APP_NS}" \
+    be_ready=$(oc_cluster get deploy mesh-hello-backend -n "${APP_NS}" \
       -o jsonpath='{.status.availableReplicas}' 2>/dev/null || true)
     if [ "${fe_ready:-0}" -ge 1 ] && [ "${be_ready:-0}" -ge 1 ]; then
       break
@@ -479,14 +493,14 @@ EOF
   log "mesh-hello deployed"
   echo ""
 
-  if oc api-resources --api-group=route.openshift.io --no-headers 2>/dev/null | grep -q routes; then
+  if oc_cluster api-resources --api-group=route.openshift.io --no-headers 2>/dev/null | grep -q routes; then
     local route_host
-    route_host=$(oc get route "${route_name}" -n "${APP_NS}" \
+    route_host=$(oc_cluster get route "${route_name}" -n "${APP_NS}" \
       -o jsonpath='{.spec.host}' 2>/dev/null || true)
     echo "Open in your browser: http://${route_host}"
   else
     echo "Access the test app with:"
-    echo "  oc port-forward -n ${APP_NS} svc/mesh-hello 8080:8080"
+    echo "  oc ${OC_CONTEXT:+--context=${OC_CONTEXT} }port-forward -n ${APP_NS} svc/mesh-hello 8080:8080"
     echo "  Then open: http://localhost:8080"
   fi
   echo ""
@@ -494,7 +508,7 @@ EOF
 
 do_uninstall() {
   log "Removing mesh-hello from ${APP_NS}"
-  oc delete namespace "${APP_NS}" --ignore-not-found 2>/dev/null || true
+  oc_cluster delete namespace "${APP_NS}" --ignore-not-found 2>/dev/null || true
   info "[ok] Removed"
 }
 
