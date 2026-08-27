@@ -44,3 +44,7 @@ _output
 
 # Cursor — ignore all .cursor files
 .cursor/
+
+# OpenAI / Codex / ChatGPT Desktop
+.codex/
+.agents/
