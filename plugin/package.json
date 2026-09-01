@@ -163,7 +163,7 @@
     "@patternfly/react-topology": "~6.4.0",
     "@types/react": "^17.0.1",
     "@types/react-dom": "^17.0.1",
-    "dompurify": "^3.4.7",
+    "dompurify": "^3.4.13",
     "fflate": "^0.8.3",
     "immutable": "^4.3.8",
     "js-cookie": "^3.0.8",
