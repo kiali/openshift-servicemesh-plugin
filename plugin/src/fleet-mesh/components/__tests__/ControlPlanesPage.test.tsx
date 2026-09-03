@@ -100,7 +100,7 @@ describe('ControlPlanesPage', () => {
       await waitFor(() => {
         const nameLink = screen.getByRole('link', { name: 'default' });
         const row = nameLink.closest('tr') as HTMLTableRowElement;
-        const meshIdCell = within(row).getAllByRole('cell')[0];
+        const meshIdCell = within(row).getAllByRole('cell')[2];
         expect(meshIdCell).toHaveTextContent('-');
         expect(within(meshIdCell).queryByRole('link')).not.toBeInTheDocument();
       });

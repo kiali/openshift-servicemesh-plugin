@@ -48,3 +48,25 @@ export const makeOssmConsoleResource = (overrides: Partial<LiteOssmConsoleResour
   },
   ...overrides
 });
+
+export const makeIstioNotReadyResource = (overrides: Partial<LiteIstioResource> = {}): LiteIstioResource =>
+  makeIstioResource({
+    status: {
+      activeRevisionName: 'default',
+      conditions: [{ type: 'Ready', status: 'False', reason: 'IstiodNotReady' }],
+      state: 'NotReady'
+    },
+    ...overrides
+  });
+
+export const makeKialiFailureResource = (overrides: Partial<LiteKialiResource> = {}): LiteKialiResource =>
+  makeKialiResource({
+    status: {
+      conditions: [
+        { type: 'Successful', status: 'False', reason: 'Failure' },
+        { type: 'Failure', status: 'True', message: 'install failed' }
+      ],
+      progress: { message: 'Reconciling deployment' }
+    },
+    ...overrides
+  });

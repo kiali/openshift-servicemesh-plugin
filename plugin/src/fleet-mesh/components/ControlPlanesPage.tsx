@@ -11,7 +11,7 @@ import {
   useActiveColumns,
   Timestamp
 } from '@openshift-console/dynamic-plugin-sdk';
-import type { TableColumn, RowProps } from '@openshift-console/dynamic-plugin-sdk';
+import type { RowProps } from '@openshift-console/dynamic-plugin-sdk';
 import { EmptyState, EmptyStateBody, Label } from '@patternfly/react-core';
 import { useMultiClusterMeshes } from '../hooks/useMultiClusterMeshes';
 import { useDiscoveredControlPlanes } from '../hooks/useDiscoveredControlPlanes';
@@ -22,53 +22,19 @@ import { buildKialiLinkMap, controlPlaneLinkKey, toControlPlaneLinkTargets } fro
 import type { EnrichedControlPlane } from '../types/istio';
 import type { KialiLink } from '../types/kiali';
 import { MeshStatus } from './MeshStatus';
-import { getStatusRank } from '../utils/statusUtils';
+import { buildControlPlaneTableColumns } from '../utils/controlPlaneColumnDefs';
 import { cpTypeSegment } from '../utils/cpTypeSegment';
 import { clusterDetailLink } from '../utils/linkUtils';
 import { fuzzyCaseInsensitive } from '../utils/filterUtils';
 import type { RowSearchFilter } from '../utils/filterUtils';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import { isObservabilityDataReady } from '../utils/observabilityReady';
-import { sortWithComparator } from '../utils/tableCallbacks';
 import { renderObservabilityLink } from './ObservabilityLinks';
 
 type ControlPlaneRowData = {
   kialiLinkMap: Map<string, KialiLink[]>;
   observabilityReady: boolean;
 };
-
-const compareCpMeshID = (a: EnrichedControlPlane, b: EnrichedControlPlane): number =>
-  (a.meshID ?? '').localeCompare(b.meshID ?? '');
-const compareCpStatusRank = (a: EnrichedControlPlane, b: EnrichedControlPlane): number =>
-  getStatusRank(a.status?.conditions) - getStatusRank(b.status?.conditions);
-const cpTypeRank = (cp: EnrichedControlPlane): number => (cp.managedBy ? 0 : cp.meshID ? 1 : 2);
-const compareCpType = (a: EnrichedControlPlane, b: EnrichedControlPlane): number => cpTypeRank(a) - cpTypeRank(b);
-
-function buildColumns(t: (key: string) => string): TableColumn<EnrichedControlPlane>[] {
-  return [
-    {
-      title: t('Mesh ID'),
-      id: 'meshID',
-      sort: (data: EnrichedControlPlane[], dir: string) => sortWithComparator(data, dir, compareCpMeshID)
-    },
-    {
-      title: t('Type'),
-      id: 'type',
-      sort: (data: EnrichedControlPlane[], dir: string) => sortWithComparator(data, dir, compareCpType)
-    },
-    { title: t('Name'), id: 'name', sort: 'metadata.name' },
-    { title: t('Cluster'), id: 'cluster', sort: 'clusterName' },
-    { title: t('Namespace'), id: 'namespace', sort: 'controlPlaneNamespace' },
-    { title: t('Version'), id: 'version', sort: 'version' },
-    { title: t('Observe'), id: 'observe' },
-    { title: t('Created'), id: 'created', sort: 'metadata.creationTimestamp' },
-    {
-      title: t('Status'),
-      id: 'status',
-      sort: (data: EnrichedControlPlane[], dir: string) => sortWithComparator(data, dir, compareCpStatusRank)
-    }
-  ];
-}
 
 const NoControlPlanesMsg: FC = () => {
   const { t } = useKialiTranslation();
@@ -109,6 +75,16 @@ const ControlPlaneRow: FC<RowProps<EnrichedControlPlane, ControlPlaneRowData>> =
     : undefined;
   return (
     <>
+      <TableData id="name" activeColumnIDs={activeColumnIDs}>
+        <Link
+          to={`/fleet-mesh/control-planes/${cpTypeSegment(obj)}/${encodeURIComponent(obj.clusterName)}/${encodeURIComponent(obj.metadata.name)}`}
+        >
+          {obj.metadata.name}
+        </Link>
+      </TableData>
+      <TableData id="type" activeColumnIDs={activeColumnIDs}>
+        {obj.managedBy ? t('Managed') : obj.meshID ? t('Discovered') : t('Standalone')}
+      </TableData>
       <TableData id="meshID" activeColumnIDs={activeColumnIDs}>
         {obj.managedBy ? (
           <Link
@@ -121,16 +97,6 @@ const ControlPlaneRow: FC<RowProps<EnrichedControlPlane, ControlPlaneRowData>> =
         ) : (
           <span>-</span>
         )}
-      </TableData>
-      <TableData id="type" activeColumnIDs={activeColumnIDs}>
-        {obj.managedBy ? t('Managed') : obj.meshID ? t('Discovered') : t('Standalone')}
-      </TableData>
-      <TableData id="name" activeColumnIDs={activeColumnIDs}>
-        <Link
-          to={`/fleet-mesh/control-planes/${cpTypeSegment(obj)}/${encodeURIComponent(obj.clusterName)}/${encodeURIComponent(obj.metadata.name)}`}
-        >
-          {obj.metadata.name}
-        </Link>
       </TableData>
       <TableData id="cluster" activeColumnIDs={activeColumnIDs}>
         <Link to={clusterDetailLink(obj.clusterName)}>{obj.clusterName}</Link>
@@ -212,7 +178,7 @@ const ControlPlanesPage: FC = () => {
     [enrichedPlanes, kialis, managedClusterMap, observabilityReady, ossmcs]
   );
 
-  const columns = useMemo(() => buildColumns(t), [t]);
+  const columns = useMemo(() => buildControlPlaneTableColumns(t), [t]);
   const searchFilters = useMemo(() => buildSearchFilters(t), [t]);
   const [staticData, filteredData, onFilterChange] = useListPageFilter(enrichedPlanes, searchFilters);
   const [activeColumns, userSettingsLoaded] = useActiveColumns({

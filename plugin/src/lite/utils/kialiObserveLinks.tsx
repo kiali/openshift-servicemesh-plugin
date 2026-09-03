@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { Link } from 'react-router-dom-v5-compat';
 import { ExternalLink } from '../../openshift/components/ExternalLink';
 import { buildSafeHttpsUrlFromHost } from 'openshift/utils/safeUrlUtils';
 import type { LiteKialiResource } from '../types/kiali';
@@ -14,7 +13,7 @@ export function getKialiStandaloneUrl(obj: LiteKialiResource, routeHostMap: Map<
 
 export function renderKialiObserveLinks(
   obj: LiteKialiResource,
-  activeInConsole: boolean,
+  _activeInConsole: boolean,
   routeHostMap: Map<string, string>,
   t: (key: string) => string
 ): React.ReactNode {
@@ -29,28 +28,9 @@ export function renderKialiObserveLinks(
     );
   }
 
-  if (activeInConsole) {
-    links.push(
-      <Link key="console" to="/ossmconsole/overview">
-        {t('Console')}
-      </Link>
-    );
-  }
-
   if (links.length === 0) {
     return '-';
   }
 
-  return links.reduce<React.ReactNode>((acc, link, index) => {
-    if (index === 0) {
-      return link;
-    }
-    return (
-      <>
-        {acc}
-        {' | '}
-        {link}
-      </>
-    );
-  }, null);
+  return links[0];
 }

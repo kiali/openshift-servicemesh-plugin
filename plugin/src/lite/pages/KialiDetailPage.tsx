@@ -31,12 +31,20 @@ import {
   Tooltip
 } from '@patternfly/react-core';
 import { LiteConditionsTable } from '../components/LiteConditionsTable';
+import { KialiRelatedCard } from '../components/KialiRelatedCard';
+import { KialiRemoteClusterSecretsCard } from '../components/KialiRemoteClusterSecretsCard';
+import { KialiVersionDisplay } from '../components/KialiVersionDisplay';
+import { ExternalLink } from '../../openshift/components/ExternalLink';
 import type { LiteKialiResource } from '../types/kiali';
 import { kialiGVK } from '../types/kiali';
 import type { LiteOssmConsoleResource } from '../types/ossmconsole';
 import { ossmConsoleGVK } from '../types/ossmconsole';
 import { getKialiServiceTarget as getServiceTarget } from '../utils/kialiServiceTarget';
+import { getKialiStandaloneUrl } from '../utils/kialiObserveLinks';
 import { useConnectDisconnectPending } from '../hooks/useConnectDisconnectPending';
+import { useKialiDetailVersion } from '../hooks/useKialiDetailVersion';
+import { useKialiRemoteClusterSecrets } from '../hooks/useKialiRemoteClusterSecrets';
+import { useKialiRouteHosts } from '../hooks/useKialiRouteHosts';
 import {
   demoteFromConsole,
   findActiveOssmConsole,
@@ -120,6 +128,11 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
       'Timed out waiting for Console integration to update. The operator may still be reconciling — refresh the page to check.'
     )
   });
+
+  const routeHostMap = useKialiRouteHosts(resource ? [resource] : []);
+  const standaloneUrl = resource ? getKialiStandaloneUrl(resource, routeHostMap) : undefined;
+  const { loaded: versionLoaded, version: runningVersion } = useKialiDetailVersion(resource, promoted);
+  const secretNames = useKialiRemoteClusterSecrets(resource);
 
   if (!loaded) {
     return (
@@ -266,8 +279,30 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
                     <DescriptionListTerm>
                       <strong>{t('Version')}</strong>
                     </DescriptionListTerm>
+                    <DescriptionListDescription>
+                      {versionLoaded ? (
+                        <KialiVersionDisplay notSpecifiedLabel={t('Not specified')} value={runningVersion} />
+                      ) : (
+                        <Spinner aria-label={t('Loading version')} size="sm" />
+                      )}
+                    </DescriptionListDescription>
+                  </DescriptionListGroup>
+                  <DescriptionListGroup>
+                    <DescriptionListTerm>
+                      <strong>{t('Spec Version')}</strong>
+                    </DescriptionListTerm>
                     <DescriptionListDescription>{spec?.version ?? t('Not specified')}</DescriptionListDescription>
                   </DescriptionListGroup>
+                  {standaloneUrl && (
+                    <DescriptionListGroup>
+                      <DescriptionListTerm>
+                        <strong>{t('Kiali')}</strong>
+                      </DescriptionListTerm>
+                      <DescriptionListDescription>
+                        <ExternalLink href={standaloneUrl}>{t('Kiali')}</ExternalLink>
+                      </DescriptionListDescription>
+                    </DescriptionListGroup>
+                  )}
                   <DescriptionListGroup>
                     <DescriptionListTerm>
                       <strong>{t('Installation Tag')}</strong>
@@ -294,14 +329,6 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       {spec?.deployment?.instance_name ?? t('Not specified')}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      <strong>{t('Replicas')}</strong>
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {spec?.deployment?.replicas != null ? String(spec.deployment.replicas) : t('Not specified')}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
@@ -359,53 +386,12 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
           </GridItem>
 
           <GridItem span={5}>
-            <Card isCompact>
-              <CardTitle>
-                <strong>{t('External Services')}</strong>
-              </CardTitle>
-              <CardBody>
-                <DescriptionList isCompact>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      <strong>{t('Prometheus')}</strong>
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {spec?.external_services?.prometheus?.url ?? t('Not specified')}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      <strong>{t('Grafana')}</strong>
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {spec?.external_services?.grafana?.enabled === false
-                        ? t('Disabled')
-                        : (spec?.external_services?.grafana?.url ?? t('Not specified'))}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      <strong>{t('Tracing')}</strong>
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {spec?.external_services?.tracing?.enabled === false
-                        ? t('Disabled')
-                        : (spec?.external_services?.tracing?.url ?? t('Not specified'))}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                </DescriptionList>
-              </CardBody>
-            </Card>
+            <KialiRelatedCard resource={resource} routeHostMap={routeHostMap} />
           </GridItem>
 
-          {status?.progress?.message && (
-            <GridItem span={5}>
-              <Card isCompact>
-                <CardTitle>
-                  <strong>{t('Reconcile Progress')}</strong>
-                </CardTitle>
-                <CardBody>{status.progress.message}</CardBody>
-              </Card>
+          {secretNames.length > 0 && (
+            <GridItem span={12}>
+              <KialiRemoteClusterSecretsCard namespace={serviceNamespace} secretNames={secretNames} />
             </GridItem>
           )}
 
