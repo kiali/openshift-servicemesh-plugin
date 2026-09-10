@@ -10,16 +10,17 @@ This automates the metrics portions of the [ossm-multicluster tutorial](https://
 
 | Phase | What it configures |
 |-------|-------------------|
-| A | Hub ACM Observatorium (MCO + MinIO + hub allowlist) — `hub` backend only |
+| A | Hub ACM Observatorium (MCO + MinIO) — `hub` backend only |
 | B | User Workload Monitoring (UWM) on the target cluster |
-| C | Istio metrics scraping (ServiceMonitor/PodMonitor + namespace allowlists) |
-| D | Kiali CR `external_services.prometheus` — **only when `--kiali-cr-namespace` is set** |
+| C | Istio metrics scraping (ServiceMonitor/PodMonitor) |
+| D | ACM MCOA edge recording rules and `/federate` configuration — `hub` backend only |
+| E | Kiali CR `external_services.prometheus` — **only when `--kiali-cr-namespace` is set** |
 
 **Kiali is optional.** Omit `--kiali-cr-namespace` to configure metrics collection and storage only (e.g. unsecure meshes, discovered meshes without Kiali). Re-run later with `--kiali-cr-namespace` to add visualization.
 
 ## Prerequisites
 
-- OpenShift 4.19+ with cluster monitoring enabled
+- An OpenShift release supported by the installed ACM version
 - An Istio control plane (Istio CR) in `--istio-namespace`
 - `oc`, `jq`, and `openssl` on your PATH
 - Cluster-admin on the target cluster (and hub, for `hub` backend)
@@ -27,6 +28,12 @@ This automates the metrics portions of the [ossm-multicluster tutorial](https://
 **Hub backend (`--metrics-backend hub`):**
 
 - ACM hub with the target cluster imported as a `ManagedCluster`
+- ACM multicluster observability with MCOA support; MCOA supplies its own
+  managed-cluster metrics component and does not require the full Cluster
+  Observability Operator
+- A Kiali source checkout containing `hack/configure-acm-mcoa.sh`. The default
+  helper path assumes a sibling `kiali` checkout; otherwise pass an explicit
+  `--mcoa-helper` path
 - ~30GB disk on the hub for Thanos storage (if MCO is not already installed)
 
 **Kiali visualization (`--kiali-cr-namespace`):**
@@ -35,18 +42,27 @@ This automates the metrics portions of the [ossm-multicluster tutorial](https://
 
 ## Quick start
 
+The names below are examples only. Set independent values for your kubeconfig
+contexts and ACM managed-cluster name; they do not need to match:
+
+```bash
+HUB_CONTEXT="<hub-kubecontext>"
+SPOKE_CONTEXT="<spoke-kubecontext>"
+SPOKE_NAME="<acm-managed-cluster-name>"
+```
+
 ### Fleet-mesh demo topology
 
 After [`setup-demo-multicluster.sh install`](setup-demo-multicluster.sh), the demo has:
 
 | CP namespace | Mesh type | Clusters | Shared `meshID` | Metrics backend |
 |--------------|-----------|----------|-----------------|-----------------|
-| `secure-ns` | MCM `secure-mcm` | hub (`local-cluster`) + spoke (`my-spoke`) | `secure-mcm-ns-secure-mcm` | **hub** Observatorium |
+| `secure-ns` | MCM `secure-mcm` | hub (`local-cluster`) + spoke (`${SPOKE_NAME}`) | `secure-mcm-ns-secure-mcm` | **hub** Observatorium |
 | `unsecure-ns` | MCM `unsecure-mcm` | hub + spoke | `unsecure-mcm-ns-unsecure-mcm` | **hub** Observatorium |
 | `discovered-hub-ns` | Standalone (no MCM) | hub only | `discovered-hub-id` | **local** UWM |
 | `discovered-spoke-ns` | Standalone (no MCM) | spoke only | `discovered-spoke-id` | **local** UWM |
 
-**Hub aggregated metrics for an MCM mesh:** ACM forwards each cluster's UWM scrape to hub Thanos. You must run this script **once per cluster** that runs that mesh's control plane (hub and spoke), all with `--metrics-backend hub` and the same `--istio-namespace`. The first `hub` install also creates hub MCO/Observatorium (phase A). After you run install with `--kiali-cr-namespace` on a cluster that has a Kiali CR, that Kiali queries the hub Observatorium endpoint and can see metrics from every cluster that forwards into Thanos.
+**Hub aggregated metrics for an MCM mesh:** MCOA federates selected metrics from each cluster's UWM and remote-writes them to hub Thanos. You must run this script **once per cluster** that runs that mesh's control plane (hub and spoke), all with `--metrics-backend hub` and the same `--istio-namespace`. The first `hub` install also creates hub MCO/Observatorium (phase A). After you run install with `--kiali-cr-namespace` on a cluster that has a Kiali CR, that Kiali queries the hub Observatorium endpoint and can see metrics from every selected cluster.
 
 **Discovered meshes** are single cluster meshes in the demo setup. In cases like this, use `--metrics-backend local` on the cluster where the mesh control plane lives.
 
@@ -59,22 +75,22 @@ Requires a Kiali CR on the spoke (`kiali` in `kiali-operator`; deployment in `se
 ```bash
 # Hub side (local-cluster): scrape istiod + mesh-hello; install MCO if needed
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
-  --hub-context my-hub \
-  --cluster-context my-hub \
+  --hub-context "${HUB_CONTEXT}" \
+  --cluster-context "${HUB_CONTEXT}" \
   --istio-namespace secure-ns \
   --metrics-backend hub \
   --app-namespaces secure-mcm-testapp \
   --managed-cluster-name local-cluster
 
-# Spoke side (my-spoke): scrape istiod + mesh-hello; point Kiali at hub Observatorium
+# Spoke side: scrape istiod + mesh-hello; point Kiali at hub Observatorium
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
-  --hub-context my-hub \
-  --cluster-context my-spoke \
+  --hub-context "${HUB_CONTEXT}" \
+  --cluster-context "${SPOKE_CONTEXT}" \
   --istio-namespace secure-ns \
   --kiali-cr-namespace kiali-operator \
   --metrics-backend hub \
   --app-namespaces secure-mcm-testapp \
-  --managed-cluster-name my-spoke
+  --managed-cluster-name "${SPOKE_NAME}"
 ```
 
 Kiali on the spoke reads hub Thanos via Observatorium, so graphs can include metrics from **both** clusters once traffic exists and ACM has forwarded samples (~5–10 minutes).
@@ -85,18 +101,18 @@ Same pattern: run on **each** cluster. No Kiali is installed for `unsecure-ns` i
 
 ```bash
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
-  --hub-context my-hub \
-  --cluster-context my-hub \
+  --hub-context "${HUB_CONTEXT}" \
+  --cluster-context "${HUB_CONTEXT}" \
   --istio-namespace unsecure-ns \
   --metrics-backend hub \
   --managed-cluster-name local-cluster
 
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
-  --hub-context my-hub \
-  --cluster-context my-spoke \
+  --hub-context "${HUB_CONTEXT}" \
+  --cluster-context "${SPOKE_CONTEXT}" \
   --istio-namespace unsecure-ns \
   --metrics-backend hub \
-  --managed-cluster-name my-spoke
+  --managed-cluster-name "${SPOKE_NAME}"
 ```
 
 ### 3. Discovered mesh on spoke — local UWM only (not hub)
@@ -105,7 +121,7 @@ Same pattern: run on **each** cluster. No Kiali is installed for `unsecure-ns` i
 
 ```bash
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
-  --cluster-context my-spoke \
+  --cluster-context "${SPOKE_CONTEXT}" \
   --istio-namespace discovered-spoke-ns \
   --metrics-backend local
 ```
@@ -114,7 +130,7 @@ Same pattern: run on **each** cluster. No Kiali is installed for `unsecure-ns` i
 
 ```bash
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
-  --cluster-context my-hub \
+  --cluster-context "${HUB_CONTEXT}" \
   --istio-namespace discovered-hub-ns \
   --metrics-backend local
 ```
@@ -125,7 +141,7 @@ Install Kiali, then re-run with `--kiali-cr-namespace` (namespace of the Kiali C
 
 ```bash
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
-  --cluster-context my-spoke \
+  --cluster-context "${SPOKE_CONTEXT}" \
   --istio-namespace discovered-spoke-ns \
   --kiali-cr-namespace kiali-operator \
   --metrics-backend local
@@ -161,12 +177,22 @@ Run `./hack/fleet-mesh/enable-mesh-observability.sh --help` for the full flag li
 
 | Flag | Description |
 |------|-------------|
-| `--app-namespaces` | Comma-separated workload NSes for sidecar PodMonitors |
+| `--app-namespaces` | Comma-separated workload namespaces for sidecar or waypoint PodMonitors, MCOA recording rules, and platform CPU/memory federation; waypoint namespaces must be listed explicitly |
 | `--mesh-id` | PodMonitor `mesh_id` label (auto-detected from Istio CR if omitted) |
-| `--ambient` | Also scrape ztunnel (`--ztunnel-namespace`, default `ztunnel`) |
+| `--ambient` | Also scrape ztunnel and include its namespace in MCOA; pass `--ztunnel-namespace` when it is not the default `ztunnel` |
 | `--managed-cluster-name` | ACM ManagedCluster name (default: `--cluster-context` value) |
+| `--collection-mode` | `mcoa` or `legacy` |
+| `--mcoa-helper` | Path to Kiali's `hack/configure-acm-mcoa.sh` |
+| `--mcoa-placement-name` | Select the MCOA placement; required when more than one exists |
+| `--mcoa-placement-namespace` | Namespace of the selected MCOA placement |
+| `--configure-mcoa` | `auto` configures only on the hub invocation; use `always` or `never` to override |
+| `--mcoa-with-dashboards` | Also federate the optional Istio dashboard metric tier |
+| `--remove-mcoa-federation` | On uninstall, remove this invocation's MCOA namespace set |
 | `--install-hub-observability` | `auto` \| `always` \| `never` — install MCO if missing |
 | `--skip-uwm` | Assume UWM already enabled |
+| `--observability-namespace` | `open-cluster-management-observability` — hub namespace for ACM observability resources |
+| `--retention-period` | `365d` — Kiali `thanos_proxy.retention_period` and, when this script creates the MCO, its retention; must match the actual MCO retention configuration |
+| `--scrape-interval` | `5m` — Kiali `thanos_proxy.scrape_interval`; must match the effective MCOA federation interval |
 | `--wait-for-metrics` | Block until `istio_*` metrics appear (10+ min possible) |
 | `--dry-run` | Print actions without applying |
 | `--remove-hub-observability` | On uninstall, also remove hub MCO/MinIO (lab only) |
@@ -176,10 +202,51 @@ Run `./hack/fleet-mesh/enable-mesh-observability.sh --help` for the full flag li
 
 | | `hub` | `local` |
 |---|-------|---------|
-| **Storage** | UWM on cluster → ACM collector → hub Thanos | UWM Prometheus only |
+| **Storage** | UWM on cluster → MCOA Prometheus Agent → hub Thanos | UWM Prometheus only |
 | **Kiali queries** | Hub Observatorium API (mTLS + `thanos_proxy`) | In-cluster UWM URL |
 | **Requires** | ACM hub + managed cluster | Target cluster only |
 | **Use when** | MCM meshes spanning ACM managed clusters (run per cluster) | Standalone / discovered CP on one cluster |
+
+### ACM MCOA metrics flow
+
+The default `--collection-mode mcoa` uses UWM as the edge Prometheus. The
+script asks Kiali's `configure-acm-mcoa.sh` helper to create hub-side source
+resources. With one placement it is selected automatically; with multiple
+placements you must use `--mcoa-placement-name` and, when needed,
+`--mcoa-placement-namespace`. By default (`--configure-mcoa auto`) only the
+invocation whose cluster context equals the hub context performs this hub-side
+step. This avoids repeating it from every spoke invocation.
+
+When it creates or reuses the hub `MultiClusterObservability` resource, the
+script enables its platform and user-workload metrics capabilities required by
+MCOA. The default retention is `365d`, which matches ACM's retention default;
+override `--retention-period` only when the actual MCO retention differs.
+
+ACM propagates one recording rule into every target namespace: the Istio
+control-plane namespace, each `--app-namespaces` entry, and the optional
+`--ztunnel-namespace`. The propagated rules carry the OpenShift
+`leaf-prometheus` label so UWM evaluates them.
+
+Every target namespace must exist on every managed cluster selected by the MCOA
+placement. If the mesh uses different namespace layouts across clusters, use
+separate placements and source resource sets rather than applying one target
+list to all clusters.
+
+The edge rules aggregate raw per-proxy `istio_*` series as
+`workload:istio_*`. The MCOA user-workload collector then scrapes UWM's
+`/federate` endpoint, selects the Kiali core metric tier, changes
+`workload:istio_*` back to `istio_*`, and remote-writes the result to hub
+Observatorium/Thanos. Namespace-specific platform federation jobs collect the
+container CPU and memory series used by Kiali's control-plane overview. Their
+stable per-namespace names allow separate mesh setup runs to coexist. Kiali
+always queries the hub backend.
+
+Kubeconfig context names are local aliases. `--hub-context` and
+`--cluster-context` never need to equal `--managed-cluster-name`; MCOA targets
+clusters through its configured placements.
+
+Use `--collection-mode legacy` only to exercise the older ACM collector and
+ConfigMap allowlist path.
 
 ## What gets created
 
@@ -189,12 +256,14 @@ Prometheus auth secrets and ServiceAccounts are created in the Kiali **deploymen
 
 | Resource | Namespace | When |
 |----------|-----------|------|
-| MinIO, MCO, hub allowlist | `open-cluster-management-observability` | `hub` backend, MCO not Ready |
+| MinIO and MCO | `open-cluster-management-observability` | `hub` backend, MCO not Ready |
+| MCOA `ScrapeConfig` and source `PrometheusRule` objects | `open-cluster-management-observability` | `hub` backend with default `mcoa` mode |
+| Propagated recording rules | Every MCOA target namespace (`--istio-namespace`, `--app-namespaces`, and optional `--ztunnel-namespace`) | Selected managed clusters |
 | `cluster-monitoring-config` patch | `openshift-monitoring` | UWM enablement |
 | `ServiceMonitor/istiod-monitor` | `--istio-namespace` | Always |
 | `PodMonitor/istio-proxies-monitor-<ns>` | each `--app-namespaces` entry | When specified |
 | `PodMonitor/ztunnel-monitor` | `--ztunnel-namespace` | `--ambient` |
-| `ConfigMap/observability-metrics-custom-allowlist` | scraped namespaces | Always (labeled) |
+| Legacy `ConfigMap/observability-metrics-custom-allowlist` | scraped namespaces | Only with `--collection-mode legacy` |
 | `Secret/acm-observability-certs`, `ConfigMap/kiali-cabundle` | Kiali deployment namespace | Kiali + `hub` backend |
 | `Secret/prometheus-user-workload-token` | Kiali deployment namespace | Kiali + `local` backend |
 | Kiali CR patch (`external_services.prometheus`) | `--kiali-cr-namespace` | When `--kiali-cr-namespace` set |
@@ -205,20 +274,25 @@ Prometheus auth secrets and ServiceAccounts are created in the Kiali **deploymen
 
 - Second `install`: logs `[ok] … already configured` and exits 0
 - Second `uninstall` on a clean cluster: logs `[ok] … not found, skipping` and exits 0
-- `install` → `uninstall` → `install` restores full configuration
+- `install` → `uninstall` → `install` restores cluster-local configuration;
+  MCOA is retained unless `--remove-mcoa-federation` is supplied
 
 ### Uninstall removes
 
-- Labeled ServiceMonitors, PodMonitors, and namespace allowlists
+- Labeled ServiceMonitors, PodMonitors, and legacy namespace allowlists
 - Kiali prometheus config (when `--kiali-cr-namespace` was used and `--restore-kiali-prometheus true`)
 - Labeled Kiali cert/token secrets (in the Kiali deployment namespace)
+- This invocation's MCOA scrape jobs and recording rules when
+  `--remove-mcoa-federation` is supplied
 
 ### Uninstall does **not** remove (by default)
 
-- Hub MCO, MinIO, or hub-level allowlist (shared infrastructure)
+- Hub MCO, MinIO, and MCOA resources (shared infrastructure)
 - UWM / `cluster-monitoring-config` (cluster-wide)
 
 Use `--remove-hub-observability` on uninstall for lab teardown of hub MCO/MinIO.
+Use `--remove-mcoa-federation` only when no other setup relies on the same
+placement, rule namespace, and platform namespace set.
 
 ## Validation
 
@@ -227,20 +301,20 @@ For MCM meshes (`secure-ns`, `unsecure-ns`), validate **both** clusters after ru
 ```bash
 # Hub cluster metrics path
 ./hack/fleet-mesh/enable-mesh-observability.sh verify \
-  --cluster-context my-hub \
+  --cluster-context "${HUB_CONTEXT}" \
   --istio-namespace secure-ns \
   --metrics-backend hub \
-  --hub-context my-hub \
+  --hub-context "${HUB_CONTEXT}" \
   --managed-cluster-name local-cluster
 
 # Spoke cluster + Kiali
 ./hack/fleet-mesh/enable-mesh-observability.sh verify \
-  --cluster-context my-spoke \
+  --cluster-context "${SPOKE_CONTEXT}" \
   --istio-namespace secure-ns \
   --kiali-cr-namespace kiali-operator \
   --metrics-backend hub \
-  --hub-context my-hub \
-  --managed-cluster-name my-spoke \
+  --hub-context "${HUB_CONTEXT}" \
+  --managed-cluster-name "${SPOKE_NAME}" \
   --wait-for-metrics
 ```
 
@@ -250,7 +324,7 @@ For MCM meshes (`secure-ns`, `unsecure-ns`), validate **both** clusters after ru
 
 ```bash
 # Hub Thanos (hub backend)
-oc --context=my-hub get --raw \
+oc --context="${HUB_CONTEXT}" get --raw \
   "/api/v1/namespaces/open-cluster-management-observability/services/http:observability-thanos-query-frontend:9090/proxy/api/v1/label/__name__/values" \
   | jq -r '.data[]' | grep '^istio_'
 ```
@@ -264,10 +338,10 @@ In the fleet-mesh demo, [mesh-hello](deploy-mesh-hello.sh) deploys into `secure-
 Look up the Route URL on each cluster where the app runs:
 
 ```bash
-oc --context=my-hub get route mesh-hello-secure-mcm \
+oc --context="${HUB_CONTEXT}" get route mesh-hello-secure-mcm \
   -n secure-mcm-testapp -o jsonpath='http://{.spec.host}{"\n"}'
 
-oc --context=my-spoke get route mesh-hello-secure-mcm \
+oc --context="${SPOKE_CONTEXT}" get route mesh-hello-secure-mcm \
   -n secure-mcm-testapp -o jsonpath='http://{.spec.host}{"\n"}'
 ```
 
@@ -289,7 +363,7 @@ For `secure-mcm`, generate traffic on **hub and spoke** if you installed mesh-he
 | Step | Typical latency |
 |------|-----------------|
 | UWM scrape | 30 seconds |
-| ACM forward to hub | ~5 minutes |
+| MCOA federation and remote write | ~5 minutes |
 | Kiali/OSSMC graphs | 5–10 minutes after new traffic |
 | `--wait-for-metrics` | Up to `--timeout` (default 1200s) |
 
@@ -302,10 +376,10 @@ See [Generate traffic for Kiali graphs](#generate-traffic-for-kiali-graphs) abov
 1. Confirm monitors exist on **each** cluster in the mesh:
 
    ```bash
-   oc --context=my-hub get servicemonitor -n secure-ns
-   oc --context=my-hub get podmonitor -n secure-mcm-testapp
-   oc --context=my-spoke get servicemonitor -n secure-ns
-   oc --context=my-spoke get podmonitor -n secure-mcm-testapp
+   oc --context="${HUB_CONTEXT}" get servicemonitor -n secure-ns
+   oc --context="${HUB_CONTEXT}" get podmonitor -n secure-mcm-testapp
+   oc --context="${SPOKE_CONTEXT}" get servicemonitor -n secure-ns
+   oc --context="${SPOKE_CONTEXT}" get podmonitor -n secure-mcm-testapp
    ```
 
    (`secure-mcm-testapp` runs on hub and spoke in the default demo; each cluster needs its own PodMonitor from `--app-namespaces`.)
@@ -313,15 +387,15 @@ See [Generate traffic for Kiali graphs](#generate-traffic-for-kiali-graphs) abov
 2. Confirm UWM is running on **each** cluster:
 
    ```bash
-   oc --context=my-hub get pods -n openshift-user-workload-monitoring
-   oc --context=my-spoke get pods -n openshift-user-workload-monitoring
+   oc --context="${HUB_CONTEXT}" get pods -n openshift-user-workload-monitoring
+   oc --context="${SPOKE_CONTEXT}" get pods -n openshift-user-workload-monitoring
    ```
 
-3. For `hub` backend, confirm ACM collector on **each** managed cluster:
+3. For the `hub` backend, confirm the MCOA agents on **each** managed cluster:
 
    ```bash
-   oc --context=my-hub get pods -n open-cluster-management-addon-observability
-   oc --context=my-spoke get pods -n open-cluster-management-addon-observability
+   oc --context="${HUB_CONTEXT}" get pods -n open-cluster-management-agent-addon
+   oc --context="${SPOKE_CONTEXT}" get pods -n open-cluster-management-agent-addon
    ```
 
 4. Wait at least 10 minutes after traffic starts (ACM collection interval is ~5m).
@@ -330,12 +404,12 @@ See [Generate traffic for Kiali graphs](#generate-traffic-for-kiali-graphs) abov
 
    ```bash
    # Raw counters (should be > 0 after traffic)
-   oc --context=my-hub get --raw \
+   oc --context="${HUB_CONTEXT}" get --raw \
      "/api/v1/namespaces/open-cluster-management-observability/services/http:observability-thanos-query-frontend:9090/proxy/api/v1/query?query=sum(istio_requests_total%7Bnamespace%3D%22secure-mcm-testapp%22%7D)" \
      | jq '.data.result[0].value[1]'
 
    # Rate window Kiali uses (may be empty for several ACM cycles)
-   oc --context=my-hub get --raw \
+   oc --context="${HUB_CONTEXT}" get --raw \
      "/api/v1/namespaces/open-cluster-management-observability/services/http:observability-thanos-query-frontend:9090/proxy/api/v1/query?query=sum(rate(istio_requests_total%7Bnamespace%3D%22secure-mcm-testapp%22%7D%5B5m%5D))" \
      | jq '.data.result'
    ```
@@ -345,14 +419,14 @@ See [Generate traffic for Kiali graphs](#generate-traffic-for-kiali-graphs) abov
 6. Confirm Kiali CR has `external_services.prometheus.url`:
 
    ```bash
-   oc --context=my-spoke get kiali kiali -n kiali-operator \
+   oc --context="${SPOKE_CONTEXT}" get kiali kiali -n kiali-operator \
      -o jsonpath='{.spec.external_services.prometheus}' | jq .
    ```
 
 ### Hub backend fails preflight
 
-- Verify the cluster is imported as a ManagedCluster on the hub (e.g. `local-cluster` for hub installs, `my-spoke` for spoke installs): `oc --context=my-hub get managedcluster <name>`
-- Use `--managed-cluster-name` if the ACM name differs from the kubeconfig context name (hub self-registration is always `local-cluster`, not `my-hub`)
+- Verify the cluster is imported as a `ManagedCluster` on the hub: `oc --context="${HUB_CONTEXT}" get managedcluster "${SPOKE_NAME}"`.
+- Use `--managed-cluster-name` when the ACM name differs from the kubeconfig context name. Hub self-registration is always `local-cluster`.
 
 ### MCO install fails on small clusters
 
@@ -367,9 +441,10 @@ This script places the istiod ServiceMonitor in `--istio-namespace` (e.g. `secur
 
 | Tutorial guide | This script |
 |----------------|-------------|
-| Phase 1 — Hub MCO + allowlist | Phase A (`--metrics-backend hub`) |
+| Phase 1 — Hub MCO | Phase A (`--metrics-backend hub`) |
 | Phase 3.1 — UWM | Phase B |
 | Phase 3 — ServiceMonitor/PodMonitor | Phase C |
-| Phase 4 — Kiali prometheus | Phase D (`--kiali-cr-namespace`) |
+| ACM MCOA federation | Phase D (`--collection-mode mcoa`) |
+| Phase 4 — Kiali prometheus | Phase E (`--kiali-cr-namespace`) |
 
 See also: [ossm-acm-hub-spoke](https://kiali.io/docs/tutorials/ossm-multicluster/ossm-acm-hub-spoke/) for background architecture.
