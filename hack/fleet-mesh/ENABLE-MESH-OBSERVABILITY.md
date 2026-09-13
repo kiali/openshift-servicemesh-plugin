@@ -320,14 +320,51 @@ For MCM meshes (`secure-ns`, `unsecure-ns`), validate **both** clusters after ru
 
 **With Kiali/OSSMC:** open the mesh overview traffic graph after metrics warm-up (see [Generate traffic](#generate-traffic-for-kiali-graphs) below).
 
-**Without Kiali:** query the backend directly:
+### Validate the metrics pipeline directly
+
+With or without Kiali, query the edge and hub backends directly:
 
 ```bash
-# Hub Thanos (hub backend)
+# Locate the user-workload Prometheus pod on the managed cluster
+PROM_POD=$(oc --context="${SPOKE_CONTEXT}" \
+  -n openshift-user-workload-monitoring \
+  get pods -l app.kubernetes.io/name=prometheus \
+  -o jsonpath='{.items[0].metadata.name}')
+
+# Edge UWM: raw counters scraped from Istio proxies
+oc --context="${SPOKE_CONTEXT}" \
+  -n openshift-user-workload-monitoring \
+  exec -c prometheus "${PROM_POD}" -- \
+  wget -qO- \
+  'http://localhost:9090/api/v1/query?query=sum%28istio_requests_total%29' \
+  | jq '.data.result'
+
+# Edge UWM: aggregates produced by the recording rules
+oc --context="${SPOKE_CONTEXT}" \
+  -n openshift-user-workload-monitoring \
+  exec -c prometheus "${PROM_POD}" -- \
+  wget -qO- \
+  'http://localhost:9090/api/v1/query?query=sum%28workload%3Aistio_requests_total%29' \
+  | jq '.data.result'
+
+# Hub Thanos: federated aggregates, relabeled back to istio_requests_total
+oc --context="${HUB_CONTEXT}" get --raw \
+  "/api/v1/namespaces/open-cluster-management-observability/services/http:observability-thanos-query-frontend:9090/proxy/api/v1/query?query=sum%28istio_requests_total%7Bcluster%3D%22${SPOKE_NAME}%22%7D%29" \
+  | jq '.data.result'
+
+# List the Istio metric names available in hub Thanos
 oc --context="${HUB_CONTEXT}" get --raw \
   "/api/v1/namespaces/open-cluster-management-observability/services/http:observability-thanos-query-frontend:9090/proxy/api/v1/label/__name__/values" \
   | jq -r '.data[]' | grep '^istio_'
 ```
+
+Generate traffic first and allow at least one five-minute MCOA collection
+interval. All three value queries should return a non-empty result. Hub Thanos
+lags the edge, so compare presence and approximately corresponding counter
+values rather than expecting exact point-in-time equality. The
+`--wait-for-metrics` verification checks for the final `istio_*` series in hub
+Thanos; the commands above additionally isolate failures in edge scraping and
+recording-rule evaluation.
 
 ### Generate traffic for Kiali graphs
 
