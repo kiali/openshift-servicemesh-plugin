@@ -415,7 +415,7 @@ When('the user clicks the {string} header button', (label: string) => {
 
 /**
  * Verifies the Chatbot component class, which is driven by the displayMode value
- * stored in Redux (state.aiChat.displayMode). Pattern: pf-chatbot--{mode}.
+ * stored in Redux (state.ai.chat.displayMode). Pattern: pf-chatbot--{mode}.
  */
 Then('the chatbot should be in {string} display mode', (mode: string) => {
   cy.get(`.pf-chatbot.pf-chatbot--${mode}`).should('exist');
@@ -562,7 +562,7 @@ Given('two AI providers are configured', () => {
       );
     }
 
-    const aiState = store.getState().aiChat;
+    const aiState = store.getState().ai.chat;
     const realProviders: any[] = (aiState.providers ?? []).filter((p: any) => p.name !== SECOND_PROVIDER_NAME);
 
     if (realProviders.length === 0) {
@@ -582,6 +582,7 @@ Given('two AI providers are configured', () => {
     store.dispatch({
       type: 'CHAT_AI_SET_CHAT_AI',
       payload: {
+        allowed: aiState.allowed,
         enabled: aiState.enabled,
         defaultProvider: aiState.defaultProvider || first.name,
         providers: [
@@ -598,6 +599,42 @@ Given('two AI providers are configured', () => {
       }
     });
   });
+});
+
+/**
+ * Simulates the backend marking the current user as not allowed to use ChatAI
+ * (e.g. because "allowedUsers" is configured and the user is not in the list).
+ * Dispatches the same CHAT_AI_SET_CHAT_AI action the app dispatches after login,
+ * but with allowed:false, leaving every other field untouched.
+ */
+Given('the user is not allowed to use the AI chatbot', () => {
+  cy.get(CHATBOT_TOGGLE).should('exist');
+
+  cy.window().then(win => {
+    const store = getReduxStoreFromFiber(win);
+    if (!store) {
+      throw new Error(
+        'Could not find the Redux store via the React fiber tree. ' +
+          'Ensure the app is running in development/test mode.'
+      );
+    }
+
+    const aiState = store.getState().ai.chat;
+    store.dispatch({
+      type: 'CHAT_AI_SET_CHAT_AI',
+      payload: {
+        allowed: false,
+        enabled: aiState.enabled,
+        defaultProvider: aiState.defaultProvider,
+        providers: aiState.providers
+      }
+    });
+  });
+});
+
+Then('the AI chatbot toggle tooltip should say {string}', (tooltip: string) => {
+  cy.get(CHATBOT_TOGGLE).trigger('mouseover', { force: true }).trigger('mouseenter', { force: true });
+  cy.get('.pf-v6-c-tooltip__content', { timeout: 5000 }).should('be.visible').and('contain.text', tooltip);
 });
 
 When('user selects the second AI provider', () => {
