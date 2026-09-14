@@ -160,6 +160,7 @@ export interface MeshToolbarState {
   findValue: string;
   hideValue: string;
   showGateways: boolean;
+  showKiali: boolean;
   showLegend: boolean;
   showWaypoints: boolean;
 }
@@ -197,7 +198,13 @@ export interface TourState {
   activeTour?: TourInfo;
 }
 
+export interface AIState {
+  enabled: boolean;
+  chat: ChatAIState;
+}
+
 export interface ChatAIState {
+  allowed: boolean;
   alwaysNavigate: boolean;
   chatHistory: ImmutableList<ImmutableMap<string, unknown>>;
   conversationID: string;
@@ -217,8 +224,8 @@ export interface ChatAIState {
 export interface KialiAppState {
   // Global state === across multiple pages
   // could also be session state
-  /** Chatbot Settings */
-  aiChat: ChatAIState;
+  /** AI Settings */
+  ai: AIState;
   appsList: AppsListState;
   /** Page Settings */
   authentication: LoginState;
