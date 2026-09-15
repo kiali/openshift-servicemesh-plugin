@@ -31,7 +31,14 @@ import type { StatusState } from 'types/StatusState';
 import { StatusKey } from 'types/StatusState';
 import { PromisesRegistry } from '../utils/CancelablePromises';
 import { GlobalActions } from '../actions/GlobalActions';
-import { applyDocumentTheme, getKialiTheme, isParentOwnedTheme, syncReduxThemeFromDocument } from 'utils/ThemeUtils';
+import {
+  applyDocumentTheme,
+  getKialiContrastMode,
+  getKialiColorScheme,
+  getKialiThemeFelt,
+  isParentOwnedTheme,
+  syncReduxThemeFromDocument
+} from 'utils/ThemeUtils';
 import { i18n } from 'i18n';
 import { ChatAIActions } from 'actions/ChatAIActions';
 import type { ChatAIConfig } from 'types/Chatbot';
@@ -344,9 +351,13 @@ class AuthenticationControllerComponent extends React.Component<
     if (isParentOwnedTheme()) {
       syncReduxThemeFromDocument();
     } else {
-      const theme = getKialiTheme();
-      applyDocumentTheme(theme);
-      store.dispatch(GlobalActions.setTheme(theme));
+      const colorScheme = getKialiColorScheme();
+      const contrastMode = getKialiContrastMode();
+      const themeFelt = getKialiThemeFelt();
+      applyDocumentTheme(colorScheme, contrastMode, themeFelt);
+      store.dispatch(GlobalActions.setColorScheme(colorScheme));
+      store.dispatch(GlobalActions.setContrastMode(contrastMode));
+      store.dispatch(GlobalActions.setThemeFelt(themeFelt));
     }
 
     // Set Kiosk mode

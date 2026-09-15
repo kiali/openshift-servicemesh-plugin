@@ -4,7 +4,14 @@ import { kialiStyle } from 'styles/StyleUtils';
 import { isKioskMode } from '../utils/SearchParamUtils';
 
 import { Theme } from 'types/Common';
-import { applyDocumentTheme, getKialiTheme, isParentOwnedTheme, readDocumentTheme } from 'utils/ThemeUtils';
+import {
+  applyDocumentTheme,
+  getKialiContrastMode,
+  getKialiColorScheme,
+  getKialiThemeFelt,
+  isParentOwnedTheme,
+  readDocumentTheme
+} from 'utils/ThemeUtils';
 import { kialiLogoDark, kialiLogoLight } from 'config';
 
 type initializingScreenProps = {
@@ -55,21 +62,30 @@ const centerVerticalHorizontalStyle = kialiStyle({
 
 export const InitializingScreen: React.FC<initializingScreenProps> = (props: initializingScreenProps) => {
   const errorDiv = React.createRef<HTMLDivElement>();
+  const [colorScheme, setColorScheme] = React.useState<Theme>(() =>
+    isParentOwnedTheme() ? readDocumentTheme() : getKialiColorScheme()
+  );
 
-  if (isKioskMode()) {
-    document.body.classList.add('kiosk');
-  }
+  React.useEffect(() => {
+    if (isKioskMode()) {
+      document.body.classList.add('kiosk');
+    }
 
-  // OSSMC: Console owns <html> classes — read theme from the document so the logo
-  // matches before ParentThemeSync mounts. Standalone: use stored theme and apply it.
-  const theme = isParentOwnedTheme() ? readDocumentTheme() : getKialiTheme();
-  if (!isParentOwnedTheme()) {
-    applyDocumentTheme(theme);
-  }
+    // OSSMC: Console owns <html> classes — read theme from the document so the logo
+    // matches before ParentThemeSync mounts. Standalone: use stored theme and apply it.
+    if (isParentOwnedTheme()) {
+      setColorScheme(readDocumentTheme());
+      return;
+    }
+
+    const resolvedColorScheme = getKialiColorScheme();
+    applyDocumentTheme(resolvedColorScheme, getKialiContrastMode(), getKialiThemeFelt());
+    setColorScheme(resolvedColorScheme);
+  }, []);
 
   return (
     <div data-test="loading-screen" className={centerVerticalHorizontalStyle}>
-      <img alt="Kiali Logo" src={theme === Theme.DARK ? kialiLogoDark : kialiLogoLight} width="200" />
+      <img alt="Kiali Logo" src={colorScheme === Theme.DARK ? kialiLogoDark : kialiLogoLight} width="200" />
       {props.errorMsg ? (
         <div ref={errorDiv} className={defaultErrorStyle}>
           <Alert variant="danger" isInline={true} title={props.errorMsg} />
