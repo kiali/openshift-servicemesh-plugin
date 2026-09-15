@@ -1,8 +1,9 @@
-import { Message, SourcesCardProps } from '@patternfly/chatbot';
+import type { SourcesCardProps } from '@patternfly/chatbot';
+import { Message } from '@patternfly/chatbot';
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { KialiAppState } from 'store/Store';
-import { ChatEntry, ReferencedDoc } from 'types/Chatbot';
+import type { KialiAppState } from 'store/Store';
+import type { ChatEntry, ReferencedDoc } from 'types/Chatbot';
 import { copyToClipboard } from './clipboard';
 import { Alert } from '@patternfly/react-core';
 import { t } from 'utils/I18nUtils';
@@ -10,7 +11,7 @@ import { ResponseTools } from './ResponseTools';
 import userAvatar from '../../../assets/img/kiali/ai/img_avatar-light.svg';
 import aiAvatar from '../../../assets/img/kiali/ai/img-ai-lightbkg.svg';
 import aiAvatarDark from '../../../assets/img/kiali/ai/img-ai-darkbkg.svg';
-import { useKialiTheme } from 'utils/ThemeUtils';
+import { useKialiColorScheme } from 'utils/ThemeUtils';
 import { Theme } from 'types/Common';
 import { Actions } from './Actions';
 import { ChatMessageMarkdown } from './ChatMessageMarkdown';
@@ -22,7 +23,7 @@ type EntryChatProps = {
 export const EntryChat = React.memo(({ entryIndex }: EntryChatProps) => {
   const entryObject = useSelector((state: KialiAppState) => state.ai.chat.chatHistory.getIn([entryIndex])) as any;
   const entry = entryObject.toJS() as ChatEntry;
-  const isDarkTheme = useKialiTheme() === Theme.DARK;
+  const isDarkTheme = useKialiColorScheme() === Theme.DARK;
 
   if (entry.who === 'user' && entry.hidden) {
     return null;
