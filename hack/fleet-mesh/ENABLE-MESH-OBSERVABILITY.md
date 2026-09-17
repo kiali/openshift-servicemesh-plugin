@@ -177,7 +177,7 @@ Run `./hack/fleet-mesh/enable-mesh-observability.sh --help` for the full flag li
 
 | Flag | Description |
 |------|-------------|
-| `--app-namespaces` | Comma-separated workload namespaces for sidecar or waypoint PodMonitors, MCOA recording rules, and platform CPU/memory federation; waypoint namespaces must be listed explicitly |
+| `--app-namespaces` | Comma-separated workload namespaces for sidecar or waypoint PodMonitors and MCOA recording rules; waypoint namespaces must be listed explicitly. Platform CPU/memory federation is cluster-wide. |
 | `--mesh-id` | PodMonitor `mesh_id` label (auto-detected from Istio CR if omitted) |
 | `--ambient` | Also scrape ztunnel and include its namespace in MCOA; pass `--ztunnel-namespace` when it is not the default `ztunnel` |
 | `--managed-cluster-name` | ACM ManagedCluster name (default: `--cluster-context` value) |
@@ -236,9 +236,8 @@ The edge rules aggregate raw per-proxy `istio_*` series as
 `workload:istio_*`. The MCOA user-workload collector then scrapes UWM's
 `/federate` endpoint, selects the Kiali core metric tier, changes
 `workload:istio_*` back to `istio_*`, and remote-writes the result to hub
-Observatorium/Thanos. Namespace-specific platform federation jobs collect the
-container CPU and memory series used by Kiali's control-plane overview. Their
-stable per-namespace names allow separate mesh setup runs to coexist. Kiali
+Observatorium/Thanos. A cluster-wide platform federation job collects the
+container CPU and memory series used by Kiali's control-plane overview. Kiali
 always queries the hub backend.
 
 Kubeconfig context names are local aliases. `--hub-context` and

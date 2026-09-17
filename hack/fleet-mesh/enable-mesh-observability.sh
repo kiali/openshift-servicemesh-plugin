@@ -148,8 +148,9 @@ Optional — Kiali (phase E; omit for metrics-only):
 
 Other options:
   --mesh-id ID                mesh_id PodMonitor label (auto-detect from Istio CR if omitted)
-  --app-namespaces LIST       Comma-separated workload namespaces for PodMonitors,
-                              MCOA recording rules, and platform metrics
+  --app-namespaces LIST       Comma-separated workload namespaces for PodMonitors
+                              and MCOA recording rules; platform metrics are
+                              federated cluster-wide
   --ambient                   Create ztunnel PodMonitor and MCOA resources in
                               --ztunnel-namespace
   --ztunnel-namespace NS      Actual ztunnel namespace (default: ztunnel)
