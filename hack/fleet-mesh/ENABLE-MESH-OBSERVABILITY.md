@@ -239,6 +239,19 @@ Observatorium/Thanos. A cluster-wide platform federation job collects the
 container CPU and memory series used by Kiali's control-plane overview. Kiali
 always queries the hub backend.
 
+The generated interval fields are explicit rather than inherited from defaults:
+the Istio `ServiceMonitor` and `PodMonitor` endpoints use `30s`, the source
+`PrometheusRule` group uses `30s`, and the MCOA `ScrapeConfig` jobs created by
+the Kiali helper set `spec.scrapeInterval: 5m`. When Kiali is configured for
+the hub backend, its `thanos_proxy.scrape_interval` comes from
+`--scrape-interval` and defaults to the same `5m`; keep it aligned with the
+effective federation interval. The UWM ConfigMap is used for the
+rule-namespace exemption only; this script does not set its global
+`prometheus.scrapeInterval` or `prometheus.evaluationInterval` values. For the
+relationship between these intervals, expected hub latency, and query-window
+requirements, see the [Scrape Intervals](https://kiali.io/docs/configuration/multi-cluster/acm-observability/#scrape-intervals)
+guidance.
+
 Kubeconfig context names are local aliases. `--hub-context` and
 `--cluster-context` never need to equal `--managed-cluster-name`; MCOA targets
 clusters through its configured placements.
@@ -359,8 +372,8 @@ oc --context="${HUB_CONTEXT}" get --raw \
   | jq -r '.data[]' | grep '^istio_'
 ```
 
-Generate traffic first and allow at least one five-minute MCOA collection
-interval. All three value queries should return a non-empty result. Hub Thanos
+Generate traffic first and follow the timing guidance in the [Scrape Intervals](https://kiali.io/docs/configuration/multi-cluster/acm-observability/#scrape-intervals)
+section. All three value queries should return a non-empty result. Hub Thanos
 lags the edge, so compare presence and approximately corresponding counter
 values rather than expecting exact point-in-time equality. The
 `--wait-for-metrics` verification checks for the final `istio_*` series in hub
@@ -436,9 +449,13 @@ See [Generate traffic for Kiali graphs](#generate-traffic-for-kiali-graphs) abov
    oc --context="${SPOKE_CONTEXT}" get pods -n open-cluster-management-agent-addon
    ```
 
-4. Wait at least 10 minutes after traffic starts (ACM collection interval is ~5m).
+4. Review the [Scrape Intervals](https://kiali.io/docs/configuration/multi-cluster/acm-observability/#scrape-intervals)
+   section for the expected federation delay and rate-query warm-up before
+   checking Kiali results.
 
-5. Kiali graphs use `rate(...[5m])`. Hub Thanos may show raw `istio_requests_total` while `rate()` is still empty until ACM forwards **two** counter changes within the window. Verify both:
+5. If raw `istio_requests_total` exists but a Kiali-style `rate()` query is
+   empty, verify both the raw counter and a range window compatible with the
+   effective federation interval:
 
    ```bash
    # Raw counters (should be > 0 after traffic)
@@ -446,9 +463,9 @@ See [Generate traffic for Kiali graphs](#generate-traffic-for-kiali-graphs) abov
      "/api/v1/namespaces/open-cluster-management-observability/services/http:observability-thanos-query-frontend:9090/proxy/api/v1/query?query=sum(istio_requests_total%7Bnamespace%3D%22secure-mcm-testapp%22%7D)" \
      | jq '.data.result[0].value[1]'
 
-   # Rate window Kiali uses (may be empty for several ACM cycles)
+   # Example rate window for the default 5m federation interval
    oc --context="${HUB_CONTEXT}" get --raw \
-     "/api/v1/namespaces/open-cluster-management-observability/services/http:observability-thanos-query-frontend:9090/proxy/api/v1/query?query=sum(rate(istio_requests_total%7Bnamespace%3D%22secure-mcm-testapp%22%7D%5B5m%5D))" \
+     "/api/v1/namespaces/open-cluster-management-observability/services/http:observability-thanos-query-frontend:9090/proxy/api/v1/query?query=sum(rate(istio_requests_total%7Bnamespace%3D%22secure-mcm-testapp%22%7D%5B10m%5D))" \
      | jq '.data.result'
    ```
 

@@ -67,6 +67,8 @@ INSTALL_HUB_OBS="auto"
 SKIP_UWM=false
 OBS_NS="open-cluster-management-observability"
 RETENTION_PERIOD="365d"
+# Explicit metrics cadence: edge monitors/rules are 30s, MCOA federation jobs
+# are 5m, and Kiali's hint below must match the effective federation interval.
 SCRAPE_INTERVAL="5m"
 WAIT_FOR_METRICS=false
 TIMEOUT=1200
@@ -933,8 +935,8 @@ spec:
     matchLabels:
       istio: pilot
   endpoints:
-  - port: http-monitoring
-    interval: 30s
+  - interval: 30s
+    port: http-monitoring
 EOF
   apply_namespace_allowlist "${ISTIO_NAMESPACE}"
 }
@@ -980,8 +982,8 @@ spec:
     - key: istio-prometheus-ignore
       operator: DoesNotExist
   podMetricsEndpoints:
-  - path: /stats/prometheus
-    interval: 30s
+  - interval: 30s
+    path: /stats/prometheus
     relabelings:
     - action: keep
       sourceLabels: ["__meta_kubernetes_pod_container_name"]
@@ -1058,8 +1060,8 @@ spec:
     - key: istio-prometheus-ignore
       operator: DoesNotExist
   podMetricsEndpoints:
-  - path: /stats/prometheus
-    interval: 30s
+  - interval: 30s
+    path: /stats/prometheus
     relabelings:
     - action: keep
       sourceLabels: ["__meta_kubernetes_pod_container_name"]
