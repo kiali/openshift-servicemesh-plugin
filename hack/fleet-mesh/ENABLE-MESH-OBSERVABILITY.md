@@ -177,9 +177,10 @@ Run `./hack/fleet-mesh/enable-mesh-observability.sh --help` for the full flag li
 
 | Flag | Description |
 |------|-------------|
-| `--app-namespaces` | Comma-separated workload namespaces for sidecar or waypoint PodMonitors and MCOA recording rules; waypoint namespaces must be listed explicitly. Platform CPU/memory federation is cluster-wide. |
+| `--app-namespaces` | Comma-separated workload namespaces for sidecar or waypoint PodMonitors; waypoint namespaces must be listed explicitly. Platform CPU/memory federation is cluster-wide. |
 | `--mesh-id` | PodMonitor `mesh_id` label (auto-detected from Istio CR if omitted) |
-| `--ambient` | Also scrape ztunnel and include its namespace in MCOA; pass `--ztunnel-namespace` when it is not the default `ztunnel` |
+| `--mcoa-rule-namespace` | `mesh-observability` — dedicated namespace exempted from UWM label enforcement for the single cross-namespace recording rule |
+| `--ambient` | Also scrape ztunnel; pass `--ztunnel-namespace` when it is not the default `ztunnel` |
 | `--managed-cluster-name` | ACM ManagedCluster name (default: `--cluster-context` value) |
 | `--collection-mode` | `mcoa` or `legacy` |
 | `--mcoa-helper` | Path to Kiali's `hack/configure-acm-mcoa.sh` |
@@ -187,7 +188,7 @@ Run `./hack/fleet-mesh/enable-mesh-observability.sh --help` for the full flag li
 | `--mcoa-placement-namespace` | Namespace of the selected MCOA placement |
 | `--configure-mcoa` | `auto` configures only on the hub invocation; use `always` or `never` to override |
 | `--mcoa-with-dashboards` | Also federate the optional Istio dashboard metric tier |
-| `--remove-mcoa-federation` | On uninstall, remove this invocation's MCOA namespace set |
+| `--remove-mcoa-federation` | On uninstall, remove this invocation's MCOA federation resources |
 | `--install-hub-observability` | `auto` \| `always` \| `never` — install MCO if missing |
 | `--skip-uwm` | Assume UWM already enabled |
 | `--observability-namespace` | `open-cluster-management-observability` — hub namespace for ACM observability resources |
@@ -222,15 +223,13 @@ script enables its platform and user-workload metrics capabilities required by
 MCOA. The default retention is `365d`, which matches ACM's retention default;
 override `--retention-period` only when the actual MCO retention differs.
 
-ACM propagates one recording rule into every target namespace: the Istio
-control-plane namespace, each `--app-namespaces` entry, and the optional
-`--ztunnel-namespace`. The propagated rules carry the OpenShift
-`leaf-prometheus` label so UWM evaluates them.
-
-Every target namespace must exist on every managed cluster selected by the MCOA
-placement. If the mesh uses different namespace layouts across clusters, use
-separate placements and source resource sets rather than applying one target
-list to all clusters.
+The script creates a single source `PrometheusRule` and asks MCOA to propagate
+it into the dedicated `--mcoa-rule-namespace` (default `mesh-observability`) on
+each selected managed cluster. It adds that namespace to UWM's
+`namespacesWithoutLabelEnforcement` configuration, because the rule contains
+cross-namespace selectors and recorded series. Application namespaces only
+need to exist for their ServiceMonitor/PodMonitor resources; they are not MCOA
+rule targets.
 
 The edge rules aggregate raw per-proxy `istio_*` series as
 `workload:istio_*`. The MCOA user-workload collector then scrapes UWM's
@@ -257,8 +256,10 @@ Prometheus auth secrets and ServiceAccounts are created in the Kiali **deploymen
 |----------|-----------|------|
 | MinIO and MCO | `open-cluster-management-observability` | `hub` backend, MCO not Ready |
 | MCOA `ScrapeConfig` and source `PrometheusRule` objects | `open-cluster-management-observability` | `hub` backend with default `mcoa` mode |
-| Propagated recording rules | Every MCOA target namespace (`--istio-namespace`, `--app-namespaces`, and optional `--ztunnel-namespace`) | Selected managed clusters |
+| UWM-exempt aggregation namespace | `--mcoa-rule-namespace` (default `mesh-observability`) | Each cluster running this script with MCOA |
+| Propagated recording rule | `mesh-observability` (or `--mcoa-rule-namespace`) | Selected managed clusters |
 | `cluster-monitoring-config` patch | `openshift-monitoring` | UWM enablement |
+| `user-workload-monitoring-config` exemption | `openshift-user-workload-monitoring` | MCOA mode; adds `mesh-observability` (or `--mcoa-rule-namespace`) to `namespacesWithoutLabelEnforcement` |
 | `ServiceMonitor/istiod-monitor` | `--istio-namespace` | Always |
 | `PodMonitor/istio-proxies-monitor-<ns>` | each `--app-namespaces` entry | When specified |
 | `PodMonitor/ztunnel-monitor` | `--ztunnel-namespace` | `--ambient` |
@@ -287,11 +288,12 @@ Prometheus auth secrets and ServiceAccounts are created in the Kiali **deploymen
 ### Uninstall does **not** remove (by default)
 
 - Hub MCO, MinIO, and MCOA resources (shared infrastructure)
-- UWM / `cluster-monitoring-config` (cluster-wide)
+- UWM / `cluster-monitoring-config` (cluster-wide); the script removes only its
+  owned `mesh-observability` exemption entry
 
 Use `--remove-hub-observability` on uninstall for lab teardown of hub MCO/MinIO.
 Use `--remove-mcoa-federation` only when no other setup relies on the same
-placement, rule namespace, and platform namespace set.
+placement and rule namespace.
 
 ## Validation
 

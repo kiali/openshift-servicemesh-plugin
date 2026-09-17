@@ -80,6 +80,7 @@ MCOA_PLACEMENT_NAMESPACE=""
 MCOA_CONFIGURE="auto"
 MCOA_REMOVE=false
 MCOA_WITH_DASHBOARDS=false
+MCOA_RULE_NAMESPACE="mesh-observability"
 
 MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-minio}"
 MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-minio123}"
@@ -148,11 +149,11 @@ Optional — Kiali (phase E; omit for metrics-only):
 
 Other options:
   --mesh-id ID                mesh_id PodMonitor label (auto-detect from Istio CR if omitted)
-  --app-namespaces LIST       Comma-separated workload namespaces for PodMonitors
-                              and MCOA recording rules; platform metrics are
-                              federated cluster-wide
-  --ambient                   Create ztunnel PodMonitor and MCOA resources in
-                              --ztunnel-namespace
+  --app-namespaces LIST       Comma-separated workload namespaces for PodMonitors;
+                              platform metrics are federated cluster-wide
+  --mcoa-rule-namespace NS    Dedicated UWM-exempt namespace for the single
+                              cross-namespace recording rule (default: mesh-observability)
+  --ambient                   Create ztunnel PodMonitor in --ztunnel-namespace
   --ztunnel-namespace NS      Actual ztunnel namespace (default: ztunnel)
   --managed-cluster-name NAME ACM ManagedCluster name (default: cluster context name)
   --collection-mode MODE      mcoa (ACM 2.17, default) or legacy
@@ -221,6 +222,7 @@ parse_args() {
       --mcoa-placement-namespace) MCOA_PLACEMENT_NAMESPACE="${2:?'--mcoa-placement-namespace requires a value'}"; shift 2 ;;
       --configure-mcoa) MCOA_CONFIGURE="${2:?'--configure-mcoa requires a value'}"; shift 2 ;;
       --mcoa-with-dashboards) MCOA_WITH_DASHBOARDS=true; shift ;;
+      --mcoa-rule-namespace) MCOA_RULE_NAMESPACE="${2:?'--mcoa-rule-namespace requires a value'}"; shift 2 ;;
       --remove-mcoa-federation) MCOA_REMOVE=true; shift ;;
       --install-hub-observability) INSTALL_HUB_OBS="${2:?'--install-hub-observability requires a value'}"; shift 2 ;;
       --skip-uwm) SKIP_UWM=true; shift ;;
@@ -274,6 +276,8 @@ parse_args() {
   if [ -z "${MANAGED_CLUSTER_NAME}" ]; then
     MANAGED_CLUSTER_NAME="${CLUSTER_CTX}"
   fi
+  [[ "${MCOA_RULE_NAMESPACE}" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || \
+    die "Invalid --mcoa-rule-namespace: ${MCOA_RULE_NAMESPACE}"
 }
 
 label_block() {
@@ -729,22 +733,85 @@ data:
     enableUserWorkload: true
 EOF
   else
-    local existing
-    existing=$(oc_cluster get configmap cluster-monitoring-config -n openshift-monitoring \
-      -o jsonpath='{.data.config\.yaml}' 2>/dev/null || true)
-    if echo "${existing}" | grep -q "enableUserWorkload: true"; then
-      info "[ok] enableUserWorkload already true in cluster-monitoring-config"
-    else
-      oc_cluster patch configmap cluster-monitoring-config -n openshift-monitoring --type merge \
-        -p '{"data":{"config.yaml":"enableUserWorkload: true\n"}}'
-    fi
+    oc_cluster get configmap cluster-monitoring-config -n openshift-monitoring -o json | \
+      jq '.data //= {} |
+          .data["config.yaml"] = ((.data["config.yaml"] // "") |
+            if test("(^|\\n)[[:space:]]*enableUserWorkload:") then
+              gsub("enableUserWorkload:[[:space:]]*[^\\n]*";
+                   "enableUserWorkload: true")
+            else . + "\\nenableUserWorkload: true\\n" end)' | oc_cluster apply -f -
   fi
 
   wait_for "UWM prometheus Ready" "${TIMEOUT}" "uwm_is_ready"
 }
 
+configure_mcoa_uwm_namespace() {
+  [ "${COLLECTION_MODE}" = mcoa ] || return 0
+  local namespace=${MCOA_RULE_NAMESPACE} existing updated
+  if [ "${DRY_RUN}" = true ]; then
+    info "[dry-run] Would exempt UWM namespace ${namespace} from label enforcement"
+    return 0
+  fi
+  oc_cluster create namespace "${namespace}" --dry-run=client -o yaml | oc_cluster apply -f - >/dev/null
+  if ! oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring >/dev/null 2>&1; then
+    cat <<EOF | oc_cluster apply -f - >/dev/null
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-workload-monitoring-config
+  namespace: openshift-user-workload-monitoring
+  annotations:
+    kiali.io/mcoa-rule-namespace: ${namespace}
+data:
+  config.yaml: |
+    namespacesWithoutLabelEnforcement:
+    - ${namespace}
+EOF
+    return 0
+  fi
+  existing=$(oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring -o jsonpath='{.data.config\.yaml}' 2>/dev/null || true)
+  if printf '%s\n' "${existing}" | grep -Eq \
+    "^[[:space:]]*-[[:space:]]*['\"]?${namespace}['\"]?[[:space:]]*$|namespacesWithoutLabelEnforcement:.*${namespace}"; then
+    return 0
+  fi
+  if [ -z "${existing}" ]; then
+    updated=$(printf 'namespacesWithoutLabelEnforcement:\n- %s\n' "${namespace}")
+  elif printf '%s\n' "${existing}" | grep -Eq '^[[:space:]]*namespacesWithoutLabelEnforcement:[[:space:]]*$'; then
+    updated=$(printf '%s\n' "${existing}" | awk -v ns="${namespace}" \
+      '/^[[:space:]]*namespacesWithoutLabelEnforcement:[[:space:]]*$/ {print; print "- " ns; added=1; next} {print} END {if (!added) print "namespacesWithoutLabelEnforcement:\n- " ns}')
+  else
+    updated=$(printf '%s\nnamespacesWithoutLabelEnforcement:\n- %s\n' "${existing}" "${namespace}")
+  fi
+  oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring -o json | \
+    jq --arg cfg "${updated}" --arg ns "${namespace}" \
+      '(.data //= {}) | (.data["config.yaml"]=$cfg) | (.metadata.annotations //= {}) |
+       .metadata.annotations["kiali.io/mcoa-rule-namespace"]=$ns' | oc_cluster apply -f - >/dev/null
+}
+
+remove_mcoa_uwm_namespace() {
+  [ "${COLLECTION_MODE}" = mcoa ] || return 0
+  local namespace=${MCOA_RULE_NAMESPACE} owner existing updated
+  owner=$(oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring \
+    -o jsonpath='{.metadata.annotations.kiali\.io/mcoa-rule-namespace}' 2>/dev/null || true)
+  [ "${owner}" = "${namespace}" ] || return 0
+  existing=$(oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring -o jsonpath='{.data.config\.yaml}' 2>/dev/null || true)
+  updated=$(printf '%s\n' "${existing}" | awk -v ns="${namespace}" \
+    '$0 !~ "^[[:space:]]*-[[:space:]]*[\\\"'"'"']?" ns "[\\\"'"'"']?[[:space:]]*$" {print}')
+  oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring -o json | \
+    jq --arg cfg "${updated}" \
+      '(.data //= {}) | (.data["config.yaml"]=$cfg) | (.metadata.annotations //= {}) |
+       del(.metadata.annotations["kiali.io/mcoa-rule-namespace"])' | oc_cluster apply -f - >/dev/null
+}
+
 phase_b_uwm() {
   enable_uwm
+  configure_mcoa_uwm_namespace
 }
 
 # ---------------------------------------------------------------------------
@@ -1052,15 +1119,6 @@ phase_c_scraping() {
 # Phase D — ACM 2.17 MCOA federation
 # ---------------------------------------------------------------------------
 
-mcoa_target_namespaces() {
-  local result="${ISTIO_NAMESPACE}"
-  [ -z "${APP_NAMESPACES}" ] || result="${result},${APP_NAMESPACES}"
-  if [ "${AMBIENT}" = true ]; then
-    result="${result},${ZTUNNEL_NAMESPACE}"
-  fi
-  printf '%s' "${result}"
-}
-
 resolve_mcoa_helper() {
   if [ ! -x "${MCOA_HELPER}" ] && command -v configure-acm-mcoa.sh >/dev/null 2>&1; then
     MCOA_HELPER=$(command -v configure-acm-mcoa.sh)
@@ -1080,11 +1138,11 @@ phase_d_mcoa() {
   [ -x "${MCOA_HELPER}" ] || die "MCOA helper not executable: ${MCOA_HELPER}. Use --mcoa-helper to specify the Kiali repository helper."
   info "=== Configuring ACM 2.17 MCOA federation ==="
   if [ "${DRY_RUN}" = true ]; then
-    info "[dry-run] ${MCOA_HELPER} install --hub-context ${HUB_CTX} --target-namespaces $(mcoa_target_namespaces)"
+    info "[dry-run] ${MCOA_HELPER} install --hub-context ${HUB_CTX} --rule-namespace ${MCOA_RULE_NAMESPACE}"
     return 0
   fi
   local args=(install --hub-context "${HUB_CTX}" --observability-namespace "${OBS_NS}" \
-    --target-namespaces "$(mcoa_target_namespaces)" --rule-namespace "${ISTIO_NAMESPACE}" \
+    --rule-namespace "${MCOA_RULE_NAMESPACE}" \
     --timeout "${TIMEOUT}")
   if [ -n "${MCOA_PLACEMENT_NAME}" ]; then
     args+=(--placement-name "${MCOA_PLACEMENT_NAME}")
@@ -1104,7 +1162,7 @@ uninstall_mcoa_federation() {
   [ -x "${MCOA_HELPER}" ] || die "MCOA helper not executable: ${MCOA_HELPER}"
 
   local args=(uninstall --hub-context "${HUB_CTX}" --observability-namespace "${OBS_NS}" \
-    --target-namespaces "$(mcoa_target_namespaces)" --rule-namespace "${ISTIO_NAMESPACE}" \
+    --rule-namespace "${MCOA_RULE_NAMESPACE}" \
     --timeout "${TIMEOUT}")
   [ -z "${MCOA_PLACEMENT_NAME}" ] || args+=(--placement-name "${MCOA_PLACEMENT_NAME}")
   [ -z "${MCOA_PLACEMENT_NAMESPACE}" ] || args+=(--placement-namespace "${MCOA_PLACEMENT_NAMESPACE}")
@@ -1356,7 +1414,7 @@ do_verify() {
     if [ "${COLLECTION_MODE}" = mcoa ]; then
       resolve_mcoa_helper
       local verify_args=(verify --hub-context "${HUB_CTX}" --observability-namespace "${OBS_NS}" \
-        --target-namespaces "$(mcoa_target_namespaces)" --rule-namespace "${ISTIO_NAMESPACE}" \
+        --rule-namespace "${MCOA_RULE_NAMESPACE}" \
         --timeout "${TIMEOUT}")
       [ -z "${MCOA_PLACEMENT_NAME}" ] || verify_args+=(--placement-name "${MCOA_PLACEMENT_NAME}")
       [ -z "${MCOA_PLACEMENT_NAMESPACE}" ] || verify_args+=(--placement-namespace "${MCOA_PLACEMENT_NAMESPACE}")
@@ -1542,6 +1600,7 @@ do_uninstall() {
   uninstall_kiali_secrets
   uninstall_monitors_and_allowlists
   uninstall_mcoa_federation
+  remove_mcoa_uwm_namespace
   remove_hub_observability
 
   info "[ok] Uninstall complete"
