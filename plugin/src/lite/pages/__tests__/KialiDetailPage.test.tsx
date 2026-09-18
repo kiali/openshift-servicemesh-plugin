@@ -1,9 +1,15 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { k8sPatch, useAccessReview, useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
+import {
+  k8sGet,
+  k8sPatch,
+  useAccessReview,
+  useK8sWatchResource,
+  consoleFetch
+} from '@openshift-console/dynamic-plugin-sdk';
 import { useParams } from 'react-router-dom-v5-compat';
 import KialiDetailPage from '../KialiDetailPage';
-import { makeKialiResource, makeOssmConsoleResource } from '../../__fixtures__/testFactories';
+import { makeKialiFailureResource, makeKialiResource, makeOssmConsoleResource } from '../../__fixtures__/testFactories';
 import type { LiteOssmConsoleResource } from '../../types/ossmconsole';
 
 afterEach(() => rstest.clearAllMocks());
@@ -72,8 +78,16 @@ describe('KialiDetailPage', () => {
   });
 
   describe('loaded state', () => {
+    const originalApiProxy = process.env.API_PROXY;
+
     beforeEach(() => {
       rstest.mocked(useParams).mockReturnValue({ name: 'kiali', namespace: 'istio-system' });
+      process.env.API_PROXY = '/api/proxy/plugin/ossmconsole/kiali';
+      rstest.mocked(k8sGet).mockRejectedValue(new Error('not mocked'));
+    });
+
+    afterEach(() => {
+      process.env.API_PROXY = originalApiProxy;
     });
 
     it('renders the breadcrumb with link to the list page', () => {
@@ -88,10 +102,21 @@ describe('KialiDetailPage', () => {
       expect(screen.getByRole('heading', { name: 'kiali' })).toBeInTheDocument();
     });
 
-    it('renders the version', () => {
-      mockWatchResources([makeKialiResource(), true, null]);
+    it('renders running version from /api and spec version separately', async () => {
+      rstest.mocked(consoleFetch).mockResolvedValue({
+        json: async () => ({ status: { 'Kiali version': 'v2.31.0-SNAPSHOT' } }),
+        ok: true
+      } as Response);
+      mockWatchResources(
+        [makeKialiResource({ spec: { server: { web_fqdn: 'kiali.custom.com' }, version: 'default' } }), true, null],
+        [[promotedOssmConsole()], true, null]
+      );
       render(<KialiDetailPage />);
-      expect(screen.getByText('Version')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('v2.31.0-SNAPSHOT')).toBeInTheDocument();
+        expect(screen.getByText('Spec Version')).toBeInTheDocument();
+        expect(screen.getByText('default')).toBeInTheDocument();
+      });
     });
 
     it('renders the server namespace', () => {
@@ -112,43 +137,64 @@ describe('KialiDetailPage', () => {
       expect(screen.getByText('Instance Name')).toBeInTheDocument();
     });
 
-    it('renders the replicas', () => {
-      mockWatchResources([makeKialiResource(), true, null]);
+    it('does not render the Reconcile Progress card even when progress.message is set', () => {
+      mockWatchResources([makeKialiFailureResource(), true, null]);
       render(<KialiDetailPage />);
-      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(screen.queryByText('Reconcile Progress')).not.toBeInTheDocument();
+      expect(screen.queryByText('Reconciling deployment')).not.toBeInTheDocument();
     });
 
-    it('renders External Services card with configured URLs', () => {
+    it('renders remote cluster secrets in a separate card above conditions', async () => {
+      rstest.mocked(k8sGet).mockImplementation(({ model, name }: { model: { kind?: string }; name?: string }) => {
+        if (model.kind === 'Deployment' && name === 'kiali') {
+          return Promise.resolve({
+            spec: {
+              template: {
+                spec: {
+                  volumes: [
+                    { name: 'east-secret', secret: { secretName: 'east-secret' } },
+                    {
+                      name: 'kiali-multi-cluster-secret',
+                      secret: { optional: true, secretName: 'kiali-multi-cluster-secret' }
+                    }
+                  ],
+                  containers: [
+                    {
+                      name: 'kiali',
+                      volumeMounts: [
+                        { name: 'east-secret', mountPath: '/kiali-remote-cluster-secrets/east-secret' },
+                        {
+                          name: 'kiali-multi-cluster-secret',
+                          mountPath: '/kiali-remote-cluster-secrets/kiali-multi-cluster-secret'
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          });
+        }
+        return Promise.reject(new Error('404'));
+      });
       mockWatchResources([
         makeKialiResource({
           spec: {
-            auth: { strategy: 'openshift' },
-            deployment: { instance_name: 'kiali', namespace: 'istio-system', replicas: 1 },
-            external_services: {
-              grafana: { enabled: true, url: 'http://grafana:3000' },
-              prometheus: { url: 'http://prometheus:9090' },
-              tracing: { enabled: true, url: 'http://jaeger:16686' }
-            },
-            server: { port: 20001 },
-            version: 'default'
+            clustering: { clusters: [{ name: 'east', secret_name: 'east-secret' }] },
+            deployment: { instance_name: 'kiali', namespace: 'istio-system' }
           }
         }),
         true,
         null
       ]);
       render(<KialiDetailPage />);
-      expect(screen.getByText('External Services')).toBeInTheDocument();
-      expect(screen.getByText('http://prometheus:9090')).toBeInTheDocument();
-      expect(screen.getByText('http://grafana:3000')).toBeInTheDocument();
-      expect(screen.getByText('http://jaeger:16686')).toBeInTheDocument();
-    });
-
-    it('renders External Services card with "Not specified" when external_services is absent', () => {
-      mockWatchResources([makeKialiResource(), true, null]);
-      render(<KialiDetailPage />);
-      expect(screen.getByText('External Services')).toBeInTheDocument();
-      const notSpecified = screen.getAllByText('Not specified');
-      expect(notSpecified.length).toBeGreaterThanOrEqual(3);
+      await waitFor(() => {
+        expect(screen.getByText('Related')).toBeInTheDocument();
+        expect(screen.getByText('Remote Cluster Secrets (1)')).toBeInTheDocument();
+        expect(screen.getByText('east-secret')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('kiali-multi-cluster-secret')).not.toBeInTheDocument();
+      expect(screen.queryAllByText('Remote Cluster Secret')).toHaveLength(0);
     });
 
     it('renders "Not specified" for missing optional fields', () => {

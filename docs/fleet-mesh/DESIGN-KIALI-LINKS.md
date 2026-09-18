@@ -1,8 +1,8 @@
 # Kiali / OSSMC Observability Link Decision Flows
 
-Per-page decision flows for the five pages that render observability links (`Kiali`, `OSSMC`, or `-`).
+Per-page decision flows for the six pages that render observability links (`Kiali`, `OSSMC`, or `-`).
 
-Observability links on fleet pages (sections 1–4) open in a new browser tab. Section 5 is the exception: a connected Kiali navigates to the OSSMC overview in the same tab.
+Observability links open in a new browser tab.
 
 `{consoleUrl}` is the spoke cluster's OpenShift Console URL as known to ACM on the hub (from the ManagedCluster resource). Spoke links need it so the hub can build absolute URLs that open the correct console in a new tab.
 
@@ -12,7 +12,7 @@ Observability links on fleet pages (sections 1–4) open in a new browser tab. S
 
 - **(b) Standalone Kiali** — Opens the Kiali server directly at `https://{routeHost|webFqdn}`, using the Route host or `spec.server.web_fqdn` from the matching Kiali CR.
 
-- **(c) OSSMC-Full** — Opens the full OSSMC mesh overview at `{consoleUrl}/ossmconsole/overview`. This route requires a Kiali backend and is used on spokes when a Kiali CR matches the control plane namespace and OSSMC is integrated with that Kiali (`status.kiali.serviceNamespace` equals the CP namespace). On the hub Kialis admin page (section 5), a connected Kiali uses the same overview route in the same tab.
+- **(c) OSSMC-Full** — Opens the full OSSMC mesh overview at `{consoleUrl}/ossmconsole/overview`. This route requires a Kiali backend and is used on spokes when a Kiali CR matches the control plane namespace and OSSMC is integrated with that Kiali (`status.kiali.serviceNamespace` equals the CP namespace).
 
 - **(d) Istios and Kialis list pages** — Opens OSSMC plugin pages that work without a Kiali backend. Hub links use relative paths on the current console (`/ossmconsole/...`). Spoke links prefix the spoke's known console URL (`{consoleUrl}/ossmconsole/...`). Specific routes:
   - Kiali CR detail (hub): `/ossmconsole/kialis/{crNamespace}/{crName}`
@@ -137,16 +137,13 @@ Matching Kiali CR (same cluster, deploymentNamespace = CP namespace)?
 
 ## 5. Kialis list page — `/ossmconsole/kialis`
 
-Per Kiali CR row in the **Observe** column (`renderKialiLink` — **not** fleet-mesh discovery logic):
+Per Kiali CR row in the **Observe** column (`renderKialiObserveLinks` — **not** fleet-mesh discovery logic). The connected-to-Console status is shown as an icon in a separate **Connected** column and does not affect the Observe column.
 
 ```
-Is this Kiali currently connected to Console?
-(OSSMC status known AND isPromoted(activeOssmConsole, serviceName, serviceNamespace))
-├─ Yes → (c) OSSMC-Full on hub  [OSSMC overview in Console, same tab, "OSSMC"]
-└─ No  → host available?
-          (spec.server.web_fqdn  OR  Route host from useKialiRouteHosts)
-          ├─ Yes → (b) Standalone Kiali  ["https://{host}", "Kiali"]
-          └─ No  → (a) no link  ["-"]
+host available?
+(spec.server.web_fqdn  OR  Route host from useKialiRouteHosts)
+├─ Yes → (b) Standalone Kiali  ["https://{host}", "Kiali"]
+└─ No  → (a) no link  ["-"]
 
 Route lookup skipped when:
   ingress.enabled === false  OR  web_fqdn already set
@@ -159,12 +156,28 @@ Route fetch failure → treated as no routeHost
 
 
 
+## 6. Istios list page — `/ossmconsole/istios`
+
+Per Istio CR row in the **Observe** column (`renderIstioObserveLink`). Co-located Kiali CRs are those whose deployment namespace (`getKialiServiceTarget(k).namespace`) equals the Istio CR's `spec.namespace`. Only the first match is used.
+
+```
+Co-located Kiali CR (deployment namespace = Istio CR's spec.namespace)?
+├─ Yes → host available (spec.server.web_fqdn OR Route host from useKialiRouteHosts)?
+│         ├─ Yes → (b) Standalone Kiali  ["https://{host}", "Kiali"]
+│         └─ No  → (a) no link  ["-"]
+└─ No  → (a) no link  ["-"]
+```
+
+---
+
+
+
 ## Cross-page cheat sheet
 
 
-| Outcome            | Fleet pages 1, 3, 4               | CP Detail (#2)           | Kialis page (#5)                  |
-| ------------------ | --------------------------------- | ------------------------ | --------------------------------- |
-| **(a) No link**    | `-` in cell                       | `Kiali not available` / `OSSMC not available` | `-`                               |
-| **(b) Standalone** | Preferred in cell                 | Separate Kiali row       | When not connected + host found    |
-| **(c) OSSMC-Full** | Spoke overview when Kiali CR exists and OSSMC is integrated with that Kiali | Separate OSSMC row (spoke + Kiali CR + integrated OSSMC) | When connected → hub overview (same tab) |
-| **(d) Istios and Kialis list pages** | Hub istios/kiali detail; spoke istios detail when OSSMC installed but full observability unavailable | Separate OSSMC row (hub or spoke) | N/A (uses overview when connected) |
+| Outcome            | Fleet pages 1, 3, 4               | CP Detail (#2)           | Kialis page (#5)        | Istios page (#6)                  |
+| ------------------ | --------------------------------- | ------------------------ | ----------------------- | --------------------------------- |
+| **(a) No link**    | `-` in cell                       | `Kiali not available` / `OSSMC not available` | `-`   | `-`                               |
+| **(b) Standalone** | Preferred in cell                 | Separate Kiali row       | When host found         | When co-located Kiali + host found |
+| **(c) OSSMC-Full** | Spoke overview when Kiali CR exists and OSSMC is integrated with that Kiali | Separate OSSMC row (spoke + Kiali CR + integrated OSSMC) | N/A | N/A |
+| **(d) Istios and Kialis list pages** | Hub istios/kiali detail; spoke istios detail when OSSMC installed but full observability unavailable | Separate OSSMC row (hub or spoke) | N/A | N/A |

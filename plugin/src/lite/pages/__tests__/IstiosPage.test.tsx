@@ -6,40 +6,49 @@ import { makeIstioResource } from '../../__fixtures__/testFactories';
 
 afterEach(() => rstest.clearAllMocks());
 
+type WatchResult<T> = [T, boolean, unknown];
+
+function mockIstioWatch(istio: WatchResult<unknown>, kiali: WatchResult<unknown> = [[], true, null]): void {
+  rstest.mocked(useK8sWatchResource).mockImplementation((params: { groupVersionKind?: { kind?: string } } | null) => {
+    if (params?.groupVersionKind?.kind === 'Kiali') return kiali;
+    return istio;
+  });
+}
+
 describe('IstiosPage', () => {
   it('renders the page title', () => {
-    rstest.mocked(useK8sWatchResource).mockReturnValue([[], true, null]);
+    mockIstioWatch([[], true, null]);
     render(<IstiosPage />);
     expect(screen.getByText('Istios')).toBeInTheDocument();
   });
 
   it('shows loading state while resources are fetching', () => {
-    rstest.mocked(useK8sWatchResource).mockReturnValue([[], false, null]);
+    mockIstioWatch([[], false, null]);
     render(<IstiosPage />);
     expect(screen.getByTestId('loading')).toBeInTheDocument();
   });
 
   it('shows empty state when no Istio resources exist', () => {
-    rstest.mocked(useK8sWatchResource).mockReturnValue([[], true, null]);
+    mockIstioWatch([[], true, null]);
     render(<IstiosPage />);
     expect(screen.getByText('No Istio control planes found')).toBeInTheDocument();
   });
 
   it('shows OSSM Operator missing state when the Istio CRD is not registered', () => {
-    rstest.mocked(useK8sWatchResource).mockReturnValue([null, true, new Error('Model does not exist')]);
+    mockIstioWatch([null, true, new Error('Model does not exist')]);
     render(<IstiosPage />);
     expect(screen.getByText('OSSM Operator is not installed')).toBeInTheDocument();
     expect(screen.queryByTestId('load-error')).not.toBeInTheDocument();
   });
 
   it('links to OperatorHub from the OSSM Operator missing state', () => {
-    rstest.mocked(useK8sWatchResource).mockReturnValue([null, true, new Error('Model does not exist')]);
+    mockIstioWatch([null, true, new Error('Model does not exist')]);
     render(<IstiosPage />);
     expect(screen.getByRole('link', { name: 'OperatorHub' })).toHaveAttribute('href', OSSM_OPERATORHUB_HREF);
   });
 
   it('shows load error for unexpected watch failures', () => {
-    rstest.mocked(useK8sWatchResource).mockReturnValue([null, true, new Error('watch failed')]);
+    mockIstioWatch([null, true, new Error('watch failed')]);
     render(<IstiosPage />);
     expect(screen.getByTestId('load-error')).toBeInTheDocument();
     expect(screen.queryByText('OSSM Operator is not installed')).not.toBeInTheDocument();
@@ -50,7 +59,7 @@ describe('IstiosPage', () => {
       makeIstioResource({ metadata: { name: 'default', creationTimestamp: '2026-01-01T00:00:00Z' } }),
       makeIstioResource({ metadata: { name: 'secondary', creationTimestamp: '2026-01-02T00:00:00Z' } })
     ];
-    rstest.mocked(useK8sWatchResource).mockReturnValue([resources, true, null]);
+    mockIstioWatch([resources, true, null]);
     render(<IstiosPage />);
     expect(screen.getByText('default')).toBeInTheDocument();
     expect(screen.getByText('secondary')).toBeInTheDocument();
@@ -58,35 +67,35 @@ describe('IstiosPage', () => {
 
   it('renders the control plane namespace from spec.namespace', () => {
     const resources = [makeIstioResource()];
-    rstest.mocked(useK8sWatchResource).mockReturnValue([resources, true, null]);
+    mockIstioWatch([resources, true, null]);
     render(<IstiosPage />);
     expect(screen.getByText('istio-system')).toBeInTheDocument();
   });
 
   it('renders the version column', () => {
     const resources = [makeIstioResource()];
-    rstest.mocked(useK8sWatchResource).mockReturnValue([resources, true, null]);
+    mockIstioWatch([resources, true, null]);
     render(<IstiosPage />);
     expect(screen.getByText('v1.30.2')).toBeInTheDocument();
   });
 
   it('renders the profile column', () => {
     const resources = [makeIstioResource()];
-    rstest.mocked(useK8sWatchResource).mockReturnValue([resources, true, null]);
+    mockIstioWatch([resources, true, null]);
     render(<IstiosPage />);
     expect(screen.getByText('openshift')).toBeInTheDocument();
   });
 
   it('renders the update strategy column', () => {
     const resources = [makeIstioResource()];
-    rstest.mocked(useK8sWatchResource).mockReturnValue([resources, true, null]);
+    mockIstioWatch([resources, true, null]);
     render(<IstiosPage />);
     expect(screen.getByText('InPlace')).toBeInTheDocument();
   });
 
   it('renders the status column with Ready label', () => {
     const resources = [makeIstioResource()];
-    rstest.mocked(useK8sWatchResource).mockReturnValue([resources, true, null]);
+    mockIstioWatch([resources, true, null]);
     render(<IstiosPage />);
     expect(screen.getByText('Ready')).toBeInTheDocument();
   });
@@ -98,7 +107,7 @@ describe('IstiosPage', () => {
         status: undefined
       })
     ];
-    rstest.mocked(useK8sWatchResource).mockReturnValue([resources, true, null]);
+    mockIstioWatch([resources, true, null]);
     render(<IstiosPage />);
     const dashes = screen.getAllByText('-');
     expect(dashes.length).toBeGreaterThanOrEqual(2);
@@ -106,7 +115,7 @@ describe('IstiosPage', () => {
 
   it('links the name to the detail page', () => {
     const resources = [makeIstioResource()];
-    rstest.mocked(useK8sWatchResource).mockReturnValue([resources, true, null]);
+    mockIstioWatch([resources, true, null]);
     render(<IstiosPage />);
     expect(screen.getByRole('link', { name: 'default' })).toHaveAttribute('href', '/ossmconsole/istios/default');
   });
