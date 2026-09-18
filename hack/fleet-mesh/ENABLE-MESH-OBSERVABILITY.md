@@ -281,11 +281,19 @@ Prometheus auth secrets and ServiceAccounts are created in the Kiali **deploymen
 | `Secret/prometheus-user-workload-token` | Kiali deployment namespace | Kiali + `local` backend |
 | Kiali CR patch (`external_services.prometheus`) | `--kiali-cr-namespace` | When `--kiali-cr-namespace` set |
 
+The workload and ztunnel `PodMonitor`s derive the generic `app` and `version`
+labels from `app.kubernetes.io/name` and `app.kubernetes.io/version`, falling
+back to the legacy `app` and `version` pod labels when necessary. The
+`app_kubernetes_io_name` and `app_kubernetes_io_version` labels are copied
+only from their corresponding Kubernetes pod labels; they are not synthesized
+from the legacy labels.
+
 ## Idempotency
 
 **`install`** and **`uninstall`** are safe to run repeatedly with the same flags.
 
-- Second `install`: logs `[ok] … already configured` and exits 0
+- Second `install`: reconciles managed monitors and leaves other already
+  configured resources unchanged
 - Second `uninstall` on a clean cluster: logs `[ok] … not found, skipping` and exits 0
 - `install` → `uninstall` → `install` restores cluster-local configuration;
   MCOA is retained unless `--remove-mcoa-federation` is supplied
