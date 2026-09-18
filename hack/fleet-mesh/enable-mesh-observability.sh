@@ -947,11 +947,10 @@ install_app_podmonitor() {
 
   if oc_cluster get podmonitor "${name}" -n "${app_ns}" \
     -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}' 2>/dev/null | grep -q "${MANAGED_BY}"; then
-    info "[ok] ${name} already managed in ${app_ns}"
-    return 0
+    info "[ok] ${name} already managed in ${app_ns}; reconciling"
   fi
 
-  info "Creating sidecar PodMonitor ${name} in ${app_ns}"
+  info "Applying sidecar PodMonitor ${name} in ${app_ns}"
   if [ "${DRY_RUN}" = true ]; then
     info "[dry-run] Would create ${name}"
     return 0
@@ -1012,6 +1011,18 @@ spec:
       action: replace
       regex: "(.+);.*|.*;(.+)"
       replacement: "\${1}\${2}"
+    - sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_name","__meta_kubernetes_pod_label_app"]
+      separator: ";"
+      targetLabel: "app_kubernetes_io_name"
+      action: replace
+      regex: "(.+);.*|.*;(.+)"
+      replacement: "\${1}\${2}"
+    - sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_version","__meta_kubernetes_pod_label_version"]
+      separator: ";"
+      targetLabel: "app_kubernetes_io_version"
+      action: replace
+      regex: "(.+);.*|.*;(.+)"
+      replacement: "\${1}\${2}"
     - sourceLabels: ["__meta_kubernetes_namespace"]
       action: replace
       targetLabel: namespace
@@ -1025,11 +1036,10 @@ install_ztunnel_monitor() {
 
   if oc_cluster get podmonitor "${name}" -n "${ZTUNNEL_NAMESPACE}" \
     -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}' 2>/dev/null | grep -q "${MANAGED_BY}"; then
-    info "[ok] ${name} already managed in ${ZTUNNEL_NAMESPACE}"
-    return 0
+    info "[ok] ${name} already managed in ${ZTUNNEL_NAMESPACE}; reconciling"
   fi
 
-  info "Creating ztunnel PodMonitor in ${ZTUNNEL_NAMESPACE}"
+  info "Applying ztunnel PodMonitor in ${ZTUNNEL_NAMESPACE}"
   if [ "${DRY_RUN}" = true ]; then
     info "[dry-run] Would create ${name}"
     return 0
@@ -1087,6 +1097,18 @@ spec:
     - sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_version","__meta_kubernetes_pod_label_version"]
       separator: ";"
       targetLabel: "version"
+      action: replace
+      regex: "(.+);.*|.*;(.+)"
+      replacement: "\${1}\${2}"
+    - sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_name","__meta_kubernetes_pod_label_app"]
+      separator: ";"
+      targetLabel: "app_kubernetes_io_name"
+      action: replace
+      regex: "(.+);.*|.*;(.+)"
+      replacement: "\${1}\${2}"
+    - sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_version","__meta_kubernetes_pod_label_version"]
+      separator: ";"
+      targetLabel: "app_kubernetes_io_version"
       action: replace
       regex: "(.+);.*|.*;(.+)"
       replacement: "\${1}\${2}"
