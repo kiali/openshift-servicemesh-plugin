@@ -7,7 +7,8 @@ import type { editor } from 'monaco-editor';
 import { MarkerSeverity } from 'monaco-editor';
 import { YAMLException, loadAll } from 'js-yaml';
 import { editorStyle } from 'styles/EditorStyle';
-import { Theme } from '../../types/Common';
+import { ColorScheme } from '../../types/Common';
+import { mapAppearanceFromState, resolveColorScheme } from '../../utils/AppearanceUtils';
 import type { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
 
@@ -15,6 +16,7 @@ export type PolicyItem = AuthorizationPolicy | Sidecar;
 
 type ReduxProps = {
   colorScheme: string;
+  systemAppearanceRevision: number;
 };
 
 type Props = ReduxProps & {
@@ -77,7 +79,7 @@ export const EditorPreviewComponent: React.FC<Props> = (props: Props) => {
       <Editor
         value={yaml}
         language="yaml"
-        theme={props.colorScheme === Theme.DARK ? 'vs-dark' : 'light'}
+        theme={resolveColorScheme(props.colorScheme) === ColorScheme.DARK ? 'vs-dark' : 'light'}
         height="275px"
         onMount={onEditorDidMount}
         options={{ readOnly: props.readOnly, wordWrap: 'on', scrollBeyondLastLine: false, glyphMargin: true }}
@@ -86,10 +88,6 @@ export const EditorPreviewComponent: React.FC<Props> = (props: Props) => {
   );
 };
 
-const mapStateToProps = (state: KialiAppState): ReduxProps => {
-  return {
-    colorScheme: state.globalState.colorScheme
-  };
-};
+const mapStateToProps = (state: KialiAppState): ReduxProps => mapAppearanceFromState(state);
 
 export const EditorPreview = connect(mapStateToProps)(EditorPreviewComponent);

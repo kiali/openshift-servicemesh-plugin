@@ -4,8 +4,8 @@ import { t } from 'utils/I18nUtils';
 import type { Conversation } from '@patternfly/chatbot';
 import { Chatbot, ChatbotToggle } from '@patternfly/chatbot';
 import '@patternfly/chatbot/dist/css/main.css';
-import { Theme } from 'types/Common';
-import { useKialiColorScheme } from 'utils/ThemeUtils';
+import { ColorScheme } from 'types/Common';
+import { useKialiColorScheme } from 'utils/AppearanceUtils';
 import { ChatBotHeader } from './ChatBotHeader';
 import type { KialiAppState } from 'store/Store';
 import { ChatBotFooter } from './ChatBotFooter';
@@ -32,7 +32,7 @@ const resetConversationState = (): void => {
 export const ChatBot: React.FC = () => {
   const dispatch = useDispatch();
   const colorScheme = useKialiColorScheme();
-  const isDarkTheme = colorScheme === Theme.DARK;
+  const isDarkTheme = colorScheme === ColorScheme.DARK;
   const ClosedToggleIcon = isDarkTheme ? KialiIconDark : KialiIconLight;
   const allowedToUseChatbot = useSelector((state: KialiAppState) => state.ai.chat.allowed);
   const displayMode = useSelector((state: KialiAppState) => state.ai.chat.displayMode);

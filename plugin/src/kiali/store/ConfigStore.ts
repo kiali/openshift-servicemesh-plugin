@@ -28,6 +28,7 @@ import type { KialiAppAction } from 'actions/KialiAppAction';
 import { INITIAL_MESH_STATE } from 'reducers/MeshDataState';
 import { webRoot } from 'app/History';
 import { INITIAL_CHAT_AI_STATE } from 'reducers/ChatAIState';
+import { ColorScheme, ContrastMode } from 'types/Common';
 
 declare const window;
 
@@ -65,22 +66,52 @@ const namespacePersistFilter = whitelistInputWithInitialState(
 
 const globalStatePersistPaths = ['colorScheme', 'contrastMode', 'language', 'theme'];
 
+/**
+ * Normalizes globalState read from redux-persist on rehydrate.
+ *
+ * Older builds stored light/dark preference in `theme`; current builds use `colorScheme`
+ * for that and reserve `theme` for the PF variant (default|felt). When `theme` is Light
+ * or Dark, promote it to `colorScheme` and reset `theme` to default.
+ *
+ * Also validates contrast mode and theme variant against known values, falling back to
+ * defaults for anything missing or invalid. Spreads INITIAL_GLOBAL_STATE so new fields
+ * added to GlobalState get sane defaults without breaking existing persisted sessions.
+ */
+export const migratePersistedGlobalState = (outboundState: Partial<GlobalState> & { theme?: string }): GlobalState => {
+  const isLegacyColorSchemeTheme = outboundState.theme === 'Light' || outboundState.theme === 'Dark';
+  const legacyColorScheme = isLegacyColorSchemeTheme ? outboundState.theme : undefined;
+  const theme = isLegacyColorSchemeTheme
+    ? 'default'
+    : outboundState.theme === 'default' || outboundState.theme === 'felt'
+      ? outboundState.theme
+      : INITIAL_GLOBAL_STATE.theme;
+  const rawColorScheme = outboundState.colorScheme;
+  const normalizedColorScheme =
+    rawColorScheme === ColorScheme.LIGHT || rawColorScheme === ColorScheme.DARK || rawColorScheme === ColorScheme.SYSTEM
+      ? rawColorScheme
+      : undefined;
+  const colorScheme = normalizedColorScheme || legacyColorScheme || INITIAL_GLOBAL_STATE.colorScheme;
+  const rawContrastMode = outboundState.contrastMode;
+  const contrastMode =
+    rawContrastMode === ContrastMode.GLASS ||
+    rawContrastMode === ContrastMode.HIGH_CONTRAST ||
+    rawContrastMode === ContrastMode.DEFAULT ||
+    rawContrastMode === ContrastMode.SYSTEM
+      ? rawContrastMode
+      : INITIAL_GLOBAL_STATE.contrastMode;
+
+  return {
+    ...INITIAL_GLOBAL_STATE,
+    ...outboundState,
+    colorScheme,
+    contrastMode,
+    theme
+  };
+};
+
 const globalStateFilter = createTransform(
   inboundState => persistFilter(inboundState, globalStatePersistPaths, 'whitelist'),
-  outboundState => {
-    const persisted = outboundState as Partial<GlobalState> & { theme?: string };
-    const legacyColorScheme = persisted.theme === 'Light' || persisted.theme === 'Dark' ? persisted.theme : undefined;
-    const colorScheme = persisted.colorScheme || legacyColorScheme || INITIAL_GLOBAL_STATE.colorScheme;
-    const theme =
-      persisted.theme === 'default' || persisted.theme === 'felt' ? persisted.theme : INITIAL_GLOBAL_STATE.theme;
-
-    return {
-      ...INITIAL_GLOBAL_STATE,
-      ...persisted,
-      colorScheme,
-      theme
-    };
-  },
+  outboundState => migratePersistedGlobalState(outboundState as Partial<GlobalState> & { theme?: string }),
   { whitelist: ['globalState'] }
 );
 

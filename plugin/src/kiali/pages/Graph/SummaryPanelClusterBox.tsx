@@ -21,8 +21,8 @@ import { descendents } from 'helpers/GraphHelpers';
 import { panelHeadingStyle, panelStyle } from './SummaryPanelStyle';
 import { kialiIconDark, kialiIconLight, serverConfig } from '../../config';
 import type { KialiInstance } from '../../types/Mesh';
-import { getKialiColorScheme } from 'utils/ThemeUtils';
-import { Theme } from '../../types/Common';
+import { getKialiColorScheme, resolveColorScheme } from 'utils/AppearanceUtils';
+import { ColorScheme } from '../../types/Common';
 
 type SummaryPanelClusterBoxState = {
   clusterBox: any;
@@ -298,7 +298,7 @@ export class SummaryPanelClusterBox extends React.Component<SummaryPanelPropType
   };
 
   private renderKialiLinks = (kialiInstances: KialiInstance[]): React.ReactNode => {
-    const kialiIcon = getKialiColorScheme() === Theme.DARK ? kialiIconDark : kialiIconLight;
+    const kialiIcon = resolveColorScheme(getKialiColorScheme()) === ColorScheme.DARK ? kialiIconDark : kialiIconLight;
 
     return kialiInstances.map(instance => {
       if (instance.url.length !== 0) {

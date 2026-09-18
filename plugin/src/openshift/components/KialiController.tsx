@@ -34,7 +34,7 @@ import {
 import { MeshTlsActions } from 'actions/MeshTlsActions';
 import type { TLSStatus } from 'types/TLSStatus';
 import { store } from 'store/ConfigStore';
-import { syncReduxThemeFromDocument } from 'utils/ThemeUtils';
+import { syncReduxAppearanceFromDocument } from 'utils/AppearanceUtils';
 import { kialiStyle } from 'styles/StyleUtils';
 import { addError } from 'utils/AlertUtils';
 
@@ -315,10 +315,10 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   };
 
   private setDocLayout = (): void => {
-    // Mark parent-owned theme for Kiali session detection (no URL kiosk param in OSSMC).
+    // Mark parent-owned appearance for Kiali session detection (no URL kiosk param in OSSMC).
     sessionStorage.setItem('KIALI_PARENT_KIOSK', '/');
     store.dispatch(GlobalActions.setKiosk('/'));
-    syncReduxThemeFromDocument();
+    syncReduxAppearanceFromDocument();
   };
 
   private processServerStatus = (status: StatusState): void => {

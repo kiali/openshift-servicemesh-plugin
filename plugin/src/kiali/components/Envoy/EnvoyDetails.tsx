@@ -38,7 +38,8 @@ import {
 } from 'styles/FlexStyles';
 import { ResizeHeightObserver } from 'utils/ResizeHeightObserver';
 import type { TimeInMilliseconds } from '../../types/Common';
-import { Theme } from '../../types/Common';
+import { ColorScheme } from '../../types/Common';
+import { mapAppearanceFromState, resolveColorScheme } from '../../utils/AppearanceUtils';
 import { subTabStyle } from 'styles/TabStyles';
 import { getAppLabelName, getVersionLabelName } from 'config/ServerConfig';
 
@@ -69,6 +70,7 @@ export type ResourceSorts = { [resource: string]: ISortBy };
 type ReduxProps = {
   colorScheme: string;
   namespaces: Namespace[];
+  systemAppearanceRevision: number;
 };
 
 type EnvoyDetailsProps = ReduxProps & {
@@ -288,10 +290,6 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
     return envoyDashboardRef;
   };
 
-  isLoadingConfig = (): boolean => {
-    return Object.keys(this.state.config).length < 1;
-  };
-
   onRouteLinkClick = (): void => {
     this.setState({
       config: {},
@@ -366,7 +364,7 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
                       <Editor
                         value={this.editorContent()}
                         language="yaml"
-                        theme={this.props.colorScheme === Theme.DARK ? 'vs-dark' : 'light'}
+                        theme={resolveColorScheme(this.props.colorScheme) === ColorScheme.DARK ? 'vs-dark' : 'light'}
                         height="100%"
                         onMount={ed => {
                           (this.monacoEditorRef as any).current = ed;
@@ -391,6 +389,7 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
                     namespace={this.props.namespace}
                     template={envoyMetricsDashboardRef.template}
                     version={version}
+                    versionLabelName={verLabelName}
                     workload={this.props.workload!.name}
                   />
                 </div>
@@ -434,7 +433,7 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
 
 const mapStateToProps = (state: KialiAppState): ReduxProps => ({
   namespaces: namespaceItemsSelector(state)!,
-  colorScheme: state.globalState.colorScheme
+  ...mapAppearanceFromState(state)
 });
 
 export const EnvoyDetails = connect(mapStateToProps)(EnvoyDetailsComponent);

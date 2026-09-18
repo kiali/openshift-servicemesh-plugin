@@ -24,7 +24,8 @@ import type { TracingUrlProvider } from 'types/Tracing';
 import { KialiIcon } from 'config/KialiIcon';
 import type { SortableTh } from 'components/Table/SimpleTable';
 import { SimpleTable } from 'components/Table/SimpleTable';
-import { Theme } from '../../../types/Common';
+import { ColorScheme } from '../../../types/Common';
+import { mapAppearanceFromState, resolveColorScheme } from '../../../utils/AppearanceUtils';
 
 type ReduxProps = {
   loadMetricsStats: (queries: MetricsStatsQuery[], isCompact: boolean) => void;
@@ -35,6 +36,7 @@ type StateProps = {
   kiosk: string;
   metricsStats: Map<string, MetricsStats>;
   provider?: string;
+  systemAppearanceRevision: number;
 };
 
 type Props = ReduxProps &
@@ -224,7 +226,7 @@ class SpanTableComponent extends React.Component<Props, State> {
   private buildRow = (item: RichSpanData): IRow => {
     const isExpanded = this.isExpanded(item.spanID);
     const isSpan = item.spanID === getSpanId();
-    const darkTheme = this.props.colorScheme === Theme.DARK;
+    const darkTheme = resolveColorScheme(this.props.colorScheme) === ColorScheme.DARK;
     return {
       cells: [
         <>
@@ -573,7 +575,7 @@ const mapStateToProps = (state: KialiAppState): StateProps => ({
   kiosk: state.globalState.kiosk,
   metricsStats: state.metricsStats.data,
   provider: state.tracingState.info?.provider,
-  colorScheme: state.globalState.colorScheme
+  ...mapAppearanceFromState(state)
 });
 
 const mapDispatchToProps = (dispatch: KialiDispatch): ReduxProps => ({

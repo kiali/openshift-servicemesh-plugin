@@ -3,15 +3,16 @@ import { Alert, Button, ButtonVariant } from '@patternfly/react-core';
 import { kialiStyle } from 'styles/StyleUtils';
 import { isKioskMode } from '../utils/SearchParamUtils';
 
-import { Theme } from 'types/Common';
+import { ColorScheme } from 'types/Common';
 import {
-  applyDocumentTheme,
-  getKialiContrastMode,
+  applyDocumentAppearance,
   getKialiColorScheme,
+  getKialiContrastMode,
   getKialiTheme,
-  isParentOwnedTheme,
-  readDocumentTheme
-} from 'utils/ThemeUtils';
+  resolveColorScheme,
+  isParentOwnedAppearance,
+  readDocumentColorScheme
+} from 'utils/AppearanceUtils';
 import { kialiLogoDark, kialiLogoLight } from 'config';
 
 type initializingScreenProps = {
@@ -62,8 +63,8 @@ const centerVerticalHorizontalStyle = kialiStyle({
 
 export const InitializingScreen: React.FC<initializingScreenProps> = (props: initializingScreenProps) => {
   const errorDiv = React.createRef<HTMLDivElement>();
-  const [colorScheme, setColorScheme] = React.useState<Theme>(() =>
-    isParentOwnedTheme() ? readDocumentTheme() : getKialiColorScheme()
+  const [colorScheme, setColorScheme] = React.useState(() =>
+    isParentOwnedAppearance() ? readDocumentColorScheme() : resolveColorScheme(getKialiColorScheme())
   );
 
   React.useEffect(() => {
@@ -71,21 +72,17 @@ export const InitializingScreen: React.FC<initializingScreenProps> = (props: ini
       document.body.classList.add('kiosk');
     }
 
-    // OSSMC: Console owns <html> classes — read theme from the document so the logo
-    // matches before ParentThemeSync mounts. Standalone: use stored theme and apply it.
-    if (isParentOwnedTheme()) {
-      setColorScheme(readDocumentTheme());
-      return;
+    // OSSMC: Console owns <html> classes — logo color scheme comes from useState above.
+    // Standalone: apply stored appearance (color scheme, contrast mode, and theme) to <html>.
+    if (!isParentOwnedAppearance()) {
+      applyDocumentAppearance(getKialiColorScheme(), getKialiContrastMode(), getKialiTheme());
+      setColorScheme(resolveColorScheme(getKialiColorScheme()));
     }
-
-    const resolvedColorScheme = getKialiColorScheme();
-    applyDocumentTheme(resolvedColorScheme, getKialiContrastMode(), getKialiTheme());
-    setColorScheme(resolvedColorScheme);
   }, []);
 
   return (
     <div data-test="loading-screen" className={centerVerticalHorizontalStyle}>
-      <img alt="Kiali Logo" src={colorScheme === Theme.DARK ? kialiLogoDark : kialiLogoLight} width="200" />
+      <img alt="Kiali Logo" src={colorScheme === ColorScheme.DARK ? kialiLogoDark : kialiLogoLight} width="200" />
       {props.errorMsg ? (
         <div ref={errorDiv} className={defaultErrorStyle}>
           <Alert variant="danger" isInline={true} title={props.errorMsg} />

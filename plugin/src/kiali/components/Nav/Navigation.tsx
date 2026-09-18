@@ -25,12 +25,13 @@ import { UserSettingsThunkActions } from '../../actions/UserSettingsThunkActions
 import { Menu } from './Menu';
 import { Link, useLocation } from 'react-router-dom-v5-compat';
 import type { ExternalServiceInfo } from '../../types/StatusState';
-import { Theme } from 'types/Common';
+import { ColorScheme } from 'types/Common';
 import { useKialiTranslation } from 'utils/I18nUtils';
+import { useKialiColorScheme } from 'utils/AppearanceUtils';
 import { isKiosk } from '../Kiosk/KioskActions';
 import { NotificationCenter } from 'components/NotificationCenter/NotificationCenter';
 import { ChatBot } from 'components/ChatBot/ChatBot';
-import { ParentThemeSync } from 'components/Kiosk/ParentThemeSync';
+import { ParentAppearanceSync } from 'components/Kiosk/ParentAppearanceSync';
 
 type ReduxStateProps = {
   chatbotEnabled: boolean;
@@ -116,7 +117,8 @@ export const NavigationComponent: React.FC<NavigationProps> = (props: Navigation
 
   const isNavOpen = isMobileView ? isNavOpenMobile : isNavOpenDesktop || !props.navCollapsed;
 
-  const darkTheme = props.colorScheme === Theme.DARK;
+  const colorScheme = useKialiColorScheme();
+  const darkTheme = colorScheme === ColorScheme.DARK;
   const kioskMode = isKiosk(props.kiosk);
 
   const masthead = kioskMode ? undefined : (
@@ -159,7 +161,7 @@ export const NavigationComponent: React.FC<NavigationProps> = (props: Navigation
       isNotificationDrawerExpanded={props.showNotificationCenter}
       onPageResize={(_, { mobileView, windowSize }) => onPageResize({ mobileView, windowSize })}
     >
-      {kioskMode && <ParentThemeSync />}
+      {kioskMode && <ParentAppearanceSync />}
       <PageSection hasBodyWrapper={false} className={flexBoxColumnStyle}>
         <RenderPage isGraph={isGraph()} />
       </PageSection>
