@@ -10,10 +10,11 @@
 #   install scripts or requiring a particular directory layout.
 #
 # WHAT IT DOES (per mesh, per cluster)
-#   Phase A — Hub Observatorium (hub backend only): MinIO, MCO, hub metrics allowlist
+#   Phase A — Hub Observatorium (hub backend only): MinIO and MCO
 #   Phase B — User Workload Monitoring on the target cluster
-#   Phase C — Istio scraping: istiod ServiceMonitor, optional workload PodMonitors, allowlists
-#   Phase D — Optional Kiali CR patch for external_services.prometheus (--kiali-cr-namespace)
+#   Phase C — Istio scraping: istiod ServiceMonitor and optional workload PodMonitors
+#   Phase D — ACM 2.17 MCOA recording rules and federation (hub backend only)
+#   Phase E — Optional Kiali CR patch for external_services.prometheus (--kiali-cr-namespace)
 #
 #   MCM meshes spanning hub and spoke: run install once on *each* cluster that runs the
 #   mesh control plane, with --metrics-backend hub and the same --istio-namespace. Kiali
@@ -28,8 +29,9 @@
 #   install, uninstall, and verify are idempotent with the same flags. Created resources
 #   are labeled app.kubernetes.io/managed-by=enable-mesh-observability; uninstall removes
 #   only labeled monitors, allowlists, and Kiali prometheus secrets/config it added.
-#   Hub MCO/MinIO are left in place by default; pass --remove-hub-observability on
-#   uninstall for lab teardown.
+#   Hub MCO/MinIO and MCOA federation resources are left in place by default.
+#   Use --remove-mcoa-federation for scoped federation cleanup and
+#   --remove-hub-observability for lab infrastructure teardown.
 #
 # DOCUMENTATION
 #   See ENABLE-MESH-OBSERVABILITY.md in this directory for fleet-mesh quick starts,
@@ -64,13 +66,23 @@ MANAGED_CLUSTER_NAME=""
 INSTALL_HUB_OBS="auto"
 SKIP_UWM=false
 OBS_NS="open-cluster-management-observability"
-RETENTION_PERIOD="14d"
+RETENTION_PERIOD="365d"
+# Explicit metrics cadence: edge monitors/rules are 30s, MCOA federation jobs
+# are 5m, and Kiali's hint below must match the effective federation interval.
 SCRAPE_INTERVAL="5m"
 WAIT_FOR_METRICS=false
 TIMEOUT=1200
 DRY_RUN=false
 RESTORE_KIALI_PROM=true
 REMOVE_HUB_OBS=false
+COLLECTION_MODE="mcoa"
+MCOA_HELPER="${SCRIPT_DIR}/../../../kiali/hack/configure-acm-mcoa.sh"
+MCOA_PLACEMENT_NAME=""
+MCOA_PLACEMENT_NAMESPACE=""
+MCOA_CONFIGURE="auto"
+MCOA_REMOVE=false
+MCOA_WITH_DASHBOARDS=false
+MCOA_RULE_NAMESPACE="mesh-observability"
 
 MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-minio}"
 MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-minio123}"
@@ -133,20 +145,30 @@ Required:
 Required when --metrics-backend hub:
   --hub-context CTX           ACM hub cluster context
 
-Optional — Kiali (phase D; omit for metrics-only):
+Optional — Kiali (phase E; omit for metrics-only):
   --kiali-cr-namespace NS     Namespace of the Kiali CR to patch
   --kiali-name NAME           Kiali CR name (default: kiali)
 
 Other options:
   --mesh-id ID                mesh_id PodMonitor label (auto-detect from Istio CR if omitted)
-  --app-namespaces LIST       Comma-separated workload namespaces for PodMonitors
+  --app-namespaces LIST       Comma-separated workload namespaces for PodMonitors;
+                              platform metrics are federated cluster-wide
+  --mcoa-rule-namespace NS    Dedicated UWM-exempt namespace for the single
+                              cross-namespace recording rule (default: mesh-observability)
   --ambient                   Create ztunnel PodMonitor in --ztunnel-namespace
-  --ztunnel-namespace NS      ZTunnel namespace (default: ztunnel)
+  --ztunnel-namespace NS      Actual ztunnel namespace (default: ztunnel)
   --managed-cluster-name NAME ACM ManagedCluster name (default: cluster context name)
+  --collection-mode MODE      mcoa (ACM 2.17, default) or legacy
+  --mcoa-helper PATH          Path to Kiali configure-acm-mcoa.sh
+  --mcoa-placement-name NAME Select the placement (required when multiple exist)
+  --mcoa-placement-namespace NS Namespace of the selected MCOA placement
+  --configure-mcoa MODE       auto (hub invocation only), always, or never
+  --mcoa-with-dashboards      Also federate the optional Istio dashboard tier
+  --remove-mcoa-federation   Remove this namespace set from MCOA on uninstall
   --install-hub-observability auto|always|never  Install MCO on hub if missing (default: auto)
   --skip-uwm                  Skip UWM enablement
   --observability-namespace NS Hub observability namespace (default: open-cluster-management-observability)
-  --retention-period DUR      Kiali thanos_proxy retention (default: 14d)
+  --retention-period DUR      Kiali thanos_proxy retention (default: 365d)
   --scrape-interval DUR       Kiali thanos_proxy scrape interval (default: 5m)
   --wait-for-metrics          Block until istio_* metrics appear in backend
   --timeout SECS              Wait timeout (default: 1200)
@@ -158,21 +180,21 @@ Other options:
 Examples:
   # MCM secure-mcm: hub (metrics scrape + mesh-hello workloads)
   enable-mesh-observability.sh install \
-    --hub-context my-hub --cluster-context my-hub \
+    --hub-context HUB_CONTEXT --cluster-context HUB_CONTEXT \
     --istio-namespace secure-ns --metrics-backend hub \
     --app-namespaces secure-mcm-testapp \
     --managed-cluster-name local-cluster
 
   # MCM secure-mcm: spoke (mesh-hello + Kiali queries hub Observatorium)
   enable-mesh-observability.sh install \
-    --hub-context my-hub --cluster-context my-spoke \
+    --hub-context HUB_CONTEXT --cluster-context SPOKE_CONTEXT \
     --istio-namespace secure-ns --kiali-cr-namespace kiali-operator \
     --metrics-backend hub --app-namespaces secure-mcm-testapp \
-    --managed-cluster-name my-spoke
+    --managed-cluster-name SPOKE_NAME
 
   # Discovered mesh on spoke (local UWM only)
   enable-mesh-observability.sh install \
-    --cluster-context my-spoke \
+    --cluster-context SPOKE_CONTEXT \
     --istio-namespace discovered-spoke-ns \
     --metrics-backend local
 USAGE
@@ -196,6 +218,14 @@ parse_args() {
       --ambient) AMBIENT=true; shift ;;
       --ztunnel-namespace) ZTUNNEL_NAMESPACE="${2:?'--ztunnel-namespace requires a value'}"; shift 2 ;;
       --managed-cluster-name) MANAGED_CLUSTER_NAME="${2:?'--managed-cluster-name requires a value'}"; shift 2 ;;
+      --collection-mode) COLLECTION_MODE="${2:?'--collection-mode requires a value'}"; shift 2 ;;
+      --mcoa-helper) MCOA_HELPER="${2:?'--mcoa-helper requires a value'}"; shift 2 ;;
+      --mcoa-placement-name) MCOA_PLACEMENT_NAME="${2:?'--mcoa-placement-name requires a value'}"; shift 2 ;;
+      --mcoa-placement-namespace) MCOA_PLACEMENT_NAMESPACE="${2:?'--mcoa-placement-namespace requires a value'}"; shift 2 ;;
+      --configure-mcoa) MCOA_CONFIGURE="${2:?'--configure-mcoa requires a value'}"; shift 2 ;;
+      --mcoa-with-dashboards) MCOA_WITH_DASHBOARDS=true; shift ;;
+      --mcoa-rule-namespace) MCOA_RULE_NAMESPACE="${2:?'--mcoa-rule-namespace requires a value'}"; shift 2 ;;
+      --remove-mcoa-federation) MCOA_REMOVE=true; shift ;;
       --install-hub-observability) INSTALL_HUB_OBS="${2:?'--install-hub-observability requires a value'}"; shift 2 ;;
       --skip-uwm) SKIP_UWM=true; shift ;;
       --observability-namespace) OBS_NS="${2:?'--observability-namespace requires a value'}"; shift 2 ;;
@@ -235,9 +265,21 @@ parse_args() {
     *) die "--install-hub-observability must be auto, always, or never" ;;
   esac
 
+  case "${COLLECTION_MODE}" in
+    legacy|mcoa) ;;
+    *) die "--collection-mode must be mcoa or legacy" ;;
+  esac
+
+  case "${MCOA_CONFIGURE}" in
+    auto|always|never) ;;
+    *) die "--configure-mcoa must be auto, always, or never" ;;
+  esac
+
   if [ -z "${MANAGED_CLUSTER_NAME}" ]; then
     MANAGED_CLUSTER_NAME="${CLUSTER_CTX}"
   fi
+  [[ "${MCOA_RULE_NAMESPACE}" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || \
+    die "Invalid --mcoa-rule-namespace: ${MCOA_RULE_NAMESPACE}"
 }
 
 label_block() {
@@ -261,8 +303,27 @@ verify_context() {
 }
 
 mco_is_ready() {
-  [ "$(oc_hub get mco observability -n "${OBS_NS}" \
+  [ "$(oc_hub get mco observability \
     -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || true)" = "True" ]
+}
+
+enable_mcoa_capabilities() {
+  [ "${COLLECTION_MODE}" = "mcoa" ] || return 0
+
+  if [ "${DRY_RUN}" = true ]; then
+    info "[dry-run] Would enable MCOA platform and user-workload metrics capabilities"
+    return 0
+  fi
+
+  info "Enabling MCOA platform and user-workload metrics capabilities"
+  oc_hub patch mco observability --type=merge -p='{
+    "spec": {
+      "capabilities": {
+        "platform": {"metrics": {"default": {"enabled": true}}},
+        "userWorkloads": {"metrics": {"default": {"enabled": true}}}
+      }
+    }
+  }' >/dev/null
 }
 
 detect_mesh_id() {
@@ -333,6 +394,7 @@ preflight() {
 # ---------------------------------------------------------------------------
 
 apply_hub_allowlist() {
+  [ "${COLLECTION_MODE}" = legacy ] || return 0
   local existing
   existing=$(oc_hub get configmap observability-metrics-custom-allowlist -n "${OBS_NS}" \
     -o jsonpath='{.data.uwl_metrics_list\.yaml}' 2>/dev/null || true)
@@ -396,6 +458,7 @@ EOF
 install_hub_observability() {
   if mco_is_ready; then
     info "[ok] Hub observability (MCO) already Ready"
+    enable_mcoa_capabilities
     apply_hub_allowlist
     return 0
   fi
@@ -412,7 +475,7 @@ install_hub_observability() {
   run_or_dry oc_hub create namespace "${OBS_NS}" --dry-run=client -o yaml | run_or_dry oc_hub apply -f -
 
   if [ "${DRY_RUN}" = true ]; then
-    info "[dry-run] Would install MinIO, thanos-object-storage, MCO, and hub allowlist"
+    info "[dry-run] Would install MinIO, thanos-object-storage, and MCO"
     return 0
   fi
 
@@ -520,7 +583,7 @@ EOF
     info "[ok] thanos-object-storage secret already exists"
   fi
 
-  if ! oc_hub get mco observability -n "${OBS_NS}" >/dev/null 2>&1; then
+  if ! oc_hub get mco observability >/dev/null 2>&1; then
     oc_hub apply -f - <<EOF
 apiVersion: observability.open-cluster-management.io/v1beta2
 kind: MultiClusterObservability
@@ -617,6 +680,8 @@ EOF
     info "[ok] MultiClusterObservability CR already exists"
   fi
 
+  enable_mcoa_capabilities
+
   wait_for "MultiClusterObservability Ready" "${TIMEOUT}" "mco_is_ready"
   wait_for "observatorium-api route" "${TIMEOUT}" \
     "oc_hub get route observatorium-api -n ${OBS_NS} >/dev/null 2>&1"
@@ -670,22 +735,85 @@ data:
     enableUserWorkload: true
 EOF
   else
-    local existing
-    existing=$(oc_cluster get configmap cluster-monitoring-config -n openshift-monitoring \
-      -o jsonpath='{.data.config\.yaml}' 2>/dev/null || true)
-    if echo "${existing}" | grep -q "enableUserWorkload: true"; then
-      info "[ok] enableUserWorkload already true in cluster-monitoring-config"
-    else
-      oc_cluster patch configmap cluster-monitoring-config -n openshift-monitoring --type merge \
-        -p '{"data":{"config.yaml":"enableUserWorkload: true\n"}}'
-    fi
+    oc_cluster get configmap cluster-monitoring-config -n openshift-monitoring -o json | \
+      jq '.data //= {} |
+          .data["config.yaml"] = ((.data["config.yaml"] // "") |
+            if test("(^|\\n)[[:space:]]*enableUserWorkload:") then
+              gsub("enableUserWorkload:[[:space:]]*[^\\n]*";
+                   "enableUserWorkload: true")
+            else . + "\\nenableUserWorkload: true\\n" end)' | oc_cluster apply -f -
   fi
 
   wait_for "UWM prometheus Ready" "${TIMEOUT}" "uwm_is_ready"
 }
 
+configure_mcoa_uwm_namespace() {
+  [ "${COLLECTION_MODE}" = mcoa ] || return 0
+  local namespace=${MCOA_RULE_NAMESPACE} existing updated
+  if [ "${DRY_RUN}" = true ]; then
+    info "[dry-run] Would exempt UWM namespace ${namespace} from label enforcement"
+    return 0
+  fi
+  oc_cluster create namespace "${namespace}" --dry-run=client -o yaml | oc_cluster apply -f - >/dev/null
+  if ! oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring >/dev/null 2>&1; then
+    cat <<EOF | oc_cluster apply -f - >/dev/null
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-workload-monitoring-config
+  namespace: openshift-user-workload-monitoring
+  annotations:
+    kiali.io/mcoa-rule-namespace: ${namespace}
+data:
+  config.yaml: |
+    namespacesWithoutLabelEnforcement:
+    - ${namespace}
+EOF
+    return 0
+  fi
+  existing=$(oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring -o jsonpath='{.data.config\.yaml}' 2>/dev/null || true)
+  if printf '%s\n' "${existing}" | grep -Eq \
+    "^[[:space:]]*-[[:space:]]*['\"]?${namespace}['\"]?[[:space:]]*$|namespacesWithoutLabelEnforcement:.*${namespace}"; then
+    return 0
+  fi
+  if [ -z "${existing}" ]; then
+    updated=$(printf 'namespacesWithoutLabelEnforcement:\n- %s\n' "${namespace}")
+  elif printf '%s\n' "${existing}" | grep -Eq '^[[:space:]]*namespacesWithoutLabelEnforcement:[[:space:]]*$'; then
+    updated=$(printf '%s\n' "${existing}" | awk -v ns="${namespace}" \
+      '/^[[:space:]]*namespacesWithoutLabelEnforcement:[[:space:]]*$/ {print; print "- " ns; added=1; next} {print} END {if (!added) print "namespacesWithoutLabelEnforcement:\n- " ns}')
+  else
+    updated=$(printf '%s\nnamespacesWithoutLabelEnforcement:\n- %s\n' "${existing}" "${namespace}")
+  fi
+  oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring -o json | \
+    jq --arg cfg "${updated}" --arg ns "${namespace}" \
+      '(.data //= {}) | (.data["config.yaml"]=$cfg) | (.metadata.annotations //= {}) |
+       .metadata.annotations["kiali.io/mcoa-rule-namespace"]=$ns' | oc_cluster apply -f - >/dev/null
+}
+
+remove_mcoa_uwm_namespace() {
+  [ "${COLLECTION_MODE}" = mcoa ] || return 0
+  local namespace=${MCOA_RULE_NAMESPACE} owner existing updated
+  owner=$(oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring \
+    -o jsonpath='{.metadata.annotations.kiali\.io/mcoa-rule-namespace}' 2>/dev/null || true)
+  [ "${owner}" = "${namespace}" ] || return 0
+  existing=$(oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring -o jsonpath='{.data.config\.yaml}' 2>/dev/null || true)
+  updated=$(printf '%s\n' "${existing}" | awk -v ns="${namespace}" \
+    '$0 !~ "^[[:space:]]*-[[:space:]]*[\\\"'"'"']?" ns "[\\\"'"'"']?[[:space:]]*$" {print}')
+  oc_cluster get configmap user-workload-monitoring-config \
+    -n openshift-user-workload-monitoring -o json | \
+    jq --arg cfg "${updated}" \
+      '(.data //= {}) | (.data["config.yaml"]=$cfg) | (.metadata.annotations //= {}) |
+       del(.metadata.annotations["kiali.io/mcoa-rule-namespace"])' | oc_cluster apply -f - >/dev/null
+}
+
 phase_b_uwm() {
   enable_uwm
+  configure_mcoa_uwm_namespace
 }
 
 # ---------------------------------------------------------------------------
@@ -733,6 +861,7 @@ EOF
 }
 
 apply_namespace_allowlist() {
+  [ "${METRICS_BACKEND}" = hub ] && [ "${COLLECTION_MODE}" = legacy ] || return 0
   local ns=$1
   local existing
   existing=$(oc_cluster get configmap observability-metrics-custom-allowlist -n "${ns}" \
@@ -806,8 +935,8 @@ spec:
     matchLabels:
       istio: pilot
   endpoints:
-  - port: http-monitoring
-    interval: 30s
+  - interval: 30s
+    port: http-monitoring
 EOF
   apply_namespace_allowlist "${ISTIO_NAMESPACE}"
 }
@@ -818,11 +947,10 @@ install_app_podmonitor() {
 
   if oc_cluster get podmonitor "${name}" -n "${app_ns}" \
     -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}' 2>/dev/null | grep -q "${MANAGED_BY}"; then
-    info "[ok] ${name} already managed in ${app_ns}"
-    return 0
+    info "[ok] ${name} already managed in ${app_ns}; reconciling"
   fi
 
-  info "Creating sidecar PodMonitor ${name} in ${app_ns}"
+  info "Applying sidecar PodMonitor ${name} in ${app_ns}"
   if [ "${DRY_RUN}" = true ]; then
     info "[dry-run] Would create ${name}"
     return 0
@@ -853,8 +981,8 @@ spec:
     - key: istio-prometheus-ignore
       operator: DoesNotExist
   podMetricsEndpoints:
-  - path: /stats/prometheus
-    interval: 30s
+  - interval: 30s
+    path: /stats/prometheus
     relabelings:
     - action: keep
       sourceLabels: ["__meta_kubernetes_pod_container_name"]
@@ -871,6 +999,28 @@ spec:
       replacement: '\$2:\$1'
       sourceLabels: ["__meta_kubernetes_pod_annotation_prometheus_io_port","__meta_kubernetes_pod_ip"]
       targetLabel: "__address__"
+    - sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_name","__meta_kubernetes_pod_label_app"]
+      separator: ";"
+      targetLabel: "app"
+      action: replace
+      regex: "(.+);.*|.*;(.+)"
+      replacement: "\${1}\${2}"
+    - sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_version","__meta_kubernetes_pod_label_version"]
+      separator: ";"
+      targetLabel: "version"
+      action: replace
+      regex: "(.+);.*|.*;(.+)"
+      replacement: "\${1}\${2}"
+    - action: replace
+      regex: "(.+)"
+      replacement: "\${1}"
+      sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+      targetLabel: "app_kubernetes_io_name"
+    - action: replace
+      regex: "(.+)"
+      replacement: "\${1}"
+      sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_version"]
+      targetLabel: "app_kubernetes_io_version"
     - sourceLabels: ["__meta_kubernetes_namespace"]
       action: replace
       targetLabel: namespace
@@ -884,11 +1034,10 @@ install_ztunnel_monitor() {
 
   if oc_cluster get podmonitor "${name}" -n "${ZTUNNEL_NAMESPACE}" \
     -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}' 2>/dev/null | grep -q "${MANAGED_BY}"; then
-    info "[ok] ${name} already managed in ${ZTUNNEL_NAMESPACE}"
-    return 0
+    info "[ok] ${name} already managed in ${ZTUNNEL_NAMESPACE}; reconciling"
   fi
 
-  info "Creating ztunnel PodMonitor in ${ZTUNNEL_NAMESPACE}"
+  info "Applying ztunnel PodMonitor in ${ZTUNNEL_NAMESPACE}"
   if [ "${DRY_RUN}" = true ]; then
     info "[dry-run] Would create ${name}"
     return 0
@@ -919,8 +1068,8 @@ spec:
     - key: istio-prometheus-ignore
       operator: DoesNotExist
   podMetricsEndpoints:
-  - path: /stats/prometheus
-    interval: 30s
+  - interval: 30s
+    path: /stats/prometheus
     relabelings:
     - action: keep
       sourceLabels: ["__meta_kubernetes_pod_container_name"]
@@ -937,6 +1086,28 @@ spec:
       replacement: '\$2:\$1'
       sourceLabels: ["__meta_kubernetes_pod_annotation_prometheus_io_port","__meta_kubernetes_pod_ip"]
       targetLabel: "__address__"
+    - sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_name","__meta_kubernetes_pod_label_app"]
+      separator: ";"
+      targetLabel: "app"
+      action: replace
+      regex: "(.+);.*|.*;(.+)"
+      replacement: "\${1}\${2}"
+    - sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_version","__meta_kubernetes_pod_label_version"]
+      separator: ";"
+      targetLabel: "version"
+      action: replace
+      regex: "(.+);.*|.*;(.+)"
+      replacement: "\${1}\${2}"
+    - action: replace
+      regex: "(.+)"
+      replacement: "\${1}"
+      sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+      targetLabel: "app_kubernetes_io_name"
+    - action: replace
+      regex: "(.+)"
+      replacement: "\${1}"
+      sourceLabels: ["__meta_kubernetes_pod_label_app_kubernetes_io_version"]
+      targetLabel: "app_kubernetes_io_version"
     - sourceLabels: ["__meta_kubernetes_namespace"]
       action: replace
       targetLabel: namespace
@@ -965,7 +1136,62 @@ phase_c_scraping() {
 }
 
 # ---------------------------------------------------------------------------
-# Phase D — Kiali prometheus (optional)
+# Phase D — ACM 2.17 MCOA federation
+# ---------------------------------------------------------------------------
+
+resolve_mcoa_helper() {
+  if [ ! -x "${MCOA_HELPER}" ] && command -v configure-acm-mcoa.sh >/dev/null 2>&1; then
+    MCOA_HELPER=$(command -v configure-acm-mcoa.sh)
+  fi
+}
+
+phase_d_mcoa() {
+  [ "${METRICS_BACKEND}" = hub ] || return 0
+  [ "${COLLECTION_MODE}" = mcoa ] || return 0
+  [ "${MCOA_CONFIGURE}" != never ] || return 0
+  if [ "${MCOA_CONFIGURE}" = auto ] && [ "${CLUSTER_CTX}" != "${HUB_CTX}" ]; then
+    info "[skip] MCOA hub resources are configured only by the hub-cluster invocation; use --configure-mcoa always to override"
+    return 0
+  fi
+
+  resolve_mcoa_helper
+  [ -x "${MCOA_HELPER}" ] || die "MCOA helper not executable: ${MCOA_HELPER}. Use --mcoa-helper to specify the Kiali repository helper."
+  info "=== Configuring ACM 2.17 MCOA federation ==="
+  if [ "${DRY_RUN}" = true ]; then
+    info "[dry-run] ${MCOA_HELPER} install --hub-context ${HUB_CTX} --rule-namespace ${MCOA_RULE_NAMESPACE}"
+    return 0
+  fi
+  local args=(install --hub-context "${HUB_CTX}" --observability-namespace "${OBS_NS}" \
+    --rule-namespace "${MCOA_RULE_NAMESPACE}" \
+    --timeout "${TIMEOUT}")
+  if [ -n "${MCOA_PLACEMENT_NAME}" ]; then
+    args+=(--placement-name "${MCOA_PLACEMENT_NAME}")
+  fi
+  if [ -n "${MCOA_PLACEMENT_NAMESPACE}" ]; then
+    args+=(--placement-namespace "${MCOA_PLACEMENT_NAMESPACE}")
+  fi
+  [ "${MCOA_WITH_DASHBOARDS}" != true ] || args+=(--with-dashboards)
+  "${MCOA_HELPER}" "${args[@]}"
+}
+
+uninstall_mcoa_federation() {
+  [ "${MCOA_REMOVE}" = true ] || return 0
+  [ "${METRICS_BACKEND}" = hub ] || return 0
+  [ "${COLLECTION_MODE}" = mcoa ] || return 0
+  resolve_mcoa_helper
+  [ -x "${MCOA_HELPER}" ] || die "MCOA helper not executable: ${MCOA_HELPER}"
+
+  local args=(uninstall --hub-context "${HUB_CTX}" --observability-namespace "${OBS_NS}" \
+    --rule-namespace "${MCOA_RULE_NAMESPACE}" \
+    --timeout "${TIMEOUT}")
+  [ -z "${MCOA_PLACEMENT_NAME}" ] || args+=(--placement-name "${MCOA_PLACEMENT_NAME}")
+  [ -z "${MCOA_PLACEMENT_NAMESPACE}" ] || args+=(--placement-namespace "${MCOA_PLACEMENT_NAMESPACE}")
+  [ "${MCOA_WITH_DASHBOARDS}" != true ] || args+=(--with-dashboards)
+  "${MCOA_HELPER}" "${args[@]}"
+}
+
+# ---------------------------------------------------------------------------
+# Phase E — Kiali prometheus (optional)
 # ---------------------------------------------------------------------------
 
 resource_has_our_label() {
@@ -1153,7 +1379,7 @@ EOF
     "[ \"\$(oc_cluster get kiali ${KIALI_NAME} -n ${KIALI_CR_NAMESPACE} -o jsonpath='{.status.conditions[?(@.type==\"Successful\")].status}' 2>/dev/null)\" = 'True' ]"
 }
 
-phase_d_kiali() {
+phase_e_kiali() {
   if [ -z "${KIALI_CR_NAMESPACE}" ]; then
     info "[ok] Metrics collection configured; no Kiali CR to patch (omit --kiali-cr-namespace)"
     return 0
@@ -1204,6 +1430,21 @@ do_verify() {
     else
       warn "UWM prometheus not Ready"
       failed=1
+    fi
+    if [ "${COLLECTION_MODE}" = mcoa ]; then
+      resolve_mcoa_helper
+      local verify_args=(verify --hub-context "${HUB_CTX}" --observability-namespace "${OBS_NS}" \
+        --rule-namespace "${MCOA_RULE_NAMESPACE}" \
+        --timeout "${TIMEOUT}")
+      [ -z "${MCOA_PLACEMENT_NAME}" ] || verify_args+=(--placement-name "${MCOA_PLACEMENT_NAME}")
+      [ -z "${MCOA_PLACEMENT_NAMESPACE}" ] || verify_args+=(--placement-namespace "${MCOA_PLACEMENT_NAMESPACE}")
+      [ "${MCOA_WITH_DASHBOARDS}" != true ] || verify_args+=(--with-dashboards)
+      if [ -x "${MCOA_HELPER}" ] && "${MCOA_HELPER}" "${verify_args[@]}"; then
+        info "[ok] MCOA federation resources and placement references are valid"
+      else
+        warn "MCOA federation verification failed"
+        failed=1
+      fi
     fi
   fi
 
@@ -1359,9 +1600,9 @@ remove_hub_observability() {
     return 0
   fi
 
-  if oc_hub get mco observability -n "${OBS_NS}" >/dev/null 2>&1; then
+  if oc_hub get mco observability >/dev/null 2>&1; then
     oc_hub delete mco observability --ignore-not-found
-    wait_for "MCO deleted" 300 "! oc_hub get mco observability -n ${OBS_NS} >/dev/null 2>&1"
+    wait_for "MCO deleted" 300 "! oc_hub get mco observability >/dev/null 2>&1"
   else
     info "[ok] MCO not found, skipping"
   fi
@@ -1378,6 +1619,8 @@ do_uninstall() {
   restore_kiali_prometheus
   uninstall_kiali_secrets
   uninstall_monitors_and_allowlists
+  uninstall_mcoa_federation
+  remove_mcoa_uwm_namespace
   remove_hub_observability
 
   info "[ok] Uninstall complete"
@@ -1395,7 +1638,8 @@ do_install() {
   phase_a_hub
   phase_b_uwm
   phase_c_scraping
-  phase_d_kiali
+  phase_d_mcoa
+  phase_e_kiali
   do_verify
 
   info "=== Install complete ==="
