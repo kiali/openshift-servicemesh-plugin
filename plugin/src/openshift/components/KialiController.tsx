@@ -6,7 +6,6 @@ import { CubesIcon } from '@patternfly/react-icons';
 import type { Namespace } from 'types/Namespace';
 import { MessageType } from 'types/NotificationCenter';
 import type { DurationInSeconds, IntervalInMilliseconds } from 'types/Common';
-import { PF_THEME_DARK, Theme } from 'types/Common';
 import type { TracingInfo } from 'types/TracingInfo';
 import { toGrpcRate, toHttpRate, toTcpRate, TrafficRate } from 'types/Graph';
 import type { StatusState } from 'types/StatusState';
@@ -35,6 +34,7 @@ import {
 import { MeshTlsActions } from 'actions/MeshTlsActions';
 import type { TLSStatus } from 'types/TLSStatus';
 import { store } from 'store/ConfigStore';
+import { syncReduxAppearanceFromDocument } from 'utils/AppearanceUtils';
 import { kialiStyle } from 'styles/StyleUtils';
 import { addError } from 'utils/AlertUtils';
 
@@ -315,12 +315,10 @@ class KialiControllerComponent extends React.Component<KialiControllerProps> {
   };
 
   private setDocLayout = (): void => {
-    // Set theme checking if Openshift Console has added Dark Theme CSS class
-    const theme = document.documentElement.classList.contains(PF_THEME_DARK) ? Theme.DARK : Theme.LIGHT;
-    store.dispatch(GlobalActions.setTheme(theme));
-
-    // Set kiosk mode for OSSMC
+    // Mark parent-owned appearance for Kiali session detection (no URL kiosk param in OSSMC).
+    sessionStorage.setItem('KIALI_PARENT_KIOSK', '/');
     store.dispatch(GlobalActions.setKiosk('/'));
+    syncReduxAppearanceFromDocument();
   };
 
   private processServerStatus = (status: StatusState): void => {
