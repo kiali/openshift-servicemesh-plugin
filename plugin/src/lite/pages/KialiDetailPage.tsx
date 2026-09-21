@@ -34,13 +34,11 @@ import { LiteConditionsTable } from '../components/LiteConditionsTable';
 import { KialiRelatedCard } from '../components/KialiRelatedCard';
 import { KialiRemoteClusterSecretsCard } from '../components/KialiRemoteClusterSecretsCard';
 import { KialiVersionDisplay } from '../components/KialiVersionDisplay';
-import { ExternalLink } from '../../openshift/components/ExternalLink';
 import type { LiteKialiResource } from '../types/kiali';
 import { kialiGVK } from '../types/kiali';
 import type { LiteOssmConsoleResource } from '../types/ossmconsole';
 import { ossmConsoleGVK } from '../types/ossmconsole';
 import { getKialiServiceTarget as getServiceTarget } from '../utils/kialiServiceTarget';
-import { getKialiStandaloneUrl } from '../utils/kialiObserveLinks';
 import { useConnectDisconnectPending } from '../hooks/useConnectDisconnectPending';
 import { useKialiDetailVersion } from '../hooks/useKialiDetailVersion';
 import { useKialiRemoteClusterSecrets } from '../hooks/useKialiRemoteClusterSecrets';
@@ -130,7 +128,6 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
   });
 
   const routeHostMap = useKialiRouteHosts(resource ? [resource] : []);
-  const standaloneUrl = resource ? getKialiStandaloneUrl(resource, routeHostMap) : undefined;
   const { loaded: versionLoaded, version: runningVersion } = useKialiDetailVersion(resource, promoted);
   const secretNames = useKialiRemoteClusterSecrets(resource);
 
@@ -293,16 +290,6 @@ const KialiDetailContent: FC<{ name: string; namespace: string }> = ({ name, nam
                     </DescriptionListTerm>
                     <DescriptionListDescription>{spec?.version ?? t('Not specified')}</DescriptionListDescription>
                   </DescriptionListGroup>
-                  {standaloneUrl && (
-                    <DescriptionListGroup>
-                      <DescriptionListTerm>
-                        <strong>{t('Kiali')}</strong>
-                      </DescriptionListTerm>
-                      <DescriptionListDescription>
-                        <ExternalLink href={standaloneUrl}>{t('Kiali')}</ExternalLink>
-                      </DescriptionListDescription>
-                    </DescriptionListGroup>
-                  )}
                   <DescriptionListGroup>
                     <DescriptionListTerm>
                       <strong>{t('Installation Tag')}</strong>

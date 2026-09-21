@@ -9,6 +9,7 @@ import {
   DescriptionListGroup,
   DescriptionListTerm
 } from '@patternfly/react-core';
+import { ExternalLink } from '../../openshift/components/ExternalLink';
 import { routeGVK, type LiteKialiResource } from '../types/kiali';
 import { getKialiServiceTarget } from '../utils/kialiServiceTarget';
 import { getKialiStandaloneUrl } from '../utils/kialiObserveLinks';
@@ -37,6 +38,16 @@ export const KialiRelatedCard: FC<KialiRelatedCardProps> = ({ resource, routeHos
       </CardTitle>
       <CardBody>
         <DescriptionList isCompact>
+          {standaloneUrl && (
+            <DescriptionListGroup>
+              <DescriptionListTerm>
+                <strong>{t('Kiali UI')}</strong>
+              </DescriptionListTerm>
+              <DescriptionListDescription>
+                <ExternalLink href={standaloneUrl}>{t('Kiali UI')}</ExternalLink>
+              </DescriptionListDescription>
+            </DescriptionListGroup>
+          )}
           <DescriptionListGroup>
             <DescriptionListTerm>
               <strong>{t('Deployment')}</strong>

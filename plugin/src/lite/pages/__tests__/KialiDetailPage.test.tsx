@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   k8sGet,
@@ -129,6 +129,34 @@ describe('KialiDetailPage', () => {
       mockWatchResources([makeKialiResource(), true, null]);
       render(<KialiDetailPage />);
       expect(screen.getByText('openshift')).toBeInTheDocument();
+    });
+
+    it('shows the Kiali UI link first in the Related card', async () => {
+      mockWatchResources([
+        makeKialiResource({
+          spec: {
+            deployment: { instance_name: 'kiali', namespace: 'istio-system' },
+            server: { web_fqdn: 'kiali.apps.example.com' }
+          }
+        }),
+        true,
+        null
+      ]);
+      render(<KialiDetailPage />);
+
+      await waitFor(() => {
+        const relatedCard = screen.getByText('Related').closest('.pf-v6-c-card');
+        expect(relatedCard).not.toBeNull();
+        expect(within(relatedCard!).getByRole('link', { name: 'Kiali UI' })).toHaveAttribute(
+          'href',
+          'https://kiali.apps.example.com'
+        );
+        expect(
+          Array.from(relatedCard!.querySelectorAll('dt'))
+            .slice(0, 2)
+            .map(term => term.textContent)
+        ).toEqual(['Kiali UI', 'Deployment']);
+      });
     });
 
     it('renders the instance name', () => {
