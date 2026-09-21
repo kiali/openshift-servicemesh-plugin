@@ -1,6 +1,6 @@
 # Multi-Cluster Demo Environment Setup
 
-> **Quick start:** Log in to hub and spoke OpenShift clusters (`oc login` on both; rename contexts to `my-hub` / `my-spoke` if needed). With repos cloned, run [`hack/fleet-mesh/setup-demo-multicluster.sh install`](setup-demo-multicluster.sh) to automate this guide. By default (`--manage-acm-install true`) the script installs ACM on the hub if not already present; pass `--manage-acm-install false` if ACM is already running. Use `--install-kiali`, `--install-ossmc`, and `--install-mesh-hello true` for optional install-time components (uninstall always removes Kiali, OSSMC, and mesh-hello).
+> **Quick start:** Log in to hub and spoke OpenShift clusters (`oc login` on both; rename contexts to `my-hub` / `my-spoke` if needed). With repos cloned, run [`hack/fleet-mesh/setup-demo-multicluster.sh install`](setup-demo-multicluster.sh) to automate this guide. By default (`--manage-acm-install true`) the script installs ACM on the hub if not already present; pass `--manage-acm-install false` if ACM is already running. Use `--install-kiali`, `--install-ossmc`, `--install-mesh-hello true`, and `--enable-observability true` for optional install-time components (uninstall always removes Kiali, OSSMC, and mesh-hello).
 >
 > ```bash
 > # Greenfield hub (script installs ACM if needed)
@@ -804,13 +804,15 @@ and mTLS status. [`deploy-mesh-hello.sh`](deploy-mesh-hello.sh) installs on **on
 per invocation**; for a multi-cluster mesh, run it once on each cluster with the same
 `-m`/`-n` and a different `-c`.
 
-The setup script does this automatically when `--install-mesh-hello true` (default): it
-calls `deploy-mesh-hello.sh` on the hub, then again on the spoke, then runs
+The setup script deploys mesh-hello automatically when `--install-mesh-hello true`
+(default). On managed clusters the MCM CR lives on the ACM hub, so the spoke
+invocation passes `--mcm-context my-hub`. Observability is separate and disabled by
+default; pass `--enable-observability true` (with mesh-hello enabled) to also run
 [`enable-mesh-observability.sh`](enable-mesh-observability.sh) on both clusters with
-`--app-namespaces secure-mcm-testapp` so Kiali can graph mesh-hello traffic. On managed
-clusters the MCM CR lives on the ACM hub, so the spoke invocation passes
-`--mcm-context my-hub`. Pass `--install-mesh-hello false` to skip the app and metrics
-setup. See [ENABLE-MESH-OBSERVABILITY.md](ENABLE-MESH-OBSERVABILITY.md) for details.
+`--app-namespaces secure-mcm-testapp` so Kiali can graph mesh-hello traffic. If the
+demo was installed without observability, rerun the setup command with
+`--enable-observability true install` to enable it later. Both operations are
+idempotent. See [ENABLE-MESH-OBSERVABILITY.md](ENABLE-MESH-OBSERVABILITY.md) for details.
 
 Manual example for the `secure-mcm` mesh:
 
@@ -1003,4 +1005,3 @@ make undeploy-plugin
 helm uninstall multicluster-mesh-addon -n multicluster-mesh-system --kube-context=my-hub 2>/dev/null || true
 oc --context=my-hub delete namespace multicluster-mesh-system --ignore-not-found
 ```
-
