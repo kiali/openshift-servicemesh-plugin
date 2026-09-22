@@ -82,7 +82,15 @@ describe('IstioDetailPage', () => {
     it('renders the control plane namespace', () => {
       rstest.mocked(useK8sWatchResource).mockReturnValue([makeIstioResource(), true, null]);
       render(<IstioDetailPage />);
-      expect(screen.getByText('istio-system')).toBeInTheDocument();
+      expect(screen.getAllByText('istio-system').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders the Related card with istiod deployment and pods list links', () => {
+      rstest.mocked(useK8sWatchResource).mockReturnValue([makeIstioResource(), true, null]);
+      render(<IstioDetailPage />);
+      expect(screen.getByText('Related')).toBeInTheDocument();
+      expect(screen.getByText('istiod')).toBeInTheDocument();
+      expect(screen.getByText('Pods')).toBeInTheDocument();
     });
 
     it('renders the profile', () => {

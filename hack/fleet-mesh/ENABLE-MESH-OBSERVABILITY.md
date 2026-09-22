@@ -70,7 +70,7 @@ After [`setup-demo-multicluster.sh install`](setup-demo-multicluster.sh), the de
 
 ### 1. MCM `secure-mcm` — hub + spoke → hub Observatorium (with Kiali on spoke)
 
-Requires a Kiali CR on the spoke (`kiali` in `kiali-operator`; deployment in `secure-ns` — the default [`setup-demo-multicluster.sh install`](setup-demo-multicluster.sh) uses `--install-kiali spoke`). The demo script runs these steps automatically when `--install-mesh-hello true` (default). To run manually (e.g. after `--install-mesh-hello false`):
+Requires a Kiali CR on the spoke (`kiali` in `kiali-operator`; deployment in `secure-ns` — the default [`setup-demo-multicluster.sh install`](setup-demo-multicluster.sh) uses `--install-kiali spoke`). The demo script runs these steps automatically when `--enable-observability true`. To run manually (e.g. after `--enable-observability false`):
 
 ```bash
 # Hub side (local-cluster): scrape istiod + mesh-hello; install MCO if needed

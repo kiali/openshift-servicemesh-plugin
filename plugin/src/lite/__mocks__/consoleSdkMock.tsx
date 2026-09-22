@@ -10,11 +10,17 @@ import type { FC } from 'react';
 // Already covered by openshift mock (do NOT re-export here):
 //   consoleFetchJSON, useActivePerspective
 
-export const ResourceLink: FC<{ groupVersionKind?: unknown; kind?: string; name?: string; namespace?: string }> = ({
-  name
-}) => <span>{name ?? ''}</span>;
+export const ResourceLink: FC<{
+  displayName?: string;
+  groupVersionKind?: { kind?: string };
+  kind?: string;
+  name?: string;
+  namespace?: string;
+}> = ({ displayName, name }) => <span>{displayName ?? name ?? ''}</span>;
 
 export const k8sPatch = rs.fn();
+
+export const k8sList = rs.fn(() => Promise.resolve({ items: [] }));
 
 // Defaults to rejecting so tests that don't care about Route discovery don't need to mock it;
 // KialisPage treats a rejected Route lookup as "no Route found" and falls back gracefully.

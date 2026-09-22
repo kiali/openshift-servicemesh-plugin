@@ -11,7 +11,8 @@
 #   --spoke-name <name>           ACM ManagedCluster name (default: my-spoke)
 #   --install-kiali <targets>     hub, spoke, both, or none (default: spoke; install only)
 #   --install-ossmc <targets>     hub, spoke, both, or none (default: both; install only)
-#   --install-mesh-hello <bool>   Deploy mesh-hello + secure-mcm metrics on hub/spoke (default: true; install only)
+#   --install-mesh-hello <bool>   Deploy mesh-hello on hub/spoke (default: true; install only)
+#   --enable-observability <bool> Enable secure-mcm metrics when mesh-hello is installed (default: false; install only)
 #   --manage-acm-install <bool>   true: install/remove ACM on hub; false: assume ACM exists (default: true)
 #   --acm-channel <channel>       ACM operator channel (default: latest packagemanifest)
 #   --kiali-repo <path>           Path to kiali server repo
@@ -20,7 +21,7 @@
 #
 # Notes:
 #   - operator-create (kiali Makefile) runs operator-delete first on each target cluster.
-#   - --install-kiali / --install-ossmc / --install-mesh-hello only affect install; uninstall always removes Kiali, OSSMC, mesh-hello, and mesh observability.
+#   - --install-kiali / --install-ossmc / --install-mesh-hello / --enable-observability only affect install; uninstall always removes Kiali, OSSMC, mesh-hello, and mesh observability.
 #   - Pass the same --manage-acm-install value on install and uninstall for a full round-trip.
 #   - Spoke import/deregistration is always managed; only hub ACM install/removal is gated.
 
@@ -34,6 +35,7 @@ SPOKE_NAME="${SPOKE_NAME:-my-spoke}"
 INSTALL_KIALI="${INSTALL_KIALI:-spoke}"
 INSTALL_OSSMC="${INSTALL_OSSMC:-both}"
 INSTALL_MESH_HELLO=true
+ENABLE_OBSERVABILITY=false
 MANAGE_ACM_INSTALL=true
 ACM_CHANNEL=""
 PLUGIN_REPO="${PLUGIN_REPO:-$(cd "${SCRIPT_DIR}/../.." && pwd)}"
@@ -239,7 +241,8 @@ Options:
   --spoke-name <name>           ACM ManagedCluster name (default: my-spoke)
   --install-kiali <targets>     hub, spoke, both, or none (default: spoke; install only)
   --install-ossmc <targets>     hub, spoke, both, or none (default: both; install only)
-  --install-mesh-hello <bool>   Deploy mesh-hello and secure-mcm metrics on hub/spoke (default: true; install only)
+  --install-mesh-hello <bool>   Deploy mesh-hello on hub/spoke (default: true; install only)
+  --enable-observability <bool> Enable secure-mcm metrics when mesh-hello is installed (default: false; install only)
   --manage-acm-install <bool>   true: install/remove ACM on hub; false: assume ACM exists (default: true)
   --acm-channel <channel>       ACM operator channel (default: latest)
   --kiali-repo <path>           Path to kiali server repo
@@ -266,6 +269,12 @@ parse_args() {
         case "${2,,}" in
           true|false) INSTALL_MESH_HELLO="${2,,}"; shift 2 ;;
           *) error "--install-mesh-hello requires true or false" ;;
+        esac
+        ;;
+      --enable-observability)
+        case "${2,,}" in
+          true|false) ENABLE_OBSERVABILITY="${2,,}"; shift 2 ;;
+          *) error "--enable-observability requires true or false" ;;
         esac
         ;;
       --manage-acm-install)
@@ -611,13 +620,32 @@ install_backend_controller() {
   podman push --tls-verify=false \
     "${registry}/${BACKEND_NAMESPACE}/${BACKEND_IMAGE_NAME}:${BACKEND_IMAGE_TAG}"
 
+  local pull_secret="${BACKEND_IMAGE_NAME}-pull-secret"
+  local pull_secret_file="${TMP_DIR}/${pull_secret}.json"
+  mkdir -p "${TMP_DIR}"
+
+  # Use an explicit registry credential, as Kiali's cluster install does.
+  # The addon chart does not expose imagePullSecrets, so the Deployment must
+  # be patched after Helm creates it.
+  oc_hub registry login --registry="${internal_registry}" \
+    --namespace="${BACKEND_NAMESPACE}" --to="${pull_secret_file}"
+  oc_hub create secret generic "${pull_secret}" -n "${BACKEND_NAMESPACE}" \
+    --from-file=.dockerconfigjson="${pull_secret_file}" \
+    --type=kubernetes.io/dockerconfigjson \
+    --dry-run=client -o yaml | oc_hub apply -f -
+
+  # Do not use Helm's --wait here: the pod template needs the explicit
+  # registry credential below before the controller can start.
   helm upgrade --install "${BACKEND_IMAGE_NAME}" "${MESH_ADDON_REPO}/chart/" \
     --kube-context="${HUB_CTX}" \
     --create-namespace \
     --namespace "${BACKEND_NAMESPACE}" \
     --set "image.repository=${internal_registry}/${BACKEND_NAMESPACE}/${BACKEND_IMAGE_NAME}" \
-    --set "image.tag=${BACKEND_IMAGE_TAG}" \
-    --wait --timeout 180s
+    --set "image.tag=${BACKEND_IMAGE_TAG}"
+
+  oc_hub patch deployment/multicluster-mesh-controller -n "${BACKEND_NAMESPACE}" \
+    --type=merge \
+    -p "{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\":[{\"name\":\"${pull_secret}\"}]}}}}"
 
   oc_hub rollout status deployment/multicluster-mesh-controller \
     -n "${BACKEND_NAMESPACE}" --timeout=120s
@@ -849,10 +877,13 @@ wait_for_mesh_ready() {
 wait_for_reconciliation() {
   info "=== Waiting for controller reconciliation ==="
 
-  oc_hub wait manifestwork multicluster-mesh-operator -n local-cluster \
-    --for=condition=Applied --timeout=180s
-  oc_hub wait manifestwork multicluster-mesh-operator -n "${SPOKE_NAME}" \
-    --for=condition=Applied --timeout=180s
+  # `oc wait` returns NotFound immediately when a new controller has not yet
+  # created its first ManifestWork. Polling covers controller startup and the
+  # ManifestWork's Applied condition in one timeout.
+  wait_for "operator ManifestWork applied on local-cluster" 180 \
+    "[ \"\$(oc_hub get manifestwork multicluster-mesh-operator -n local-cluster -o jsonpath='{.status.conditions[?(@.type==\"Applied\")].status}' 2>/dev/null)\" = 'True' ]"
+  wait_for "operator ManifestWork applied on ${SPOKE_NAME}" 180 \
+    "[ \"\$(oc_hub get manifestwork multicluster-mesh-operator -n ${SPOKE_NAME} -o jsonpath='{.status.conditions[?(@.type==\"Applied\")].status}' 2>/dev/null)\" = 'True' ]"
 
   local oc_fn csv_name
   for oc_fn in oc_hub oc_spoke; do
@@ -1032,7 +1063,7 @@ install_mesh_hello() {
 }
 
 install_mesh_observability() {
-  if [ "${INSTALL_MESH_HELLO}" != true ]; then
+  if [ "${INSTALL_MESH_HELLO}" != true ] || [ "${ENABLE_OBSERVABILITY}" != true ]; then
     return 0
   fi
 
@@ -1393,6 +1424,7 @@ info "install-kiali:      ${INSTALL_KIALI}"
 info "install-ossmc:      ${INSTALL_OSSMC}"
 info "manage-acm-install: ${MANAGE_ACM_INSTALL}"
 info "install-mesh-hello: ${INSTALL_MESH_HELLO}"
+info "enable-observability: ${ENABLE_OBSERVABILITY}"
 
 case "${COMMAND}" in
   install) do_install ;;

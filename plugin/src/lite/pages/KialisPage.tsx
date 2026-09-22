@@ -6,6 +6,7 @@ import {
   ListPageBody,
   ListPageFilter,
   ListPageHeader,
+  ResourceLink,
   TableData,
   Timestamp,
   VirtualizedTable,
@@ -26,7 +27,8 @@ import {
   Tooltip
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
-import { ConsoleConnectionStatus } from '../components/ConsoleConnectionStatus';
+import { ConsoleConnectionIcon } from '../components/ConsoleConnectionIcon';
+import { LiteStatus } from '../components/LiteStatus';
 import { renderKialiObserveLinks } from '../utils/kialiObserveLinks';
 import type { LiteKialiResource } from '../types/kiali';
 import { kialiGVK } from '../types/kiali';
@@ -43,8 +45,15 @@ import {
   promoteToConsole
 } from '../utils/ossmConsoleUtils';
 import { useKialiTranslation } from 'utils/I18nUtils';
+import { getStatusRank } from '../utils/statusUtils';
 
 export { getKialiServiceTarget };
+
+const sortWithComparator = <T,>(data: T[], dir: string, cmp: (a: T, b: T) => number): T[] =>
+  [...data].sort((a, b) => (dir === 'asc' ? cmp(a, b) : cmp(b, a)));
+
+const compareKialiStatus = (a: LiteKialiResource, b: LiteKialiResource): number =>
+  getStatusRank(a.status?.conditions, 'Successful') - getStatusRank(b.status?.conditions, 'Successful');
 
 const compactButtonStyle: React.CSSProperties = {
   fontSize: '0.80rem',
@@ -68,11 +77,16 @@ type KialiRowData = {
 function buildColumns(t: (key: string) => string): TableColumn<LiteKialiResource>[] {
   return [
     { id: 'name', sort: 'metadata.name', title: t('Name') },
+    { id: 'connected', title: t('Connected') },
+    {
+      id: 'status',
+      sort: (data: LiteKialiResource[], dir: string) => sortWithComparator(data, dir, compareKialiStatus),
+      title: t('Status')
+    },
     { id: 'namespace', sort: 'metadata.namespace', title: t('Namespace') },
     { id: 'serverNamespace', sort: 'spec.deployment.namespace', title: t('Server Namespace') },
-    { id: 'version', sort: 'spec.version', title: t('Version') },
+    { id: 'version', sort: 'spec.version', title: t('Spec Version') },
     { id: 'observe', title: t('Observe') },
-    { id: 'connected', title: t('Connected') },
     { id: 'created', sort: 'metadata.creationTimestamp', title: t('Created') },
     { id: 'actions', title: t('Actions') }
   ];
@@ -184,24 +198,23 @@ const KialiRow: FC<RowProps<LiteKialiResource, KialiRowData>> = ({ obj, activeCo
           {crName}
         </Link>
       </TableData>
+      <TableData activeColumnIDs={activeColumnIDs} id="connected">
+        <ConsoleConnectionIcon active={promoted} statusUnknown={rowData?.ossmConsoleStatusUnknown ?? false} />
+      </TableData>
+      <TableData activeColumnIDs={activeColumnIDs} id="status">
+        <LiteStatus conditions={obj.status?.conditions} conditionType="Successful" isCompact />
+      </TableData>
       <TableData activeColumnIDs={activeColumnIDs} id="namespace">
-        {crNamespace || '-'}
+        {crNamespace ? <ResourceLink kind="Namespace" name={crNamespace} /> : '-'}
       </TableData>
       <TableData activeColumnIDs={activeColumnIDs} id="serverNamespace">
-        {obj.spec?.deployment?.namespace ?? '-'}
+        {obj.spec?.deployment?.namespace ? <ResourceLink kind="Namespace" name={obj.spec.deployment.namespace} /> : '-'}
       </TableData>
       <TableData activeColumnIDs={activeColumnIDs} id="version">
         {obj.spec?.version ?? '-'}
       </TableData>
       <TableData activeColumnIDs={activeColumnIDs} id="observe">
         {renderKialiObserveLinks(obj, promoted, rowData?.routeHostMap ?? new Map(), t)}
-      </TableData>
-      <TableData activeColumnIDs={activeColumnIDs} id="connected">
-        <ConsoleConnectionStatus
-          active={promoted}
-          isCompact
-          statusUnknown={rowData?.ossmConsoleStatusUnknown ?? false}
-        />
       </TableData>
       <TableData activeColumnIDs={activeColumnIDs} id="created">
         {obj.metadata?.creationTimestamp ? <Timestamp timestamp={obj.metadata.creationTimestamp} /> : '-'}
