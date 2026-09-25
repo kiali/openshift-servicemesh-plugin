@@ -10,7 +10,7 @@ This automates the metrics portions of the [ossm-multicluster tutorial](https://
 
 | Phase | What it configures |
 |-------|-------------------|
-| A | Hub ACM Observatorium (MCO + MinIO) — `hub` backend only |
+| A | Hub ACM Observatorium (MCO + SeaweedFS) — `hub` backend only |
 | B | User Workload Monitoring (UWM) on the target cluster |
 | C | Istio metrics scraping (ServiceMonitor/PodMonitor) |
 | D | ACM MCOA edge recording rules and `/federate` configuration — `hub` backend only |
@@ -196,7 +196,7 @@ Run `./hack/fleet-mesh/enable-mesh-observability.sh --help` for the full flag li
 | `--scrape-interval` | `5m` — Kiali `thanos_proxy.scrape_interval`; must match the effective MCOA federation interval |
 | `--wait-for-metrics` | Block until `istio_*` metrics appear (10+ min possible) |
 | `--dry-run` | Print actions without applying |
-| `--remove-hub-observability` | On uninstall, also remove hub MCO/MinIO (lab only) |
+| `--remove-hub-observability` | On uninstall, also remove hub MCO/SeaweedFS (lab only) |
 | `--restore-kiali-prometheus` | `true` \| `false` on uninstall (default: `true`) |
 
 ## Backend comparison
@@ -267,7 +267,7 @@ Prometheus auth secrets and ServiceAccounts are created in the Kiali **deploymen
 
 | Resource | Namespace | When |
 |----------|-----------|------|
-| MinIO and MCO | `open-cluster-management-observability` | `hub` backend, MCO not Ready |
+| SeaweedFS and MCO | `open-cluster-management-observability` | `hub` backend, MCO not Ready |
 | MCOA `ScrapeConfig` and source `PrometheusRule` objects | `open-cluster-management-observability` | `hub` backend with default `mcoa` mode |
 | UWM-exempt aggregation namespace | `--mcoa-rule-namespace` (default `mesh-observability`) | Each cluster running this script with MCOA |
 | Propagated recording rule | `mesh-observability` (or `--mcoa-rule-namespace`) | Selected managed clusters |
@@ -308,11 +308,11 @@ from the legacy labels.
 
 ### Uninstall does **not** remove (by default)
 
-- Hub MCO, MinIO, and MCOA resources (shared infrastructure)
+- Hub MCO, SeaweedFS, and MCOA resources (shared infrastructure)
 - UWM / `cluster-monitoring-config` (cluster-wide); the script removes only its
   owned `mesh-observability` exemption entry
 
-Use `--remove-hub-observability` on uninstall for lab teardown of hub MCO/MinIO.
+Use `--remove-hub-observability` on uninstall for lab teardown of hub MCO/SeaweedFS.
 Use `--remove-mcoa-federation` only when no other setup relies on the same
 placement and rule namespace.
 

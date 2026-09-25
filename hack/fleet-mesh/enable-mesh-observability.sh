@@ -10,7 +10,7 @@
 #   install scripts or requiring a particular directory layout.
 #
 # WHAT IT DOES (per mesh, per cluster)
-#   Phase A — Hub Observatorium (hub backend only): MinIO and MCO
+#   Phase A — Hub Observatorium (hub backend only): SeaweedFS and MCO
 #   Phase B — User Workload Monitoring on the target cluster
 #   Phase C — Istio scraping: istiod ServiceMonitor and optional workload PodMonitors
 #   Phase D — ACM 2.17 MCOA recording rules and federation (hub backend only)
@@ -29,7 +29,7 @@
 #   install, uninstall, and verify are idempotent with the same flags. Created resources
 #   are labeled app.kubernetes.io/managed-by=enable-mesh-observability; uninstall removes
 #   only labeled monitors, allowlists, and Kiali prometheus secrets/config it added.
-#   Hub MCO/MinIO and MCOA federation resources are left in place by default.
+#   Hub MCO/SeaweedFS and MCOA federation resources are left in place by default.
 #   Use --remove-mcoa-federation for scoped federation cleanup and
 #   --remove-hub-observability for lab infrastructure teardown.
 #
@@ -84,8 +84,8 @@ MCOA_REMOVE=false
 MCOA_WITH_DASHBOARDS=false
 MCOA_RULE_NAMESPACE="mesh-observability"
 
-MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-minio}"
-MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-minio123}"
+SEAWEEDFS_ACCESS_KEY="${SEAWEEDFS_ACCESS_KEY:-seaweedfs}"
+SEAWEEDFS_SECRET_KEY="${SEAWEEDFS_SECRET_KEY:-seaweedfs123}"
 
 COMMAND=""
 TMP_DIR=""
@@ -174,7 +174,7 @@ Other options:
   --timeout SECS              Wait timeout (default: 1200)
   --dry-run                   Print actions without applying
   --restore-kiali-prometheus  true|false on uninstall (default: true)
-  --remove-hub-observability  Also remove hub MCO/MinIO on uninstall (lab only)
+  --remove-hub-observability  Also remove hub MCO/SeaweedFS on uninstall (lab only)
   -h, --help                  Show this help
 
 Examples:
@@ -468,23 +468,23 @@ install_hub_observability() {
       die "MultiClusterObservability not Ready and --install-hub-observability never. Install MCO on hub first."
       ;;
     auto|always)
-      info "=== Installing hub observability (MinIO + MCO) ==="
+      info "=== Installing hub observability (SeaweedFS + MCO) ==="
       ;;
   esac
 
   run_or_dry oc_hub create namespace "${OBS_NS}" --dry-run=client -o yaml | run_or_dry oc_hub apply -f -
 
   if [ "${DRY_RUN}" = true ]; then
-    info "[dry-run] Would install MinIO, thanos-object-storage, and MCO"
+    info "[dry-run] Would install SeaweedFS, thanos-object-storage, and MCO"
     return 0
   fi
 
-  if ! oc_hub get deployment minio -n "${OBS_NS}" >/dev/null 2>&1; then
+  if ! oc_hub get deployment seaweedfs -n "${OBS_NS}" >/dev/null 2>&1; then
     oc_hub apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: minio
+  name: seaweedfs
   namespace: ${OBS_NS}
   labels:
 $(label_block)
@@ -492,44 +492,42 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: minio
+      app: seaweedfs
   template:
     metadata:
       labels:
-        app: minio
+        app: seaweedfs
 $(label_block)
     spec:
       containers:
-      - name: minio
-        image: quay.io/minio/minio:latest
+      - name: seaweedfs
+        image: ghcr.io/chrislusf/seaweedfs:4.47
         args:
-        - server
-        - /data
-        - --console-address
-        - ":9001"
+        - mini
+        - -dir=/data
+        - -admin.port=12646
+        - -master.telemetry=false
         env:
-        - name: MINIO_ROOT_USER
-          value: "${MINIO_ACCESS_KEY}"
-        - name: MINIO_ROOT_PASSWORD
-          value: "${MINIO_SECRET_KEY}"
+        - name: AWS_ACCESS_KEY_ID
+          value: "${SEAWEEDFS_ACCESS_KEY}"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "${SEAWEEDFS_SECRET_KEY}"
+        - name: S3_BUCKET
+          value: thanos
         ports:
-        - containerPort: 9000
-          name: api
-        - containerPort: 9001
-          name: console
+        - containerPort: 8333
+          name: s3
         volumeMounts:
         - name: data
           mountPath: /data
         readinessProbe:
-          httpGet:
-            path: /minio/health/ready
-            port: 9000
+          tcpSocket:
+            port: 8333
           initialDelaySeconds: 10
           periodSeconds: 5
         livenessProbe:
-          httpGet:
-            path: /minio/health/live
-            port: 9000
+          tcpSocket:
+            port: 8333
           initialDelaySeconds: 10
           periodSeconds: 5
       volumes:
@@ -539,26 +537,20 @@ $(label_block)
 apiVersion: v1
 kind: Service
 metadata:
-  name: minio
+  name: seaweedfs
   namespace: ${OBS_NS}
 spec:
   ports:
-  - port: 9000
-    name: api
-    targetPort: 9000
-  - port: 9001
-    name: console
-    targetPort: 9001
+  - port: 8333
+    name: s3
+    targetPort: 8333
   selector:
-    app: minio
+    app: seaweedfs
 EOF
-    wait_for "MinIO ready" "${TIMEOUT}" \
-      "oc_hub rollout status deployment/minio -n ${OBS_NS} --timeout=10s"
-    local minio_pod
-    minio_pod=$(oc_hub get pods -n "${OBS_NS}" -l app=minio -o jsonpath='{.items[0].metadata.name}')
-    oc_hub exec -n "${OBS_NS}" "${minio_pod}" -- mkdir -p /data/thanos 2>/dev/null || true
+    wait_for "SeaweedFS ready" "${TIMEOUT}" \
+      "oc_hub rollout status deployment/seaweedfs -n ${OBS_NS} --timeout=10s"
   else
-    info "[ok] MinIO deployment already exists"
+    info "[ok] SeaweedFS deployment already exists"
   fi
 
   if ! oc_hub get secret thanos-object-storage -n "${OBS_NS}" >/dev/null 2>&1; then
@@ -574,10 +566,10 @@ stringData:
     type: s3
     config:
       bucket: thanos
-      endpoint: minio.${OBS_NS}.svc:9000
+      endpoint: seaweedfs.${OBS_NS}.svc:8333
       insecure: true
-      access_key: ${MINIO_ACCESS_KEY}
-      secret_key: ${MINIO_SECRET_KEY}
+      access_key: ${SEAWEEDFS_ACCESS_KEY}
+      secret_key: ${SEAWEEDFS_SECRET_KEY}
 EOF
   else
     info "[ok] thanos-object-storage secret already exists"
@@ -1596,7 +1588,7 @@ remove_hub_observability() {
 
   info "=== Removing hub observability (lab teardown) ==="
   if [ "${DRY_RUN}" = true ]; then
-    info "[dry-run] Would remove MCO, MinIO, and observability namespace"
+    info "[dry-run] Would remove MCO, SeaweedFS, and observability namespace"
     return 0
   fi
 
@@ -1607,8 +1599,8 @@ remove_hub_observability() {
     info "[ok] MCO not found, skipping"
   fi
 
-  oc_hub delete deployment minio -n "${OBS_NS}" --ignore-not-found 2>/dev/null || true
-  oc_hub delete service minio -n "${OBS_NS}" --ignore-not-found 2>/dev/null || true
+  oc_hub delete deployment seaweedfs -n "${OBS_NS}" --ignore-not-found 2>/dev/null || true
+  oc_hub delete service seaweedfs -n "${OBS_NS}" --ignore-not-found 2>/dev/null || true
   oc_hub delete secret thanos-object-storage -n "${OBS_NS}" --ignore-not-found 2>/dev/null || true
   info "[ok] Hub observability components removed"
 }
