@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { PlacementSummaryCard } from '../PlacementSummaryCard';
 import type { MeshPlacementResult } from '../../hooks/useMeshPlacement';
 import { makeCluster } from '../../__fixtures__/testFactories';
@@ -57,7 +57,7 @@ describe('PlacementSummaryCard', () => {
     );
   });
 
-  it('shows selected, mesh, and installed counts separately without ClusterSets', () => {
+  it('shows Placement selection, deployed, and installed counts separately without ClusterSets', () => {
     render(
       <PlacementSummaryCard
         clusterStatuses={[makeCluster('hub', 'True'), makeCluster('leaving', 'False')]}
@@ -74,10 +74,36 @@ describe('PlacementSummaryCard', () => {
     );
     expect(screen.queryByText('ClusterSets')).not.toBeInTheDocument();
     expect(screen.queryByText('demo-cluster-set')).not.toBeInTheDocument();
+    expect(screen.getByText('Placement selection')).toBeInTheDocument();
+    expect(screen.getByText('Deployed clusters')).toBeInTheDocument();
     expect(document.querySelector('[data-test="placement-selected-count"]')).toHaveTextContent('2');
     expect(document.querySelector('[data-test="placement-mesh-count"]')).toHaveTextContent('2');
     expect(document.querySelector('[data-test="placement-operator-installed-count"]')).toHaveTextContent('1');
     expect(screen.getByText('Target clusters: 2')).toBeInTheDocument();
+  });
+
+  it('explains Placement selection and deployed clusters with tooltips', async () => {
+    render(
+      <PlacementSummaryCard
+        clusterStatuses={[makeCluster('hub')]}
+        namespace="mesh-ns"
+        placementName="demo-placement"
+        result={readyResult}
+        sharedMeshCount={1}
+      />
+    );
+    fireEvent.mouseEnter(screen.getByText('Placement selection'));
+    expect(
+      await screen.findByText(
+        'The number of clusters currently selected by this Placement. These are the intended deployment targets.'
+      )
+    ).toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByText('Deployed clusters'));
+    expect(
+      await screen.findByText(
+        'The number of clusters that MultiClusterMesh status reports as deployed. This can temporarily differ from Placement selection while deployment or removal is in progress.'
+      )
+    ).toBeInTheDocument();
   });
 
   it('does not report a forbidden decision watch as an empty selection', () => {

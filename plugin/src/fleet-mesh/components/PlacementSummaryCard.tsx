@@ -9,7 +9,8 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Label
+  Label,
+  Tooltip
 } from '@patternfly/react-core';
 import type { MeshPlacementResult, SelectionState } from '../hooks/useMeshPlacement';
 import type { ClusterMeshStatus } from '../types/multiClusterMesh';
@@ -130,13 +131,29 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>{t('Selected clusters')}</DescriptionListTerm>
+            <DescriptionListTerm>
+              <Tooltip
+                content={t(
+                  'The number of clusters currently selected by this Placement. These are the intended deployment targets.'
+                )}
+              >
+                <span>{t('Placement selection')}</span>
+              </Tooltip>
+            </DescriptionListTerm>
             <DescriptionListDescription data-test="placement-selected-count">
               {result.selectedNames?.length ?? t('Unavailable')}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>{t('Mesh clusters')}</DescriptionListTerm>
+            <DescriptionListTerm>
+              <Tooltip
+                content={t(
+                  'The number of clusters that MultiClusterMesh status reports as deployed. This can temporarily differ from Placement selection while deployment or removal is in progress.'
+                )}
+              >
+                <span>{t('Deployed clusters')}</span>
+              </Tooltip>
+            </DescriptionListTerm>
             <DescriptionListDescription data-test="placement-mesh-count">
               {clusterStatuses.length}
             </DescriptionListDescription>
