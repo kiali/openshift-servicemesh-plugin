@@ -2,6 +2,12 @@ import type { K8sCondition } from '../types/common';
 
 export type StatusColor = 'green' | 'red' | 'orange' | 'grey';
 
+export function isConditionStale(condition: K8sCondition | undefined, generation: number | undefined): boolean {
+  return (
+    generation !== undefined && condition?.observedGeneration !== undefined && condition.observedGeneration < generation
+  );
+}
+
 // Maps K8s condition reason codes to user-friendly English strings (also the i18n keys).
 const friendlyReasons: Record<string, string> = {
   ClustersNotReady: 'Clusters Not Ready',
@@ -9,8 +15,34 @@ const friendlyReasons: Record<string, string> = {
   MissingProductClaim: 'Missing Product Claim',
   NamespaceConflict: 'Namespace Conflict',
   OperatorConfigConflict: 'Operator Config Conflict',
+  PlacementNotFound: 'Placement Not Found',
+  NoClustersSelected: 'No Clusters Selected',
   ReconcileError: 'Reconcile Error'
 };
+
+/** Explicit keys let the locale extractor see reason labels while unknown backend reasons remain readable. */
+export function translateStatusLabel(label: string, t: (key: string) => string): string {
+  switch (label) {
+    case 'Clusters Not Ready':
+      return t('Clusters Not Ready');
+    case 'Installing':
+      return t('Installing');
+    case 'Missing Product Claim':
+      return t('Missing Product Claim');
+    case 'Namespace Conflict':
+      return t('Namespace Conflict');
+    case 'Operator Config Conflict':
+      return t('Operator Config Conflict');
+    case 'Placement Not Found':
+      return t('Placement Not Found');
+    case 'No Clusters Selected':
+      return t('No Clusters Selected');
+    case 'Reconcile Error':
+      return t('Reconcile Error');
+    default:
+      return t(label);
+  }
+}
 
 export function deriveStatus(
   conditions?: K8sCondition[],

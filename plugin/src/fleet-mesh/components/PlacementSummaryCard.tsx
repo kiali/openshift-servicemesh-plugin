@@ -1,0 +1,211 @@
+import type { FC } from 'react';
+import { ResourceLink } from '@openshift-console/dynamic-plugin-sdk';
+import {
+  Alert,
+  Card,
+  CardBody,
+  CardTitle,
+  DescriptionList,
+  DescriptionListDescription,
+  DescriptionListGroup,
+  DescriptionListTerm,
+  Label
+} from '@patternfly/react-core';
+import type { MeshPlacementResult, SelectionState } from '../hooks/useMeshPlacement';
+import type { ClusterMeshStatus } from '../types/multiClusterMesh';
+import type { K8sCondition } from '../types/common';
+import type { Placement } from '../types/placement';
+import { managedClusterSetGroupVersionKind, placementGroupVersionKind } from '../types/placement';
+import { getPlacementProblem, operatorInstalledCount } from '../utils/placementSelection';
+import { isConditionStale } from '../utils/statusUtils';
+import { useKialiTranslation } from 'utils/I18nUtils';
+
+interface PlacementSummaryCardProps {
+  clusterStatuses: ClusterMeshStatus[];
+  meshConditions?: K8sCondition[];
+  meshGeneration?: number;
+  namespace: string;
+  placementName?: string;
+  result: MeshPlacementResult;
+  sharedMeshCount: number;
+}
+
+function selectionStateLabel(state: SelectionState, t: (key: string) => string): string {
+  switch (state) {
+    case 'error':
+      return t('Selection unavailable');
+    case 'forbidden':
+      return t('Selection access denied');
+    case 'loading':
+      return t('Loading selection');
+    case 'missing':
+      return t('Placement not found');
+    case 'missingReference':
+      return t('Placement reference missing');
+    case 'ready':
+      return t('Selection loaded');
+    case 'updating':
+      return t('Updating decisions');
+    case 'waiting':
+      return t('Waiting for placement decisions');
+  }
+}
+
+function selectionPolicy(spec: Placement['spec'], t: (key: string, options?: { count: number }) => string): string {
+  if (!spec) return '-';
+  const details: string[] = [];
+  const target = spec.numberOfClusters;
+  details.push(
+    typeof target === 'number' ? t('Target clusters: {{count}}', { count: target }) : t('All eligible clusters')
+  );
+  const predicates = spec.predicates;
+  if (Array.isArray(predicates) && predicates.length > 0) {
+    details.push(t('Predicates configured; view Placement YAML'));
+  }
+  if (Array.isArray(spec.tolerations) && spec.tolerations.length > 0) details.push(t('Tolerations configured'));
+  if (spec.prioritizerPolicy && Object.keys(spec.prioritizerPolicy).length > 0)
+    details.push(t('Prioritizers configured'));
+  if (spec.spreadPolicy && Object.keys(spec.spreadPolicy).length > 0) details.push(t('Spread policy configured'));
+  if (spec.decisionStrategy && Object.keys(spec.decisionStrategy).length > 0)
+    details.push(t('Decision groups configured'));
+  return details.join(' · ');
+}
+
+/** Selection data belongs to ACM; MCM status remains the operational mesh view. */
+export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
+  clusterStatuses,
+  meshConditions,
+  meshGeneration,
+  namespace,
+  placementName,
+  result,
+  sharedMeshCount
+}) => {
+  const { t } = useKialiTranslation();
+  const condition =
+    result.placementLoaded && !result.placementError ? getPlacementProblem(result.placement) : undefined;
+  const misconfigured = condition?.type === 'PlacementMisconfigured';
+  const readyCondition = meshConditions?.find(c => c.type === 'Ready');
+  const meshStatusStale = isConditionStale(readyCondition, meshGeneration);
+  const clusterSets = result.placement?.spec?.clusterSets ?? [];
+  const diagnostic =
+    result.state === 'missing'
+      ? t('Create the referenced Placement in this mesh namespace, or update the mesh reference.')
+      : result.state === 'forbidden'
+        ? t(
+            'You cannot read the Placement or its decisions in this namespace. Mesh operational data remains available.'
+          )
+        : result.state === 'error'
+          ? t('Unable to read selection details. Mesh operational data remains available.')
+          : result.state === 'updating'
+            ? t(
+                'Placement selection is updating. Membership will appear when its status and decisions are current and consistent.'
+              )
+            : result.state === 'waiting'
+              ? t('Waiting for ACM to publish Placement decisions.')
+              : undefined;
+
+  return (
+    <Card isCompact data-test="placement-summary-card">
+      <CardTitle>
+        <strong>{t('Cluster selection')}</strong>
+      </CardTitle>
+      <CardBody>
+        <DescriptionList isCompact columnModifier={{ default: '2Col' }}>
+          <DescriptionListGroup>
+            <DescriptionListTerm>{t('Placement')}</DescriptionListTerm>
+            <DescriptionListDescription>
+              {placementName ? (
+                <ResourceLink groupVersionKind={placementGroupVersionKind} name={placementName} namespace={namespace} />
+              ) : (
+                '-'
+              )}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+          <DescriptionListGroup>
+            <DescriptionListTerm>{t('Selection status')}</DescriptionListTerm>
+            <DescriptionListDescription>
+              <Label color={result.state === 'ready' && !condition ? 'green' : 'orange'} isCompact>
+                {result.state === 'ready' && condition
+                  ? misconfigured
+                    ? t('Placement misconfigured')
+                    : t('Placement unsatisfied')
+                  : selectionStateLabel(result.state, t)}
+              </Label>
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+          <DescriptionListGroup>
+            <DescriptionListTerm>{t('Selected clusters')}</DescriptionListTerm>
+            <DescriptionListDescription data-test="placement-selected-count">
+              {result.selectedNames?.length ?? t('Unavailable')}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+          <DescriptionListGroup>
+            <DescriptionListTerm>{t('Mesh clusters')}</DescriptionListTerm>
+            <DescriptionListDescription data-test="placement-mesh-count">
+              {clusterStatuses.length}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+          <DescriptionListGroup>
+            <DescriptionListTerm>{t('Operator installed')}</DescriptionListTerm>
+            <DescriptionListDescription data-test="placement-operator-installed-count">
+              {operatorInstalledCount(clusterStatuses)}
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+          {result.placement && (
+            <>
+              <DescriptionListGroup>
+                <DescriptionListTerm>{t('ClusterSets')}</DescriptionListTerm>
+                <DescriptionListDescription>
+                  {clusterSets.length === 0
+                    ? t('All ClusterSets bound to this namespace')
+                    : clusterSets.map((name, index) => (
+                        <span key={name}>
+                          {index > 0 ? ', ' : ''}
+                          <ResourceLink groupVersionKind={managedClusterSetGroupVersionKind} name={name} />
+                        </span>
+                      ))}
+                </DescriptionListDescription>
+              </DescriptionListGroup>
+              <DescriptionListGroup>
+                <DescriptionListTerm>{t('Selection policy')}</DescriptionListTerm>
+                <DescriptionListDescription>{selectionPolicy(result.placement.spec, t)}</DescriptionListDescription>
+              </DescriptionListGroup>
+            </>
+          )}
+        </DescriptionList>
+        {diagnostic && <Alert variant="warning" isInline title={diagnostic} style={{ marginTop: '1rem' }} />}
+        {meshStatusStale && (
+          <Alert
+            variant="info"
+            isInline
+            title={t('Mesh status is updating for the latest Placement reference.')}
+            style={{ marginTop: '1rem' }}
+          />
+        )}
+        {condition && (
+          <Alert
+            variant={misconfigured ? 'danger' : 'warning'}
+            isInline
+            title={condition.message || condition.reason || t('Placement is not satisfied')}
+            style={{ marginTop: '1rem' }}
+          >
+            {condition.reason === 'NoManagedClusterSetBindings' &&
+              t('Create a ManagedClusterSetBinding for the required ClusterSet in this mesh namespace.')}
+          </Alert>
+        )}
+        {sharedMeshCount > 1 && (
+          <Alert
+            variant="info"
+            isInline
+            title={t('This Placement is shared by {{count}} meshes.', { count: sharedMeshCount })}
+            style={{ marginTop: '1rem' }}
+          />
+        )}
+        <div style={{ marginTop: '0.75rem' }}>
+          {t('Placements and ClusterSet bindings are managed separately from this mesh.')}
+        </div>
+      </CardBody>
+    </Card>
+  );
+};

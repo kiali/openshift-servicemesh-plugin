@@ -6,6 +6,7 @@ import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
 import { makeMesh, makeCluster } from '../../__fixtures__/testFactories';
 import type { K8sCondition } from '../../types/common';
 import type { ManagedCluster } from '../../types/managedCluster';
+import type { SelectionState } from '../../hooks/useMeshPlacement';
 
 // TrustStatusCard has its own test file; stub it here to avoid consuming
 // useK8sWatchResource mock slots meant for the mesh watch.
@@ -15,6 +16,17 @@ rstest.mock('../TrustStatusCard', () => ({
 
 rstest.mock('../../hooks/useMultiClusterMeshes', () => ({
   useMultiClusterMeshes: () => [[], true, null]
+}));
+rstest.mock('../../hooks/useMeshPlacement', () => ({
+  useMeshPlacement: () => ({
+    decisionError: null,
+    decisionLoaded: true,
+    placement: null,
+    placementError: null,
+    placementLoaded: true,
+    selectedNames: null,
+    state: 'missing'
+  })
 }));
 rstest.mock('../../hooks/useDiscoveredControlPlanes', () => ({
   useDiscoveredControlPlanes: () => ({ results: [], loaded: true, error: null })
@@ -108,15 +120,14 @@ describe('MeshDetailPage', () => {
       expect(screen.getByText('Managed')).toBeInTheDocument();
     });
 
-    it('links spec.clusterSet to the ACM cluster set detail page', () => {
+    it('shows the namespaced Placement reference', () => {
       rstest
         .mocked(useK8sWatchResource)
-        .mockReturnValue([makeMesh({ spec: { clusterSet: 'my-clusterset' } }), true, null]);
+        .mockReturnValue([makeMesh({ spec: { placementRef: { name: 'my-placement' } } }), true, null]);
       render(<MeshDetailPage />);
-      expect(screen.getByRole('link', { name: 'my-clusterset' })).toHaveAttribute(
-        'href',
-        '/multicloud/infrastructure/clusters/sets/details/my-clusterset/overview'
-      );
+      const placement = screen.getAllByText('my-placement')[0];
+      expect(placement).toHaveAttribute('data-resource-kind', 'Placement');
+      expect(placement).toHaveAttribute('data-resource-namespace', 'mesh-system');
     });
 
     it('shows the istio-system default when controlPlane.namespace is absent', () => {
@@ -126,7 +137,9 @@ describe('MeshDetailPage', () => {
     });
 
     it('shows the actual controlPlane.namespace when set', () => {
-      const mesh = makeMesh({ spec: { clusterSet: 'global', controlPlane: { namespace: 'custom-ns' } } });
+      const mesh = makeMesh({
+        spec: { placementRef: { name: 'global-placement' }, controlPlane: { namespace: 'custom-ns' } }
+      });
       rstest.mocked(useK8sWatchResource).mockReturnValue([mesh, true, null]);
       render(<MeshDetailPage />);
       expect(screen.getByText('custom-ns')).toBeInTheDocument();
@@ -141,7 +154,7 @@ describe('MeshDetailPage', () => {
     it('shows the issuer name and kind when set', () => {
       const mesh = makeMesh({
         spec: {
-          clusterSet: 'global',
+          placementRef: { name: 'global-placement' },
           security: { trust: { certManager: { issuerRef: { name: 'root-ca', kind: 'ClusterIssuer' } } } }
         }
       });
@@ -153,7 +166,7 @@ describe('MeshDetailPage', () => {
     it('defaults Issuer kind when kind is not specified', () => {
       const mesh = makeMesh({
         spec: {
-          clusterSet: 'global',
+          placementRef: { name: 'global-placement' },
           security: { trust: { certManager: { issuerRef: { name: 'my-issuer' } } } }
         }
       });
@@ -204,6 +217,85 @@ describe('ClusterStatusSection', () => {
     expect(screen.getByText('No clusters are part of this mesh yet.')).toBeInTheDocument();
   });
 
+  it('distinguishes a settled empty Placement from unavailable selection', () => {
+    render(<ClusterStatusSection clusterStatuses={[]} selectedNames={[]} selectionState="ready" />);
+    expect(screen.getByText('The Placement currently selects no clusters.')).toBeInTheDocument();
+  });
+
+  it.each(['PlacementNotFound', 'NoClustersSelected', 'NamespaceConflict'])(
+    'ignores a stale %s condition after changing the reference',
+    reason => {
+      render(
+        <ClusterStatusSection
+          clusterStatuses={[]}
+          selectedNames={[]}
+          selectionState="ready"
+          meshGeneration={2}
+          meshConditions={[{ ...makeCondition('Ready', 'False', reason), observedGeneration: 1 }]}
+        />
+      );
+      expect(screen.getByText('The Placement currently selects no clusters.')).toBeInTheDocument();
+      expect(
+        screen.queryByText('The referenced Placement was not found in this mesh namespace.')
+      ).not.toBeInTheDocument();
+    }
+  );
+
+  it.each(['forbidden', 'error', 'loading', 'waiting', 'updating'] as SelectionState[])(
+    'does not infer an empty selection when selection is %s',
+    selectionState => {
+      render(
+        <ClusterStatusSection
+          clusterStatuses={[]}
+          selectedNames={null}
+          selectionState={selectionState}
+          meshConditions={[makeCondition('Ready', 'False', 'NoClustersSelected')]}
+        />
+      );
+      expect(
+        screen.getByText(
+          selectionState === 'forbidden' || selectionState === 'error'
+            ? 'Selection details are unavailable. Mesh cluster status remains available when reported.'
+            : 'Waiting for Placement decisions and mesh reconciliation.'
+        )
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/The Placement has not selected/)).not.toBeInTheDocument();
+    }
+  );
+
+  it('uses the current Placement result even before the MCM notices it was created', () => {
+    render(
+      <ClusterStatusSection
+        clusterStatuses={[]}
+        selectedNames={[]}
+        selectionState="ready"
+        meshConditions={[makeCondition('Ready', 'False', 'PlacementNotFound')]}
+      />
+    );
+    expect(screen.getByText('The Placement currently selects no clusters.')).toBeInTheDocument();
+  });
+
+  it.each(['PlacementMisconfigured', 'PlacementSatisfied'])(
+    'explains %s instead of presenting it as a valid empty selection',
+    type => {
+      render(
+        <ClusterStatusSection
+          clusterStatuses={[]}
+          selectedNames={[]}
+          selectionState="ready"
+          placementProblem={makeCondition(
+            type,
+            type === 'PlacementSatisfied' ? 'False' : 'True',
+            'NoEligibleClusters',
+            'No eligible clusters in the bound sets'
+          )}
+        />
+      );
+      expect(screen.getByText('No eligible clusters in the bound sets')).toBeInTheDocument();
+      expect(screen.queryByText('The Placement currently selects no clusters.')).not.toBeInTheDocument();
+    }
+  );
+
   it('shows blocked message for OperatorConfigConflict', () => {
     const conditions = [makeCondition('Ready', 'False', 'OperatorConfigConflict', 'Operator conflict detected')];
     render(<ClusterStatusSection clusterStatuses={[]} meshConditions={conditions} />);
@@ -243,6 +335,22 @@ describe('ClusterStatusSection', () => {
     expect(screen.getByText('cluster-b')).toBeInTheDocument();
   });
 
+  it('shows selected and operational membership without implying operator installation', () => {
+    render(
+      <ClusterStatusSection
+        clusterStatuses={[makeCluster('hub', 'True'), makeCluster('leaving', 'False')]}
+        selectedNames={['hub', 'joining']}
+        selectionState="ready"
+      />
+    );
+    expect(screen.getByText('Clusters (3)')).toBeInTheDocument();
+    expect(screen.getByText('Selected and mesh')).toBeInTheDocument();
+    expect(screen.getByText('Selected only')).toBeInTheDocument();
+    expect(screen.getByText('Mesh only')).toBeInTheDocument();
+    expect(screen.getByText('Operator installed (1)')).toBeInTheDocument();
+    expect(screen.getByText('Unknown (1)')).toBeInTheDocument();
+  });
+
   it('shows correct summary counts', () => {
     const clusters = [
       makeCluster('cluster-a', 'True'),
@@ -250,8 +358,8 @@ describe('ClusterStatusSection', () => {
       makeCluster('cluster-c', 'Unknown')
     ];
     render(<ClusterStatusSection clusterStatuses={clusters} />);
-    expect(screen.getByText('Ready (1)')).toBeInTheDocument();
-    expect(screen.getByText('Not Ready (1)')).toBeInTheDocument();
+    expect(screen.getByText('Operator installed (1)')).toBeInTheDocument();
+    expect(screen.getByText('Not installed (1)')).toBeInTheDocument();
     expect(screen.getByText('Unknown (1)')).toBeInTheDocument();
   });
 
@@ -273,7 +381,7 @@ describe('ClusterStatusSection', () => {
     it('filters to only Ready clusters', async () => {
       const user = userEvent.setup();
       render(<ClusterStatusSection clusterStatuses={clusters} />);
-      await user.click(screen.getByText('Ready (1)'));
+      await user.click(screen.getByText('Operator installed (1)'));
       expect(screen.getByText('ready-cluster')).toBeInTheDocument();
       expect(screen.queryByText('notready-cluster')).not.toBeInTheDocument();
       expect(screen.queryByText('unknown-cluster')).not.toBeInTheDocument();
@@ -282,7 +390,7 @@ describe('ClusterStatusSection', () => {
     it('filters to only Not Ready clusters', async () => {
       const user = userEvent.setup();
       render(<ClusterStatusSection clusterStatuses={clusters} />);
-      await user.click(screen.getByText('Not Ready (1)'));
+      await user.click(screen.getByText('Not installed (1)'));
       expect(screen.getByText('notready-cluster')).toBeInTheDocument();
       expect(screen.queryByText('ready-cluster')).not.toBeInTheDocument();
     });
@@ -299,7 +407,7 @@ describe('ClusterStatusSection', () => {
     it('returns to all clusters when All is clicked after a filter', async () => {
       const user = userEvent.setup();
       render(<ClusterStatusSection clusterStatuses={clusters} />);
-      await user.click(screen.getByText('Ready (1)'));
+      await user.click(screen.getByText('Operator installed (1)'));
       await user.click(screen.getByText('All (3)'));
       expect(screen.getByText('ready-cluster')).toBeInTheDocument();
       expect(screen.getByText('notready-cluster')).toBeInTheDocument();

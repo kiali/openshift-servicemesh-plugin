@@ -1,4 +1,4 @@
-import { clusterDetailLink, clusterSetDetailLink } from '../linkUtils';
+import { clusterDetailLink } from '../linkUtils';
 
 describe('clusterDetailLink', () => {
   it('produces correct URL for a simple cluster name', () => {
@@ -11,17 +11,5 @@ describe('clusterDetailLink', () => {
     const name = 'cluster/with spaces&special';
     const encoded = encodeURIComponent(name);
     expect(clusterDetailLink(name)).toBe(`/multicloud/infrastructure/clusters/details/${encoded}/${encoded}/overview`);
-  });
-});
-
-describe('clusterSetDetailLink', () => {
-  it('produces correct URL for a simple cluster set name', () => {
-    expect(clusterSetDetailLink('global')).toBe('/multicloud/infrastructure/clusters/sets/details/global/overview');
-  });
-
-  it('encodes special characters with encodeURIComponent', () => {
-    const name = 'set/with spaces&special';
-    const encoded = encodeURIComponent(name);
-    expect(clusterSetDetailLink(name)).toBe(`/multicloud/infrastructure/clusters/sets/details/${encoded}/overview`);
   });
 });

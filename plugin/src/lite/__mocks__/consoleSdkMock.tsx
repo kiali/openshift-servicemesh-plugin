@@ -16,7 +16,11 @@ export const ResourceLink: FC<{
   kind?: string;
   name?: string;
   namespace?: string;
-}> = ({ displayName, name }) => <span>{displayName ?? name ?? ''}</span>;
+}> = ({ displayName, groupVersionKind, name, namespace }) => (
+  <span data-resource-kind={groupVersionKind?.kind} data-resource-namespace={namespace}>
+    {displayName ?? name ?? ''}
+  </span>
+);
 
 export const k8sPatch = rs.fn();
 

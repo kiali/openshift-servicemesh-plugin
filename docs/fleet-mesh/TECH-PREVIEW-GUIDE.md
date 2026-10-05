@@ -4,7 +4,7 @@
 
 **Technology Preview.** The OSSMC Fleet Service Mesh perspective is released as a tech preview. Technology Preview features provide early access to upcoming product innovations, enabling you to test functionality and provide feedback during the development process. However, these features are not fully supported, may not be functionally complete, and are not intended for production use.
 
-Note that this technical preview is compatible with the OSSM Multicluster Mesh Add-on Developer Preview 1 (DP1).
+Managed meshes in this technical preview require the Placement-capable OSSM Multicluster Mesh Add-on and its updated `MultiClusterMesh` CRD. The older Developer Preview 1 add-on uses `spec.clusterSet` and does not support the managed-mesh example below. Discovered meshes remain available without the add-on.
 
 This document has two sections:
 
@@ -107,6 +107,79 @@ If the perspective is missing, confirm:
 - You refreshed the browser after the plugin became ready.
 - Your user can list `multiclusterhubs` on the hub (the plugin probes that API to know if it is on a hub).
 
+### Optional: create a managed mesh with a Placement
+
+This example requires the OSSM-ACM add-on already installed on the ACM hub. Run these commands on the **hub**. ACM normally registers the hub as `local-cluster`; check `oc get managedcluster local-cluster` first. The ClusterSet is cluster scoped. Its member cluster has the ACM clusterset label. The binding, Placement, and MCM all live in `tech-preview-mesh-ns`.
+
+Create the ManagedClusterSet and Placement:
+
+```bash
+oc apply -f - <<'EOF'
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSet
+metadata:
+  name: tech-preview-cluster-set
+EOF
+
+oc label managedcluster local-cluster \
+  cluster.open-cluster-management.io/clusterset=tech-preview-cluster-set --overwrite
+
+oc create namespace tech-preview-mesh-ns --dry-run=client -o yaml | oc apply -f -
+
+oc apply -f - <<'EOF'
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: tech-preview-cluster-set
+  namespace: tech-preview-mesh-ns
+spec:
+  clusterSet: tech-preview-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: tech-preview-placement
+  namespace: tech-preview-mesh-ns
+spec:
+  clusterSets:
+  - tech-preview-cluster-set
+EOF
+
+oc wait managedclustersetbinding/tech-preview-cluster-set -n tech-preview-mesh-ns \
+  --for=condition=Bound --timeout=120s
+oc get placement tech-preview-placement -n tech-preview-mesh-ns -o yaml
+oc get placementdecision -n tech-preview-mesh-ns \
+  -l cluster.open-cluster-management.io/placement=tech-preview-placement -o yaml
+```
+
+Wait for `status.numberOfSelectedClusters: 1` and a generated PlacementDecision naming `local-cluster`. ACM creates the decisions; do not create a PlacementDecision or a policy `PlacementBinding` for this MCM. If selection is empty, check the ManagedCluster's clusterset label, the Binding's `Bound` condition, and Placement conditions in `tech-preview-mesh-ns`.
+
+Create the MultiClusterMesh (aka MCM) custom resource:
+
+```bash
+oc apply -f - <<'EOF'
+apiVersion: mesh.open-cluster-management.io/v1alpha1
+kind: MultiClusterMesh
+metadata:
+  name: tech-preview-mesh
+  namespace: tech-preview-mesh-ns
+spec:
+  placementRef:
+    name: tech-preview-placement
+  controlPlane:
+    namespace: tech-preview-cp
+EOF
+
+oc get multiclustermesh tech-preview-mesh -n tech-preview-mesh-ns -o yaml
+```
+
+The add-on installs mesh plumbing for selected clusters. Its `Ready=True` condition currently confirms the operator-installation milestone; create Istio CRs separately and check their readiness. To remove this example, delete the MCM and wait for its cleanup, then delete the Placement and Binding in `tech-preview-mesh-ns`, and the namespace. Before deleting the ClusterSet, remove its label from `local-cluster`:
+
+```bash
+oc label managedcluster local-cluster cluster.open-cluster-management.io/clusterset-
+oc delete managedclusterset tech-preview-cluster-set
+```
+
 ### Uninstall OSSMC
 
 Delete the OSSMConsole CR **before** uninstalling the Kiali Operator:
@@ -167,15 +240,19 @@ A table of every mesh the hub knows about.
 
 | Type           | Meaning                                                                                                                                                                          |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Managed**    | A `MultiClusterMesh` resource on the hub. The add-on installs the service mesh operator on the cluster set, and can distribute trust and discovery secrets.                      |
+| **Managed**    | A `MultiClusterMesh` resource on the hub. Its same-namespace Placement selects clusters from ClusterSets bound to that namespace; the add-on installs the operator and can distribute trust and discovery secrets. |
 | **Discovered** | Istio control planes that share a mesh ID (from the Istio CR) but are **not** owned by a `MultiClusterMesh`. Includes single **standalone** control planes that have no mesh ID. |
 
-Columns include mesh ID, name, ACM cluster set (managed meshes), cluster count, whether trust is configured (managed only), and status.
+Columns include mesh ID, name, MCM namespace and Placement (managed meshes), cluster count, whether trust is configured (managed only), and status. The Clusters number counts entries in MCM status for managed meshes; for discovered meshes it counts distinct clusters with observed Istio control planes. It is not a Placement selected-cluster count.
+
+Managed mesh status in the list and Overview comes from the MultiClusterMesh conditions, so an add-on reconciliation failure remains visible even when its Istio control planes are healthy. Discovered mesh status comes from the observed Istio conditions. Check the Control Planes view for Istio readiness separately from the managed mesh's operator-installation status.
 
 Open a row to see that mesh's details:
 
-- **Managed mesh** — Cluster set, control-plane namespace, cert-manager issuer, OSSM operator settings, per-cluster operator status, control planes in that mesh, trust distribution, and conditions.
+- **Managed mesh** — Placement selection status and selected/mesh/operator-installed counts, membership transitions, control-plane namespace, cert-manager issuer, OSSM operator settings, per-cluster operator status, control planes, trust distribution, and conditions. Placement and PlacementDecisions may update before MCM status converges.
 - **Discovered mesh** — Clusters and control planes that share that mesh ID, availability, and conditions.
+
+The managed mesh detail page treats cluster selection as unknown until it can verify that the Placement and its decisions are current. Selection remains unknown while the Placement data is loading, your user cannot read it, its status reflects an older policy revision, or the number of decision entries does not match the Placement's selected-cluster count. During that time, the page still shows existing mesh status, control-plane information, and trust information. It shows an empty selection only when current selection data confirms that no clusters are selected; an older MCM selection error does not override the current Placement result. When `placementRef` changes, the page loads the newly referenced Placement in the MCM namespace and warns until MCM status catches up.
 
 A **Mesh ID Conflict** warning means the same mesh ID is used by a managed mesh and by independently discovered control planes. That usually means overlapping configuration; fix it on the Istio or `MultiClusterMesh` side.
 
@@ -207,6 +284,8 @@ Those links appear only when the matching Kiali or OSSMConsole is installed and 
 ### What the add-on does versus what you still own
 
 The Multicluster Mesh Add-on (backend for **managed** meshes) handles plumbing: operator install on member clusters, optional trust via cert-manager, and discovery token exchange.
+
+You create and manage the ManagedClusterSet, assign clusters to it, and create a ManagedClusterSetBinding and Placement in **each MCM namespace**. A Placement can select a subset of bound ClusterSets using predicates, a desired cluster count, and other rules. ACM publishes PlacementDecisions; the add-on reads them through the MCM's `spec.placementRef.name`. A `PlacementBinding` is used by consumers such as ACM policies and is not needed for this mesh reference. Deleting an MCM does not delete its Placement or ClusterSet binding, which may be shared.
 
 You still create Istio CRs (and typically Istio CNI and east-west gateways) on each cluster, often with GitOps. Fleet Service Mesh shows the result; it does not create those CRs for you.
 

@@ -11,7 +11,7 @@ const makeMCM = (
   kind: 'MultiClusterMesh',
   metadata: { name, namespace },
   spec: {
-    clusterSet: 'global',
+    placementRef: { name: 'global-placement' },
     ...(cpNamespace ? { controlPlane: { namespace: cpNamespace } } : {})
   },
   status: {
@@ -57,6 +57,15 @@ describe('buildMcmIndex', () => {
     expect(buildMcmIndex([]).size).toBe(0);
   });
 
+  it('correlates overlapping meshes independently by control plane namespace', () => {
+    const first = makeMCM('mesh', 'team-a', 'cp-a', ['shared-cluster']);
+    const second = makeMCM('mesh', 'team-b', 'cp-b', ['shared-cluster']);
+    const index = buildMcmIndex([first, second]);
+    expect(lookupMcm(index, 'shared-cluster', 'cp-a')).toEqual({ name: 'mesh', namespace: 'team-a' });
+    expect(lookupMcm(index, 'shared-cluster', 'cp-b')).toEqual({ name: 'mesh', namespace: 'team-b' });
+    expect(lookupMcm(index, 'selected-only-cluster', 'cp-a')).toBeUndefined();
+  });
+
   it('handles MCM with empty clusterStatus', () => {
     const mcms = [makeMCM('mesh-empty', 'ns', 'istio-system', [])];
     expect(buildMcmIndex(mcms).size).toBe(0);
@@ -67,7 +76,7 @@ describe('buildMcmIndex', () => {
       apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
       kind: 'MultiClusterMesh',
       metadata: { name: 'no-status', namespace: 'ns' },
-      spec: { clusterSet: 'global' }
+      spec: { placementRef: { name: 'global-placement' } }
     };
     expect(buildMcmIndex([mcm]).size).toBe(0);
   });

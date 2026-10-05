@@ -23,7 +23,7 @@ import type { MultiClusterMesh } from '../types/multiClusterMesh';
 import type { K8sCondition } from '../types/common';
 import type { EnrichedControlPlane } from '../types/istio';
 import type { StatusColor } from '../utils/statusUtils';
-import { deriveStatus } from '../utils/statusUtils';
+import { deriveStatus, translateStatusLabel } from '../utils/statusUtils';
 import { StatusDonutChart } from './StatusDonutChart';
 import type { StatusCounts } from './StatusDonutChart';
 import { cpTypeSegment } from '../utils/cpTypeSegment';
@@ -169,6 +169,7 @@ const OverviewPage: FC = () => {
 
   const ossmAcmAddonMissing = isOssmAcmAddonMissing(mcmsLoaded, mcmsError);
   const meshLoadError = !!mcmsError && !ossmAcmAddonMissing;
+  const managedLoaded = mcmsLoaded || !!mcmsError;
 
   // Two-phase Meshes: show MCM counts immediately, add discovered when ready
   const meshCount = enrichmentLoaded ? items.length : mcms.length;
@@ -177,7 +178,7 @@ const OverviewPage: FC = () => {
     [items, mcms, enrichmentLoaded]
   );
 
-  const cpLoaded = searchLoaded;
+  const cpLoaded = searchLoaded || !!searchError;
   const cpSectionError = searchError ?? enrichmentError;
   const cpCount = enrichedPlanes.length;
 
@@ -207,25 +208,26 @@ const OverviewPage: FC = () => {
                     </Link>
                   </CardTitle>
                   <CardBody style={{ overflow: 'hidden' }}>
-                    {!mcmsLoaded ? (
+                    {!managedLoaded ? (
                       <Spinner size="md" aria-label={t('Loading fleet meshes')} />
-                    ) : ossmAcmAddonMissing ? (
-                      <EmptyState variant="xs">
-                        <EmptyStateBody>
-                          {t(
-                            'OSSM-ACM addon is not installed. Install the addon controller to create and manage MultiClusterMesh resources.'
-                          )}
-                        </EmptyStateBody>
-                      </EmptyState>
-                    ) : meshLoadError ? (
-                      <Alert variant="danger" isInline isPlain title={t('Unable to load mesh data')} />
-                    ) : meshCount === 0 ? (
-                      <EmptyState variant="xs">
-                        <EmptyStateBody>{t('No managed or discovered meshes found.')}</EmptyStateBody>
-                      </EmptyState>
                     ) : (
                       <>
-                        {!!cpSectionError && enrichmentLoaded && (
+                        {(ossmAcmAddonMissing || meshLoadError) && (
+                          <Alert
+                            variant="warning"
+                            isInline
+                            isPlain
+                            title={
+                              ossmAcmAddonMissing
+                                ? t(
+                                    'OSSM-ACM addon is not installed. Install the addon controller to create and manage MultiClusterMesh resources.'
+                                  )
+                                : t('Unable to load mesh data')
+                            }
+                            style={{ marginBottom: '0.5rem' }}
+                          />
+                        )}
+                        {!!cpSectionError && (
                           <Alert
                             variant="warning"
                             isInline
@@ -234,7 +236,25 @@ const OverviewPage: FC = () => {
                             style={{ marginBottom: '0.5rem' }}
                           />
                         )}
-                        <StatusDonutChart counts={meshStatusCounts} subtitle={t('total')} />
+                        {meshCount === 0 ? (
+                          cpSectionError ? (
+                            <EmptyState variant="xs">
+                              <EmptyStateBody>{t('Discovered meshes are unavailable.')}</EmptyStateBody>
+                            </EmptyState>
+                          ) : !searchLoaded || !enrichmentLoaded ? (
+                            <Spinner size="md" aria-label={t('Loading discovered meshes')} />
+                          ) : (
+                            <EmptyState variant="xs">
+                              <EmptyStateBody>
+                                {mcmsError
+                                  ? t('Managed meshes are unavailable. No discovered meshes found.')
+                                  : t('No managed or discovered meshes found.')}
+                              </EmptyStateBody>
+                            </EmptyState>
+                          )
+                        ) : (
+                          <StatusDonutChart counts={meshStatusCounts} subtitle={t('total')} />
+                        )}
                       </>
                     )}
                   </CardBody>
@@ -274,7 +294,7 @@ const OverviewPage: FC = () => {
             <Card isCompact style={{ height: '100%' }}>
               <CardTitle>{t('Recent Issues')}</CardTitle>
               <CardBody>
-                {!mcmsLoaded || !cpLoaded ? (
+                {!managedLoaded || !cpLoaded ? (
                   <Spinner size="md" aria-label={t('Loading recent issues')} />
                 ) : meshLoadError && cpSectionError ? (
                   <Alert variant="danger" isInline isPlain title={t('Unable to load fleet data')} />
@@ -327,7 +347,7 @@ const OverviewPage: FC = () => {
                               </td>
                               <td className="pf-v6-c-table__td">
                                 <Label color={issue.color} isCompact>
-                                  {t(issue.label)}
+                                  {translateStatusLabel(issue.label, t)}
                                 </Label>
                               </td>
                               <td className="pf-v6-c-table__td">

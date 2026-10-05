@@ -59,10 +59,7 @@ function buildItems(
 
     const correlatedPlanes = [...(managedByIndex.get(`${ns}/${name}`) ?? [])];
 
-    const { conditions, rank } =
-      correlatedPlanes.length > 0 && correlatedPlanes.some(cp => cp.status?.conditions)
-        ? worstConditions(correlatedPlanes)
-        : { conditions: mcm.status?.conditions, rank: getStatusRank(mcm.status?.conditions) };
+    const conditions = mcm.status?.conditions;
 
     const meshID = correlatedPlanes.find(cp => cp.meshID)?.meshID;
 
@@ -72,7 +69,6 @@ function buildItems(
         creationTimestamp: mcm.metadata?.creationTimestamp
       },
       clusterCount: mcm.status?.clusterStatus?.length ?? 0,
-      clusterSet: mcm.spec.clusterSet,
       conditions,
       detailLink: `/fleet-mesh/meshes/managed/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`,
       kind: 'managed',
@@ -80,7 +76,9 @@ function buildItems(
       mcmNamespace: ns,
       meshID,
       meshIDConflict: false,
-      statusRank: rank,
+      placementName: mcm.spec?.placementRef?.name,
+      placementNamespace: ns,
+      statusRank: getStatusRank(conditions),
       trustIssuer: mcm.spec.security?.trust?.certManager?.issuerRef?.name
     };
   });
@@ -159,7 +157,7 @@ export function useFleetMeshItems(): UseFleetMeshItemsResult {
     enrichmentError,
     enrichmentLoaded,
     items,
-    loaded: (mcmsLoaded ?? false) && enrichmentLoaded,
+    loaded: ((mcmsLoaded ?? false) || !!mcmsError) && (searchLoaded || !!searchError) && enrichmentLoaded,
     mcms: mcms ?? [],
     mcmsError,
     mcmsLoaded: mcmsLoaded ?? false,

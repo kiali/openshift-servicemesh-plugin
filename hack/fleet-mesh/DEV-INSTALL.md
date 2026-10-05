@@ -2,7 +2,7 @@
 
 Complete instructions to go from zero to a working Fleet Service Mesh perspective and backend MultiCluster Mesh addon controller (aka "the backend controller" or "the controller") on a local CRC OpenShift cluster. If you have a two-cluster ACM environment, see [DEMO-SETUP-MULTICLUSTER.md](DEMO-SETUP-MULTICLUSTER.md) instead.
 
-> **Quick start:** After completing steps 1-3 manually (ACM cluster, backend controller, frontend plugin — use either install option in step 3), run `[hack/fleet-mesh/setup-demo.sh install](setup-demo.sh)` to automate steps 4-8: cert-manager, infrastructure, trust chain, RBAC, MCM creation, IstioCNI, Istio CRs, and the standalone discovered CR. The script is idempotent — re-running it on an already-configured cluster finishes successfully without changing anything. Steps 9-11 (verification, optional Kiali install, optional test app) are not covered by the script.
+> **Quick start:** After completing steps 1-3 manually (ACM cluster, backend controller, frontend plugin — use either install option in step 3), run `[hack/fleet-mesh/setup-demo.sh install](setup-demo.sh)` to automate steps 4-8: cert-manager, the ManagedClusterSet, per-namespace bindings and Placements, trust chain, RBAC, MCM creation, IstioCNI, Istio CRs, and the standalone discovered CR. The script is idempotent — re-running it on an already-configured cluster finishes successfully without changing the intended configuration. Steps 9-11 (verification, optional Kiali install, optional test app) are not covered by the script.
 
 ## Resource Layout
 
@@ -40,7 +40,7 @@ The backend controller does **not** create Istio CRs, IstioCNI, or east-west gat
 
 ## 1. Get an OpenShift cluster with ACM
 
-You need an OpenShift cluster with ACM (Advanced Cluster Management) 2.16+ installed. The image registry must be exposed. How you get this is up to you — any method that produces a working ACM hub cluster will work.
+You need an OpenShift cluster with ACM (Advanced Cluster Management) 2.17+ installed. The image registry must be exposed. How you get this is up to you — any method that produces a working ACM hub cluster will work.
 
 One option is the [install-acm.sh](https://github.com/kiali/kiali/blob/master/hack/install-acm.sh) script in the Kiali repo, which automates a full CRC/OpenShift + ACM setup. Its `init-openshift` command depends on other scripts in the same repo, so you need the [kiali server repo](https://github.com/kiali/kiali) cloned locally. All commands below are run from that repo's directory:
 
@@ -48,8 +48,8 @@ One option is the [install-acm.sh](https://github.com/kiali/kiali/blob/master/ha
 # Start CRC with 12 CPUs, 100GB disk, exposed image registry
 ./hack/install-acm.sh --crc-pull-secret-file <path-to-your-pull-secret-file> init-openshift
 
-# Install ACM 2.16+ (operator, MultiClusterHub, observability)
-# ACM 2.16+ is required for the v1beta1 addon API used by the backend Helm chart.
+# Install ACM 2.17+ (operator, MultiClusterHub, observability).
+# Verify that the hub serves the Placement and ClusterSet API versions used below.
 ./hack/install-acm.sh -c release-2.17 install-acm
 ```
 
@@ -268,10 +268,10 @@ oc rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
 
 ## 5. Set up infrastructure
 
-Create the ManagedClusterSet and MCM namespaces.
+Create the cluster-scoped ManagedClusterSet, assign `local-cluster` to it, and create the two hub namespaces. A Placement is namespace-scoped, so each MCM namespace needs its **own** ManagedClusterSetBinding and Placement even though both use the same ClusterSet. The add-on reads `spec.placementRef.name` in the MCM's namespace; it does not create these ACM resources.
 
 ```bash
-# Create a ManagedClusterSet and bind local-cluster to it
+# Create a ManagedClusterSet and assign local-cluster to it
 oc apply -f - <<'EOF'
 apiVersion: cluster.open-cluster-management.io/v1beta2
 kind: ManagedClusterSet
@@ -285,7 +285,55 @@ oc label managedcluster local-cluster \
 # Create MCM namespaces
 oc create namespace secure-mcm-ns
 oc create namespace unsecure-mcm-ns
+
+# Bind the ClusterSet and create a Placement in each MCM namespace.
+oc apply -f - <<'EOF'
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: secure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: secure-demo-placement
+  namespace: secure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: unsecure-demo-placement
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+EOF
+
+for ns in secure-mcm-ns unsecure-mcm-ns; do
+  placement="${ns%-mcm-ns}-demo-placement"
+  oc wait managedclustersetbinding/demo-cluster-set -n "$ns" \
+    --for=condition=Bound --timeout=120s
+  oc get placement "$placement" -n "$ns" -o yaml
+  oc get placementdecision -n "$ns" \
+    -l cluster.open-cluster-management.io/placement="$placement" -o yaml
+done
 ```
+
+Wait until each Placement reports `status.numberOfSelectedClusters: 1` and its generated PlacementDecision selects `local-cluster`. ACM creates PlacementDecisions; do not create a PlacementDecision or a policy `PlacementBinding` for the MCM. A Placement selects from the ClusterSets **bound to its namespace**. The explicit `clusterSets` list above limits each demo Placement to `demo-cluster-set`.
 
 ## 6. Set up the trust chain
 
@@ -363,9 +411,9 @@ metadata:
   labels:
     open-cluster-management.io/aggregate-to-work: "true"
 rules:
-  - apiGroups: ["operators.coreos.com"]
-    resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-    verbs: ["create", "get", "list", "update", "patch", "delete"]
+- apiGroups: ["operators.coreos.com"]
+  resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
+  verbs: ["create", "get", "list", "update", "patch", "delete"]
 EOF
 ```
 
@@ -377,7 +425,7 @@ oc auth can-i create operatorgroups.operators.coreos.com \
 # Should output: yes
 ```
 
-Create both MultiClusterMesh CRs. The controller will create the control plane
+After both Placements select `local-cluster`, create both MultiClusterMesh CRs. The controller will create the control plane
 namespace and install the operator on `local-cluster`. It will also distribute
 `cacerts` trust certificates for `secure-mcm`.
 
@@ -392,7 +440,8 @@ metadata:
   name: secure-mcm
   namespace: secure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
+  placementRef:
+    name: secure-demo-placement
   controlPlane:
     namespace: secure-ns
   security:
@@ -410,7 +459,8 @@ metadata:
   name: unsecure-mcm
   namespace: unsecure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
+  placementRef:
+    name: unsecure-demo-placement
   controlPlane:
     namespace: unsecure-ns
 EOF
@@ -428,6 +478,8 @@ oc get multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
 # Check ManifestWorks created by the controller
 oc get manifestwork -n local-cluster | grep multicluster-mesh
 ```
+
+`MultiClusterMesh Ready=True` currently means the selected clusters have reached the add-on's operator-installation milestone. Check Istio and trust conditions separately. If reconciliation reports `PlacementNotFound` or `NoClustersSelected`, inspect the Placement and Binding in the **same namespace** as that MCM, then inspect all PlacementDecisions with the Placement label. Check the ManagedCluster's `cluster.open-cluster-management.io/clusterset` label and any Placement predicates; ordinary labels do not assign a cluster to a ClusterSet.
 
 ## 7a. Create IstioCNI and Istio CRs on each cluster
 
@@ -498,7 +550,7 @@ EOF
 > **Note:** If you need east-west gateways for cross-cluster service discovery, create
 > them after istiod is running. The OCM-native way to fan out Istio configuration
 > consistently across clusters is a `ManifestWorkReplicaSet` referencing a `Placement`
-> that targets the same ClusterSet — this creates a per-cluster `ManifestWork` for each
+> that selects the same clusters — this creates a per-cluster `ManifestWork` for each
 > cluster the Placement selects. This guide will not cover this topic.
 
 ## 8. (Optional) Create a standalone discovered Istio CR
