@@ -113,13 +113,25 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
       <CardBody>
         <DescriptionList isCompact columnModifier={{ default: '2Col' }}>
           <DescriptionListGroup>
-            <DescriptionListTerm>{t('Placement')}</DescriptionListTerm>
+            <DescriptionListTerm>
+              <Tooltip content={t('The Placement resource that determines which clusters are selected for this mesh.')}>
+                <span>{t('Placement')}</span>
+              </Tooltip>
+            </DescriptionListTerm>
             <DescriptionListDescription>
               {placementName ? <Link to={placementDetailLink(namespace, placementName)}>{placementName}</Link> : '-'}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>{t('Selection status')}</DescriptionListTerm>
+            <DescriptionListTerm>
+              <Tooltip
+                content={t(
+                  'Whether the Placement and its decisions are available, current, and consistent. This does not indicate deployment or operator health.'
+                )}
+              >
+                <span>{t('Selection status')}</span>
+              </Tooltip>
+            </DescriptionListTerm>
             <DescriptionListDescription>
               <Label color={result.state === 'ready' && !condition ? 'green' : 'orange'} isCompact>
                 {result.state === 'ready' && condition
@@ -159,14 +171,30 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>{t('Operator installed')}</DescriptionListTerm>
+            <DescriptionListTerm>
+              <Tooltip
+                content={t(
+                  'The number of deployed clusters whose MultiClusterMesh status reports the OSSM operator as installed.'
+                )}
+              >
+                <span>{t('Operator installed')}</span>
+              </Tooltip>
+            </DescriptionListTerm>
             <DescriptionListDescription data-test="placement-operator-installed-count">
               {operatorInstalledCount(clusterStatuses)}
             </DescriptionListDescription>
           </DescriptionListGroup>
           {result.placement && (
             <DescriptionListGroup>
-              <DescriptionListTerm>{t('Selection policy')}</DescriptionListTerm>
+              <DescriptionListTerm>
+                <Tooltip
+                  content={t(
+                    'A summary of the rules this Placement uses to select clusters. View the Placement for complete policy details.'
+                  )}
+                >
+                  <span>{t('Selection policy')}</span>
+                </Tooltip>
+              </DescriptionListTerm>
               <DescriptionListDescription>{selectionPolicy(result.placement.spec, t)}</DescriptionListDescription>
             </DescriptionListGroup>
           )}

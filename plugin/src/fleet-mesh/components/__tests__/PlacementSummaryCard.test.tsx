@@ -106,6 +106,34 @@ describe('PlacementSummaryCard', () => {
     ).toBeInTheDocument();
   });
 
+  it.each([
+    ['Placement', 'The Placement resource that determines which clusters are selected for this mesh.'],
+    [
+      'Selection status',
+      'Whether the Placement and its decisions are available, current, and consistent. This does not indicate deployment or operator health.'
+    ],
+    [
+      'Operator installed',
+      'The number of deployed clusters whose MultiClusterMesh status reports the OSSM operator as installed.'
+    ],
+    [
+      'Selection policy',
+      'A summary of the rules this Placement uses to select clusters. View the Placement for complete policy details.'
+    ]
+  ])('explains %s with a tooltip', async (label, tooltip) => {
+    render(
+      <PlacementSummaryCard
+        clusterStatuses={[makeCluster('hub')]}
+        namespace="mesh-ns"
+        placementName="demo-placement"
+        result={readyResult}
+        sharedMeshCount={1}
+      />
+    );
+    fireEvent.mouseEnter(screen.getByText(label));
+    expect(await screen.findByText(tooltip)).toBeInTheDocument();
+  });
+
   it('does not report a forbidden decision watch as an empty selection', () => {
     render(
       <PlacementSummaryCard
