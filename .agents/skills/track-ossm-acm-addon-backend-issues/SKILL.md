@@ -7,7 +7,9 @@ description: >-
   affected). Never create, edit, or comment on issues in the stolostron repo.
   Run when new multicluster-mesh-addon backend issues are filed, before sprint
   planning, or when asked to check for addon controller changes that might affect
-  the fleet-mesh perspective.
+  the fleet-mesh perspective. Also inspect open OSSM Jira issues that mention
+  MultiClusterMesh, OSSM-ACM, or "addon controller"; never create, edit, or
+  comment on those Jira issues.
 ---
 
 # Track OSSM-ACM Addon Controller Backend Issues for Fleet Service Mesh Plugin Impact
@@ -16,6 +18,11 @@ Analyze open backend controller issues in the OSSM-ACM addon
 ([stolostron/multicluster-mesh-addon](https://github.com/stolostron/multicluster-mesh-addon))
 and create or update GitHub tracking issues for any that affect the Fleet Service
 Mesh perspective plugin.
+
+Also examine open issues in the [OSSM Jira project](https://redhat.atlassian.net/browse/OSSM)
+that mention `MultiClusterMesh`, `OSSM-ACM`, or `addon controller`. A Jira match is
+only a discovery lead: create or update a tracking issue only when the Jira content
+or its linked issues identifies an OSSM-ACM addon controller change.
 
 The plugin frontend lives in this repository under `plugin/src/fleet-mesh/`.
 Tracking issues belong in
@@ -30,18 +37,24 @@ backend controller issues and source code. Never create, edit, comment on, or
 close issues (or PRs) in that repository. All tracking issues must be filed in
 `kiali/openshift-servicemesh-plugin` or `kiali/kiali`.
 
+**Do NOT write to OSSM Jira.** Use it only to search and read issues; never create,
+edit, comment on, transition, or close a Jira issue.
+
 ## When to use
 
 Run this skill periodically — when new OSSM-ACM addon controller issues are
-filed in multicluster-mesh-addon, before sprint planning, or when the user asks
-to check for addon controller changes that might affect the fleet-mesh plugin.
-The skill is idempotent: running it multiple times will not create duplicate
-issues.
+filed in multicluster-mesh-addon, when an OSSM Jira issue mentions
+`MultiClusterMesh`, `OSSM-ACM`, or `addon controller`, before sprint planning, or
+when the user asks to check for addon controller changes that might affect the
+fleet-mesh plugin. The skill is idempotent: running it multiple times will not
+create duplicate issues.
 
 ## Prerequisites
 
 - `gh` CLI authenticated with access to `stolostron/multicluster-mesh-addon`,
   `kiali/openshift-servicemesh-plugin`, and `kiali/kiali`.
+- Read-only access to the [OSSM Jira project](https://redhat.atlassian.net/browse/OSSM)
+  through the available Jira UI, API, or connector.
 - Read frontend source from the **openshift-servicemesh-plugin** repository root.
 - Use `--repo` on all `gh` commands — addon controller issues come from one repo,
   tracking issues are filed in another.
@@ -49,12 +62,15 @@ issues.
   equivalent read commands) are permitted against `stolostron/multicluster-mesh-addon`.
   Do not run `gh issue create`, `gh issue edit`, or `gh issue comment` with
   `--repo stolostron/multicluster-mesh-addon`.
+- **Read-only for Jira:** Search and view OSSM issues only. Do not create, edit,
+  comment on, transition, or close Jira issues.
 
 ## Repositories
 
 | Role | Repository | Access | Purpose |
 |------|------------|--------|---------|
 | Backend (source) | `stolostron/multicluster-mesh-addon` | **Read-only** | OSSM-ACM addon controller, CRD, and API issues to analyze |
+| Discovery source | [OSSM Jira project](https://redhat.atlassian.net/browse/OSSM) | **Read-only** | Open issues mentioning `MultiClusterMesh`, `OSSM-ACM`, or `addon controller`; verify whether they identify an addon controller change |
 | Frontend (default target) | `kiali/openshift-servicemesh-plugin` | Read/write | Fleet Service Mesh perspective plugin (`plugin/src/fleet-mesh/`) |
 | Frontend (alternate target) | `kiali/kiali` | Read/write | Kiali server API or core UI changes the plugin depends on |
 
@@ -125,6 +141,19 @@ These are the OSSM-ACM addon controller issues to analyze. **Exclude** any issue
 with the `area/frontend` label or a title starting with `[frontend]` — those are
 obsolete tracking issues filed in the backend repo by mistake; ignore them.
 
+Also search the **OSSM** Jira project for open issues that mention any of
+`MultiClusterMesh`, `OSSM-ACM`, or `addon controller`, without relying on labels
+or components:
+
+```
+project = OSSM AND resolution = Unresolved AND (text ~ "\"MultiClusterMesh\"" OR text ~ "\"OSSM-ACM\"" OR text ~ "\"addon controller\"") ORDER BY created DESC
+```
+
+Fetch every result page. For each Jira result, read its key, summary, description,
+status, links, and any linked issues needed to determine whether it identifies an
+OSSM-ACM addon controller change. Exclude Jira results that use one of these terms
+without that connection. Do not write to Jira.
+
 ### 3. Fetch existing frontend tracking issues
 
 Check **both** kiali target repos for existing tracking issues. Apply newest-first
@@ -136,6 +165,7 @@ has many issues (open lists: `sort:created-desc`; closed lists:
 - Has the `fleet-mesh` label
 - Body contains `stolostron/multicluster-mesh-addon#NNN` or the addon controller issue URL
 - Body contains `stolostron/multicluster-mesh-addon/issues/NNN`
+- Body contains an OSSM Jira key (for example, `OSSM-123`) or its Jira browse URL
 
 **Primary target (openshift-servicemesh-plugin):**
 
@@ -164,11 +194,17 @@ gh issue list --repo kiali/kiali \
 gh issue list --repo kiali/kiali \
   --search "[fleet-mesh] sort:created-desc" --state open --limit 50 \
   --json number,title,body,labels,createdAt
+
+gh issue list --repo kiali/kiali \
+  --search "OSSM- sort:created-desc" --state open --limit 50 \
+  --json number,title,body,labels,createdAt
 ```
 
 ### 4. Analyze each addon controller issue for frontend impact
 
-For each backend issue (not already covered by a tracking issue), determine:
+For each addon controller issue, including a Jira discovery lead confirmed to
+identify an addon controller change, that is not already covered by a tracking
+issue, determine:
 
 a. Does the plugin have a workaround for this issue that will need updating when
    the issue is fixed?
@@ -199,16 +235,22 @@ The key test: **will the fleet-mesh plugin (or Kiali server, if applicable)
 need code changes when this addon controller issue is fixed?** If not, classify
 as NONE regardless of current UX impact.
 
+An open Jira issue that only matches one of the three Jira search terms and does not
+identify an addon controller change is not a tracking candidate.
+
 ### 6. Check for existing tracking issues (deduplication)
 
-Before creating a tracking issue for addon controller issue #NNN, check
+Before creating a tracking issue for a GitHub addon controller issue or a
+Jira-confirmed addon controller issue, check
 **openshift-servicemesh-plugin** and **kiali/kiali** only. Use a two-pass approach:
 
-1. **Title match:** Does any tracking issue title contain `#NNN` (e.g.,
-   `[fleet-mesh] Addon controller #118: ...`)?
+1. **Title match:** Does any tracking issue title contain the GitHub issue number
+   (e.g., `[fleet-mesh] Addon controller #118: ...`) or the Jira key (e.g.,
+   `[fleet-mesh] OSSM-123: ...`)?
 2. **Body match:** If no title match, does any tracking issue body contain
    `stolostron/multicluster-mesh-addon#NNN` or
-   `https://github.com/stolostron/multicluster-mesh-addon/issues/NNN`?
+   `https://github.com/stolostron/multicluster-mesh-addon/issues/NNN`, or the
+   Jira key or its browse URL?
 
 If either check finds a match, update that issue rather than creating a duplicate.
 Log which match method and repo were used.
@@ -233,30 +275,31 @@ For each, show the issue number and the comment that would be posted.
 Ask the user to confirm before proceeding. Do NOT create, update, or comment on
 any GitHub issues until the user explicitly approves. All writes must target
 `kiali/openshift-servicemesh-plugin` or `kiali/kiali` only — never
-`stolostron/multicluster-mesh-addon`.
+`stolostron/multicluster-mesh-addon` or OSSM Jira.
 
 ### 8. Create or update frontend tracking issues
 
 After the user confirms, execute the planned actions. **Every `gh issue create`,
 `gh issue edit`, and `gh issue comment` command must use
 `--repo kiali/openshift-servicemesh-plugin` or `--repo kiali/kiali`.** Do not
-write to the stolostron repo under any circumstance.
+write to the stolostron repo or OSSM Jira under any circumstance.
 
 **For new HIGH/MEDIUM/LOW issues with no existing tracking issue:**
 
 Create in the appropriate target repo. Use `[fleet-mesh]` in the title. Reference
-the addon controller explicitly when helpful, e.g.
-`[fleet-mesh] Addon controller #NNN: <short title>`.
+the addon controller source explicitly: use
+`[fleet-mesh] Addon controller #NNN: <short title>` for a GitHub issue or
+`[fleet-mesh] OSSM-NNN: <short title>` for a Jira-confirmed addon controller issue.
 
 **openshift-servicemesh-plugin (default):**
 
 ```
 gh issue create --repo kiali/openshift-servicemesh-plugin \
-  --title "[fleet-mesh] Addon controller #NNN: <short title>" \
+  --title "[fleet-mesh] <ADDON_CONTROLLER_REFERENCE>: <short title>" \
   --label "enhancement" \
   --label "fleet-mesh" \
   --body "$(cat <<'EOF'
-Backend issue: stolostron/multicluster-mesh-addon#NNN
+Backend issue: <ADDON_CONTROLLER_REFERENCE>
 
 **Impact:** <SEVERITY> — <one-line summary>.
 
@@ -287,11 +330,11 @@ issue there if needed).
 
 ```
 gh issue create --repo kiali/kiali \
-  --title "[fleet-mesh] Addon controller #NNN: <short title>" \
+  --title "[fleet-mesh] <ADDON_CONTROLLER_REFERENCE>: <short title>" \
   --label "enhancement" \
   --label "multi-cluster" \
   --body "$(cat <<'EOF'
-Backend issue: stolostron/multicluster-mesh-addon#NNN
+Backend issue: <ADDON_CONTROLLER_REFERENCE>
 Related OSSMC issue: <link if filed in openshift-servicemesh-plugin>
 
 **Impact:** <SEVERITY> — <one-line summary>.
@@ -343,7 +386,9 @@ after verifying.
 
 After processing all issues, report:
 
-- How many addon controller issues were analyzed.
+- How many GitHub addon controller issues and open OSSM Jira matches for the three
+  Jira search terms were analyzed, and how many Jira issues were confirmed as addon
+  controller changes.
 - How many had frontend impact (by severity).
 - How many new tracking issues were created in each target repo (list issue numbers).
 - How many existing tracking issues were updated.
