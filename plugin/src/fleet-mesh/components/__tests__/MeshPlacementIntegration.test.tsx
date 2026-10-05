@@ -48,7 +48,7 @@ describe('managed detail selection watches', () => {
     });
     render(<MeshDetailPage />);
     expect(screen.getByText('Selection access denied')).toBeInTheDocument();
-    expect(screen.getByText('Selection unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Sync Status Unavailable')).toBeInTheDocument();
     expect(screen.getAllByText('hub')).toHaveLength(2);
     expect(screen.getByTestId('trust-status-card')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'observed-control-plane' })).toBeInTheDocument();
@@ -72,14 +72,14 @@ describe('managed detail selection watches', () => {
     });
     const { rerender } = render(<MeshDetailPage />);
     expect(screen.getByText('old-selected')).toBeInTheDocument();
-    expect(screen.getByText('Selected only')).toBeInTheDocument();
+    expect(screen.getByText('Pending Deployment')).toBeInTheDocument();
     expect(useMeshControlPlanes).toHaveBeenLastCalledWith(['hub'], []);
 
     mesh = { ...mesh, spec: { ...mesh.spec, placementRef: { name: 'new-placement' } } };
     rerender(<MeshDetailPage />);
     expect(screen.queryByText('old-selected')).not.toBeInTheDocument();
     expect(screen.getByText('Loading selection')).toBeInTheDocument();
-    expect(screen.getByText('Selection unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Sync Status Unavailable')).toBeInTheDocument();
 
     newPlacementLoaded = true;
     rerender(<MeshDetailPage />);

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import { useParams, Link } from 'react-router-dom-v5-compat';
 import { useK8sWatchResource, Timestamp, ResourceLink } from '@openshift-console/dynamic-plugin-sdk';
 import {
@@ -71,17 +71,56 @@ function categorizeCluster(row: MembershipRow): ClusterCategory {
 
 const CONFLICT_REASONS = ['OperatorConfigConflict', 'NamespaceConflict'];
 
-function membershipLabel(membership: Membership, t: (key: string) => string): string {
+function syncStatusLabel(membership: Membership, t: (key: string) => string): string {
   switch (membership) {
     case 'meshOnly':
-      return t('Mesh only');
+      return t('Pending Removal');
     case 'selectedAndMesh':
-      return t('Selected and mesh');
+      return t('In Sync');
     case 'selectedOnly':
-      return t('Selected only');
+      return t('Pending Deployment');
     case 'selectionUnavailable':
-      return t('Selection unavailable');
+      return t('Sync Status Unavailable');
   }
+}
+
+function syncStatusTooltip(membership: Membership, t: (key: string) => string): string {
+  switch (membership) {
+    case 'meshOnly':
+      return t(
+        'MultiClusterMesh status still reports this cluster as deployed, but the Placement no longer selects it.'
+      );
+    case 'selectedAndMesh':
+      return t('The Placement selects this cluster, and MultiClusterMesh status reports that it is deployed there.');
+    case 'selectedOnly':
+      return t('The Placement selects this cluster, but MultiClusterMesh status does not yet report it as deployed.');
+    case 'selectionUnavailable':
+      return t(
+        'The current Placement selection cannot be determined because it is loading, changing, unavailable, or inaccessible.'
+      );
+  }
+}
+
+function syncStatusHeaderTooltip(t: (key: string) => string): ReactNode {
+  return (
+    <div>
+      <div>{t('Shows whether the Placement decision and MultiClusterMesh status agree for this cluster.')}</div>
+      <div style={{ marginTop: '0.5rem' }}>
+        <div>
+          <strong>{t('In Sync')}:</strong> {t('both report the cluster as deployed.')}
+        </div>
+        <div>
+          <strong>{t('Pending Deployment')}:</strong> {t('selected by Placement, not yet reported as deployed.')}
+        </div>
+        <div>
+          <strong>{t('Pending Removal')}:</strong> {t('no longer selected, but still reported as deployed.')}
+        </div>
+        <div>
+          <strong>{t('Sync Status Unavailable')}:</strong> {t('current Placement selection cannot be determined.')}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** Per-cluster operator status table with filter toggles and search for a single mesh. */
@@ -129,8 +168,13 @@ export const ClusterStatusSection: FC<{
       },
       {
         key: 'membership',
-        label: t('Membership'),
-        render: row => membershipLabel(row.membership, t),
+        headerTooltip: syncStatusHeaderTooltip(t),
+        label: t('Sync Status'),
+        render: row => (
+          <Tooltip content={syncStatusTooltip(row.membership, t)}>
+            <span>{syncStatusLabel(row.membership, t)}</span>
+          </Tooltip>
+        ),
         width: '22%'
       },
       {

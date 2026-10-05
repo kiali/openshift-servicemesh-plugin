@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Flex, FlexItem, SearchInput, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
+import { Flex, FlexItem, SearchInput, ToggleGroup, ToggleGroupItem, Tooltip } from '@patternfly/react-core';
 import { useVirtualRows } from '../hooks/useVirtualRows';
 import { useKialiTranslation } from 'utils/I18nUtils';
 
@@ -10,6 +10,7 @@ export interface CategoryLabel {
 }
 
 export interface VirtualFilterColumn<T> {
+  headerTooltip?: ReactNode;
   key: string;
   label: string;
   render: (item: T) => ReactNode;
@@ -108,7 +109,13 @@ export function VirtualFilterTable<T>({
           <tr className="pf-v6-c-table__tr">
             {columns.map(col => (
               <th className="pf-v6-c-table__th" scope="col" style={{ width: col.width }} key={col.key}>
-                {t(col.label)}
+                {col.headerTooltip ? (
+                  <Tooltip content={col.headerTooltip}>
+                    <span>{t(col.label)}</span>
+                  </Tooltip>
+                ) : (
+                  t(col.label)
+                )}
               </th>
             ))}
           </tr>

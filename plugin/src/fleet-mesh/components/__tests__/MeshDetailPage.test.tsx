@@ -335,7 +335,7 @@ describe('ClusterStatusSection', () => {
     expect(screen.getByText('cluster-b')).toBeInTheDocument();
   });
 
-  it('shows selected and operational membership without implying operator installation', () => {
+  it('shows Placement and MCM synchronization without implying operator installation', () => {
     render(
       <ClusterStatusSection
         clusterStatuses={[makeCluster('hub', 'True'), makeCluster('leaving', 'False')]}
@@ -344,11 +344,62 @@ describe('ClusterStatusSection', () => {
       />
     );
     expect(screen.getByText('Clusters (3)')).toBeInTheDocument();
-    expect(screen.getByText('Selected and mesh')).toBeInTheDocument();
-    expect(screen.getByText('Selected only')).toBeInTheDocument();
-    expect(screen.getByText('Mesh only')).toBeInTheDocument();
+    expect(screen.getByText('Sync Status')).toBeInTheDocument();
+    expect(screen.getByText('In Sync')).toBeInTheDocument();
+    expect(screen.getByText('Pending Deployment')).toBeInTheDocument();
+    expect(screen.getByText('Pending Removal')).toBeInTheDocument();
     expect(screen.getByText('Operator installed (1)')).toBeInTheDocument();
     expect(screen.getByText('Unknown (1)')).toBeInTheDocument();
+  });
+
+  it('explains every Sync Status value in the header tooltip', async () => {
+    render(
+      <ClusterStatusSection clusterStatuses={[makeCluster('hub')]} selectedNames={['hub']} selectionState="ready" />
+    );
+    fireEvent.mouseEnter(screen.getByText('Sync Status'));
+    expect(
+      await screen.findByText(
+        'Shows whether the Placement decision and MultiClusterMesh status agree for this cluster.'
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByText('both report the cluster as deployed.')).toBeInTheDocument();
+    expect(screen.getByText('selected by Placement, not yet reported as deployed.')).toBeInTheDocument();
+    expect(screen.getByText('no longer selected, but still reported as deployed.')).toBeInTheDocument();
+    expect(screen.getByText('current Placement selection cannot be determined.')).toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      clusterStatuses: [makeCluster('hub')],
+      label: 'In Sync',
+      selectedNames: ['hub'],
+      tooltip: 'The Placement selects this cluster, and MultiClusterMesh status reports that it is deployed there.'
+    },
+    {
+      clusterStatuses: [],
+      label: 'Pending Deployment',
+      selectedNames: ['joining'],
+      tooltip: 'The Placement selects this cluster, but MultiClusterMesh status does not yet report it as deployed.'
+    },
+    {
+      clusterStatuses: [makeCluster('leaving')],
+      label: 'Pending Removal',
+      selectedNames: [],
+      tooltip: 'MultiClusterMesh status still reports this cluster as deployed, but the Placement no longer selects it.'
+    },
+    {
+      clusterStatuses: [makeCluster('hub')],
+      label: 'Sync Status Unavailable',
+      selectedNames: null,
+      tooltip:
+        'The current Placement selection cannot be determined because it is loading, changing, unavailable, or inaccessible.'
+    }
+  ])('explains $label with a tooltip', async ({ clusterStatuses, label, selectedNames, tooltip }) => {
+    render(
+      <ClusterStatusSection clusterStatuses={clusterStatuses} selectedNames={selectedNames} selectionState="ready" />
+    );
+    fireEvent.mouseEnter(screen.getByText(label));
+    expect(await screen.findByText(tooltip)).toBeInTheDocument();
   });
 
   it('shows correct summary counts', () => {
