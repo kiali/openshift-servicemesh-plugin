@@ -1,6 +1,5 @@
 import type { FC } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { ResourceLink } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Alert,
   Card,
@@ -16,7 +15,6 @@ import type { MeshPlacementResult, SelectionState } from '../hooks/useMeshPlacem
 import type { ClusterMeshStatus } from '../types/multiClusterMesh';
 import type { K8sCondition } from '../types/common';
 import type { Placement } from '../types/placement';
-import { managedClusterSetGroupVersionKind } from '../types/placement';
 import { getPlacementProblem, operatorInstalledCount } from '../utils/placementSelection';
 import { isConditionStale } from '../utils/statusUtils';
 import { placementDetailLink } from '../utils/linkUtils';
@@ -89,7 +87,6 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
   const misconfigured = condition?.type === 'PlacementMisconfigured';
   const readyCondition = meshConditions?.find(c => c.type === 'Ready');
   const meshStatusStale = isConditionStale(readyCondition, meshGeneration);
-  const clusterSets = result.placement?.spec?.clusterSets ?? [];
   const diagnostic =
     result.state === 'missing'
       ? t('Create the referenced Placement in this mesh namespace, or update the mesh reference.')
@@ -151,25 +148,10 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
             </DescriptionListDescription>
           </DescriptionListGroup>
           {result.placement && (
-            <>
-              <DescriptionListGroup>
-                <DescriptionListTerm>{t('ClusterSets')}</DescriptionListTerm>
-                <DescriptionListDescription>
-                  {clusterSets.length === 0
-                    ? t('All ClusterSets bound to this namespace')
-                    : clusterSets.map((name, index) => (
-                        <span key={name}>
-                          {index > 0 ? ', ' : ''}
-                          <ResourceLink groupVersionKind={managedClusterSetGroupVersionKind} name={name} />
-                        </span>
-                      ))}
-                </DescriptionListDescription>
-              </DescriptionListGroup>
-              <DescriptionListGroup>
-                <DescriptionListTerm>{t('Selection policy')}</DescriptionListTerm>
-                <DescriptionListDescription>{selectionPolicy(result.placement.spec, t)}</DescriptionListDescription>
-              </DescriptionListGroup>
-            </>
+            <DescriptionListGroup>
+              <DescriptionListTerm>{t('Selection policy')}</DescriptionListTerm>
+              <DescriptionListDescription>{selectionPolicy(result.placement.spec, t)}</DescriptionListDescription>
+            </DescriptionListGroup>
           )}
         </DescriptionList>
         {diagnostic && <Alert variant="warning" isInline title={diagnostic} style={{ marginTop: '1rem' }} />}
@@ -200,9 +182,6 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
             style={{ marginTop: '1rem' }}
           />
         )}
-        <div style={{ marginTop: '0.75rem' }}>
-          {t('Placements and ClusterSet bindings are managed separately from this mesh.')}
-        </div>
       </CardBody>
     </Card>
   );

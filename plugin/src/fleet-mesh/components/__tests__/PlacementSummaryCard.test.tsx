@@ -57,7 +57,7 @@ describe('PlacementSummaryCard', () => {
     );
   });
 
-  it('shows selected, mesh, and installed counts separately with resource identities', () => {
+  it('shows selected, mesh, and installed counts separately without ClusterSets', () => {
     render(
       <PlacementSummaryCard
         clusterStatuses={[makeCluster('hub', 'True'), makeCluster('leaving', 'False')]}
@@ -72,9 +72,8 @@ describe('PlacementSummaryCard', () => {
       'href',
       '/multicloud/infrastructure/clusters/placements/details/mesh-ns/demo-placement/overview'
     );
-    const clusterSet = screen.getByText('demo-cluster-set');
-    expect(clusterSet).toHaveAttribute('data-resource-kind', 'ManagedClusterSet');
-    expect(clusterSet).not.toHaveAttribute('data-resource-namespace');
+    expect(screen.queryByText('ClusterSets')).not.toBeInTheDocument();
+    expect(screen.queryByText('demo-cluster-set')).not.toBeInTheDocument();
     expect(document.querySelector('[data-test="placement-selected-count"]')).toHaveTextContent('2');
     expect(document.querySelector('[data-test="placement-mesh-count"]')).toHaveTextContent('2');
     expect(document.querySelector('[data-test="placement-operator-installed-count"]')).toHaveTextContent('1');
