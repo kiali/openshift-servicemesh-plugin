@@ -74,6 +74,7 @@ describe('PlacementSummaryCard', () => {
     );
     expect(screen.queryByText('ClusterSets')).not.toBeInTheDocument();
     expect(screen.queryByText('demo-cluster-set')).not.toBeInTheDocument();
+    expect(screen.getByText('Placement decisions are up to date')).not.toHaveClass('pf-v6-c-label');
     expect(screen.getByText('Placement selection')).toBeInTheDocument();
     expect(screen.getByText('Deployed clusters')).toBeInTheDocument();
     expect(document.querySelector('[data-test="placement-selected-count"]')).toHaveTextContent('2');
@@ -108,10 +109,7 @@ describe('PlacementSummaryCard', () => {
 
   it.each([
     ['Placement', 'The Placement resource that determines which clusters are selected for this mesh.'],
-    [
-      'Selection status',
-      'Whether the Placement and its decisions are available, current, and consistent. This does not indicate deployment or operator health.'
-    ],
+    ['Selection status', 'Shows whether current Placement decisions are available and up to date.'],
     [
       'Operator installed',
       'The number of deployed clusters whose MultiClusterMesh status reports the OSSM operator as installed.'
@@ -145,7 +143,7 @@ describe('PlacementSummaryCard', () => {
       />
     );
     expect(screen.getByText('Unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Selection access denied')).toBeInTheDocument();
+    expect(screen.getByText('Access to Placement decisions is denied')).toBeInTheDocument();
   });
 
   it('surfaces a missing binding and warns when another mesh shares the Placement', () => {
@@ -196,7 +194,7 @@ describe('PlacementSummaryCard', () => {
         sharedMeshCount={1}
       />
     );
-    expect(screen.getByText('Selection access denied')).toBeInTheDocument();
+    expect(screen.getByText('Access to Placement decisions is denied')).toBeInTheDocument();
     expect(screen.getByText('No eligible clusters')).toBeInTheDocument();
     expect(document.querySelector('[data-test="placement-mesh-count"]')).toHaveTextContent('1');
   });
@@ -226,7 +224,7 @@ describe('PlacementSummaryCard', () => {
         sharedMeshCount={1}
       />
     );
-    expect(screen.getByText('Updating decisions')).toBeInTheDocument();
+    expect(screen.getByText('Placement decisions are updating')).toBeInTheDocument();
     expect(screen.queryByText('Old binding error')).not.toBeInTheDocument();
     expect(screen.queryByText('Placement misconfigured')).not.toBeInTheDocument();
   });

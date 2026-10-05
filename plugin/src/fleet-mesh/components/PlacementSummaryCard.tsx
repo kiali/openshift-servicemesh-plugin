@@ -9,7 +9,6 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Label,
   Tooltip
 } from '@patternfly/react-core';
 import type { MeshPlacementResult, SelectionState } from '../hooks/useMeshPlacement';
@@ -34,19 +33,19 @@ interface PlacementSummaryCardProps {
 function selectionStateLabel(state: SelectionState, t: (key: string) => string): string {
   switch (state) {
     case 'error':
-      return t('Selection unavailable');
+      return t('Cannot load placement decisions');
     case 'forbidden':
-      return t('Selection access denied');
+      return t('Access to Placement decisions is denied');
     case 'loading':
-      return t('Loading selection');
+      return t('Placement decisions are currently loading');
     case 'missing':
       return t('Placement not found');
     case 'missingReference':
       return t('Placement reference missing');
     case 'ready':
-      return t('Selection loaded');
+      return t('Placement decisions are up to date');
     case 'updating':
-      return t('Updating decisions');
+      return t('Placement decisions are updating');
     case 'waiting':
       return t('Waiting for placement decisions');
   }
@@ -124,22 +123,16 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
           </DescriptionListGroup>
           <DescriptionListGroup>
             <DescriptionListTerm>
-              <Tooltip
-                content={t(
-                  'Whether the Placement and its decisions are available, current, and consistent. This does not indicate deployment or operator health.'
-                )}
-              >
+              <Tooltip content={t('Shows whether current Placement decisions are available and up to date.')}>
                 <span>{t('Selection status')}</span>
               </Tooltip>
             </DescriptionListTerm>
             <DescriptionListDescription>
-              <Label color={result.state === 'ready' && !condition ? 'green' : 'orange'} isCompact>
-                {result.state === 'ready' && condition
-                  ? misconfigured
-                    ? t('Placement misconfigured')
-                    : t('Placement unsatisfied')
-                  : selectionStateLabel(result.state, t)}
-              </Label>
+              {result.state === 'ready' && condition
+                ? misconfigured
+                  ? t('Placement misconfigured')
+                  : t('Placement unsatisfied')
+                : selectionStateLabel(result.state, t)}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>

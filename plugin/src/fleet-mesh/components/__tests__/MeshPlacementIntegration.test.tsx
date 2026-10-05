@@ -47,7 +47,7 @@ describe('managed detail selection watches', () => {
       return resource?.isList ? [[], true, null] : [placement, true, null];
     });
     render(<MeshDetailPage />);
-    expect(screen.getByText('Selection access denied')).toBeInTheDocument();
+    expect(screen.getByText('Access to Placement decisions is denied')).toBeInTheDocument();
     expect(screen.getByText('Sync Status Unavailable')).toBeInTheDocument();
     expect(screen.getAllByText('hub')).toHaveLength(2);
     expect(screen.getByTestId('trust-status-card')).toBeInTheDocument();
@@ -78,7 +78,7 @@ describe('managed detail selection watches', () => {
     mesh = { ...mesh, spec: { ...mesh.spec, placementRef: { name: 'new-placement' } } };
     rerender(<MeshDetailPage />);
     expect(screen.queryByText('old-selected')).not.toBeInTheDocument();
-    expect(screen.getByText('Loading selection')).toBeInTheDocument();
+    expect(screen.getByText('Placement decisions are currently loading')).toBeInTheDocument();
     expect(screen.getByText('Sync Status Unavailable')).toBeInTheDocument();
 
     newPlacementLoaded = true;
