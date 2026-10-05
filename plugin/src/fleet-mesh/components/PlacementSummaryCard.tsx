@@ -1,4 +1,5 @@
 import type { FC } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import { ResourceLink } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Alert,
@@ -15,9 +16,10 @@ import type { MeshPlacementResult, SelectionState } from '../hooks/useMeshPlacem
 import type { ClusterMeshStatus } from '../types/multiClusterMesh';
 import type { K8sCondition } from '../types/common';
 import type { Placement } from '../types/placement';
-import { managedClusterSetGroupVersionKind, placementGroupVersionKind } from '../types/placement';
+import { managedClusterSetGroupVersionKind } from '../types/placement';
 import { getPlacementProblem, operatorInstalledCount } from '../utils/placementSelection';
 import { isConditionStale } from '../utils/statusUtils';
+import { placementDetailLink } from '../utils/linkUtils';
 import { useKialiTranslation } from 'utils/I18nUtils';
 
 interface PlacementSummaryCardProps {
@@ -115,11 +117,7 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
           <DescriptionListGroup>
             <DescriptionListTerm>{t('Placement')}</DescriptionListTerm>
             <DescriptionListDescription>
-              {placementName ? (
-                <ResourceLink groupVersionKind={placementGroupVersionKind} name={placementName} namespace={namespace} />
-              ) : (
-                '-'
-              )}
+              {placementName ? <Link to={placementDetailLink(namespace, placementName)}>{placementName}</Link> : '-'}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>

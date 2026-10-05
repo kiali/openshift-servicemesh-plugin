@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { FC, ReactNode } from 'react';
 import { useParams, Link } from 'react-router-dom-v5-compat';
-import { useK8sWatchResource, Timestamp, ResourceLink } from '@openshift-console/dynamic-plugin-sdk';
+import { useK8sWatchResource, Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Alert,
   Breadcrumb,
@@ -39,8 +39,7 @@ import { buildKialiLinkMap, toControlPlaneLinkTargets } from '../utils/kialiLink
 import { isObservabilityDataReady } from '../utils/observabilityReady';
 import type { ManagedCluster } from '../types/managedCluster';
 import { getClusterAvailability, availabilityColor, availabilityLabelKey } from '../types/managedCluster';
-import { clusterDetailLink } from '../utils/linkUtils';
-import { placementGroupVersionKind } from '../types/placement';
+import { clusterDetailLink, placementDetailLink } from '../utils/linkUtils';
 import { buildMembershipRows, getPlacementProblem } from '../utils/placementSelection';
 import { isConditionStale } from '../utils/statusUtils';
 import type { Membership, MembershipRow } from '../utils/placementSelection';
@@ -454,11 +453,7 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       {spec.placementRef?.name ? (
-                        <ResourceLink
-                          groupVersionKind={placementGroupVersionKind}
-                          name={spec.placementRef.name}
-                          namespace={ns}
-                        />
+                        <Link to={placementDetailLink(ns, spec.placementRef.name)}>{spec.placementRef.name}</Link>
                       ) : (
                         '-'
                       )}

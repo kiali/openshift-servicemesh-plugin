@@ -51,7 +51,10 @@ describe('PlacementSummaryCard', () => {
     );
     expect(screen.getByText('All eligible clusters · Predicates configured; view Placement YAML')).toBeInTheDocument();
     expect(screen.queryByText(/env=dev/)).not.toBeInTheDocument();
-    expect(screen.getByText('demo-placement')).toHaveAttribute('data-resource-kind', 'Placement');
+    expect(screen.getByRole('link', { name: 'demo-placement' })).toHaveAttribute(
+      'href',
+      '/multicloud/infrastructure/clusters/placements/details/mesh-ns/demo-placement/overview'
+    );
   });
 
   it('shows selected, mesh, and installed counts separately with resource identities', () => {
@@ -64,9 +67,11 @@ describe('PlacementSummaryCard', () => {
         sharedMeshCount={1}
       />
     );
-    const placement = screen.getByText('demo-placement');
-    expect(placement).toHaveAttribute('data-resource-kind', 'Placement');
-    expect(placement).toHaveAttribute('data-resource-namespace', 'mesh-ns');
+    const placement = screen.getByRole('link', { name: 'demo-placement' });
+    expect(placement).toHaveAttribute(
+      'href',
+      '/multicloud/infrastructure/clusters/placements/details/mesh-ns/demo-placement/overview'
+    );
     const clusterSet = screen.getByText('demo-cluster-set');
     expect(clusterSet).toHaveAttribute('data-resource-kind', 'ManagedClusterSet');
     expect(clusterSet).not.toHaveAttribute('data-resource-namespace');

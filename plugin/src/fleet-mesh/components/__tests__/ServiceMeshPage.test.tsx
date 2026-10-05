@@ -178,8 +178,10 @@ describe('ServiceMeshPage', () => {
     mockHook({ items: [makeItem({ placementName: 'east-placement', placementNamespace: 'mesh-system' })] });
     render(<ServiceMeshPage />);
     const placement = screen.getByText('east-placement');
-    expect(placement).toHaveAttribute('data-resource-kind', 'Placement');
-    expect(placement).toHaveAttribute('data-resource-namespace', 'mesh-system');
+    expect(placement).toHaveAttribute(
+      'href',
+      '/multicloud/infrastructure/clusters/placements/details/mesh-system/east-placement/overview'
+    );
     expect(screen.getByText('mesh-system')).toBeInTheDocument();
   });
 

@@ -120,14 +120,15 @@ describe('MeshDetailPage', () => {
       expect(screen.getByText('Managed')).toBeInTheDocument();
     });
 
-    it('shows the namespaced Placement reference', () => {
+    it('links the Placement reference to the ACM Placement overview', () => {
       rstest
         .mocked(useK8sWatchResource)
         .mockReturnValue([makeMesh({ spec: { placementRef: { name: 'my-placement' } } }), true, null]);
       render(<MeshDetailPage />);
-      const placement = screen.getAllByText('my-placement')[0];
-      expect(placement).toHaveAttribute('data-resource-kind', 'Placement');
-      expect(placement).toHaveAttribute('data-resource-namespace', 'mesh-system');
+      expect(screen.getAllByRole('link', { name: 'my-placement' })[0]).toHaveAttribute(
+        'href',
+        '/multicloud/infrastructure/clusters/placements/details/mesh-system/my-placement/overview'
+      );
     });
 
     it('shows the istio-system default when controlPlane.namespace is absent', () => {

@@ -8,8 +8,7 @@ import {
   VirtualizedTable,
   TableData,
   useListPageFilter,
-  useActiveColumns,
-  ResourceLink
+  useActiveColumns
 } from '@openshift-console/dynamic-plugin-sdk';
 import type { TableColumn, RowProps } from '@openshift-console/dynamic-plugin-sdk';
 import { Alert, EmptyState, EmptyStateBody, Label, Spinner, Tooltip } from '@patternfly/react-core';
@@ -17,7 +16,7 @@ import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 import { useFleetMeshItems } from '../hooks/useFleetMeshItems';
 import type { FleetMeshItem } from '../types/fleetMesh';
 import { MeshStatus } from './MeshStatus';
-import { placementGroupVersionKind } from '../types/placement';
+import { placementDetailLink } from '../utils/linkUtils';
 import { fuzzyCaseInsensitive } from '../utils/filterUtils';
 import type { RowSearchFilter } from '../utils/filterUtils';
 import { useKialiTranslation } from 'utils/I18nUtils';
@@ -135,11 +134,7 @@ const MeshRow: FC<RowProps<FleetMeshItem>> = ({ obj, activeColumnIDs }) => {
       </TableData>
       <TableData id="placement" activeColumnIDs={activeColumnIDs}>
         {isManaged && obj.placementName && obj.placementNamespace ? (
-          <ResourceLink
-            groupVersionKind={placementGroupVersionKind}
-            name={obj.placementName}
-            namespace={obj.placementNamespace}
-          />
+          <Link to={placementDetailLink(obj.placementNamespace, obj.placementName)}>{obj.placementName}</Link>
         ) : (
           '-'
         )}
