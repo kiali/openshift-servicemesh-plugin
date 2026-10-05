@@ -2,7 +2,7 @@ import * as React from 'react';
 import { classes } from 'typestyle';
 import { connect } from 'react-redux';
 import type { KialiAppState } from 'store/Store';
-import { namespaceItemsSelector } from 'store/Selectors';
+import { languageSelector, namespaceItemsSelector } from 'store/Selectors';
 import type { ISortBy, SortByDirection } from '@patternfly/react-table';
 import type { Workload } from 'types/Workload';
 import type { EnvoyProxyDump, Pod } from 'types/IstioObjects';
@@ -42,6 +42,7 @@ import { ColorScheme } from '../../types/Common';
 import { mapAppearanceFromState, resolveColorScheme } from '../../utils/AppearanceUtils';
 import { subTabStyle } from 'styles/TabStyles';
 import { getAppLabelName, getVersionLabelName } from 'config/ServerConfig';
+import { t } from 'utils/I18nUtils';
 
 const resources: string[] = ['clusters', 'listeners', 'routes', 'bootstrap', 'config', 'metrics'];
 
@@ -55,13 +56,21 @@ const copyButtonStyle = kialiStyle({
   marginRight: '0.5rem',
   marginTop: '1rem',
   $nest: {
-    '& > span': {
-      marginLeft: '0.375rem'
+    '& span.pf-v6-c-icon': {
+      marginRight: '0.25rem'
     }
   }
 });
 
 const envoyTabs = ['clusters', 'listeners', 'routes', 'bootstrap', 'config', 'metrics'];
+const envoyTabTitles: Record<string, string> = {
+  bootstrap: 'Bootstrap',
+  clusters: 'Clusters',
+  config: 'Config',
+  listeners: 'Listeners',
+  metrics: 'Metrics',
+  routes: 'Routes'
+};
 const tabName = 'envoyTab';
 const defaultTab = 'clusters';
 
@@ -69,6 +78,7 @@ export type ResourceSorts = { [resource: string]: ISortBy };
 
 type ReduxProps = {
   colorScheme: string;
+  language: string;
   namespaces: Namespace[];
   systemAppearanceRevision: number;
 };
@@ -327,7 +337,7 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
     }
 
     const tabs = filteredEnvoyTabs.map((value, index) => {
-      const title = `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+      const title = t(envoyTabTitles[value] ?? value);
 
       return (
         <Tab key={`tab_${value}`} eventKey={index} title={title}>
@@ -342,18 +352,18 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
 
                     <ToolbarDropdown
                       id="envoy_pods_list"
-                      tooltip="Display envoy config for the selected pod"
+                      tooltip={t('Display envoy config for the selected pod')}
                       handleSelect={key => this.setPod(key)}
                       value={this.state.pod.name}
                       label={this.state.pod.name}
                       options={this.props.workload.pods.map((pod: Pod) => pod.name).sort()}
                     />
 
-                    <Tooltip key="copy_config" position="top" content="Copy config dump to clipboard">
+                    <Tooltip key="copy_config" position="top" content={t('Copy config dump to clipboard')}>
                       <CopyToClipboard onCopy={this.onCopyToClipboard} text={this.editorContent()}>
                         <Button variant={ButtonVariant.link} className={copyButtonStyle} isInline>
                           <KialiIcon.Copy />
-                          <span>Copy</span>
+                          <span>{t('Copy')}</span>
                         </Button>
                       </CopyToClipboard>
                     </Tooltip>
@@ -432,6 +442,7 @@ class EnvoyDetailsComponent extends React.Component<EnvoyDetailsProps, EnvoyDeta
 }
 
 const mapStateToProps = (state: KialiAppState): ReduxProps => ({
+  language: languageSelector(state),
   namespaces: namespaceItemsSelector(state)!,
   ...mapAppearanceFromState(state)
 });
