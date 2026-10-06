@@ -131,6 +131,37 @@ function fillLoginForm({ authProvider, username, password }: LoginForm): void {
   cy.get('button[type="submit"]').click();
 }
 
+// The Kiali API reached through the console service proxy, which only answers
+// for an authenticated console session. Spelled out in full rather than as
+// '/api/status' because the cy.request() overwrite below only rewrites URLs
+// that do not already mention the plugin.
+const SESSION_PROBE_URL = '/api/proxy/plugin/ossmconsole/kiali/api/status';
+
+// Only a positive signal of expiry triggers a re-login. An unexpected status
+// (a probe URL that no longer exists, a transient 5xx) leaves the session
+// alone: losing the expiry protection is far cheaper than failing every test.
+//
+// Note cy.getCookie() is useless here - after cy.session() the page is
+// about:blank, so it has no superdomain to resolve the cookie against and
+// always yields null.
+function ocpSessionIsExpired(): Cypress.Chainable<boolean> {
+  return cy.request({ failOnStatusCode: false, method: 'GET', url: SESSION_PROBE_URL }).then(resp => {
+    const contentTypeHeader = resp.headers['content-type'];
+    const contentType = Array.isArray(contentTypeHeader) ? contentTypeHeader[0] : contentTypeHeader;
+
+    // An expired console session is answered with the login page, not a 401.
+    const isLoginPage = !!contentType && contentType.includes('text/html');
+    const isExpired = resp.status === 401 || resp.status === 403 || isLoginPage;
+
+    cy.task(
+      'log',
+      `OCP session probe ${SESSION_PROBE_URL} -> ${resp.status} ${contentType ?? '(no type)'}, expired=${isExpired}`
+    );
+
+    return cy.wrap(isExpired, { log: false });
+  });
+}
+
 Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) => {
   const username = clusterUser || Cypress.env('USERNAME');
   const password = clusterPassword || Cypress.env('PASSWD');
@@ -153,28 +184,40 @@ Cypress.Commands.add('login', (clusterUser, clusterPassword, identityProvider) =
       : undefined);
   const isCrossOrigin = !!oauthOrigin;
 
-  cy.session(
-    username,
-    () => {
-      cy.visit({ url: '/' });
+  const createSession = (): void => {
+    cy.session(
+      username,
+      () => {
+        cy.visit({ url: '/' });
 
-      if (isCrossOrigin) {
-        cy.url().should('include', new URL(oauthOrigin!).host);
-        cy.origin(oauthOrigin!, { args: { authProvider: idp, username, password } }, fillLoginForm);
-      } else {
-        fillLoginForm({ authProvider: idp, username, password });
-      }
+        if (isCrossOrigin) {
+          cy.url().should('include', new URL(oauthOrigin!).host);
+          cy.origin(oauthOrigin!, { args: { authProvider: idp, username, password } }, fillLoginForm);
+        } else {
+          fillLoginForm({ authProvider: idp, username, password });
+        }
 
-      cy.get("[data-test-id='dashboard']").should('be.visible');
-      closeGuidedTour();
-    },
-    {
-      cacheAcrossSpecs: true,
-      validate: () => {
-        cy.request({ method: 'GET', url: '/api/status' }).its('status').should('eq', 200);
-      }
+        cy.get("[data-test-id='dashboard']").should('be.visible');
+        closeGuidedTour();
+      },
+      { cacheAcrossSpecs: true }
+    );
+  };
+
+  createSession();
+
+  // Deliberately checked here instead of through cy.session()'s validate():
+  // with testIsolation disabled Cypress no-ops cy.session() for the already
+  // active session and skips validate() entirely, and a failing validate()
+  // right after a successful login fails the test outright. Re-checking here
+  // catches an expiry from an earlier test in this spec. Only this user's
+  // session is dropped, so other cached users stay usable.
+  ocpSessionIsExpired().then(isExpired => {
+    if (isExpired) {
+      Cypress.session.clearCurrentSessionData();
+      createSession();
     }
-  );
+  });
 });
 
 Cypress.Commands.add('getBySel', (selector: string, ...args: any) => cy.get(`[data-test="${selector}"]`, ...args));
