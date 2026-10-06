@@ -13,7 +13,6 @@ export interface ClusterMeshStatus {
 }
 
 export interface MultiClusterMeshSpec {
-  clusterSet: string;
   controlPlane?: {
     namespace?: string;
   };
@@ -25,6 +24,7 @@ export interface MultiClusterMeshSpec {
     sourceNamespace?: string;
     startingCSV?: string;
   };
+  placementRef: { name: string };
   security?: {
     discovery?: {
       tokenValidity?: string;

@@ -46,7 +46,10 @@ describe('useFleetMeshItems', () => {
   it('converts MCM CRs to managed FleetMeshItems with correct flattened fields', () => {
     const mcm = makeMesh({
       metadata: { name: 'my-mesh', namespace: 'mesh-system', creationTimestamp: '2026-06-22T12:00:00Z' },
-      spec: { clusterSet: 'global', security: { trust: { certManager: { issuerRef: { name: 'mesh-ca' } } } } },
+      spec: {
+        placementRef: { name: 'global-placement' },
+        security: { trust: { certManager: { issuerRef: { name: 'mesh-ca' } } } }
+      },
       status: { conditions: [{ type: 'Ready', status: 'True' }], clusterStatus: [{ clusterName: 'cluster-a' }] }
     });
     setupMocks({ mcms: [mcm] });
@@ -57,7 +60,8 @@ describe('useFleetMeshItems', () => {
     expect(item.kind).toBe('managed');
     expect(item.metadata.name).toBe('my-mesh');
     expect(item.metadata.creationTimestamp).toBe('2026-06-22T12:00:00Z');
-    expect(item.clusterSet).toBe('global');
+    expect(item.placementName).toBe('global-placement');
+    expect(item.placementNamespace).toBe('mesh-system');
     expect(item.mcmNamespace).toBe('mesh-system');
     expect(item.clusterCount).toBe(1);
     expect(item.trustIssuer).toBe('mesh-ca');
@@ -184,27 +188,65 @@ describe('useFleetMeshItems', () => {
     expect(result.current.enrichmentError).toBe(err);
   });
 
-  it('falls back to MCM conditions when correlated CPs have no status object', () => {
-    const mcm = makeMesh({
-      metadata: { name: 'my-mesh', namespace: 'mesh-system', creationTimestamp: '2026-06-22T12:00:00Z' },
-      status: { conditions: [{ type: 'Ready', status: 'True' }], clusterStatus: [{ clusterName: 'cluster-a' }] }
-    });
-    const planes = [
-      makeEnrichedCP({
-        managedBy: { name: 'my-mesh', namespace: 'mesh-system' },
-        status: undefined
-      })
-    ];
-    setupMocks({ mcms: [mcm], enrichedPlanes: planes });
+  it.each([undefined, { conditions: [{ type: 'Ready', status: 'True' as const }] }])(
+    'preserves MCM failures regardless of correlated control plane status: %j',
+    status => {
+      const mcm = makeMesh({
+        metadata: { name: 'my-mesh', namespace: 'mesh-system', creationTimestamp: '2026-06-22T12:00:00Z' },
+        status: {
+          conditions: [{ type: 'Ready', status: 'False', reason: 'ReconcileError' }],
+          clusterStatus: [{ clusterName: 'cluster-a' }]
+        }
+      });
+      const planes = [
+        makeEnrichedCP({
+          managedBy: { name: 'my-mesh', namespace: 'mesh-system' },
+          status
+        })
+      ];
+      setupMocks({ mcms: [mcm], enrichedPlanes: planes });
 
-    const { result } = renderHook(() => useFleetMeshItems());
-    const managed = result.current.items.find(i => i.kind === 'managed');
+      const { result } = renderHook(() => useFleetMeshItems());
+      const managed = result.current.items.find(i => i.kind === 'managed');
 
-    expect(managed!.conditions).toEqual([{ type: 'Ready', status: 'True' }]);
-    expect(managed!.statusRank).toBe(0);
+      expect(managed!.conditions).toEqual(mcm.status?.conditions);
+      expect(managed!.statusRank).toBe(3);
+    }
+  );
+
+  it.each([{ code: 403 }, new Error('Model does not exist')])(
+    'keeps discovery visible after a terminal MCM read failure: %j',
+    mcmsError => {
+      setupMocks({ mcmsLoaded: false, mcmsError, enrichedPlanes: [makeEnrichedCP({ meshID: 'discovered' })] });
+      const { result } = renderHook(() => useFleetMeshItems());
+      expect(result.current.loaded).toBe(true);
+      expect(result.current.items[0].kind).toBe('discovered');
+      expect(result.current.items[0].placementName).toBeUndefined();
+      expect(result.current.items[0].placementNamespace).toBeUndefined();
+    }
+  );
+
+  it('waits for Search even when an empty input has finished enrichment', () => {
+    setupMocks({ mcmsLoaded: false, mcmsError: { code: 403 }, searchLoaded: false, enrichmentLoaded: true });
+    const { result, rerender } = renderHook(() => useFleetMeshItems());
+    expect(result.current.items).toEqual([]);
+    expect(result.current.loaded).toBe(false);
+
+    setupMocks({ mcmsLoaded: false, mcmsError: { code: 403 }, searchLoaded: true, enrichmentLoaded: true });
+    rerender();
+    expect(result.current.loaded).toBe(true);
   });
 
-  it('loaded equals mcmsLoaded AND enrichmentLoaded', () => {
+  it.each([false, true])('exposes a terminal Search error when searchLoaded=%s', searchLoaded => {
+    const searchError = new Error('Search unavailable');
+    setupMocks({ mcms: [makeMesh()], searchLoaded, searchError, enrichmentLoaded: true });
+    const { result } = renderHook(() => useFleetMeshItems());
+    expect(result.current.loaded).toBe(true);
+    expect(result.current.searchError).toBe(searchError);
+    expect(result.current.items[0].kind).toBe('managed');
+  });
+
+  it('waits for MCMs and enrichment when Search has loaded', () => {
     setupMocks({ mcmsLoaded: true, enrichmentLoaded: false });
     const { result: r1 } = renderHook(() => useFleetMeshItems());
     expect(r1.current.loaded).toBe(false);

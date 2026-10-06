@@ -5,13 +5,13 @@ Plugin code lives in `plugin/src/fleet-mesh/` within the OpenShift Service Mesh 
 
 ## What's next (not blocked)
 
+- **Placement-based managed meshes** — Track [OSSMC #870](https://github.com/kiali/openshift-servicemesh-plugin/issues/870) with [add-on PR #286](https://github.com/stolostron/multicluster-mesh-addon/pull/286). Managed meshes reference a user-owned Placement in the MCM namespace. A namespace needs a ManagedClusterSetBinding for each ClusterSet its Placement uses. The read-only Fleet view shows selection separately from MCM operational status; it does not create or delete these ACM resources.
 - **Data plane visibility** — Meshes have control planes but also data planes — the
   namespaces within clusters where application workloads run with sidecar proxies. The
   UI needs a way to discover and visualize data planes (which clusters, which
   namespaces, how many workloads). The discovery mechanism and UI design are TBD.
-- **Create / delete mesh actions** — Add a "Create Mesh" button to the list page and
-  "Delete Mesh" on the detail page.
-- **Edit mesh** — Edit issuer, operator config, etc. from the detail page.
+- **Create / delete mesh actions** — Choose an existing Placement in the selected hub namespace, then create only the MCM. Deleting a mesh retains its Placement and ManagedClusterSetBinding because other consumers may use them.
+- **Edit mesh** — Edit issuer, operator config, or `placementRef` from the detail page. Preview the current decisions for the old and new Placements and likely cluster additions/removals before saving.
 - **Scoped enrichment on discovered mesh detail** — `DiscoveredMeshDetailPage` still
   runs fleet-wide Istio enrichment then filters client-side. Adopt a scoped hook (like
   `useMeshControlPlanes` on managed mesh detail) to reduce GET volume on large fleets.

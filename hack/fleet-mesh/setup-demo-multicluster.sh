@@ -316,7 +316,9 @@ verify_context() {
 
 demo_already_installed() {
   oc_hub get multiclustermesh secure-mcm -n secure-mcm-ns &>/dev/null && \
-    oc_hub get multiclustermesh unsecure-mcm -n unsecure-mcm-ns &>/dev/null
+    oc_hub get multiclustermesh unsecure-mcm -n unsecure-mcm-ns &>/dev/null && \
+    oc_hub get placement secure-demo-placement -n secure-mcm-ns &>/dev/null && \
+    oc_hub get placement unsecure-demo-placement -n unsecure-mcm-ns &>/dev/null
 }
 
 verify_mesh_clean() {
@@ -775,6 +777,73 @@ EOF
   oc_hub create namespace secure-mcm-ns --dry-run=client -o yaml | oc_hub apply -f -
 }
 
+install_placements() {
+  info "=== Creating ClusterSet bindings and Placements in both MCM namespaces ==="
+  oc_hub apply -f - <<'EOF'
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: secure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: secure-demo-placement
+  namespace: secure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: unsecure-demo-placement
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+EOF
+
+  local namespace placement elapsed selected decided expected
+  expected=$(printf '%s\n' local-cluster "${SPOKE_NAME}" | sort -u | paste -sd, -)
+  for namespace in secure-mcm-ns unsecure-mcm-ns; do
+    placement="${namespace%-mcm-ns}-demo-placement"
+    oc_hub wait managedclustersetbinding/demo-cluster-set -n "${namespace}" \
+      --for=condition=Bound --timeout=120s || die "ClusterSet binding is not Bound in ${namespace}"
+    elapsed=0
+    while true; do
+      selected=$(oc_hub get placement "${placement}" -n "${namespace}" \
+        -o jsonpath='{.status.numberOfSelectedClusters}' 2>/dev/null || true)
+      decided=$(oc_hub get placementdecision -n "${namespace}" \
+        -l cluster.open-cluster-management.io/placement="${placement}" \
+        -o jsonpath='{range .items[*].status.decisions[*]}{.clusterName}{"\n"}{end}' 2>/dev/null \
+        | sed '/^$/d' | sort -u | paste -sd, -) || decided=''
+      if [ "${selected}" = 2 ] && [ "${decided}" = "${expected}" ]; then
+        info "[ok] ${namespace}/${placement} selected both demo clusters"
+        break
+      fi
+      if [ "${elapsed}" -ge 120 ]; then
+        oc_hub describe placement "${placement}" -n "${namespace}" || true
+        oc_hub get placementdecision -n "${namespace}" -l cluster.open-cluster-management.io/placement="${placement}" -o yaml || true
+        die "Placement in ${namespace} did not select both demo clusters"
+      fi
+      sleep 5
+      elapsed=$((elapsed + 5))
+    done
+  done
+}
+
 install_trust_chain() {
   info "=== Deploying cert-manager trust chain in secure-mcm-ns ==="
   echo "${CERT_MANAGER_TRUST_CHAIN}" | oc_hub apply -n secure-mcm-ns -f - \
@@ -803,9 +872,9 @@ metadata:
   labels:
     open-cluster-management.io/aggregate-to-work: "true"
 rules:
-  - apiGroups: ["operators.coreos.com"]
-    resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-    verbs: ["create", "get", "list", "update", "patch", "delete"]
+- apiGroups: ["operators.coreos.com"]
+  resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
+  verbs: ["create", "get", "list", "update", "patch", "delete"]
 EOF
 }
 
@@ -821,7 +890,8 @@ metadata:
   name: unsecure-mcm
   namespace: unsecure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
+  placementRef:
+    name: unsecure-demo-placement
   controlPlane:
     namespace: unsecure-ns
 EOF
@@ -833,7 +903,8 @@ metadata:
   name: secure-mcm
   namespace: secure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
+  placementRef:
+    name: secure-demo-placement
   controlPlane:
     namespace: secure-ns
   security:
@@ -1124,6 +1195,9 @@ verify_install() {
   echo ""
   echo "MCMs:"
   oc_hub get multiclustermesh --all-namespaces
+  echo "Placements:"
+  oc_hub get placement -n secure-mcm-ns
+  oc_hub get placement -n unsecure-mcm-ns
   echo ""
   echo "Istio CRs on hub:"
   oc_hub get istios --all-namespaces 2>/dev/null || true
@@ -1191,6 +1265,7 @@ do_install() {
   install_cert_manager
   install_backend_controller
   install_infrastructure
+  install_placements
   install_trust_chain
   install_mcm_crs
   wait_for_reconciliation
@@ -1263,6 +1338,14 @@ uninstall_cert_manager_stack() {
 }
 
 uninstall_infrastructure() {
+  info "=== Removing demo Placements and ClusterSet bindings ==="
+  local namespace placement
+  for namespace in secure-mcm-ns unsecure-mcm-ns; do
+    placement="${namespace%-mcm-ns}-demo-placement"
+    oc_hub delete placement "${placement}" -n "${namespace}" --ignore-not-found 2>/dev/null || true
+    oc_hub delete managedclustersetbinding demo-cluster-set -n "${namespace}" --ignore-not-found 2>/dev/null || true
+  done
+
   info "=== Removing cluster labels and namespaces ==="
   oc_hub label managedcluster local-cluster \
     cluster.open-cluster-management.io/clusterset- 2>/dev/null || true

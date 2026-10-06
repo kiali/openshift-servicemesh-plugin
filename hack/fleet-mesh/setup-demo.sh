@@ -19,14 +19,15 @@
 #   hack/fleet-mesh/setup-demo.sh uninstall   # remove all demo resources
 #
 # Prerequisites (checked automatically on install):
-#   - ACM 2.16+ installed and MultiClusterHub in Running phase
+#   - ACM 2.17 installed and MultiClusterHub in Running phase
 #   - Backend controller deployed in multicluster-mesh-system
 #   - oc logged in with cluster-admin privileges
 #
 # What this creates:
 #   Infrastructure:
 #     cert-manager            - installed if not already present (idempotent)
-#     demo-cluster-set        - ManagedClusterSet with local-cluster bound to it
+#     demo-cluster-set        - ManagedClusterSet containing local-cluster
+#     {secure,unsecure}-demo-placement - one Placement and ManagedClusterSetBinding in each MCM namespace
 #     cert-manager trust chain - self-signed root CA Issuer in secure-mcm-ns
 #
 #   MCMs (controller installs operator, creates CP namespace, distributes cacerts):
@@ -182,6 +183,72 @@ EOF
   oc create namespace unsecure-mcm-ns --dry-run=client -o yaml | oc apply -f -
 }
 
+install_placements() {
+  echo "=== Creating ClusterSet bindings and Placements in both MCM namespaces ==="
+  oc apply -f - <<'EOF' || die "Failed to create demo bindings and Placements"
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: secure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: secure-demo-placement
+  namespace: secure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: unsecure-demo-placement
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+EOF
+
+  local namespace placement elapsed selected decided
+  for namespace in secure-mcm-ns unsecure-mcm-ns; do
+    placement="${namespace%-mcm-ns}-demo-placement"
+    oc wait managedclustersetbinding/demo-cluster-set -n "$namespace" \
+      --for=condition=Bound --timeout=120s || die "ClusterSet binding is not Bound in $namespace"
+    elapsed=0
+    while true; do
+      selected=$(oc get placement "$placement" -n "$namespace" \
+        -o jsonpath='{.status.numberOfSelectedClusters}' 2>/dev/null || true)
+      decided=$(oc get placementdecision -n "$namespace" \
+        -l cluster.open-cluster-management.io/placement="$placement" \
+        -o jsonpath='{range .items[*].status.decisions[*]}{.clusterName}{"\n"}{end}' 2>/dev/null \
+        | sed '/^$/d' | sort -u | paste -sd, -) || decided=''
+      if [ "$selected" = 1 ] && [ "$decided" = local-cluster ]; then
+        echo "  [ok] $namespace/$placement selected local-cluster"
+        break
+      fi
+      if [ "$elapsed" -ge 120 ]; then
+        oc describe placement "$placement" -n "$namespace" || true
+        oc get placementdecision -n "$namespace" -l cluster.open-cluster-management.io/placement="$placement" -o yaml || true
+        die "Placement in $namespace did not select local-cluster"
+      fi
+      sleep 5
+      elapsed=$((elapsed + 5))
+    done
+  done
+}
+
 # cert-manager trust chain for MultiClusterMesh.
 # Architecture:
 #   Issuer (self-signed) --> Certificate (root CA) --> Issuer (CA-backed)
@@ -251,9 +318,9 @@ metadata:
   labels:
     open-cluster-management.io/aggregate-to-work: "true"
 rules:
-  - apiGroups: ["operators.coreos.com"]
-    resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-    verbs: ["create", "get", "list", "update", "patch", "delete"]
+- apiGroups: ["operators.coreos.com"]
+  resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
+  verbs: ["create", "get", "list", "update", "patch", "delete"]
 EOF
   fi
 
@@ -265,7 +332,8 @@ metadata:
   name: secure-mcm
   namespace: secure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
+  placementRef:
+    name: secure-demo-placement
   controlPlane:
     namespace: secure-ns
   security:
@@ -283,7 +351,8 @@ metadata:
   name: unsecure-mcm
   namespace: unsecure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
+  placementRef:
+    name: unsecure-demo-placement
   controlPlane:
     namespace: unsecure-ns
 EOF
@@ -380,6 +449,7 @@ install() {
   preflight
   install_cert_manager
   install_infrastructure
+  install_placements
   install_trust_chain
   install_meshes
   install_discovered
@@ -389,6 +459,9 @@ install() {
   echo ""
   echo "MCMs:"
   oc get multiclustermesh -A
+  echo "Placements:"
+  oc get placement -n secure-mcm-ns
+  oc get placement -n unsecure-mcm-ns
   echo ""
   echo "ManifestWorks:"
   oc get manifestwork -n local-cluster | grep multicluster-mesh
@@ -427,6 +500,14 @@ uninstall() {
     fi
     sleep 5
     elapsed=$((elapsed + 5))
+  done
+
+  echo "=== Removing demo Placements and ClusterSet bindings ==="
+  local namespace placement
+  for namespace in secure-mcm-ns unsecure-mcm-ns; do
+    placement="${namespace%-mcm-ns}-demo-placement"
+    oc delete placement "$placement" -n "$namespace" --ignore-not-found 2>/dev/null || true
+    oc delete managedclustersetbinding demo-cluster-set -n "$namespace" --ignore-not-found 2>/dev/null || true
   done
 
   echo "=== Removing cert-manager trust chain ==="

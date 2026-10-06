@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import { useParams, Link } from 'react-router-dom-v5-compat';
 import { useK8sWatchResource, Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import {
@@ -33,19 +33,24 @@ import { useMultiClusterMeshes } from '../hooks/useMultiClusterMeshes';
 import { useMeshControlPlanes } from '../hooks/useMeshControlPlanes';
 import { useManagedClusterMap } from '../hooks/useManagedClusterMap';
 import { useDiscoveredKialis } from '../hooks/useDiscoveredKialis';
+import { useMeshPlacement } from '../hooks/useMeshPlacement';
+import type { SelectionState } from '../hooks/useMeshPlacement';
 import { buildKialiLinkMap, toControlPlaneLinkTargets } from '../utils/kialiLinkUtils';
 import { isObservabilityDataReady } from '../utils/observabilityReady';
 import type { ManagedCluster } from '../types/managedCluster';
 import { getClusterAvailability, availabilityColor, availabilityLabelKey } from '../types/managedCluster';
-import { clusterDetailLink, clusterSetDetailLink } from '../utils/linkUtils';
+import { clusterDetailLink, placementDetailLink } from '../utils/linkUtils';
+import { buildMembershipRows, getPlacementProblem } from '../utils/placementSelection';
+import { isConditionStale } from '../utils/statusUtils';
+import type { Membership, MembershipRow } from '../utils/placementSelection';
 import { ConditionsTable } from './ConditionsTable';
 import { ControlPlanesCard } from './ControlPlanesCard';
 import { MeshStatus } from './MeshStatus';
+import { PlacementSummaryCard } from './PlacementSummaryCard';
 import { TrustStatusCard } from './TrustStatusCard';
 import { VirtualFilterTable } from './VirtualFilterTable';
 import type { CategoryLabel, VirtualFilterColumn } from './VirtualFilterTable';
 import { useKialiTranslation } from 'utils/I18nUtils';
-import { clusterMeshStatusRowKey, clusterMeshStatusSearchMatch } from '../utils/tableCallbacks';
 
 function conditionMessage(condition: K8sCondition): string {
   if (condition.message) return condition.message;
@@ -55,8 +60,8 @@ function conditionMessage(condition: K8sCondition): string {
 
 type ClusterCategory = 'ready' | 'notReady' | 'unknown';
 
-function categorizeCluster(cs: ClusterMeshStatus): ClusterCategory {
-  const op = cs.conditions?.find(c => c.type === 'OperatorInstalled');
+function categorizeCluster(row: MembershipRow): ClusterCategory {
+  const op = row.clusterStatus?.conditions?.find(c => c.type === 'OperatorInstalled');
   if (!op) return 'unknown';
   if (op.status === 'True') return 'ready';
   if (op.status === 'Unknown') return 'unknown';
@@ -65,12 +70,57 @@ function categorizeCluster(cs: ClusterMeshStatus): ClusterCategory {
 
 const CONFLICT_REASONS = ['OperatorConfigConflict', 'NamespaceConflict'];
 
-const CLUSTER_CATEGORY_LABELS: CategoryLabel[] = [
-  { key: 'all', label: 'All ({{count}})' },
-  { key: 'ready', label: 'Ready ({{count}})' },
-  { key: 'notReady', label: 'Not Ready ({{count}})' },
-  { key: 'unknown', label: 'Unknown ({{count}})' }
-];
+function syncStatusLabel(membership: Membership, t: (key: string) => string): string {
+  switch (membership) {
+    case 'meshOnly':
+      return t('Pending Removal');
+    case 'selectedAndMesh':
+      return t('In Sync');
+    case 'selectedOnly':
+      return t('Pending Deployment');
+    case 'selectionUnavailable':
+      return t('Sync Status Unavailable');
+  }
+}
+
+function syncStatusTooltip(membership: Membership, t: (key: string) => string): string {
+  switch (membership) {
+    case 'meshOnly':
+      return t(
+        'MultiClusterMesh status still reports this cluster as deployed, but the Placement no longer selects it.'
+      );
+    case 'selectedAndMesh':
+      return t('The Placement selects this cluster, and MultiClusterMesh status reports that it is deployed there.');
+    case 'selectedOnly':
+      return t('The Placement selects this cluster, but MultiClusterMesh status does not yet report it as deployed.');
+    case 'selectionUnavailable':
+      return t(
+        'The current Placement selection cannot be determined because it is loading, changing, unavailable, or inaccessible.'
+      );
+  }
+}
+
+function syncStatusHeaderTooltip(t: (key: string) => string): ReactNode {
+  return (
+    <div>
+      <div>{t('Shows whether the Placement decision and MultiClusterMesh status agree for this cluster.')}</div>
+      <div style={{ marginTop: '0.5rem' }}>
+        <div>
+          <strong>{t('In Sync')}:</strong> {t('both report the cluster as deployed.')}
+        </div>
+        <div>
+          <strong>{t('Pending Deployment')}:</strong> {t('selected by Placement, not yet reported as deployed.')}
+        </div>
+        <div>
+          <strong>{t('Pending Removal')}:</strong> {t('no longer selected, but still reported as deployed.')}
+        </div>
+        <div>
+          <strong>{t('Sync Status Unavailable')}:</strong> {t('current Placement selection cannot be determined.')}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /** Per-cluster operator status table with filter toggles and search for a single mesh. */
 export const ClusterStatusSection: FC<{
@@ -78,42 +128,84 @@ export const ClusterStatusSection: FC<{
   managedClusterMap?: Map<string, ManagedCluster>;
   managedClustersLoaded?: boolean;
   meshConditions?: K8sCondition[];
-}> = ({ clusterStatuses, managedClusterMap, managedClustersLoaded = true, meshConditions }) => {
+  meshGeneration?: number;
+  placementProblem?: K8sCondition;
+  selectedNames?: string[] | null;
+  selectionState?: SelectionState;
+}> = ({
+  clusterStatuses,
+  managedClusterMap,
+  managedClustersLoaded = true,
+  meshConditions,
+  meshGeneration,
+  placementProblem,
+  selectedNames,
+  selectionState
+}) => {
   const { t } = useKialiTranslation();
+  const rows = useMemo(
+    () => buildMembershipRows(selectedNames ?? null, clusterStatuses),
+    [selectedNames, clusterStatuses]
+  );
+  const categoryLabels = useMemo<CategoryLabel[]>(
+    () => [
+      { key: 'all', label: t('All ({{count}})') },
+      { key: 'ready', label: t('Operator installed ({{count}})') },
+      { key: 'notReady', label: t('Not installed ({{count}})') },
+      { key: 'unknown', label: t('Unknown ({{count}})') }
+    ],
+    [t]
+  );
 
-  const columns = useMemo<VirtualFilterColumn<ClusterMeshStatus>[]>(
+  const columns = useMemo<VirtualFilterColumn<MembershipRow>[]>(
     () => [
       {
         key: 'cluster',
-        label: 'Cluster',
-        render: cs => <Link to={clusterDetailLink(cs.clusterName)}>{cs.clusterName}</Link>,
-        width: '25%'
+        label: t('Cluster'),
+        render: row => <Link to={clusterDetailLink(row.clusterName)}>{row.clusterName}</Link>,
+        width: '22%'
+      },
+      {
+        key: 'membership',
+        headerTooltip: syncStatusHeaderTooltip(t),
+        label: t('Sync Status'),
+        render: row => (
+          <Tooltip content={syncStatusTooltip(row.membership, t)}>
+            <span>{syncStatusLabel(row.membership, t)}</span>
+          </Tooltip>
+        ),
+        width: '22%'
       },
       {
         key: 'clusterStatus',
-        label: 'Cluster Status',
-        render: cs => {
+        label: t('Cluster Status'),
+        render: row => {
           if (!managedClustersLoaded) return '-';
-          const availability = getClusterAvailability(managedClusterMap?.get(cs.clusterName));
+          const availability = getClusterAvailability(managedClusterMap?.get(row.clusterName));
           return (
             <Label color={availabilityColor(availability)} isCompact>
               {t(availabilityLabelKey(availability))}
             </Label>
           );
         },
-        width: '20%'
+        width: '18%'
       },
       {
         key: 'operatorStatus',
-        label: 'Operator Status',
-        render: cs => <MeshStatus conditions={cs.conditions} conditionType="OperatorInstalled" isCompact />,
-        width: '20%'
+        label: t('Operator Status'),
+        render: row =>
+          row.clusterStatus ? (
+            <MeshStatus conditions={row.clusterStatus.conditions} conditionType="OperatorInstalled" isCompact />
+          ) : (
+            '-'
+          ),
+        width: '18%'
       },
       {
         key: 'message',
-        label: 'Message',
-        render: cs => {
-          const operatorCondition = cs.conditions?.find(c => c.type === 'OperatorInstalled');
+        label: t('Message'),
+        render: row => {
+          const operatorCondition = row.clusterStatus?.conditions?.find(c => c.type === 'OperatorInstalled');
           const msg = operatorCondition ? conditionMessage(operatorCondition) : '-';
           return (
             <Tooltip content={msg}>
@@ -121,15 +213,36 @@ export const ClusterStatusSection: FC<{
             </Tooltip>
           );
         },
-        width: '35%'
+        width: '20%'
       }
     ],
     [managedClusterMap, managedClustersLoaded, t]
   );
 
-  if (clusterStatuses.length === 0) {
+  if (rows.length === 0) {
     const readyCondition = meshConditions?.find(c => c.type === 'Ready');
-    const isConflict = readyCondition && CONFLICT_REASONS.includes(readyCondition.reason ?? '');
+    const isConflict =
+      readyCondition?.status === 'False' &&
+      !isConditionStale(readyCondition, meshGeneration) &&
+      CONFLICT_REASONS.includes(readyCondition.reason ?? '');
+    let emptyMessage = t('No clusters are part of this mesh yet.');
+    if (selectionState === 'missingReference') {
+      emptyMessage = t('This mesh does not have a Placement reference.');
+    } else if (selectionState === 'missing') {
+      emptyMessage = t('The referenced Placement was not found in this mesh namespace.');
+    } else if (selectionState === 'forbidden' || selectionState === 'error') {
+      emptyMessage = t('Selection details are unavailable. Mesh cluster status remains available when reported.');
+    } else if (placementProblem) {
+      emptyMessage = placementProblem.message || placementProblem.reason || t('Placement is not satisfied');
+    } else if (selectionState === 'loading' || selectionState === 'waiting' || selectionState === 'updating') {
+      emptyMessage = t('Waiting for Placement decisions and mesh reconciliation.');
+    } else if (isConflict) {
+      emptyMessage = t('This mesh is blocked: {{reason}}. Resolve the conflict to allow reconciliation.', {
+        reason: readyCondition.message || readyCondition.reason
+      });
+    } else if (selectionState === 'ready' && selectedNames?.length === 0) {
+      emptyMessage = t('The Placement currently selects no clusters.');
+    }
     return (
       <Card isCompact>
         <CardTitle>
@@ -137,13 +250,7 @@ export const ClusterStatusSection: FC<{
         </CardTitle>
         <CardBody>
           <EmptyState variant="xs">
-            <EmptyStateBody>
-              {isConflict
-                ? t('This mesh is blocked: {{reason}}. Resolve the conflict to allow reconciliation.', {
-                    reason: readyCondition?.message || readyCondition?.reason
-                  })
-                : t('No clusters are part of this mesh yet.')}
-            </EmptyStateBody>
+            <EmptyStateBody>{emptyMessage}</EmptyStateBody>
           </EmptyState>
         </CardBody>
       </Card>
@@ -153,21 +260,67 @@ export const ClusterStatusSection: FC<{
   return (
     <Card isCompact>
       <CardTitle>
-        <strong>{t('Clusters ({{count}})', { count: clusterStatuses.length })}</strong>
+        <strong>{t('Clusters ({{count}})', { count: rows.length })}</strong>
       </CardTitle>
       <CardBody>
         <VirtualFilterTable
           categorize={categorizeCluster}
-          categoryLabels={CLUSTER_CATEGORY_LABELS}
+          categoryLabels={categoryLabels}
           columns={columns}
-          emptyMessage="No clusters match the current filter."
-          items={clusterStatuses}
-          rowKey={clusterMeshStatusRowKey}
-          searchMatch={clusterMeshStatusSearchMatch}
-          searchPlaceholder="Filter by cluster name"
+          emptyMessage={t('No clusters match the current filter.')}
+          items={rows}
+          rowKey={row => row.clusterName}
+          searchMatch={(row, query) => row.clusterName.toLowerCase().includes(query.toLowerCase())}
+          searchPlaceholder={t('Filter by cluster name')}
         />
       </CardBody>
     </Card>
+  );
+};
+
+const MeshSelectionSection: FC<{
+  managedClusterMap: Map<string, ManagedCluster>;
+  managedClustersLoaded: boolean;
+  mcms: MultiClusterMesh[];
+  mesh: MultiClusterMesh;
+  namespace: string;
+}> = ({ managedClusterMap, managedClustersLoaded, mcms, mesh, namespace }) => {
+  const placementName = mesh.spec?.placementRef?.name;
+  const result = useMeshPlacement(namespace, placementName);
+  const clusterStatuses = mesh.status?.clusterStatus ?? [];
+  const sharedMeshCount = Math.max(
+    1,
+    mcms.filter(mcm => mcm.metadata?.namespace === namespace && mcm.spec?.placementRef?.name === placementName).length
+  );
+
+  return (
+    <>
+      <GridItem span={12}>
+        <PlacementSummaryCard
+          clusterStatuses={clusterStatuses}
+          meshConditions={mesh.status?.conditions}
+          meshGeneration={mesh.metadata?.generation}
+          namespace={namespace}
+          placementName={placementName}
+          result={result}
+          sharedMeshCount={sharedMeshCount}
+        />
+      </GridItem>
+      <GridItem span={12}>
+        <ClusterStatusSection
+          clusterStatuses={clusterStatuses}
+          managedClusterMap={managedClusterMap}
+          managedClustersLoaded={managedClustersLoaded}
+          meshConditions={mesh.status?.conditions}
+          meshGeneration={mesh.metadata?.generation}
+          placementProblem={
+            result.placementLoaded && !result.placementError ? getPlacementProblem(result.placement) : undefined
+          }
+          selectedNames={result.selectedNames}
+          selectionState={result.state}
+        />
+      </GridItem>
+    </>
   );
 };
 
@@ -263,6 +416,7 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
           <FlexItem>
             <Title headingLevel="h1">{mesh.metadata?.name}</Title>
           </FlexItem>
+          <FlexItem>{ns}</FlexItem>
           <FlexItem>
             <MeshStatus conditions={conditions} conditionType="Ready" />
           </FlexItem>
@@ -295,10 +449,14 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      <strong>{t('Cluster Set')}</strong>
+                      <strong>{t('Placement')}</strong>
                     </DescriptionListTerm>
                     <DescriptionListDescription>
-                      <Link to={clusterSetDetailLink(spec.clusterSet)}>{spec.clusterSet}</Link>
+                      {spec.placementRef?.name ? (
+                        <Link to={placementDetailLink(ns, spec.placementRef.name)}>{spec.placementRef.name}</Link>
+                      ) : (
+                        '-'
+                      )}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
@@ -366,14 +524,14 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
             </Card>
           </GridItem>
 
-          <GridItem span={12}>
-            <ClusterStatusSection
-              clusterStatuses={clusterStatuses}
-              managedClusterMap={managedClusterMap}
-              managedClustersLoaded={managedClustersLoaded}
-              meshConditions={conditions}
-            />
-          </GridItem>
+          <MeshSelectionSection
+            key={`${ns}/${spec.placementRef?.name ?? ''}`}
+            managedClusterMap={managedClusterMap}
+            managedClustersLoaded={managedClustersLoaded}
+            mcms={mcms ?? []}
+            mesh={mesh}
+            namespace={ns}
+          />
 
           <GridItem span={12}>
             <ControlPlanesCard kialiLinks={kialiLinkMap} planes={managedPlanes} />

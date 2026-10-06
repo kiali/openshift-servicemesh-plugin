@@ -11,12 +11,12 @@ import {
   useActiveColumns
 } from '@openshift-console/dynamic-plugin-sdk';
 import type { TableColumn, RowProps } from '@openshift-console/dynamic-plugin-sdk';
-import { Alert, EmptyState, EmptyStateBody, Label, Tooltip } from '@patternfly/react-core';
+import { Alert, EmptyState, EmptyStateBody, Label, Spinner, Tooltip } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 import { useFleetMeshItems } from '../hooks/useFleetMeshItems';
 import type { FleetMeshItem } from '../types/fleetMesh';
 import { MeshStatus } from './MeshStatus';
-import { clusterSetDetailLink } from '../utils/linkUtils';
+import { placementDetailLink } from '../utils/linkUtils';
 import { fuzzyCaseInsensitive } from '../utils/filterUtils';
 import type { RowSearchFilter } from '../utils/filterUtils';
 import { useKialiTranslation } from 'utils/I18nUtils';
@@ -24,8 +24,12 @@ import { sortWithComparator } from '../utils/tableCallbacks';
 import { isOssmAcmAddonMissing } from '../../openshift/utils/watchErrors';
 
 const compareMeshClusterCount = (a: FleetMeshItem, b: FleetMeshItem): number => a.clusterCount - b.clusterCount;
-const compareMeshClusterSet = (a: FleetMeshItem, b: FleetMeshItem): number =>
-  (a.clusterSet ?? '').localeCompare(b.clusterSet ?? '');
+const compareMeshPlacement = (a: FleetMeshItem, b: FleetMeshItem): number =>
+  `${a.placementNamespace ?? ''}/${a.placementName ?? ''}`.localeCompare(
+    `${b.placementNamespace ?? ''}/${b.placementName ?? ''}`
+  );
+const compareMeshNamespace = (a: FleetMeshItem, b: FleetMeshItem): number =>
+  (a.mcmNamespace ?? '').localeCompare(b.mcmNamespace ?? '');
 const compareMeshID = (a: FleetMeshItem, b: FleetMeshItem): number => (a.meshID ?? '').localeCompare(b.meshID ?? '');
 const compareMeshName = (a: FleetMeshItem, b: FleetMeshItem): number => a.metadata.name.localeCompare(b.metadata.name);
 const compareMeshStatusRank = (a: FleetMeshItem, b: FleetMeshItem): number => a.statusRank - b.statusRank;
@@ -51,12 +55,22 @@ function buildColumns(t: (key: string) => string): TableColumn<FleetMeshItem>[] 
       sort: (data: FleetMeshItem[], dir: string) => sortWithComparator(data, dir, compareMeshName)
     },
     {
-      title: t('Cluster Set'),
-      id: 'clusterSet',
-      sort: (data: FleetMeshItem[], dir: string) => sortWithComparator(data, dir, compareMeshClusterSet)
+      title: t('Namespace'),
+      id: 'namespace',
+      sort: (data: FleetMeshItem[], dir: string) => sortWithComparator(data, dir, compareMeshNamespace)
+    },
+    {
+      title: t('Placement'),
+      id: 'placement',
+      sort: (data: FleetMeshItem[], dir: string) => sortWithComparator(data, dir, compareMeshPlacement)
     },
     {
       title: t('Clusters'),
+      header: {
+        info: {
+          tooltip: t('Managed: clusters in MultiClusterMesh status. Discovered: clusters with observed control planes.')
+        }
+      },
       id: 'clusters',
       sort: (data: FleetMeshItem[], dir: string) => sortWithComparator(data, dir, compareMeshClusterCount)
     },
@@ -115,8 +129,15 @@ const MeshRow: FC<RowProps<FleetMeshItem>> = ({ obj, activeColumnIDs }) => {
           </Tooltip>
         )}
       </TableData>
-      <TableData id="clusterSet" activeColumnIDs={activeColumnIDs}>
-        {obj.clusterSet ? <Link to={clusterSetDetailLink(obj.clusterSet)}>{obj.clusterSet}</Link> : '-'}
+      <TableData id="namespace" activeColumnIDs={activeColumnIDs}>
+        {isManaged ? obj.mcmNamespace || '-' : '-'}
+      </TableData>
+      <TableData id="placement" activeColumnIDs={activeColumnIDs}>
+        {isManaged && obj.placementName && obj.placementNamespace ? (
+          <Link to={placementDetailLink(obj.placementNamespace, obj.placementName)}>{obj.placementName}</Link>
+        ) : (
+          '-'
+        )}
       </TableData>
       <TableData id="clusters" activeColumnIDs={activeColumnIDs}>
         {obj.clusterCount}
@@ -160,24 +181,42 @@ function buildSearchFilters(t: (key: string) => string): RowSearchFilter<FleetMe
       filterGroupName: t('Type'),
       placeholder: t('Filter by type...'),
       type: 'type'
+    },
+    {
+      filter: (input, obj) => fuzzyCaseInsensitive(input.selected?.[0], obj.placementName ?? ''),
+      filterGroupName: t('Placement'),
+      placeholder: t('Filter by placement...'),
+      type: 'placement'
     }
   ];
 }
 
 const ServiceMeshPage: FC = () => {
-  const { items, loaded, enrichmentError, mcmsLoaded, mcmsError } = useFleetMeshItems();
+  const { items, loaded, enrichmentLoaded, enrichmentError, mcmsLoaded, mcmsError, searchLoaded, searchError } =
+    useFleetMeshItems();
   const { t } = useKialiTranslation();
   const ossmAcmAddonMissing = isOssmAcmAddonMissing(mcmsLoaded, mcmsError);
+  const discoveryError = searchError ?? enrichmentError;
   const columns = useMemo(() => buildColumns(t), [t]);
   const searchFilters = useMemo(() => buildSearchFilters(t), [t]);
   const [staticData, filteredData, onFilterChange] = useListPageFilter(items, searchFilters);
   const [activeColumns, userSettingsLoaded] = useActiveColumns({
     columns,
     showNamespaceOverride: false,
-    columnManagementID: 'fleet-service-mesh~unified'
+    columnManagementID: 'fleet-service-mesh~placement'
   });
 
   const NoMeshesMsg = useCallback(() => {
+    if (discoveryError) {
+      return (
+        <EmptyState variant="xs">
+          <EmptyStateBody>{t('Discovered meshes are unavailable.')}</EmptyStateBody>
+        </EmptyState>
+      );
+    }
+    if (!searchLoaded || !enrichmentLoaded) {
+      return <Spinner size="md" aria-label={t('Loading discovered meshes')} />;
+    }
     if (ossmAcmAddonMissing) {
       return (
         <EmptyState variant="xs">
@@ -189,8 +228,15 @@ const ServiceMeshPage: FC = () => {
         </EmptyState>
       );
     }
+    if (mcmsError) {
+      return (
+        <EmptyState variant="xs">
+          <EmptyStateBody>{t('Managed meshes are unavailable. No discovered meshes found.')}</EmptyStateBody>
+        </EmptyState>
+      );
+    }
     return <NoMeshesDefaultMsg />;
-  }, [ossmAcmAddonMissing, t]);
+  }, [discoveryError, enrichmentLoaded, mcmsError, ossmAcmAddonMissing, searchLoaded, t]);
 
   return (
     <>
@@ -201,6 +247,13 @@ const ServiceMeshPage: FC = () => {
             {t('Managed meshes require the OSSM-ACM addon controller. Discovered meshes may still appear below.')}
           </Alert>
         )}
+        {!!mcmsError && !ossmAcmAddonMissing && (
+          <Alert
+            variant="warning"
+            isInline
+            title={t('Unable to load managed meshes. Discovered data is still shown.')}
+          />
+        )}
         <ListPageFilter
           data={staticData}
           loaded={loaded}
@@ -208,7 +261,7 @@ const ServiceMeshPage: FC = () => {
           rowSearchFilters={searchFilters}
           hideLabelFilter
         />
-        {!!enrichmentError && loaded && (
+        {!!discoveryError && (
           <Alert
             variant="warning"
             isInline

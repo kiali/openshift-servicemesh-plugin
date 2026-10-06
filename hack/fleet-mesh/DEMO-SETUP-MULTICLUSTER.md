@@ -47,6 +47,8 @@ managed cluster:
 3. Mints per-cluster intermediate CA certificates and distributes `cacerts` secrets (only when `spec.security.trust.certManager.issuerRef` is configured)
 4. Creates `ManagedServiceAccount` tokens and distributes remote secrets for cross-cluster endpoint discovery
 
+The controller reads a Placement in each MCM's hub namespace. ACM requires a ManagedClusterSetBinding in that namespace before the Placement can select from a ClusterSet. The controller does not create either resource; this guide creates them explicitly. ACM creates the PlacementDecision results. A policy `PlacementBinding` is not needed for a MultiClusterMesh because its `spec.placementRef` is the consumer link.
+
 The controller does **not** create Istio CRs, IstioCNI, east-west gateways, or RBAC
 resources. After the operator is installed, you must create those manually or via GitOps
 on each cluster. See section 6 below.
@@ -318,7 +320,7 @@ The following must NOT be present on either cluster:
 - No OSSM operator (no CSV, no subscription, no `sailoperator.io` or `istio.io` CRDs)
 - No existing MultiClusterMesh CRs
 - No existing Istio CRs
-- No ManagedClusterSet bound for mesh use
+- No demo ManagedClusterSet, per-namespace bindings, or Placements already in use
 
 Verify the clean state on both clusters:
 
@@ -360,7 +362,7 @@ oc --context=my-hub label managedcluster my-spoke \
   cluster.open-cluster-management.io/clusterset=demo-cluster-set --overwrite
 ```
 
-## 2. Create MCM namespaces
+## 2. Create MCM namespaces, bindings, and Placements
 
 Only MCM namespaces need to be created manually on the hub. Control plane namespaces
 are created automatically by the controller via ManifestWork on each cluster.
@@ -368,7 +370,55 @@ are created automatically by the controller via ManifestWork on each cluster.
 ```bash
 oc --context=my-hub create namespace unsecure-mcm-ns
 oc --context=my-hub create namespace secure-mcm-ns
+
+# Bind the set and create a Placement separately in each MCM namespace.
+oc --context=my-hub apply -f - <<'EOF'
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: unsecure-demo-placement
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: secure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: secure-demo-placement
+  namespace: secure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+EOF
+
+for ns in unsecure-mcm-ns secure-mcm-ns; do
+  placement="${ns%-mcm-ns}-demo-placement"
+  oc --context=my-hub wait managedclustersetbinding/demo-cluster-set -n "$ns" \
+    --for=condition=Bound --timeout=120s
+  oc --context=my-hub get placement "$placement" -n "$ns" -o yaml
+  oc --context=my-hub get placementdecision -n "$ns" \
+    -l cluster.open-cluster-management.io/placement="$placement" -o yaml
+done
 ```
+
+Wait for each Placement's `status.numberOfSelectedClusters` and its generated decision entries to show both `local-cluster` and `my-spoke` before creating MCMs. The ClusterSet is cluster scoped; each binding and Placement is in its MCM namespace. The explicit `clusterSets` list avoids selecting clusters from any other set bound to that namespace. If a decision is missing, check the hub-side ManagedCluster `cluster.open-cluster-management.io/clusterset` label, Binding `Bound` condition, Placement conditions, predicates, and all labeled PlacementDecision slices.
 
 ## 3. Deploy cert-manager Issuer chain
 
@@ -453,9 +503,9 @@ metadata:
   labels:
     open-cluster-management.io/aggregate-to-work: "true"
 rules:
-  - apiGroups: ["operators.coreos.com"]
-    resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-    verbs: ["create", "get", "list", "update", "patch", "delete"]
+- apiGroups: ["operators.coreos.com"]
+  resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
+  verbs: ["create", "get", "list", "update", "patch", "delete"]
 EOF
 
 # Spoke (skip if spoke already outputs "yes")
@@ -467,9 +517,9 @@ metadata:
   labels:
     open-cluster-management.io/aggregate-to-work: "true"
 rules:
-  - apiGroups: ["operators.coreos.com"]
-    resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-    verbs: ["create", "get", "list", "update", "patch", "delete"]
+- apiGroups: ["operators.coreos.com"]
+  resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
+  verbs: ["create", "get", "list", "update", "patch", "delete"]
 EOF
 ```
 
@@ -490,7 +540,8 @@ metadata:
   name: unsecure-mcm
   namespace: unsecure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
+  placementRef:
+    name: unsecure-demo-placement
   controlPlane:
     namespace: unsecure-ns
 EOF
@@ -502,7 +553,8 @@ metadata:
   name: secure-mcm
   namespace: secure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
+  placementRef:
+    name: secure-demo-placement
   controlPlane:
     namespace: secure-ns
   security:
@@ -518,6 +570,8 @@ After MCM Status is `Ready=True`, proceed to section 6 to create Istio CRs manua
 ```bash
 oc --context=my-hub get multiclustermesh -A -o custom-columns='NAME:.metadata.name,NAMESPACE:.metadata.namespace,READY:.status.conditions[?(@.type=="Ready")].status'
 ```
+
+Here `Ready=True` confirms the add-on's operator-installation milestone on the selected clusters. Inspect Istio and trust separately. `PlacementNotFound` points to a missing same-namespace Placement; `NoClustersSelected` calls for checking Binding, ClusterSet membership, Placement conditions, and generated decisions.
 
 ## 5. Monitor reconciliation progress
 
@@ -688,7 +742,7 @@ EOF
 > **Note:** If you need east-west gateways for cross-cluster service discovery, create
 > them manually after istiod is running. The OCM-native way to fan out Istio configuration
 > consistently across clusters is a `ManifestWorkReplicaSet` referencing a `Placement`
-> that targets the same ClusterSet — this creates a per-cluster `ManifestWork` for each
+> that selects the same clusters — this creates a per-cluster `ManifestWork` for each
 > cluster the Placement selects.
 
 ## 7. Create standalone Istio CRs
@@ -962,7 +1016,13 @@ oc --context=my-hub delete issuer mesh-root-ca -n secure-mcm-ns --ignore-not-fou
 helm uninstall cert-manager -n cert-manager --kube-context=my-hub 2>/dev/null || true
 oc --context=my-hub delete namespace cert-manager --ignore-not-found
 
-# 8. Remove cluster labels and ManagedClusterSet
+# 8. Remove demo Placements and bindings, then cluster labels and ManagedClusterSet
+for ns in unsecure-mcm-ns secure-mcm-ns; do
+  placement="${ns%-mcm-ns}-demo-placement"
+  oc --context=my-hub delete placement "$placement" -n "$ns" --ignore-not-found
+  oc --context=my-hub delete managedclustersetbinding demo-cluster-set -n "$ns" --ignore-not-found
+done
+
 oc --context=my-hub label managedcluster local-cluster \
   cluster.open-cluster-management.io/clusterset-
 oc --context=my-hub label managedcluster my-spoke \

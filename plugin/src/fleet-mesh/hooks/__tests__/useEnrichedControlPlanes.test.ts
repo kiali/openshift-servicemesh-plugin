@@ -148,7 +148,7 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global', controlPlane: { namespace: 'istio-system' } },
+        spec: { placementRef: { name: 'global-placement' }, controlPlane: { namespace: 'istio-system' } },
         status: { clusterStatus: [{ clusterName: 'cluster-a' }] }
       }
     ];
@@ -168,7 +168,7 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global' },
+        spec: { placementRef: { name: 'global-placement' } },
         status: { clusterStatus: [{ clusterName: 'cluster-a' }] }
       }
     ];
@@ -188,7 +188,7 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global', controlPlane: { namespace: 'istio-system' } },
+        spec: { placementRef: { name: 'global-placement' }, controlPlane: { namespace: 'istio-system' } },
         status: { clusterStatus: [{ clusterName: 'cluster-a' }] }
       }
     ];
@@ -208,7 +208,7 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global', controlPlane: { namespace: 'istio-system' } },
+        spec: { placementRef: { name: 'global-placement' }, controlPlane: { namespace: 'istio-system' } },
         status: { clusterStatus: [] }
       }
     ];
@@ -228,7 +228,7 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global', controlPlane: { namespace: 'istio-system' } },
+        spec: { placementRef: { name: 'global-placement' }, controlPlane: { namespace: 'istio-system' } },
         status: { clusterStatus: [{ clusterName: 'cluster-a' }] }
       }
     ];

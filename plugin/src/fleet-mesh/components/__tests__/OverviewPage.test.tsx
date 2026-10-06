@@ -76,6 +76,16 @@ describe('OverviewPage', () => {
     expect(screen.getByText('Meshes')).toBeInTheDocument();
   });
 
+  it.each([{ code: 403 }, new Error('Model does not exist')])(
+    'keeps discovered counts visible after the MCM watch fails: %j',
+    mcmsError => {
+      mockDefaults({ mcmsLoaded: false, mcmsError, items: [makeItem({ kind: 'discovered' })] });
+      render(<OverviewPage />);
+      expect(screen.queryByLabelText('Loading fleet meshes')).not.toBeInTheDocument();
+      expect(screen.getByTestId('donut-segment-Ready')).toHaveTextContent('Ready: 1');
+    }
+  );
+
   it('renders Control Planes card when search is loaded', () => {
     const enrichedPlanes = [
       makeEnrichedCP({ clusterName: 'cluster-a' }),
@@ -154,6 +164,66 @@ describe('OverviewPage', () => {
     mockDefaults();
     render(<OverviewPage />);
     expect(screen.getByText('No managed or discovered meshes found.')).toBeInTheDocument();
+  });
+
+  it.each([{ code: 403 }, new Error('watch failed'), new Error('Model does not exist')])(
+    'does not claim managed meshes are absent after %j',
+    mcmsError => {
+      mockDefaults({ mcmsLoaded: false, mcmsError });
+      render(<OverviewPage />);
+      expect(screen.getByText('Managed meshes are unavailable. No discovered meshes found.')).toBeInTheDocument();
+      expect(screen.queryByText('No managed or discovered meshes found.')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('chart-donut')).not.toBeInTheDocument();
+    }
+  );
+
+  it('waits for discovery before showing an empty result after an MCM error', () => {
+    mockDefaults({ mcmsLoaded: false, mcmsError: { code: 403 }, enrichmentLoaded: false });
+    render(<OverviewPage />);
+    expect(screen.getByLabelText('Loading discovered meshes')).toBeInTheDocument();
+    expect(screen.queryByText('No managed or discovered meshes found.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Managed meshes are unavailable. No discovered meshes found.')).not.toBeInTheDocument();
+  });
+
+  it('waits for Search even when empty enrichment has loaded, then recovers from a Search error', () => {
+    const unavailableManaged = { mcmsLoaded: false, mcmsError: { code: 403 }, enrichmentLoaded: true };
+    mockDefaults({ ...unavailableManaged, searchLoaded: false });
+    const { rerender } = render(<OverviewPage />);
+    expect(screen.getByLabelText('Loading discovered meshes')).toBeInTheDocument();
+    expect(screen.queryByText(/No discovered meshes found/)).not.toBeInTheDocument();
+    expect(screen.queryByText('No managed or discovered meshes found.')).not.toBeInTheDocument();
+
+    mockDefaults({ ...unavailableManaged, searchLoaded: false, searchError: new Error('Search unavailable') });
+    rerender(<OverviewPage />);
+    expect(screen.getByText('Discovered meshes are unavailable.')).toBeInTheDocument();
+    expect(screen.getByText('Unable to load control plane data')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Loading discovered meshes')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Loading control planes')).not.toBeInTheDocument();
+    expect(screen.queryByText(/No discovered meshes found/)).not.toBeInTheDocument();
+
+    mockDefaults({ ...unavailableManaged, searchLoaded: true });
+    rerender(<OverviewPage />);
+    expect(screen.getByText('Managed meshes are unavailable. No discovered meshes found.')).toBeInTheDocument();
+    expect(screen.queryByText('Discovered meshes are unavailable.')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    { searchError: new Error('Search unavailable'), searchLoaded: true },
+    { enrichmentError: new Error('Enrichment unavailable') }
+  ])('does not report empty discovery after a discovery error: %j', failure => {
+    mockDefaults({ ...failure, mcmsLoaded: false, mcmsError: { code: 403 } });
+    render(<OverviewPage />);
+    expect(screen.getByText('Discovered meshes are unavailable.')).toBeInTheDocument();
+    expect(screen.queryByText(/No discovered meshes found/)).not.toBeInTheDocument();
+    expect(screen.queryByText('No managed or discovered meshes found.')).not.toBeInTheDocument();
+  });
+
+  it('keeps managed counts visible when Search fails before its first load', () => {
+    mockDefaults({ items: [makeItem()], searchLoaded: false, searchError: new Error('Search unavailable') });
+    render(<OverviewPage />);
+    expect(screen.getByTestId('donut-segment-Ready')).toHaveTextContent('Ready: 1');
+    expect(screen.getByText('Unable to load control plane data. Some meshes may not be shown.')).toBeInTheDocument();
+    expect(screen.queryByText('Discovered meshes are unavailable.')).not.toBeInTheDocument();
   });
 
   it('shows empty state in Control Planes card when no control planes exist', () => {
