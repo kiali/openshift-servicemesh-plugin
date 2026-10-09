@@ -102,12 +102,9 @@ data:
         listen              [::]:9443 ssl;
         ssl_certificate     /var/serving-cert/tls.crt;
         ssl_certificate_key /var/serving-cert/tls.key;
-        # Static TLS (Intermediate-shaped). Operator installs derive nginx TLS from the cluster APIServer profile.
-        ssl_protocols       TLSv1.2 TLSv1.3;
-        ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+        # Quick-deploy sample: TLS 1.3 only. Operator installs derive nginx TLS from APIServer tlsSecurityProfile.
+        ssl_protocols       TLSv1.3;
         ssl_conf_command Ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256;
-        # PQC hybrid + classical groups; ? prefix skips unavailable groups (e.g. on FIPS clusters)
-        ssl_ecdh_curve      ?X25519MLKEM768:?SecP256r1MLKEM768:?X25519:secp256r1:secp384r1;
 
         add_header oauth_token "$http_Authorization";
 
