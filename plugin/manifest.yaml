@@ -1,3 +1,10 @@
+# Standalone quick-deploy manifest for the OSSMC backend (ConsolePlugin, Service, Deployment,
+# nginx + plugin ConfigMaps). Used by "make deploy-plugin" / "make undeploy-plugin" and similar
+# hacks — not by the OSSM/Kiali operator.
+#
+# Clusters installed via an OSSMConsole CR get equivalent resources from kiali-operator
+# (image, namespace, plugin-conf, nginx TLS from cluster APIServer tlsSecurityProfile, etc.).
+# Treat this file as a convenience sample; it can drift from operator defaults.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -95,10 +102,9 @@ data:
         listen              [::]:9443 ssl;
         ssl_certificate     /var/serving-cert/tls.crt;
         ssl_certificate_key /var/serving-cert/tls.key;
-        # Only TLS client is the OCP Console backend, which supports TLS 1.3
+        # Quick-deploy sample: TLS 1.3 only. Operator installs derive nginx TLS from APIServer tlsSecurityProfile.
         ssl_protocols       TLSv1.3;
-        # PQC hybrid + classical groups; ? prefix skips unavailable groups (e.g. on FIPS clusters)
-        ssl_ecdh_curve      ?X25519MLKEM768:?SecP256r1MLKEM768:?X25519:secp256r1:secp384r1;
+        ssl_conf_command Ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256;
 
         add_header oauth_token "$http_Authorization";
 
