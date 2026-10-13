@@ -53,6 +53,27 @@ jobs:
       working-directory: plugin
       run: yarn test
 
+  ossmc_tls_profile:
+    name: TLS profile helper
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+    # ruff is pinned in make/Makefile.plugin.mk and installed only in this job, never in the image.
+    - name: Install ruff
+      run: |
+        python3 -m venv "${RUNNER_TEMP}/ruff"
+        "${RUNNER_TEMP}/ruff/bin/pip" install --quiet "ruff==$(sed -rn 's/^RUFF_VERSION \?= (.*)/\1/p' make/Makefile.plugin.mk)"
+
+    - name: Lint
+      run: make lint-ossmc-tls-profile RUFF="${RUNNER_TEMP}/ruff/bin/ruff"
+
+    # Runs inside the Dockerfile's base image so the tests use the production interpreter and OpenSSL.
+    - name: Unit tests
+      run: make test-ossmc-tls-profile
+
   build_plugin:
     name: Build plugin
     runs-on: ubuntu-latest
@@ -63,3 +84,8 @@ jobs:
     - name: Build image
       run: |
         make -e CONTAINER_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile) build-plugin-image
+
+    # The helper is pure Python, so one image-level test run covers every architecture.
+    - name: TLS profile integration tests against the image just built
+      run: |
+        make -e CONTAINER_VERSION=$(sed -rn 's/^VERSION \?= (.*)/\1/p' Makefile) test-ossmc-tls-profile-container

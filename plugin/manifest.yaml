@@ -3,10 +3,12 @@ kind: Namespace
 metadata:
   name: ossmconsole
 ---
-apiVersion: apps/v1
-kind: Deployment
+# The OSSMC container reads the cluster TLS security profile (APIServer/cluster) with this
+# ServiceAccount and applies it to nginx. It needs nothing else from the API.
+apiVersion: v1
+kind: ServiceAccount
 metadata:
-  name: ossmconsole
+  name: ossmconsole-service-account
   namespace: ossmconsole
   labels:
     app: ossmconsole
@@ -14,60 +16,41 @@ metadata:
     app.kubernetes.io/instance: ossmconsole
     app.kubernetes.io/name: ossmconsole
     app.kubernetes.io/part-of: ossmconsole
-    app.openshift.io/runtime-namespace: ossmconsole
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: ossmconsole
-  template:
-    metadata:
-      labels:
-        app: ossmconsole
-        app.kubernetes.io/component: ossmconsole
-        app.kubernetes.io/instance: ossmconsole
-        app.kubernetes.io/name: ossmconsole
-        app.kubernetes.io/part-of: ossmconsole
-    spec:
-      containers:
-      - name: ossmconsole
-        image: quay.io/kiali/ossmconsole:latest
-        ports:
-        - containerPort: 9443
-          protocol: TCP
-        imagePullPolicy: Always
-        volumeMounts:
-        - name: plugin-serving-cert
-          readOnly: true
-          mountPath: /var/serving-cert
-        - name: nginx-conf
-          readOnly: true
-          mountPath: /etc/nginx/nginx.conf
-          subPath: nginx.conf
-        - name: plugin-conf
-          readOnly: true
-          mountPath: /usr/share/nginx/html/plugin-config.json
-          subPath: plugin-config.json
-      volumes:
-      - name: plugin-serving-cert
-        secret:
-          secretName: plugin-serving-cert
-          defaultMode: 420
-      - name: nginx-conf
-        configMap:
-          name: nginx-conf
-          defaultMode: 420
-      - name: plugin-conf
-        configMap:
-          name: plugin-conf
-          defaultMode: 420
-      restartPolicy: Always
-      dnsPolicy: ClusterFirst
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 25%
-      maxSurge: 25%
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ossmconsole-tls
+  labels:
+    app: ossmconsole
+    app.kubernetes.io/component: ossmconsole
+    app.kubernetes.io/instance: ossmconsole
+    app.kubernetes.io/name: ossmconsole
+    app.kubernetes.io/part-of: ossmconsole
+rules:
+- apiGroups: [config.openshift.io]
+  resources: [apiservers]
+  resourceNames: [cluster]
+  verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ossmconsole-tls
+  labels:
+    app: ossmconsole
+    app.kubernetes.io/component: ossmconsole
+    app.kubernetes.io/instance: ossmconsole
+    app.kubernetes.io/name: ossmconsole
+    app.kubernetes.io/part-of: ossmconsole
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ossmconsole-tls
+subjects:
+- kind: ServiceAccount
+  name: ossmconsole-service-account
+  namespace: ossmconsole
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -95,10 +78,7 @@ data:
         listen              [::]:9443 ssl;
         ssl_certificate     /var/serving-cert/tls.crt;
         ssl_certificate_key /var/serving-cert/tls.key;
-        # Only TLS client is the OCP Console backend, which supports TLS 1.3
-        ssl_protocols       TLSv1.3;
-        # PQC hybrid + classical groups; ? prefix skips unavailable groups (e.g. on FIPS clusters)
-        ssl_ecdh_curve      ?X25519MLKEM768:?SecP256r1MLKEM768:?X25519:secp256r1:secp384r1;
+        include /tmp/ossmc/tls.conf;
 
         add_header oauth_token "$http_Authorization";
 
@@ -131,6 +111,92 @@ data:
         "techPreview": true
       }
     }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ossmconsole
+  namespace: ossmconsole
+  labels:
+    app: ossmconsole
+    app.kubernetes.io/component: ossmconsole
+    app.kubernetes.io/instance: ossmconsole
+    app.kubernetes.io/name: ossmconsole
+    app.kubernetes.io/part-of: ossmconsole
+    app.openshift.io/runtime-namespace: ossmconsole
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ossmconsole
+  template:
+    metadata:
+      labels:
+        app: ossmconsole
+        app.kubernetes.io/component: ossmconsole
+        app.kubernetes.io/instance: ossmconsole
+        app.kubernetes.io/name: ossmconsole
+        app.kubernetes.io/part-of: ossmconsole
+    spec:
+      serviceAccountName: ossmconsole-service-account
+      automountServiceAccountToken: true
+      containers:
+      - name: ossmconsole
+        image: quay.io/kiali/ossmconsole:latest
+        # The helper reads the cluster TLS profile, renders /tmp/ossmc/tls.conf and supervises nginx.
+        # It requires an image that contains it; the image's default CMD starts nginx with no profile support.
+        command: ["/usr/local/bin/ossmc-tls-profile"]
+        ports:
+        - containerPort: 9443
+          protocol: TCP
+        imagePullPolicy: Always
+        # No liveness probe: a healthy nginx must not be killed because the API server is unreachable.
+        readinessProbe:
+          exec:
+            command: ["/usr/local/bin/ossmc-tls-profile", "probe"]
+          periodSeconds: 5
+          timeoutSeconds: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - name: plugin-serving-cert
+          readOnly: true
+          mountPath: /var/serving-cert
+        - name: nginx-conf
+          readOnly: true
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: plugin-conf
+          readOnly: true
+          mountPath: /usr/share/nginx/html/plugin-config.json
+          subPath: plugin-config.json
+      volumes:
+      - name: plugin-serving-cert
+        secret:
+          secretName: plugin-serving-cert
+          defaultMode: 420
+      - name: nginx-conf
+        configMap:
+          name: nginx-conf
+          defaultMode: 420
+      - name: plugin-conf
+        configMap:
+          name: plugin-conf
+          defaultMode: 420
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
 ---
 apiVersion: v1
 kind: Service

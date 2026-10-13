@@ -148,6 +148,16 @@ This builds the container image, pushes it to the OpenShift internal registry un
 complete. The image is pushed into the same namespace where the plugin pod runs, so
 OpenShift automatically grants pull access without needing additional image pull secrets.
 
+The manifest runs the image's TLS profile helper (`/usr/local/bin/ossmc-tls-profile`). It also
+creates the ServiceAccount `ossmconsole-service-account` and the ClusterRole/ClusterRoleBinding
+`ossmconsole-tls`, which let the pod read the cluster TLS profile (`get` on `apiservers/cluster`),
+so you need permission to create cluster RBAC. `oc apply` first rolls the pod with the manifest's
+quay.io `latest` image, which fails at container start until a helper-enabled `latest` is published.
+The following `oc set image` switches the pod to your dev build. The plugin pod becomes Ready only
+after the helper has read the cluster profile and nginx passed its TLS self-check. If it stays
+unready, look for `ossmc-tls-profile:` lines in `oc logs -n ossmconsole deploy/ossmconsole`. See
+"Cluster TLS Security Profile" in the repository README.
+
 To push a rebuilt image without re-applying the manifest:
 
 ```bash

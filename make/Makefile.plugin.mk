@@ -26,6 +26,50 @@ build-plugin:
 build-plugin-image:
 	${DORP} build --build-arg VERSION_PLUGIN="${VERSION}" --build-arg COMMIT_HASH="${COMMIT_HASH}" -t ${PLUGIN_QUAY_TAG} ${PLUGIN_DIR}
 
+# The OSSMC TLS profile helper (plugin/server) is tested with the same interpreter and OpenSSL
+# as production: the base image of the Dockerfile's final stage, picked out of the Dockerfile
+# so the tests always run on what we build on.
+DOCKERFILE_FINAL_FROM = $(shell sed -n 's/^FROM[[:space:]][[:space:]]*\([^[:space:]]*\).*/\1/p' ${PLUGIN_DIR}/Dockerfile | tail -n 1)
+OSSMC_TLS_PROFILE_TEST_IMAGE ?= ${DOCKERFILE_FINAL_FROM}
+OSSMC_TLS_PROFILE_DIR = ${PLUGIN_DIR}/server
+# ruff is a CI/dev-only linter; it is never installed into the image.
+RUFF_VERSION ?= 0.16.9
+RUFF ?= ruff
+
+# Fails with a clear message if the Dockerfile's final stage stops building on a nginx
+# base image, the runtime the helper's tests and recorded openssl fixtures assume.
+.ensure-tls-test-image:
+	@case "${DOCKERFILE_FINAL_FROM}" in \
+	  *nginx*) ;; \
+	  *) echo "Expected the final stage of ${PLUGIN_DIR}/Dockerfile to build on a nginx base image, found: \"${DOCKERFILE_FINAL_FROM}\""; exit 1 ;; \
+	esac
+
+## test-ossmc-tls-profile: Runs the TLS profile helper unit tests inside the Dockerfile's nginx base image (authoritative).
+test-ossmc-tls-profile: .ensure-tls-test-image
+	${DORP} run --rm --network none --user "$$(( (RANDOM % 50000) + 10000 )):0" --cap-drop=ALL \
+	  -v ${OSSMC_TLS_PROFILE_DIR}:/src:ro,Z -w /tmp ${OSSMC_TLS_PROFILE_TEST_IMAGE} \
+	  python3 -I -B -m unittest discover -s /src/tests -t /src
+
+## test-ossmc-tls-profile-host: Runs the TLS profile helper unit tests with the host python3 (>= 3.9) for fast iteration.
+test-ossmc-tls-profile-host:
+	cd ${OSSMC_TLS_PROFILE_DIR} && python3 -I -B -m unittest discover -s tests -t .
+
+## test-ossmc-tls-profile-container: Runs the TLS profile integration tests (plugin/server/integration) against the locally built plugin image in a podman pod with a fake OpenShift API - real TLS handshakes, profile changes, failure modes, old-template compatibility (requires podman, openssl, python3 >= 3.9).
+test-ossmc-tls-profile-container: .ensure-tls-test-image
+	cd ${OSSMC_TLS_PROFILE_DIR} && OSSMC_IMAGE="${PLUGIN_QUAY_TAG}" OSSMC_TLS_PROFILE_TEST_IMAGE="${OSSMC_TLS_PROFILE_TEST_IMAGE}" python3 -I -B -m unittest discover -v -s integration -t .
+
+## record-ossmc-tls-probes: Re-records the openssl probe fixtures inside the Dockerfile's base image (needed when that base image changes).
+record-ossmc-tls-probes: .ensure-tls-test-image
+	cd ${OSSMC_TLS_PROFILE_DIR} && ${DORP} run --rm --network none -v "$$PWD":/w:Z ${OSSMC_TLS_PROFILE_TEST_IMAGE} \
+	  python3 -I /w/hack/record-openssl-probes.py > tests/fixtures/openssl-probes.json
+
+## lint-ossmc-tls-profile: Byte-compiles and lints the TLS profile helper (ruff ${RUFF_VERSION}: pip install ruff==${RUFF_VERSION}).
+lint-ossmc-tls-profile:
+	@# Byte-compile into a throwaway cache so no __pycache__ lands in the source tree.
+	PYTHONPYCACHEPREFIX="$$(mktemp -d)" python3 -m compileall -q ${OSSMC_TLS_PROFILE_DIR} > /dev/null
+	@if [ "$$(${RUFF} --version 2>/dev/null)" != "ruff ${RUFF_VERSION}" ]; then echo "ruff ${RUFF_VERSION} is required (found: $$(${RUFF} --version 2>/dev/null || echo none)); run: pip install ruff==${RUFF_VERSION}"; exit 1; fi
+	cd ${OSSMC_TLS_PROFILE_DIR} && ${RUFF} check . && ${RUFF} format --check .
+
 ## push-plugin-image: Pushes the plugin container image to quay.io.
 push-plugin-image:
 	${DORP} push ${PLUGIN_QUAY_TAG}

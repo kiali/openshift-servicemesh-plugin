@@ -117,7 +117,11 @@ openshift-servicemesh-plugin/
     ├── cypress.config.ts        # Cypress E2E config
     ├── console-extensions.ts    # OpenShift Console extension points
     ├── plugin-metadata.ts       # Plugin version metadata
-    ├── manifest.yaml            # K8s deployment manifest
+    ├── manifest.yaml            # K8s deployment manifest (direct install; runs the TLS profile helper)
+    ├── server/                  # ★ OSSMC TLS profile helper (Python 3.9, standard library only)
+    │   ├── ossmc_tls_profile/   # Supervisor, profile resolver, API client (packaged as a zipapp)
+    │   ├── tests/               # unittest suite (run in the plugin's base image)
+    │   └── integration/         # podman integration tests against the built image
     ├── eslint.config.mjs        # ESLint rules (excludes src/kiali)
     ├── .prettierrc.json         # Prettier config
     ├── .editorconfig            # EditorConfig
@@ -155,6 +159,7 @@ In the repository tree above, `★` marks plugin-owned code you edit in this rep
 - **`plugin/cypress/integration/kiali/`** — Vendored Cypress tests from kiali/kiali. **Do not edit directly.**
 - **`plugin/cypress/integration/openshift/`** — OSSMC-specific E2E tests.
 - **`hack/fleet-mesh/`** — Scripts and docs for standing up a Fleet Service Mesh demo cluster (see `hack/fleet-mesh/DEV-INSTALL.md`).
+- **`plugin/server/`** — The OSSMC TLS profile helper (`/usr/local/bin/ossmc-tls-profile` in the image). It reads the cluster TLS profile, renders the nginx include `/tmp/ossmc/tls.conf` and supervises nginx as PID 1. It is a separate Python boundary: none of the TypeScript tooling (tsc, ESLint, Prettier, Rstest) covers it. See [TLS Profile Helper (Python)](#tls-profile-helper-python) and the README section "Cluster TLS Security Profile".
 
 ---
 
@@ -258,6 +263,19 @@ import { refForKialiIstio } from './IstioResources';
 - PatternFly v6 classes: `pf-v6-c-*`
 - Style constants as named exports: `export const globalStyle = kialiStyle({...})`
 
+### TLS Profile Helper (Python)
+
+Rules for `plugin/server/`:
+
+1. **Python 3.9 compatibility**: it runs on the base image's `/usr/bin/python3` (3.9). No `match` statements, and no runtime `X | Y` types (use `typing.Optional` / `from __future__ import annotations`).
+2. **Standard library only**: never `pip install` into the image, and never depend on site packages that happen to be in the base image (`requests`, `urllib3`, PyYAML, ...).
+3. **No `subprocess` in the helper**: every child process is started through `spawn.py` (`posix_spawn` in its own process group, bounded by a wall-clock deadline enforced by killing the group). `subprocess` would reap children behind the supervisor's back. Tests may use `subprocess`.
+4. **The supervisor never blocks except in `select`**: no network I/O in the supervisor process; API reads, `openssl` probes, `nginx -T` and the self-check all run as bounded children.
+5. **Keep `probe` cheap**: the readiness probe path (`__main__.py` → `probe.py` → `paths.py`) imports only `os`, `json` and `socket`. Import subcommand modules lazily in `__main__.py`.
+6. **No public configuration**: test hooks are constructor/function arguments (`supervisor.Settings`), never environment variables or CLI flags.
+7. **No TLS logic outside the image**: the Kiali operator and the manifests only provide static wiring (command, ServiceAccount/RBAC, include, readiness probe).
+8. Formatting and linting use `ruff` (config in `plugin/server/ruff.toml`, version pinned in `make/Makefile.plugin.mk`).
+
 ### Formatting
 
 Prettier and EditorConfig enforce formatting automatically via a pre-commit hook (`pretty-quick --staged`).
@@ -310,6 +328,19 @@ make test
 ```
 
 Unit tests for plugin-owned code are co-located under `plugin/src/` as `*.test.ts` and `*.test.tsx` files (typically in `__tests__/` directories). The suite uses Rstest and is configured in `plugin/rstest.config.ts`. Vendored `plugin/src/kiali/` tests are not included.
+
+#### TLS Profile Helper Tests (Python)
+
+```bash
+make lint-ossmc-tls-profile              # compileall + ruff (ruff at the pinned RUFF_VERSION, never in the image)
+make test-ossmc-tls-profile              # unittest inside the Dockerfile's base image, arbitrary UID, --network none (authoritative)
+make test-ossmc-tls-profile-host         # same suite on the host python3 (>= 3.9); in-image-only tests are skipped
+make build-plugin-image test-ossmc-tls-profile-container   # integration tier: fake API + the built image in a podman pod
+```
+
+Unit tests live in `plugin/server/tests/` and use `unittest` only. `openssl` behavior is replayed from `tests/fixtures/openssl-probes.json`, which was recorded in the plugin's base image. `make/Makefile.plugin.mk` and the integration tests read that base image ref from `plugin/Dockerfile`. The in-image unit tests fail if the fixtures drift from the image's openssl; re-record them with `make record-ossmc-tls-probes` when the base image changes.
+
+The container target is the integration tier (`plugin/server/integration/`): a podman pod pairs a fake OpenShift API (nginx TLS front end) with the locally built plugin image, and exercises the deployed artifact end to end — per-profile TLS negotiation through real `openssl s_client` handshakes, profile changes and serving-cert rotation, failure modes (API down or forbidden, invalid profiles), and compatibility with the previous manifest template (`integration/fixtures/manifest-pre-change.yaml`). Run it after changing `plugin/Dockerfile`, the nginx.conf ConfigMap in `plugin/manifest.yaml`, or the helper's supervisor/entrypoint behavior — paths the unit suites cannot see. See `plugin/server/integration/README.md` for how to run individual tests and add new ones.
 
 #### E2E Tests (Cypress + Cucumber)
 
@@ -454,7 +485,8 @@ hack/update-version-string.sh v2.27.0
 |------|-------|
 | `plugin/console-extensions.ts` | Console extension registration — affects all plugin routes. |
 | `plugin/plugin-metadata.ts` | Plugin version — updated by `hack/update-version-string.sh`. |
-| `plugin/manifest.yaml` | K8s deployment — affects cluster deploys. |
+| `plugin/manifest.yaml` | K8s deployment — affects cluster deploys. Its helper command, ServiceAccount/RBAC, `include /tmp/ossmc/tls.conf;` and readiness probe must stay in step with the operator's `ossmconsole-deploy` templates and the image. |
+| `plugin/server/ossmc_tls_profile/profiles.py` | Pinned OpenShift TLS presets; bump only via the README procedure. |
 | `.github/workflows/` | CI/CD pipelines — test changes carefully. |
 
 ---
@@ -663,6 +695,10 @@ If `plugin/src/kiali/` or `plugin/cypress/integration/kiali/` shows up with chan
 | Cypress (headless) | `cd plugin && yarn cypress:run` |
 | Cypress (JUnit) | `cd plugin && yarn cypress:run:junit` |
 | Container image build | `make build-plugin-image` |
+| TLS profile helper lint | `make lint-ossmc-tls-profile` |
+| TLS profile helper unit tests | `make test-ossmc-tls-profile` (or `make test-ossmc-tls-profile-host`) |
+| TLS profile helper image tests | `make build-plugin-image test-ossmc-tls-profile-container` |
+| Re-record TLS helper openssl fixtures | `make record-ossmc-tls-probes` |
 | Deploy to cluster (quay.io latest image) | `make deploy-plugin enable-plugin` |
 | Build, push, and deploy a dev image (no operator) | `make cluster-deploy` |
 | Build and push a dev image only (pairs with the operator, or `make restart-plugin`) | `make cluster-push` |

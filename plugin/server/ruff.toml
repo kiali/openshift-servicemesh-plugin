@@ -1,0 +1,21 @@
+# The helper runs on the Python 3.9 interpreter of the base image pinned in plugin/Dockerfile.
+target-version = "py39"
+line-length = 120
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "PL", "RUF"]
+# Keep typing.Optional/List: the runtime is Python 3.9, where "X | None" is not valid outside
+# postponed annotations.
+ignore = [
+  "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004",
+  "UP006", "UP007", "UP035", "UP045", "RUF005",
+]
+
+[lint.per-file-ignores]
+# Subcommand modules are imported lazily so the readiness probe never loads ssl or the supervisor.
+"ossmc_tls_profile/__main__.py" = ["PLC0415"]
+"tests/**" = ["PLC0415", "B023", "RUF012"]
+"integration/**" = ["PLC0415"]
+
+[lint.isort]
+known-first-party = ["ossmc_tls_profile", "tests", "integration"]
