@@ -178,17 +178,20 @@ Other options:
   -h, --help                  Show this help
 
 Examples:
-  # MCM secure-mcm: hub (metrics scrape + mesh-hello workloads)
+  # MCM secure-mcm: hub (metrics scrape + mesh-hello workloads).
+  # The istio-namespace is the mesh's auto-derived control plane namespace,
+  # read from the MCM's status.controlPlaneNamespace.
   enable-mesh-observability.sh install \
     --hub-context HUB_CONTEXT --cluster-context HUB_CONTEXT \
-    --istio-namespace secure-ns --metrics-backend hub \
+    --istio-namespace istio-system-secure-mcm-XXXXXXXXXX --metrics-backend hub \
     --app-namespaces secure-mcm-testapp \
     --managed-cluster-name local-cluster
 
   # MCM secure-mcm: spoke (mesh-hello + Kiali queries hub Observatorium)
   enable-mesh-observability.sh install \
     --hub-context HUB_CONTEXT --cluster-context SPOKE_CONTEXT \
-    --istio-namespace secure-ns --kiali-cr-namespace kiali-operator \
+    --istio-namespace istio-system-secure-mcm-XXXXXXXXXX \
+    --kiali-cr-namespace kiali-operator \
     --metrics-backend hub --app-namespaces secure-mcm-testapp \
     --managed-cluster-name SPOKE_NAME
 

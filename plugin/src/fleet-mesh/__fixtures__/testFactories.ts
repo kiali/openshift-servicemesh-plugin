@@ -7,6 +7,7 @@ export const makeMesh = (overrides: Partial<MultiClusterMesh> = {}): MultiCluste
   kind: 'MultiClusterMesh',
   metadata: { name: 'test-mesh', namespace: 'mesh-system', creationTimestamp: '2026-06-22T12:00:00Z' },
   spec: { placementRef: { name: 'global-placement' } },
+  status: { controlPlaneNamespace: 'istio-system-test-mesh-abcdef1234' },
   ...overrides
 });
 
@@ -23,7 +24,7 @@ export const makeCluster = (
   reason?: string
 ): ClusterMeshStatus => ({
   clusterName: name,
-  conditions: [{ type: 'OperatorInstalled', status, reason } as K8sCondition]
+  conditions: [{ type: 'TrustDistributed', status, reason } as K8sCondition]
 });
 
 export const makeSearchResult = (

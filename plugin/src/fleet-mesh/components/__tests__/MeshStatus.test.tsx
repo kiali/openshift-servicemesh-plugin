@@ -8,8 +8,8 @@ import type { K8sCondition } from '../../types/common';
 const ready: K8sCondition = { type: 'Ready', status: 'True' };
 const readyFalse: K8sCondition = { type: 'Ready', status: 'False' };
 const readyUnknown: K8sCondition = { type: 'Ready', status: 'Unknown' };
-const operatorInstalled: K8sCondition = { type: 'OperatorInstalled', status: 'True' };
-const operatorFailed: K8sCondition = { type: 'OperatorInstalled', status: 'False', reason: 'ReconcileError' };
+const trustDistributed: K8sCondition = { type: 'TrustDistributed', status: 'True' };
+const trustPending: K8sCondition = { type: 'TrustDistributed', status: 'False', reason: 'ReconcileError' };
 
 describe('MeshStatus', () => {
   describe('with no conditions', () => {
@@ -38,10 +38,8 @@ describe('MeshStatus', () => {
 
   describe('friendly reason codes', () => {
     const cases: [string, string][] = [
-      ['OperatorConfigConflict', 'Operator Config Conflict'],
-      ['NamespaceConflict', 'Namespace Conflict'],
+      ['CacertsPending', 'Trust Pending'],
       ['ClustersNotReady', 'Clusters Not Ready'],
-      ['InstallationPending', 'Installing'],
       ['MissingProductClaim', 'Missing Product Claim'],
       ['ReconcileError', 'Reconcile Error']
     ];
@@ -60,13 +58,13 @@ describe('MeshStatus', () => {
   });
 
   describe('custom conditionType', () => {
-    it('shows OperatorInstalled when OperatorInstalled=True', () => {
-      render(<MeshStatus conditions={[operatorInstalled]} conditionType="OperatorInstalled" />);
-      expect(screen.getByText('OperatorInstalled')).toBeInTheDocument();
+    it('shows TrustDistributed when TrustDistributed=True', () => {
+      render(<MeshStatus conditions={[trustDistributed]} conditionType="TrustDistributed" />);
+      expect(screen.getByText('TrustDistributed')).toBeInTheDocument();
     });
 
-    it('shows friendly reason for OperatorInstalled=False', () => {
-      render(<MeshStatus conditions={[operatorFailed]} conditionType="OperatorInstalled" />);
+    it('shows friendly reason for TrustDistributed=False', () => {
+      render(<MeshStatus conditions={[trustPending]} conditionType="TrustDistributed" />);
       expect(screen.getByText('Reconcile Error')).toBeInTheDocument();
     });
   });
@@ -91,11 +89,11 @@ describe('MeshStatus', () => {
 
   it('does not show Degraded for non-Ready conditionType even when secondary is False', () => {
     const conditions: K8sCondition[] = [
-      { type: 'OperatorInstalled', status: 'True' },
+      { type: 'TrustDistributed', status: 'True' },
       { type: 'Other', status: 'False' }
     ];
-    render(<MeshStatus conditions={conditions} conditionType="OperatorInstalled" />);
-    expect(screen.getByText('OperatorInstalled')).toBeInTheDocument();
+    render(<MeshStatus conditions={conditions} conditionType="TrustDistributed" />);
+    expect(screen.getByText('TrustDistributed')).toBeInTheDocument();
   });
 
   it('shows Healthy when all non-target conditions are True', () => {
@@ -131,7 +129,7 @@ describe('getStatusRank', () => {
   });
 
   it('uses provided conditionType for ranking', () => {
-    expect(getStatusRank([operatorInstalled], 'OperatorInstalled')).toBe(0);
-    expect(getStatusRank([operatorFailed], 'OperatorInstalled')).toBe(3);
+    expect(getStatusRank([trustDistributed], 'TrustDistributed')).toBe(0);
+    expect(getStatusRank([trustPending], 'TrustDistributed')).toBe(3);
   });
 });

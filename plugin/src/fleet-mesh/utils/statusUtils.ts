@@ -10,13 +10,11 @@ export function isConditionStale(condition: K8sCondition | undefined, generation
 
 // Maps K8s condition reason codes to user-friendly English strings (also the i18n keys).
 const friendlyReasons: Record<string, string> = {
+  CacertsPending: 'Trust Pending',
   ClustersNotReady: 'Clusters Not Ready',
-  InstallationPending: 'Installing',
   MissingProductClaim: 'Missing Product Claim',
-  NamespaceConflict: 'Namespace Conflict',
-  OperatorConfigConflict: 'Operator Config Conflict',
-  PlacementNotFound: 'Placement Not Found',
   NoClustersSelected: 'No Clusters Selected',
+  PlacementNotFound: 'Placement Not Found',
   ReconcileError: 'Reconcile Error'
 };
 
@@ -25,14 +23,10 @@ export function translateStatusLabel(label: string, t: (key: string) => string):
   switch (label) {
     case 'Clusters Not Ready':
       return t('Clusters Not Ready');
-    case 'Installing':
-      return t('Installing');
+    case 'Trust Pending':
+      return t('Trust Pending');
     case 'Missing Product Claim':
       return t('Missing Product Claim');
-    case 'Namespace Conflict':
-      return t('Namespace Conflict');
-    case 'Operator Config Conflict':
-      return t('Operator Config Conflict');
     case 'Placement Not Found':
       return t('Placement Not Found');
     case 'No Clusters Selected':

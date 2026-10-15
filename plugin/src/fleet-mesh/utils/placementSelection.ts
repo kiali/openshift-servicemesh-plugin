@@ -40,9 +40,9 @@ export function aggregateDecisions(decisions: PlacementDecision[]): DecisionSele
   return { rawCount, selectedNames: [...names].sort(), valid };
 }
 
-export function operatorInstalledCount(clusterStatuses: ClusterMeshStatus[]): number {
+export function trustDistributedCount(clusterStatuses: ClusterMeshStatus[]): number {
   return clusterStatuses.filter(cs =>
-    cs.conditions?.some(condition => condition.type === 'OperatorInstalled' && condition.status === 'True')
+    cs.conditions?.some(condition => condition.type === 'TrustDistributed' && condition.status === 'True')
   ).length;
 }
 

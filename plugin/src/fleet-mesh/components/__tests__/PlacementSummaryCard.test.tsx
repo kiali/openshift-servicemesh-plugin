@@ -57,7 +57,7 @@ describe('PlacementSummaryCard', () => {
     );
   });
 
-  it('shows Placement selection, deployed, and installed counts separately without ClusterSets', () => {
+  it('shows Placement selection, deployed, and trust counts separately without ClusterSets', () => {
     render(
       <PlacementSummaryCard
         clusterStatuses={[makeCluster('hub', 'True'), makeCluster('leaving', 'False')]}
@@ -79,7 +79,7 @@ describe('PlacementSummaryCard', () => {
     expect(screen.getByText('Deployed clusters')).toBeInTheDocument();
     expect(document.querySelector('[data-test="placement-selected-count"]')).toHaveTextContent('2');
     expect(document.querySelector('[data-test="placement-mesh-count"]')).toHaveTextContent('2');
-    expect(document.querySelector('[data-test="placement-operator-installed-count"]')).toHaveTextContent('1');
+    expect(document.querySelector('[data-test="placement-trust-distributed-count"]')).toHaveTextContent('1');
     expect(screen.getByText('Target clusters: 2')).toBeInTheDocument();
   });
 
@@ -111,8 +111,8 @@ describe('PlacementSummaryCard', () => {
     ['Placement', 'The Placement resource that determines which clusters are selected for this mesh.'],
     ['Selection status', 'Shows whether current Placement decisions are available and up to date.'],
     [
-      'Operator installed',
-      'The number of deployed clusters whose MultiClusterMesh status reports the OSSM operator as installed.'
+      'Trust distributed',
+      'The number of deployed clusters whose MultiClusterMesh status reports mesh trust (cacerts) as distributed.'
     ],
     [
       'Selection policy',

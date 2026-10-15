@@ -42,10 +42,13 @@ Istio CRs are split across clusters to show the cross-cluster discovery story.
 When MCM CRs are created, the controller automatically does the following on each
 managed cluster:
 
-1. Creates the control plane namespace (with `topology.istio.io/network` label) via ManifestWork
-2. Installs the OSSM operator via OLM ManifestWork (shared across meshes on the same cluster)
-3. Mints per-cluster intermediate CA certificates and distributes `cacerts` secrets (only when `spec.security.trust.certManager.issuerRef` is configured)
-4. Creates `ManagedServiceAccount` tokens and distributes remote secrets for cross-cluster endpoint discovery
+1. Creates the control plane namespace (auto-derived and reported in `status.controlPlaneNamespace`, with `topology.istio.io/network` label) via ManifestWork
+2. Mints per-cluster intermediate CA certificates and distributes `cacerts` secrets (only when `spec.security.trust.certManager.issuerRef` is configured)
+3. Creates `ManagedServiceAccount` tokens and distributes remote secrets for cross-cluster endpoint discovery
+
+The OSSM operator is a prerequisite installed separately from the controller (for
+example via an OLM subscription or OperatorPolicy). The setup script installs it on
+both clusters.
 
 The controller reads a Placement in each MCM's hub namespace. ACM requires a ManagedClusterSetBinding in that namespace before the Placement can select from a ClusterSet. The controller does not create either resource; this guide creates them explicitly. ACM creates the PlacementDecision results. A policy `PlacementBinding` is not needed for a MultiClusterMesh because its `spec.placementRef` is the consumer link.
 
@@ -55,12 +58,14 @@ on each cluster. See section 6 below.
 
 ## Resource Layout
 
-| MCM CR         | MCM Namespace     | CP Namespace  | Trust | Clusters                |
-| -------------- | ----------------- | ------------- | ----- | ----------------------- |
-| `unsecure-mcm` | `unsecure-mcm-ns` | `unsecure-ns` | No    | local-cluster, my-spoke |
-| `secure-mcm`   | `secure-mcm-ns`   | `secure-ns`   | Yes   | local-cluster, my-spoke |
+| MCM CR         | MCM Namespace     | CP Namespace                                 | Trust | Clusters                |
+| -------------- | ----------------- | -------------------------------------------- | ----- | ----------------------- |
+| `unsecure-mcm` | `unsecure-mcm-ns` | auto-derived (`istio-system-unsecure-mcm-…`) | No    | local-cluster, my-spoke |
+| `secure-mcm`   | `secure-mcm-ns`   | auto-derived (`istio-system-secure-mcm-…`)   | Yes   | local-cluster, my-spoke |
 
-The controller creates the control plane namespace on each cluster via ManifestWork.
+The control plane namespace is derived by the controller from the mesh name and
+namespace and reported in each MCM's `status.controlPlaneNamespace`; it is not
+configurable. The controller creates it on each cluster via ManifestWork.
 Istio CRs, IstioCNI, and east-west gateways must be created manually by the user
 (directly or via GitOps) in each cluster's control plane namespace after the operator
 is installed.
@@ -77,7 +82,6 @@ corresponding MCM CR is removed.
 
 | ManifestWork                          | Created by            | Per-mesh?                 |
 | ------------------------------------- | --------------------- | ------------------------- |
-| `multicluster-mesh-operator`          | First MCM reconcile   | No (shared across meshes) |
 | `multicluster-mesh-cp-ns-{namespace}` | Each MCM              | Yes                       |
 | `multicluster-mesh-cacerts`           | MCM with trust config | Yes                       |
 
@@ -471,65 +475,46 @@ oc --context=my-hub wait certificate mesh-root-ca -n secure-mcm-ns \
 
 ## 4. Create MCM CRs
 
-The controller installs the OSSM operator via ManifestWork, which requires the klusterlet
-work agent on each cluster to have OLM permissions. By default, the klusterlet work agent
-does not receive OLM permissions on either `local-cluster` or imported spoke clusters.
-This step grants the necessary permissions via an OCM aggregate ClusterRole.
-
-Check each cluster's permissions:
+The OSSM operator is a prerequisite. Install it on both clusters via an OLM
+subscription before creating the meshes:
 
 ```bash
-# Check hub's local-cluster
-oc --context=my-hub auth can-i create operatorgroups.operators.coreos.com \
-  --as=system:serviceaccount:open-cluster-management-agent:klusterlet-work-sa
-
-# Check spoke
-oc --context=my-spoke auth can-i create operatorgroups.operators.coreos.com \
-  --as=system:serviceaccount:open-cluster-management-agent:klusterlet-work-sa
-```
-
-If either cluster outputs `no`, apply the aggregate ClusterRole on that cluster. The
-klusterlet work agent uses an aggregating ClusterRole that automatically merges any
-ClusterRole labeled `open-cluster-management.io/aggregate-to-work: "true"` — no
-ClusterRoleBinding is needed. Skip a cluster if it already outputs `yes`.
-
-```bash
-# Hub (skip if hub already outputs "yes")
-oc --context=my-hub apply -f - <<'EOF'
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+for ctx in my-hub my-spoke; do
+  oc --context=${ctx} apply -f - <<'EOF'
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
 metadata:
-  name: klusterlet-work-olm
-  labels:
-    open-cluster-management.io/aggregate-to-work: "true"
-rules:
-- apiGroups: ["operators.coreos.com"]
-  resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-  verbs: ["create", "get", "list", "update", "patch", "delete"]
+  name: servicemesh-operator3
+  namespace: openshift-operators
+spec:
+  channel: stable
+  name: servicemeshoperator3
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic
 EOF
+done
 
-# Spoke (skip if spoke already outputs "yes")
-oc --context=my-spoke apply -f - <<'EOF'
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: klusterlet-work-olm
-  labels:
-    open-cluster-management.io/aggregate-to-work: "true"
-rules:
-- apiGroups: ["operators.coreos.com"]
-  resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-  verbs: ["create", "get", "list", "update", "patch", "delete"]
-EOF
+# Wait for the OSSM operator CSV on both clusters
+for ctx in my-hub my-spoke; do
+  until oc --context=${ctx} get csv -n openshift-operators 2>/dev/null \
+    | grep -q servicemeshoperator3; do
+    echo "Waiting for OSSM operator CSV on ${ctx}..."
+    sleep 10
+  done
+  CSV=$(oc --context=${ctx} get csv -n openshift-operators -o name \
+    | grep servicemeshoperator3)
+  oc --context=${ctx} wait ${CSV} -n openshift-operators \
+    --for=jsonpath='{.status.phase}'=Succeeded --timeout=300s
+done
 ```
 
 Now create both MultiClusterMesh CRs. The controller will reconcile them and perform the
 following automatically on both `local-cluster` and `my-spoke`:
 
-1. Create the control plane namespace with the cluster's network identity label
-2. Install the OSSM operator via OLM ManifestWork (shared across meshes on the same cluster)
-3. Distribute `cacerts` secrets (for `secure-mcm` — requires cert-manager trust chain)
-4. Create `ManagedServiceAccount` tokens and distribute remote secrets for cross-cluster
+1. Create the auto-derived control plane namespace (reported in `status.controlPlaneNamespace`) with the cluster's network identity label
+2. Distribute `cacerts` secrets (for `secure-mcm` — requires cert-manager trust chain)
+3. Create `ManagedServiceAccount` tokens and distribute remote secrets for cross-cluster
   endpoint discovery
 
 ```bash
@@ -542,8 +527,6 @@ metadata:
 spec:
   placementRef:
     name: unsecure-demo-placement
-  controlPlane:
-    namespace: unsecure-ns
 EOF
 
 oc --context=my-hub apply -f - <<'EOF'
@@ -555,8 +538,6 @@ metadata:
 spec:
   placementRef:
     name: secure-demo-placement
-  controlPlane:
-    namespace: secure-ns
   security:
     trust:
       certManager:
@@ -571,42 +552,18 @@ After MCM Status is `Ready=True`, proceed to section 6 to create Istio CRs manua
 oc --context=my-hub get multiclustermesh -A -o custom-columns='NAME:.metadata.name,NAMESPACE:.metadata.namespace,READY:.status.conditions[?(@.type=="Ready")].status'
 ```
 
-Here `Ready=True` confirms the add-on's operator-installation milestone on the selected clusters. Inspect Istio and trust separately. `PlacementNotFound` points to a missing same-namespace Placement; `NoClustersSelected` calls for checking Binding, ClusterSet membership, Placement conditions, and generated decisions.
+Here `Ready=True` confirms the add-on reconciled the selected clusters, including cacerts trust distribution for `secure-mcm`. Inspect Istio separately. `PlacementNotFound` points to a missing same-namespace Placement; `NoClustersSelected` calls for checking Binding, ClusterSet membership, Placement conditions, and generated decisions.
 
 ## 5. Monitor reconciliation progress
 
 ```bash
-# Wait for the operator ManifestWork on both clusters
-oc --context=my-hub wait manifestwork multicluster-mesh-operator -n local-cluster \
-  --for=condition=Applied --timeout=180s
-oc --context=my-hub wait manifestwork multicluster-mesh-operator -n my-spoke \
-  --for=condition=Applied --timeout=180s
+# Read the derived control plane namespaces (needed for the Istio CRs in section 6)
+oc --context=my-hub get multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}'
+oc --context=my-hub get multiclustermesh secure-mcm -n secure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}'
 
-# Wait for the OSSM operator CSV on the hub
-until oc --context=my-hub get csv -n openshift-operators 2>/dev/null \
-  | grep -q servicemeshoperator3; do
-  echo "Waiting for OSSM operator CSV on hub..."
-  sleep 10
-done
-
-CSV_HUB=$(oc --context=my-hub get csv -n openshift-operators -o name \
-  | grep servicemeshoperator3)
-oc --context=my-hub wait ${CSV_HUB} -n openshift-operators \
-  --for=jsonpath='{.status.phase}'=Succeeded --timeout=300s
-
-# Wait for the OSSM operator CSV on the spoke
-until oc --context=my-spoke get csv -n openshift-operators 2>/dev/null \
-  | grep -q servicemeshoperator3; do
-  echo "Waiting for OSSM operator CSV on spoke..."
-  sleep 10
-done
-
-CSV_SPOKE=$(oc --context=my-spoke get csv -n openshift-operators -o name \
-  | grep servicemeshoperator3)
-oc --context=my-spoke wait ${CSV_SPOKE} -n openshift-operators \
-  --for=jsonpath='{.status.phase}'=Succeeded --timeout=300s
-
-# Watch per-cluster OperatorInstalled condition
+# Watch per-cluster TrustDistributed condition
 oc --context=my-hub get multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
   -o jsonpath='{.status.clusterStatus}' | jq .
 oc --context=my-hub get multiclustermesh secure-mcm -n secure-mcm-ns \
@@ -615,7 +572,7 @@ oc --context=my-hub get multiclustermesh secure-mcm -n secure-mcm-ns \
 
 ## 6. Create IstioCNI and Istio CRs on each cluster
 
-The controller installs the operator and creates the control plane namespace, but does
+The controller creates the auto-derived control plane namespace, but does
 **not** create Istio CRs or IstioCNI. After the operator's CSV reaches `Succeeded`,
 create IstioCNI (required for OpenShift) and then an Istio CR in each control plane
 namespace on each cluster.
@@ -660,19 +617,29 @@ section configures multi-cluster settings: `meshID` ties the control plane to it
 `network` identifies the cluster's network for split-horizon DNS, and `clusterName`
 enables cross-cluster endpoint discovery.
 
+Read the derived control plane namespaces first (see section 5) and substitute them
+for `${UNSECURE_CP_NS}` / `${SECURE_CP_NS}` below:
+
+```bash
+UNSECURE_CP_NS=$(oc --context=my-hub get multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}')
+SECURE_CP_NS=$(oc --context=my-hub get multiclustermesh secure-mcm -n secure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}')
+```
+
 > **Note:** In a future release, the backend controller will create and manage these Istio
 > CRs automatically based on the MCM spec. For now, they must be created manually.
 
 **Hub cluster — unsecure mesh:**
 
 ```bash
-oc --context=my-hub apply -f - <<'EOF'
+oc --context=my-hub apply -f - <<EOF
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: unsecure-cp
 spec:
-  namespace: unsecure-ns
+  namespace: ${UNSECURE_CP_NS}
   values:
     global:
       meshID: unsecure-mcm-ns-unsecure-mcm
@@ -685,13 +652,13 @@ EOF
 **Spoke cluster — unsecure mesh:**
 
 ```bash
-oc --context=my-spoke apply -f - <<'EOF'
+oc --context=my-spoke apply -f - <<EOF
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: unsecure-cp
 spec:
-  namespace: unsecure-ns
+  namespace: ${UNSECURE_CP_NS}
   values:
     global:
       meshID: unsecure-mcm-ns-unsecure-mcm
@@ -704,13 +671,13 @@ EOF
 **Hub cluster — secure mesh:**
 
 ```bash
-oc --context=my-hub apply -f - <<'EOF'
+oc --context=my-hub apply -f - <<EOF
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: secure-cp
 spec:
-  namespace: secure-ns
+  namespace: ${SECURE_CP_NS}
   values:
     global:
       meshID: secure-mcm-ns-secure-mcm
@@ -723,13 +690,13 @@ EOF
 **Spoke cluster — secure mesh:**
 
 ```bash
-oc --context=my-spoke apply -f - <<'EOF'
+oc --context=my-spoke apply -f - <<EOF
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: secure-cp
 spec:
-  namespace: secure-ns
+  namespace: ${SECURE_CP_NS}
   values:
     global:
       meshID: secure-mcm-ns-secure-mcm
@@ -750,7 +717,7 @@ EOF
 These "Bring Your Own" Istio CRs are independent control planes not associated with any MCM.
 The frontend discovers them via ACM Search but does not consider them "managed". Each lives on a
 different cluster to demonstrate cross-cluster discovery. The OSSM operator must already
-be installed (the controller does this when reconciling the MCM CRs).
+be installed (it was installed as a prerequisite in section 4).
 
 **On the hub:**
 
@@ -836,20 +803,20 @@ oc --context=my-hub get multiclustermesh secure-mcm -n secure-mcm-ns \
 
 Expected results:
 
-- 2 MCMs both with `Ready=True`; per-cluster status shows `OperatorInstalled: True` on
-both `local-cluster` and `my-spoke`
-- Control plane namespaces (`unsecure-ns`, `secure-ns`) exist on both clusters (created
-by controller) and are labeled with `topology.istio.io/network`
-- OSSM operator CSV in `Succeeded` phase on both clusters
+- 2 MCMs both with `Ready=True`; per-cluster status shows `TrustDistributed: True` on
+both `local-cluster` and `my-spoke` (for `secure-mcm` with trust configured)
+- Control plane namespaces (the auto-derived names from `status.controlPlaneNamespace`)
+exist on both clusters (created by controller) and are labeled with `topology.istio.io/network`
+- OSSM operator CSV in `Succeeded` phase on both clusters (installed as a prerequisite in section 4)
 - 4 Istio CRs total (2 per cluster, created manually in section 6) plus 2 standalone
 discovered CRs
 - cert-manager `Certificate` resources in `secure-mcm-ns` with `Ready=True`
 - `multicluster-mesh-cacerts` ManifestWork in both `local-cluster` and `my-spoke`
 namespaces (for `secure-mcm`)
 
-Note: The controller tracks only `OperatorInstalled` in the MCM status. Control plane
-readiness (istiod), IstioCNI, and gateway health are visible in the Istio CRs you
-created manually — check those directly on each cluster.
+Note: The controller tracks reconciliation and trust distribution in the MCM status.
+Control plane readiness (istiod), IstioCNI, and gateway health are visible in the Istio
+CRs you created manually — check those directly on each cluster.
 
 ## 9. (Optional) Deploy the mesh-hello test application
 
@@ -902,11 +869,13 @@ hack/fleet-mesh/deploy-mesh-hello.sh \
 ### Simulating a degraded cluster
 
 To simulate a degraded state for a cluster (e.g. spoke goes unhealthy), you can delete
-the operator ManifestWork on the target cluster. The controller will re-create it on the
-next reconcile.
+one of the controller's ManifestWorks on the target cluster. The controller will
+re-create it on the next reconcile.
 
 ```bash
-oc --context=my-hub delete manifestwork multicluster-mesh-operator -n my-spoke
+# The control plane namespace ManifestWork (name ends in the derived namespace)
+oc --context=my-hub delete manifestwork \
+  -n my-spoke -l mesh.open-cluster-management.io/mesh-namespace=secure-mcm-ns
 ```
 
 Re-create by triggering a reconcile (e.g. annotate an MCM):
@@ -1032,17 +1001,18 @@ oc --context=my-hub label managedcluster my-spoke \
   cluster.open-cluster-management.io/clusterset-
 oc --context=my-hub delete managedclusterset demo-cluster-set --ignore-not-found
 
-# 9. Delete namespaces
+# 9. Delete namespaces (control plane namespaces are labeled with the mesh identity)
+for ctx in my-hub my-spoke; do
+  for mesh in unsecure-mcm secure-mcm; do
+    oc --context=${ctx} delete namespace \
+      -l "mesh.open-cluster-management.io/mesh-name=${mesh}" --ignore-not-found
+  done
+done
 oc --context=my-hub delete namespace unsecure-mcm-ns secure-mcm-ns \
-  discovered-hub-ns unsecure-ns secure-ns --ignore-not-found
-oc --context=my-spoke delete namespace discovered-spoke-ns \
-  unsecure-ns secure-ns --ignore-not-found
+  discovered-hub-ns --ignore-not-found
+oc --context=my-spoke delete namespace discovered-spoke-ns --ignore-not-found
 
-# 10. Remove klusterlet OLM RBAC
-oc --context=my-hub delete clusterrole klusterlet-work-olm --ignore-not-found
-oc --context=my-spoke delete clusterrole klusterlet-work-olm --ignore-not-found
-
-# 11. Remove the OSSM operator CSV and CRDs on both clusters
+# 10. Remove the OSSM operator CSV and CRDs on both clusters
 CSV_HUB=$(oc --context=my-hub get csv -n openshift-operators -o name 2>/dev/null \
   | grep servicemeshoperator3)
 if [ -n "${CSV_HUB}" ]; then

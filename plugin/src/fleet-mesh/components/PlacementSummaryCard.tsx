@@ -15,7 +15,7 @@ import type { MeshPlacementResult, SelectionState } from '../hooks/useMeshPlacem
 import type { ClusterMeshStatus } from '../types/multiClusterMesh';
 import type { K8sCondition } from '../types/common';
 import type { Placement } from '../types/placement';
-import { getPlacementProblem, operatorInstalledCount } from '../utils/placementSelection';
+import { getPlacementProblem, trustDistributedCount } from '../utils/placementSelection';
 import { isConditionStale } from '../utils/statusUtils';
 import { placementDetailLink } from '../utils/linkUtils';
 import { useKialiTranslation } from 'utils/I18nUtils';
@@ -167,14 +167,14 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
             <DescriptionListTerm>
               <Tooltip
                 content={t(
-                  'The number of deployed clusters whose MultiClusterMesh status reports the OSSM operator as installed.'
+                  'The number of deployed clusters whose MultiClusterMesh status reports mesh trust (cacerts) as distributed.'
                 )}
               >
-                <span>{t('Operator installed')}</span>
+                <span>{t('Trust distributed')}</span>
               </Tooltip>
             </DescriptionListTerm>
-            <DescriptionListDescription data-test="placement-operator-installed-count">
-              {operatorInstalledCount(clusterStatuses)}
+            <DescriptionListDescription data-test="placement-trust-distributed-count">
+              {trustDistributedCount(clusterStatuses)}
             </DescriptionListDescription>
           </DescriptionListGroup>
           {result.placement && (

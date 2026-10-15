@@ -22,8 +22,11 @@ const makeMcm = (clusterNames: string[]): MultiClusterMesh => ({
   apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
   kind: 'MultiClusterMesh',
   metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-  spec: { placementRef: { name: 'global-placement' }, controlPlane: { namespace: 'istio-system' } },
-  status: { clusterStatus: clusterNames.map(c => ({ clusterName: c })) }
+  spec: { placementRef: { name: 'global-placement' } },
+  status: {
+    controlPlaneNamespace: 'istio-system',
+    clusterStatus: clusterNames.map(c => ({ clusterName: c }))
+  }
 });
 
 afterEach(() => {

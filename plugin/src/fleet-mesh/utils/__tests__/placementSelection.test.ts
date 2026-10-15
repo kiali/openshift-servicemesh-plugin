@@ -1,4 +1,4 @@
-import { aggregateDecisions, buildMembershipRows, operatorInstalledCount } from '../placementSelection';
+import { aggregateDecisions, buildMembershipRows, trustDistributedCount } from '../placementSelection';
 import type { PlacementDecision } from '../../types/placement';
 import { makeCluster } from '../../__fixtures__/testFactories';
 
@@ -15,7 +15,7 @@ describe('Placement selection', () => {
     });
   });
 
-  it('shows selection and mesh membership independently of operator installation', () => {
+  it('shows selection and mesh membership independently of trust distribution', () => {
     const meshClusters = [makeCluster('hub', 'True'), makeCluster('leaving', 'False')];
     const rows = buildMembershipRows(['hub', 'joining'], meshClusters);
     expect(rows.map(row => [row.clusterName, row.membership])).toEqual([
@@ -23,7 +23,7 @@ describe('Placement selection', () => {
       ['joining', 'selectedOnly'],
       ['leaving', 'meshOnly']
     ]);
-    expect(operatorInstalledCount(meshClusters)).toBe(1);
+    expect(trustDistributedCount(meshClusters)).toBe(1);
     expect(rows.find(row => row.clusterName === 'joining')?.clusterStatus).toBeUndefined();
   });
 

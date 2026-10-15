@@ -11,7 +11,7 @@ export interface McmInfo {
 // discovered Istio CR back to its managing MCM by checking two things:
 //   1. The cluster running this control plane appears in the MCM's status.clusterStatus[]
 //   2. The control plane namespace (Istio.spec.namespace) matches the MCM's
-//      spec.controlPlane.namespace (default: istio-system)
+//      status.controlPlaneNamespace (auto-derived by the controller)
 // If both match, the control plane is considered managed by that MCM.
 // Note: this is a best-effort correlation — an independently created Istio CR
 // that happens to be on the same cluster+namespace as an MCM will also match.
@@ -25,7 +25,11 @@ export interface McmInfo {
 export function buildMcmIndex(mcms: MultiClusterMesh[]): Map<string, McmInfo> {
   const map = new Map<string, McmInfo>();
   for (const mcm of mcms) {
-    const cpNs = mcm.spec.controlPlane?.namespace ?? 'istio-system';
+    // The controller writes clusterStatus and controlPlaneNamespace in the same
+    // status update; an MCM reporting clusters without a namespace is not a
+    // realistic state, and correlating it would be guesswork.
+    const cpNs = mcm.status?.controlPlaneNamespace;
+    if (!cpNs) continue;
     for (const cs of mcm.status?.clusterStatus ?? []) {
       const key = `${cs.clusterName}/${cpNs}`;
       if (map.has(key)) {
@@ -49,5 +53,8 @@ export function lookupMcm(
   clusterName: string,
   controlPlaneNamespace: string | undefined
 ): McmInfo | undefined {
-  return index.get(`${clusterName}/${controlPlaneNamespace ?? 'istio-system'}`);
+  // Control planes are only correlated once their namespace is known (post-enrichment);
+  // correlating without it would match arbitrary MCMs on the same cluster.
+  if (!controlPlaneNamespace) return undefined;
+  return index.get(`${clusterName}/${controlPlaneNamespace}`);
 }

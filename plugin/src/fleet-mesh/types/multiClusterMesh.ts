@@ -13,17 +13,6 @@ export interface ClusterMeshStatus {
 }
 
 export interface MultiClusterMeshSpec {
-  controlPlane?: {
-    namespace?: string;
-  };
-  operator?: {
-    channel?: string;
-    installPlanApproval?: 'Automatic' | 'Manual';
-    namespace?: string;
-    source?: string;
-    sourceNamespace?: string;
-    startingCSV?: string;
-  };
   placementRef: { name: string };
   security?: {
     discovery?: {
@@ -40,6 +29,8 @@ export interface MultiClusterMeshSpec {
 export interface MultiClusterMeshStatus {
   clusterStatus?: ClusterMeshStatus[];
   conditions?: K8sCondition[];
+  // Auto-derived by the controller: istio-system-{meshName}-{SHA-256 prefix over "namespace/name"}
+  controlPlaneNamespace?: string;
 }
 
 export interface MultiClusterMesh extends K8sResourceCommon {

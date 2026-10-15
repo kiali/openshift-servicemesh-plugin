@@ -131,7 +131,7 @@ the same shared utility.
 ### Debounced Enrichment Updates
 
 **Problem:** During chunk-based enrichment, a state update after each chunk triggered a
-full re-render. Combined with the old O(C×M×K) correlation, this caused excessive work
+full re-render. Combined with an O(C×M×K) correlation, this caused excessive work
 during a single enrichment cycle.
 
 **Solution:** Enrichment progress is tracked via `useRef` and state is updated at most

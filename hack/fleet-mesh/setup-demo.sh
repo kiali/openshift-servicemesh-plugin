@@ -3,16 +3,18 @@
 # Creates (or tears down) demo resources for the Fleet Service Mesh console plugin.
 #
 # When a MultiClusterMesh CR is created, the backend controller automatically:
-#   - Installs the service mesh operator on each managed cluster via OLM ManifestWork
-#   - Creates the control plane namespace (with network label) via ManifestWork
+#   - Creates the control plane namespace (auto-derived and reported in
+#     status.controlPlaneNamespace, with network label) via ManifestWork
 #   - Mints per-cluster intermediate CA certificates and distributes cacerts secrets
 #     (only when spec.security.trust.certManager.issuerRef is configured)
 #   - Creates ManagedServiceAccount tokens and distributes remote secrets for
 #     cross-cluster endpoint discovery
 #
-# The controller does NOT create Istio CRs, IstioCNI, east-west gateways, or
-# RBAC resources. Those must be created manually or via GitOps after the operator
-# is installed. See the note after install_meshes for details.
+# The controller does NOT install the mesh operator (a prerequisite installed
+# by this script via an OLM subscription), and does NOT create Istio CRs,
+# IstioCNI, east-west gateways, or RBAC resources. Those must be created
+# manually or via GitOps after the operator is installed. See the note after
+# install_meshes for details.
 #
 # Usage:
 #   hack/fleet-mesh/setup-demo.sh install     # create all demo resources
@@ -30,9 +32,11 @@
 #     {secure,unsecure}-demo-placement - one Placement and ManagedClusterSetBinding in each MCM namespace
 #     cert-manager trust chain - self-signed root CA Issuer in secure-mcm-ns
 #
-#   MCMs (controller installs operator, creates CP namespace, distributes cacerts):
-#     secure-mcm    - mesh with trust enabled, in secure-mcm-ns, CP: secure-ns
-#     unsecure-mcm  - mesh without trust, in unsecure-mcm-ns, CP: unsecure-ns
+#   MCMs (controller creates the derived CP namespace, distributes cacerts):
+#     secure-mcm    - mesh with trust enabled, in secure-mcm-ns
+#     unsecure-mcm  - mesh without trust, in unsecure-mcm-ns
+#     Control plane namespaces are auto-derived (istio-system-<mesh>-<hash>) and
+#     reported in each mesh's status.controlPlaneNamespace.
 #
 #   Standalone Istio CRs (created manually, not managed by any MCM):
 #     discovered-standalone -> istio-discovered -> "discovered" in the UI
@@ -151,10 +155,10 @@ wait_for_mesh_ready() {
       return 0
     fi
 
-    local op
-    op=$(oc get multiclustermesh "$name" -n "$namespace" \
-      -o jsonpath='{.status.clusterStatus[0].conditions[?(@.type=="OperatorInstalled")].reason}' 2>/dev/null || true)
-    echo "  ... Operator=${op:-pending} (${elapsed}s)"
+    local trust
+    trust=$(oc get multiclustermesh "$name" -n "$namespace" \
+      -o jsonpath='{.status.clusterStatus[0].conditions[?(@.type=="TrustDistributed")].reason}' 2>/dev/null || true)
+    echo "  ... Trust=${trust:-pending} (${elapsed}s)"
 
     if [ "$elapsed" -ge "$timeout" ]; then
       echo "  [WARN] Timed out waiting for ${name} (may still be reconciling)"
@@ -300,29 +304,22 @@ install_trust_chain() {
 }
 
 install_meshes() {
-  # On production spoke clusters imported via the ACM console, the klusterlet work SA
-  # gets cluster-admin and can already manage OLM resources. On CRC/single-cluster
-  # setups where local-cluster is auto-registered as its own spoke, only scoped
-  # permissions are granted. This labeled ClusterRole is automatically aggregated into
-  # the klusterlet's effective permissions via the OCM aggregate mechanism.
-  if oc auth can-i create operatorgroups.operators.coreos.com \
-      --as=system:serviceaccount:open-cluster-management-agent:klusterlet-work-sa &>/dev/null; then
-    echo "  klusterlet already has OLM permissions, skipping."
-  else
-    echo "=== Granting klusterlet work agent OLM permissions ==="
-    oc apply -f - <<'EOF'
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+  # The mesh operator is a prerequisite; the controller does not install it.
+  # Install the OSSM operator via an OLM subscription.
+  echo "=== Installing OSSM operator subscription ==="
+  oc apply -f - <<'EOF'
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
 metadata:
-  name: klusterlet-work-olm
-  labels:
-    open-cluster-management.io/aggregate-to-work: "true"
-rules:
-- apiGroups: ["operators.coreos.com"]
-  resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-  verbs: ["create", "get", "list", "update", "patch", "delete"]
+  name: servicemesh-operator3
+  namespace: openshift-operators
+spec:
+  channel: stable
+  name: servicemeshoperator3
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic
 EOF
-  fi
 
   echo "=== Creating secure-mcm (with trust) ==="
   oc apply -f - <<'EOF' || die "Failed to create secure-mcm"
@@ -334,8 +331,6 @@ metadata:
 spec:
   placementRef:
     name: secure-demo-placement
-  controlPlane:
-    namespace: secure-ns
   security:
     trust:
       certManager:
@@ -353,8 +348,6 @@ metadata:
 spec:
   placementRef:
     name: unsecure-demo-placement
-  controlPlane:
-    namespace: unsecure-ns
 EOF
 
   echo ""
@@ -365,7 +358,7 @@ EOF
 
 install_discovered() {
   echo "=== Creating standalone discovered Istio CR ==="
-  echo "  (OSSM operator must be installed by the controller first)"
+  echo "  (OSSM operator subscription was created in install_meshes)"
   echo "  Waiting for OSSM operator CRD to be available..."
 
   local elapsed=0
@@ -413,13 +406,26 @@ EOF
   echo "  [ok] Standalone Istio CR created"
 
   echo "=== Creating MCM-managed Istio CRs ==="
-  oc apply -f - <<'EOF' || die "Failed to create secure-cp Istio CR"
+  # The control plane namespaces are auto-derived by the controller and
+  # reported in status.controlPlaneNamespace (the meshes are ready by now,
+  # so the field is populated).
+  local secure_cp_ns unsecure_cp_ns
+  secure_cp_ns=$(oc get multiclustermesh secure-mcm -n secure-mcm-ns \
+    -o jsonpath='{.status.controlPlaneNamespace}' 2>/dev/null || true)
+  unsecure_cp_ns=$(oc get multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
+    -o jsonpath='{.status.controlPlaneNamespace}' 2>/dev/null || true)
+  [ -n "$secure_cp_ns" ] || die "secure-mcm has not reported status.controlPlaneNamespace yet"
+  [ -n "$unsecure_cp_ns" ] || die "unsecure-mcm has not reported status.controlPlaneNamespace yet"
+  echo "  secure-mcm CP namespace:   $secure_cp_ns"
+  echo "  unsecure-mcm CP namespace: $unsecure_cp_ns"
+
+  oc apply -f - <<EOF || die "Failed to create secure-cp Istio CR"
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: secure-cp
 spec:
-  namespace: secure-ns
+  namespace: ${secure_cp_ns}
   values:
     global:
       meshID: secure-mcm-ns-secure-mcm
@@ -428,13 +434,13 @@ spec:
       network: local-cluster
 EOF
 
-  oc apply -f - <<'EOF' || die "Failed to create unsecure-cp Istio CR"
+  oc apply -f - <<EOF || die "Failed to create unsecure-cp Istio CR"
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: unsecure-cp
 spec:
-  namespace: unsecure-ns
+  namespace: ${unsecure_cp_ns}
   values:
     global:
       meshID: unsecure-mcm-ns-unsecure-mcm
@@ -514,14 +520,17 @@ uninstall() {
   echo "$CERT_MANAGER_TRUST_CHAIN" | oc delete -n secure-mcm-ns -f - --ignore-not-found 2>/dev/null || true
 
   echo "=== Removing namespaces ==="
+  # Control plane namespaces are labeled with the mesh identity by the controller.
+  local mesh_name
+  for mesh_name in secure-mcm unsecure-mcm; do
+    oc delete namespace -l "mesh.open-cluster-management.io/mesh-name=${mesh_name}" \
+      --ignore-not-found 2>/dev/null || true
+  done
   oc delete namespace secure-mcm-ns unsecure-mcm-ns istio-discovered --ignore-not-found 2>/dev/null || true
 
   echo "=== Removing ManagedClusterSet ==="
   oc label managedcluster local-cluster cluster.open-cluster-management.io/clusterset- 2>/dev/null || true
   oc delete managedclusterset demo-cluster-set --ignore-not-found 2>/dev/null || true
-
-  echo "=== Removing klusterlet OLM RBAC ==="
-  oc delete clusterrole klusterlet-work-olm --ignore-not-found 2>/dev/null || true
 
   echo "=== Removing OSSM/Istio CRDs (OLM does not auto-delete CRDs) ==="
   oc get crd -o name | grep -E 'sailoperator|istio' | xargs oc delete --ignore-not-found 2>/dev/null || true

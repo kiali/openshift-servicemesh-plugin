@@ -13,7 +13,6 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Divider,
   EmptyState,
   EmptyStateBody,
   Flex,
@@ -41,7 +40,6 @@ import type { ManagedCluster } from '../types/managedCluster';
 import { getClusterAvailability, availabilityColor, availabilityLabelKey } from '../types/managedCluster';
 import { clusterDetailLink, placementDetailLink } from '../utils/linkUtils';
 import { buildMembershipRows, getPlacementProblem } from '../utils/placementSelection';
-import { isConditionStale } from '../utils/statusUtils';
 import type { Membership, MembershipRow } from '../utils/placementSelection';
 import { ConditionsTable } from './ConditionsTable';
 import { ControlPlanesCard } from './ControlPlanesCard';
@@ -61,14 +59,12 @@ function conditionMessage(condition: K8sCondition): string {
 type ClusterCategory = 'ready' | 'notReady' | 'unknown';
 
 function categorizeCluster(row: MembershipRow): ClusterCategory {
-  const op = row.clusterStatus?.conditions?.find(c => c.type === 'OperatorInstalled');
-  if (!op) return 'unknown';
-  if (op.status === 'True') return 'ready';
-  if (op.status === 'Unknown') return 'unknown';
+  const trust = row.clusterStatus?.conditions?.find(c => c.type === 'TrustDistributed');
+  if (!trust) return 'unknown';
+  if (trust.status === 'True') return 'ready';
+  if (trust.status === 'Unknown') return 'unknown';
   return 'notReady';
 }
-
-const CONFLICT_REASONS = ['OperatorConfigConflict', 'NamespaceConflict'];
 
 function syncStatusLabel(membership: Membership, t: (key: string) => string): string {
   switch (membership) {
@@ -122,13 +118,11 @@ function syncStatusHeaderTooltip(t: (key: string) => string): ReactNode {
   );
 }
 
-/** Per-cluster operator status table with filter toggles and search for a single mesh. */
+/** Per-cluster trust status table with filter toggles and search for a single mesh. */
 export const ClusterStatusSection: FC<{
   clusterStatuses: ClusterMeshStatus[];
   managedClusterMap?: Map<string, ManagedCluster>;
   managedClustersLoaded?: boolean;
-  meshConditions?: K8sCondition[];
-  meshGeneration?: number;
   placementProblem?: K8sCondition;
   selectedNames?: string[] | null;
   selectionState?: SelectionState;
@@ -136,8 +130,6 @@ export const ClusterStatusSection: FC<{
   clusterStatuses,
   managedClusterMap,
   managedClustersLoaded = true,
-  meshConditions,
-  meshGeneration,
   placementProblem,
   selectedNames,
   selectionState
@@ -150,8 +142,8 @@ export const ClusterStatusSection: FC<{
   const categoryLabels = useMemo<CategoryLabel[]>(
     () => [
       { key: 'all', label: t('All ({{count}})') },
-      { key: 'ready', label: t('Operator installed ({{count}})') },
-      { key: 'notReady', label: t('Not installed ({{count}})') },
+      { key: 'ready', label: t('Trust distributed ({{count}})') },
+      { key: 'notReady', label: t('Trust pending ({{count}})') },
       { key: 'unknown', label: t('Unknown ({{count}})') }
     ],
     [t]
@@ -191,11 +183,11 @@ export const ClusterStatusSection: FC<{
         width: '18%'
       },
       {
-        key: 'operatorStatus',
-        label: t('Operator Status'),
+        key: 'trustStatus',
+        label: t('Trust Status'),
         render: row =>
           row.clusterStatus ? (
-            <MeshStatus conditions={row.clusterStatus.conditions} conditionType="OperatorInstalled" isCompact />
+            <MeshStatus conditions={row.clusterStatus.conditions} conditionType="TrustDistributed" isCompact />
           ) : (
             '-'
           ),
@@ -205,8 +197,8 @@ export const ClusterStatusSection: FC<{
         key: 'message',
         label: t('Message'),
         render: row => {
-          const operatorCondition = row.clusterStatus?.conditions?.find(c => c.type === 'OperatorInstalled');
-          const msg = operatorCondition ? conditionMessage(operatorCondition) : '-';
+          const trustCondition = row.clusterStatus?.conditions?.find(c => c.type === 'TrustDistributed');
+          const msg = trustCondition ? conditionMessage(trustCondition) : '-';
           return (
             <Tooltip content={msg}>
               <span>{msg}</span>
@@ -220,11 +212,6 @@ export const ClusterStatusSection: FC<{
   );
 
   if (rows.length === 0) {
-    const readyCondition = meshConditions?.find(c => c.type === 'Ready');
-    const isConflict =
-      readyCondition?.status === 'False' &&
-      !isConditionStale(readyCondition, meshGeneration) &&
-      CONFLICT_REASONS.includes(readyCondition.reason ?? '');
     let emptyMessage = t('No clusters are part of this mesh yet.');
     if (selectionState === 'missingReference') {
       emptyMessage = t('This mesh does not have a Placement reference.');
@@ -236,10 +223,6 @@ export const ClusterStatusSection: FC<{
       emptyMessage = placementProblem.message || placementProblem.reason || t('Placement is not satisfied');
     } else if (selectionState === 'loading' || selectionState === 'waiting' || selectionState === 'updating') {
       emptyMessage = t('Waiting for Placement decisions and mesh reconciliation.');
-    } else if (isConflict) {
-      emptyMessage = t('This mesh is blocked: {{reason}}. Resolve the conflict to allow reconciliation.', {
-        reason: readyCondition.message || readyCondition.reason
-      });
     } else if (selectionState === 'ready' && selectedNames?.length === 0) {
       emptyMessage = t('The Placement currently selects no clusters.');
     }
@@ -311,8 +294,6 @@ const MeshSelectionSection: FC<{
           clusterStatuses={clusterStatuses}
           managedClusterMap={managedClusterMap}
           managedClustersLoaded={managedClustersLoaded}
-          meshConditions={mesh.status?.conditions}
-          meshGeneration={mesh.metadata?.generation}
           placementProblem={
             result.placementLoaded && !result.placementError ? getPlacementProblem(result.placement) : undefined
           }
@@ -340,16 +321,14 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
     [enrichedPlanes, name, ns]
   );
 
-  const cpNamespace = mesh?.spec?.controlPlane?.namespace || 'istio-system';
+  // The controller publishes the derived control plane namespace only after the first
+  // reconcile, so Kiali discovery is deferred until it (and the cluster list) exist.
+  const cpNamespace = mesh?.status?.controlPlaneNamespace;
   const kialiScopeFilter = useMemo(
-    () => clusterNames.map(c => ({ cluster: c, namespace: cpNamespace })),
+    () => (cpNamespace ? clusterNames.map(c => ({ cluster: c, namespace: cpNamespace })) : undefined),
     [clusterNames, cpNamespace]
   );
-  const {
-    kialis,
-    loaded: discoveredKialisLoaded,
-    ossmcs
-  } = useDiscoveredKialis(kialiScopeFilter.length > 0 ? kialiScopeFilter : undefined);
+  const { kialis, loaded: discoveredKialisLoaded, ossmcs } = useDiscoveredKialis(kialiScopeFilter);
   const observabilityReady = isObservabilityDataReady(managedClustersLoaded, discoveredKialisLoaded);
   const kialiLinkMap = useMemo(
     () =>
@@ -464,7 +443,7 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                       <strong>{t('Control Plane Namespace')}</strong>
                     </DescriptionListTerm>
                     <DescriptionListDescription>
-                      {spec.controlPlane?.namespace || 'istio-system'}
+                      {status?.controlPlaneNamespace || t('Not yet reconciled')}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
@@ -481,42 +460,6 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       <Timestamp timestamp={mesh.metadata?.creationTimestamp ?? ''} />
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                </DescriptionList>
-                <Divider style={{ margin: '0.75rem 0' }} />
-                <Title headingLevel="h4" size="md" style={{ marginBottom: '0.5rem' }}>
-                  {t('OSSM Operator')}
-                </Title>
-                <DescriptionList isCompact columnModifier={{ default: '2Col' }}>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      <strong>{t('Namespace')}</strong>
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {spec.operator?.namespace || t('(platform default)')}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      <strong>{t('Channel')}</strong>
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>{spec.operator?.channel || 'stable'}</DescriptionListDescription>
-                  </DescriptionListGroup>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      <strong>{t('Source')}</strong>
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {spec.operator?.source || t('(platform default)')}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      <strong>{t('Install Plan Approval')}</strong>
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {spec.operator?.installPlanApproval || 'Automatic'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                 </DescriptionList>

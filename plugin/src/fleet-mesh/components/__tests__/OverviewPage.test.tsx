@@ -287,7 +287,7 @@ describe('OverviewPage', () => {
               clusterName: 'cluster-a',
               conditions: [
                 {
-                  type: 'OperatorInstalled',
+                  type: 'TrustDistributed',
                   status: 'False',
                   reason: 'ReconcileError',
                   lastTransitionTime: '2026-06-24T09:00:00Z'
@@ -435,7 +435,7 @@ describe('OverviewPage', () => {
               clusterName: 'c1',
               conditions: [
                 {
-                  type: 'OperatorInstalled',
+                  type: 'TrustDistributed',
                   status: 'False',
                   reason: 'ReconcileError',
                   lastTransitionTime: '2026-06-24T02:00:00Z'
@@ -446,7 +446,7 @@ describe('OverviewPage', () => {
               clusterName: 'c2',
               conditions: [
                 {
-                  type: 'OperatorInstalled',
+                  type: 'TrustDistributed',
                   status: 'False',
                   reason: 'ReconcileError',
                   lastTransitionTime: '2026-06-24T03:00:00Z'
@@ -457,7 +457,7 @@ describe('OverviewPage', () => {
               clusterName: 'c3',
               conditions: [
                 {
-                  type: 'OperatorInstalled',
+                  type: 'TrustDistributed',
                   status: 'False',
                   reason: 'ReconcileError',
                   lastTransitionTime: '2026-06-24T04:00:00Z'
@@ -468,7 +468,7 @@ describe('OverviewPage', () => {
               clusterName: 'c4',
               conditions: [
                 {
-                  type: 'OperatorInstalled',
+                  type: 'TrustDistributed',
                   status: 'False',
                   reason: 'ReconcileError',
                   lastTransitionTime: '2026-06-24T05:00:00Z'
@@ -479,7 +479,7 @@ describe('OverviewPage', () => {
               clusterName: 'c5',
               conditions: [
                 {
-                  type: 'OperatorInstalled',
+                  type: 'TrustDistributed',
                   status: 'False',
                   reason: 'ReconcileError',
                   lastTransitionTime: '2026-06-24T06:00:00Z'
