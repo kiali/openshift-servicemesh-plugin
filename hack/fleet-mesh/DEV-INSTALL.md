@@ -2,7 +2,7 @@
 
 Complete instructions to go from zero to a working Fleet Service Mesh perspective and backend MultiCluster Mesh addon controller (aka "the backend controller" or "the controller") on a local CRC OpenShift cluster. If you have a two-cluster ACM environment, see [DEMO-SETUP-MULTICLUSTER.md](DEMO-SETUP-MULTICLUSTER.md) instead.
 
-> **Quick start:** After completing steps 1-3 manually (ACM cluster, backend controller, frontend plugin — use either install option in step 3), run `[hack/fleet-mesh/setup-demo.sh install](setup-demo.sh)` to automate steps 4-8: cert-manager, the ManagedClusterSet, per-namespace bindings and Placements, trust chain, RBAC, MCM creation, IstioCNI, Istio CRs, and the standalone discovered CR. The script is idempotent — re-running it on an already-configured cluster finishes successfully without changing the intended configuration. Steps 9-11 (verification, optional Kiali install, optional test app) are not covered by the script.
+> **Quick start:** After completing steps 1-4 manually (ACM cluster, cert-manager, backend controller, frontend plugin — use either install option in step 4), run `[hack/fleet-mesh/setup-demo.sh install](setup-demo.sh)` to automate steps 5-8: the ManagedClusterSet, per-namespace bindings and Placements, trust chain, RBAC, MCM creation, IstioCNI, Istio CRs, and the standalone discovered CR. (The script also installs cert-manager if it is missing.) The script is idempotent — re-running it on an already-configured cluster finishes successfully without changing the intended configuration. Steps 9-11 (verification, optional Kiali install, optional test app) are not covered by the script.
 
 ## Resource Layout
 
@@ -65,7 +65,21 @@ oc get managedcluster local-cluster
 # Should show local-cluster as available
 ```
 
-## 2. Build and deploy the backend controller
+## 2. Install cert-manager
+
+Required by the backend controller for trust distribution, and a hard startup
+prerequisite: at startup the controller checks for the cert-manager `Certificate`
+CRD on the hub (and for ACM's `ManagedServiceAccount` CRD, which ACM 2.17+
+already provides) and exits fatally — CrashLoopBackOff — if cert-manager is not
+installed. Install it before deploying the controller in the next step.
+
+```bash
+oc apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.2/cert-manager.yaml
+oc rollout status deployment/cert-manager -n cert-manager --timeout=120s
+oc rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
+```
+
+## 3. Build and deploy the backend controller
 
 The backend controller is deployed via Helm. We build the image, push it to the OpenShift internal registry, then use `helm upgrade --install` to deploy.
 
@@ -126,7 +140,7 @@ oc rollout status deployment/multicluster-mesh-controller \
   -n ${BACKEND_NAMESPACE} --timeout=120s
 ```
 
-## 3. Build and deploy the frontend ConsolePlugin
+## 4. Build and deploy the frontend ConsolePlugin
 
 The Fleet Service Mesh perspective is part of the OSSMC ConsolePlugin
 (`ossmconsole`). Choose one of the install options below.
@@ -218,7 +232,7 @@ make cluster-push-operator operator-reload-image
 > Kiali operator, OSSMConsole CR, and Kiali CR on the cluster. Do not use it on a
 > cluster where you need to preserve an existing operator install.
 
-## 3a. Tech preview gate
+## 4a. Tech preview gate
 
 Fleet Service Mesh and Istios and Kialis list pages are an **unsupported tech preview** — off by default in
 production. They are gated behind a single opt-in field on the `OSSMConsole` CR:
@@ -229,7 +243,7 @@ spec:
     techPreview: true   # enables both Fleet Service Mesh AND Istios and Kialis list pages; omit or false disables both
 ```
 
-The dev artifacts used by both install options in step 3 already set this to `true`, so no
+The dev artifacts used by both install options in step 4 already set this to `true`, so no
 extra action is needed for a typical dev loop:
 
 - **Option A** (`make cluster-deploy`) embeds `internal.techPreview: true` directly in
@@ -255,16 +269,6 @@ routes (a known Console core polling delay, not specific to this plugin — see
 > [DEMO-SETUP-MULTICLUSTER.md](DEMO-SETUP-MULTICLUSTER.md)), each cluster needs its own
 > `OSSMConsole` CR with `internal.techPreview: true` — enabling it on the hub has no effect on
 > spokes.
-
-## 4. Install cert-manager
-
-Required by the backend controller for trust distribution.
-
-```bash
-oc apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.2/cert-manager.yaml
-oc rollout status deployment/cert-manager -n cert-manager --timeout=120s
-oc rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
-```
 
 ## 5. Set up infrastructure
 
@@ -622,7 +626,7 @@ Two Makefile variables are involved:
 ### Option A — Helm (no operator required)
 
 Install directly from the [kiali/helm-charts](https://github.com/kiali/helm-charts) repo.
-Use this if you deployed OSSMC via step 3 Option A and do not have the Kiali operator
+Use this if you deployed OSSMC via step 4 Option A and do not have the Kiali operator
 on the cluster.
 
 **Prerequisites:** helm-charts repo cloned locally with charts built (`make build-helm-charts`).
@@ -650,9 +654,9 @@ To remove:
 helm uninstall kiali-server --namespace ${KIALI_NAMESPACE}
 ```
 
-### Option B — Kiali operator (requires step 3 Option B)
+### Option B — Kiali operator (requires step 4 Option B)
 
-If you already installed the Kiali operator in step 3, create a `Kiali` CR so the
+If you already installed the Kiali operator in step 4, create a `Kiali` CR so the
 operator deploys the server from your locally built image.
 
 ```bash
@@ -751,14 +755,14 @@ editing source files, wait for webpack to rebuild and refresh the browser.
 ### Cluster deploy (production-like)
 
 For production-like testing (nginx/TLS packaging, in-cluster ConsolePlugin), use either
-step 3 install option:
+step 4 install option:
 
 ```bash
 # Option A — direct deploy (from openshift-servicemesh-plugin repo)
 cd <openshift-servicemesh-plugin-repo>
 make cluster-deploy
 
-# Option B — via Kiali operator (see step 3 Option B for full prerequisites)
+# Option B — via Kiali operator (see step 4 Option B for full prerequisites)
 cd <openshift-servicemesh-plugin-repo>
 make cluster-push
 
@@ -794,7 +798,7 @@ oc rollout status deployment/multicluster-mesh-controller \
 
 ## Teardown
 
-To fully tear down everything (including items installed in steps 1-3, 10, 11):
+To fully tear down everything (including items installed in steps 1-4, 10, 11):
 
 ```bash
 cd <openshift-servicemesh-plugin-repo>
@@ -811,17 +815,17 @@ helm uninstall kiali-server --namespace ${KIALI_NAMESPACE}
 # Option B (operator):
 # cd <kiali-server-repo> && make kiali-delete
 
-# Remove all demo resources (steps 4-8): cert-manager, infrastructure, trust,
+# Remove all demo resources (steps 2, 5-8): cert-manager, infrastructure, trust,
 # RBAC, MCMs, IstioCNI, Istio CRs, standalone discovered CR
 hack/fleet-mesh/setup-demo.sh uninstall
 
-# Remove the frontend plugin (step 3)
+# Remove the frontend plugin (step 4)
 # Option A (direct deploy):
 make undeploy-plugin
 # Option B (Kiali operator):
 # cd <kiali-server-repo> && make operator-delete
 
-# Remove the backend controller (step 2)
+# Remove the backend controller (step 3)
 helm uninstall multicluster-mesh-addon -n multicluster-mesh-system
 oc delete namespace multicluster-mesh-system --ignore-not-found
 

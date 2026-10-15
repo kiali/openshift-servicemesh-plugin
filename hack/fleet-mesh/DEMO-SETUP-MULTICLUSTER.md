@@ -293,7 +293,7 @@ make cluster-deploy
 #### Tech preview gate (Fleet Service Mesh + Istios and Kialis list pages)
 
 Fleet Service Mesh and Istios and Kialis list pages are an unsupported tech preview, off by default in production
-— see [DEV-INSTALL.md — Tech preview gate](DEV-INSTALL.md#3a-tech-preview-gate) for the full
+— see [DEV-INSTALL.md — Tech preview gate](DEV-INSTALL.md#4a-tech-preview-gate) for the full
 explanation of the `spec.internal.techPreview` field. For this demo:
 
 - `make cluster-deploy` above already embeds `internal.techPreview: true` in the manifest it
@@ -1010,10 +1010,13 @@ until [ "$(oc --context=my-hub get manifestwork -n local-cluster -o name 2>/dev/
 done
 
 # 7. Remove cert-manager trust chain and cert-manager
+# cert-manager was installed via `oc apply -f`, not Helm — delete by manifest so
+# the CRDs, ClusterRoles, and webhook configurations are removed too
 oc --context=my-hub delete certificate cacerts-local-cluster cacerts-my-spoke mesh-root-ca \
   -n secure-mcm-ns --ignore-not-found
 oc --context=my-hub delete issuer mesh-root-ca -n secure-mcm-ns --ignore-not-found
-helm uninstall cert-manager -n cert-manager --kube-context=my-hub 2>/dev/null || true
+oc --context=my-hub delete --ignore-not-found \
+  -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.2/cert-manager.yaml
 oc --context=my-hub delete namespace cert-manager --ignore-not-found
 
 # 8. Remove demo Placements and bindings, then cluster labels and ManagedClusterSet
