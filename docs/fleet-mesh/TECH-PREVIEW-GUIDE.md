@@ -109,7 +109,14 @@ If the perspective is missing, confirm:
 
 ### Optional: create a managed mesh with a Placement
 
-This example requires the OSSM-ACM add-on already installed on the ACM hub. Run these commands on the **hub**. ACM normally registers the hub as `local-cluster`; check `oc get managedcluster local-cluster` first. The ClusterSet is cluster scoped. Its member cluster has the ACM clusterset label. The binding, Placement, and MCM all live in `tech-preview-mesh-ns`.
+This example requires the OSSM-ACM add-on already installed on the ACM hub, and the hub's ClusterManager must have the ManifestWorkReplicaSet feature gate enabled (the add-on distributes Istio remote discovery secrets through ManifestWorkReplicaSets; without the gate those objects are created but never processed). Enable it once per hub:
+
+```bash
+oc patch clustermanager cluster-manager --type=merge \
+  -p '{"spec":{"workConfiguration":{"featureGates":[{"feature":"ManifestWorkReplicaSet","mode":"Enable"}]}}}'
+```
+
+Run these commands on the **hub**. ACM normally registers the hub as `local-cluster`; check `oc get managedcluster local-cluster` first. The ClusterSet is cluster scoped. Its member cluster has the ACM clusterset label. The binding, Placement, and MCM all live in `tech-preview-mesh-ns`.
 
 Create the ManagedClusterSet and Placement:
 

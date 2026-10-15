@@ -67,6 +67,17 @@ oc get managedcluster local-cluster
 # Should show local-cluster as available
 ```
 
+Then enable the ManifestWorkReplicaSet feature gate on the hub's ClusterManager. The backend controller distributes Istio remote discovery secrets through ManifestWorkReplicaSets; without this gate those objects are created but never processed, so remote secrets are silently not distributed.
+
+```bash
+oc patch clustermanager cluster-manager --type=merge \
+  -p '{"spec":{"workConfiguration":{"featureGates":[{"feature":"ManifestWorkReplicaSet","mode":"Enable"}]}}}'
+
+# The gate deploys the hub work controller that processes ManifestWorkReplicaSets.
+oc rollout status deployment/cluster-manager-work-controller \
+  -n open-cluster-management-hub --timeout=300s
+```
+
 ## 2. Install cert-manager
 
 Required by the backend controller for trust distribution, and a hard startup

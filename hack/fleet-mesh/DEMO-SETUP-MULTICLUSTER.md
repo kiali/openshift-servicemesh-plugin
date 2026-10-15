@@ -104,6 +104,18 @@ You need two OpenShift clusters with kubeconfig contexts named `my-hub` and `my-
 **Hub cluster with ACM:** Follow [DEV-INSTALL.md — Step 1](DEV-INSTALL.md#1-get-an-openshift-cluster-with-acm)
 to set up the hub with ACM. ACM auto-registers the hub as `local-cluster`.
 
+Enable the ManifestWorkReplicaSet feature gate on the hub's ClusterManager (the backend
+controller distributes Istio remote discovery secrets through ManifestWorkReplicaSets;
+without this gate those objects are created but never processed):
+
+```bash
+oc --context=my-hub patch clustermanager cluster-manager --type=merge \
+  -p '{"spec":{"workConfiguration":{"featureGates":[{"feature":"ManifestWorkReplicaSet","mode":"Enable"}]}}}'
+
+oc --context=my-hub rollout status deployment/cluster-manager-work-controller \
+  -n open-cluster-management-hub --timeout=300s
+```
+
 If need be, rename the kube context to `my-hub` after logging in; that's the name the rest of this guide uses:
 
 ```bash

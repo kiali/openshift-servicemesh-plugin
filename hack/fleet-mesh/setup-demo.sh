@@ -451,8 +451,40 @@ EOF
   echo "  [ok] MCM-managed Istio CRs created (secure-cp, unsecure-cp)"
 }
 
+# The addon distributes Istio remote discovery secrets through ManifestWorkReplicaSet,
+# which requires the ManifestWorkReplicaSet feature gate on the hub's ClusterManager.
+# Without it the ManifestWorkReplicaSet objects are created but never processed —
+# remote secrets are silently not distributed.
+enable_mwrs_feature_gate() {
+  if oc get clustermanager cluster-manager \
+      -o jsonpath='{.spec.workConfiguration.featureGates[?(@.feature=="ManifestWorkReplicaSet")].mode}' 2>/dev/null \
+      | grep -q Enable; then
+    echo "  [ok] ManifestWorkReplicaSet feature gate already enabled"
+    return 0
+  fi
+
+  echo "=== Enabling ManifestWorkReplicaSet feature gate on ClusterManager ==="
+  oc patch clustermanager cluster-manager --type=merge \
+    -p '{"spec":{"workConfiguration":{"featureGates":[{"feature":"ManifestWorkReplicaSet","mode":"Enable"}]}}}' \
+    || die "Failed to enable ManifestWorkReplicaSet feature gate"
+
+  # The gate deploys the hub work controller that processes ManifestWorkReplicaSets.
+  local elapsed=0
+  until oc rollout status deployment/cluster-manager-work-controller \
+      -n open-cluster-management-hub --timeout=10s &>/dev/null; do
+    if [ "$elapsed" -ge 300 ]; then
+      die "Timed out waiting for cluster-manager-work-controller deployment"
+    fi
+    echo "  Waiting for cluster-manager-work-controller..."
+    sleep 10
+    elapsed=$((elapsed + 10))
+  done
+  echo "  [ok] cluster-manager-work-controller is available"
+}
+
 install() {
   preflight
+  enable_mwrs_feature_gate
   install_cert_manager
   install_infrastructure
   install_placements
@@ -471,6 +503,9 @@ install() {
   echo ""
   echo "ManifestWorks:"
   oc get manifestwork -n local-cluster | grep multicluster-mesh
+  echo ""
+  echo "ManifestWorkReplicaSets (remote secret distribution):"
+  oc get manifestworkreplicaset -A
   echo ""
   echo "Istio CRs:"
   oc get istios --ignore-not-found 2>/dev/null || true

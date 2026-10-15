@@ -884,6 +884,29 @@ install_trust_chain() {
 
 # The mesh operator is a prerequisite; the controller does not install it.
 # Install the OSSM operator via an OLM subscription on both clusters.
+# The addon distributes Istio remote discovery secrets through ManifestWorkReplicaSet,
+# which requires the ManifestWorkReplicaSet feature gate on the hub's ClusterManager.
+# Without it the ManifestWorkReplicaSet objects are created but never processed —
+# remote secrets are silently not distributed.
+enable_mwrs_feature_gate() {
+  if oc_hub get clustermanager cluster-manager \
+      -o jsonpath='{.spec.workConfiguration.featureGates[?(@.feature=="ManifestWorkReplicaSet")].mode}' 2>/dev/null \
+      | grep -q Enable; then
+    info "[ok] ManifestWorkReplicaSet feature gate already enabled"
+    return 0
+  fi
+
+  info "=== Enabling ManifestWorkReplicaSet feature gate on ClusterManager ==="
+  oc_hub patch clustermanager cluster-manager --type=merge \
+    -p '{"spec":{"workConfiguration":{"featureGates":[{"feature":"ManifestWorkReplicaSet","mode":"Enable"}]}}}' \
+    || die "Failed to enable ManifestWorkReplicaSet feature gate"
+
+  # The gate deploys the hub work controller that processes ManifestWorkReplicaSets.
+  wait_for "cluster-manager-work-controller available" 300 \
+    "oc_hub rollout status deployment/cluster-manager-work-controller -n open-cluster-management-hub --timeout=10s"
+  info "[ok] cluster-manager-work-controller is available"
+}
+
 install_mesh_operator() {
   local oc_fn label
   for oc_fn in oc_hub oc_spoke; do
@@ -1238,6 +1261,9 @@ verify_install() {
   echo "ManifestWorks on ${SPOKE_NAME}:"
   oc_hub get manifestwork -n "${SPOKE_NAME}" 2>/dev/null | grep multicluster-mesh || true
   echo ""
+  echo "ManifestWorkReplicaSets (remote secret distribution):"
+  oc_hub get manifestworkreplicaset -A 2>/dev/null || true
+  echo ""
   echo "OSSM operator on hub:"
   oc_hub get csv -n openshift-operators 2>/dev/null | grep servicemesh || true
   echo ""
@@ -1291,6 +1317,7 @@ do_install() {
   import_spoke
   install_cert_manager
   install_backend_controller
+  enable_mwrs_feature_gate
   install_infrastructure
   install_placements
   install_trust_chain
