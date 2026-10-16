@@ -139,7 +139,7 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
             <DescriptionListTerm>
               <Tooltip
                 content={t(
-                  'The number of clusters currently selected by this Placement. These are the intended deployment targets.'
+                  'The number of clusters currently selected by this Placement, as published in its PlacementDecisions. These are the intended deployment targets.'
                 )}
               >
                 <span>{t('Placement selection')}</span>

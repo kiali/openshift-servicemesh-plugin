@@ -96,7 +96,7 @@ describe('PlacementSummaryCard', () => {
     fireEvent.mouseEnter(screen.getByText('Placement selection'));
     expect(
       await screen.findByText(
-        'The number of clusters currently selected by this Placement. These are the intended deployment targets.'
+        'The number of clusters currently selected by this Placement, as published in its PlacementDecisions. These are the intended deployment targets.'
       )
     ).toBeInTheDocument();
     fireEvent.mouseEnter(screen.getByText('Deployed clusters'));

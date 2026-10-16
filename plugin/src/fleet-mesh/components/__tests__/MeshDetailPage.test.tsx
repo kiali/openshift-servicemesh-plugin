@@ -289,7 +289,7 @@ describe('ClusterStatusSection', () => {
     fireEvent.mouseEnter(screen.getByText('Sync Status'));
     expect(
       await screen.findByText(
-        'Shows whether the Placement decision and MultiClusterMesh status agree for this cluster.'
+        'Shows whether the Placement selection and MultiClusterMesh status agree for this cluster.'
       )
     ).toBeInTheDocument();
     expect(screen.getByText('both report the cluster as deployed.')).toBeInTheDocument();

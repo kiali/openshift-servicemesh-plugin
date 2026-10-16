@@ -100,7 +100,7 @@ function syncStatusTooltip(membership: Membership, t: (key: string) => string): 
 function syncStatusHeaderTooltip(t: (key: string) => string): ReactNode {
   return (
     <div>
-      <div>{t('Shows whether the Placement decision and MultiClusterMesh status agree for this cluster.')}</div>
+      <div>{t('Shows whether the Placement selection and MultiClusterMesh status agree for this cluster.')}</div>
       <div style={{ marginTop: '0.5rem' }}>
         <div>
           <strong>{t('In Sync')}:</strong> {t('both report the cluster as deployed.')}
