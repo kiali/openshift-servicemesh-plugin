@@ -154,6 +154,7 @@ export const ClusterStatusSection: FC<{
     () => [
       {
         key: 'cluster',
+        headerTooltip: t('The managed cluster this row applies to. Links to the ACM cluster detail page.'),
         label: t('Cluster'),
         render: row => <Link to={clusterDetailLink(row.clusterName)}>{row.clusterName}</Link>,
         width: '30%'
@@ -171,6 +172,7 @@ export const ClusterStatusSection: FC<{
       },
       {
         key: 'clusterStatus',
+        headerTooltip: t('The availability of the managed cluster, as reported by ACM.'),
         label: t('Cluster Status'),
         render: row => {
           if (!managedClustersLoaded) return '-';
@@ -398,7 +400,11 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                 <DescriptionList isCompact columnModifier={{ default: '2Col' }}>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      <strong>{t('Mesh ID')}</strong>
+                      <Tooltip content={t('The identity shared by the Istio control planes that make up this mesh.')}>
+                        <span>
+                          <strong>{t('Mesh ID')}</strong>
+                        </span>
+                      </Tooltip>
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       {managedPlanes[0]?.meshID ?? `${ns}-${name}`}
@@ -406,7 +412,15 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      <strong>{t('Control Plane Namespace')}</strong>
+                      <Tooltip
+                        content={t(
+                          'The namespace where the mesh control plane runs on each selected cluster. The add-on controller derives it and reports it in the mesh status.'
+                        )}
+                      >
+                        <span>
+                          <strong>{t('Control Plane Namespace')}</strong>
+                        </span>
+                      </Tooltip>
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       {status?.controlPlaneNamespace || t('Not yet reconciled')}
@@ -414,7 +428,15 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      <strong>{t('cert-manager Issuer')}</strong>
+                      <Tooltip
+                        content={t(
+                          'The cert-manager issuer that signs the root CA distributed to the clusters in this mesh. Empty means trust distribution is not configured.'
+                        )}
+                      >
+                        <span>
+                          <strong>{t('cert-manager Issuer')}</strong>
+                        </span>
+                      </Tooltip>
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       {issuerName ? `${issuerName} (${issuerRef?.kind || 'Issuer'})` : t('Not configured')}
@@ -422,7 +444,11 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      <strong>{t('Created')}</strong>
+                      <Tooltip content={t('When the MultiClusterMesh resource was created.')}>
+                        <span>
+                          <strong>{t('Created')}</strong>
+                        </span>
+                      </Tooltip>
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       <Timestamp timestamp={mesh.metadata?.creationTimestamp ?? ''} />

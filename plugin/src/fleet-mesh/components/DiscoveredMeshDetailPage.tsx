@@ -114,12 +114,16 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
     () => [
       {
         key: 'cluster',
+        headerTooltip: t(
+          'A cluster where a control plane of this mesh was observed. Links to the ACM cluster detail page.'
+        ),
         label: 'Cluster',
         render: clusterName => <Link to={clusterDetailLink(clusterName)}>{clusterName}</Link>,
         width: '60%'
       },
       {
         key: 'clusterStatus',
+        headerTooltip: t('The availability of the managed cluster, as reported by ACM.'),
         label: 'Cluster Status',
         render: clusterName => {
           const availability = clusterAvailabilityMap.get(clusterName) ?? 'unreachable';
@@ -277,25 +281,47 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
                 <DescriptionList isCompact columnModifier={{ default: '2Col' }}>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      <strong>{t('Mesh ID')}</strong>
+                      <Tooltip content={t('The identity shared by the observed Istio control planes in this mesh.')}>
+                        <span>
+                          <strong>{t('Mesh ID')}</strong>
+                        </span>
+                      </Tooltip>
                     </DescriptionListTerm>
                     <DescriptionListDescription>{meshID}</DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      <strong>{t('Networks')}</strong>
+                      <Tooltip
+                        content={t(
+                          'The Istio network identities of the clusters hosting the observed control planes, used for split-horizon DNS.'
+                        )}
+                      >
+                        <span>
+                          <strong>{t('Networks')}</strong>
+                        </span>
+                      </Tooltip>
                     </DescriptionListTerm>
                     <DescriptionListDescription>{networkDisplay}</DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      <strong>{t('Clusters')}</strong>
+                      <Tooltip
+                        content={t('The number of distinct clusters where control planes of this mesh were observed.')}
+                      >
+                        <span>
+                          <strong>{t('Clusters')}</strong>
+                        </span>
+                      </Tooltip>
                     </DescriptionListTerm>
                     <DescriptionListDescription>{uniqueClusterNames.length}</DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>
-                      <strong>{t('Created')}</strong>
+                      <Tooltip content={t('The oldest creation time among the control planes observed in this mesh.')}>
+                        <span>
+                          <strong>{t('Created')}</strong>
+                        </span>
+                      </Tooltip>
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       {created ? <Timestamp timestamp={created} /> : '-'}
@@ -363,25 +389,39 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
                         <thead className="pf-v6-c-table__thead">
                           <tr className="pf-v6-c-table__tr">
                             <th className="pf-v6-c-table__th" scope="col" style={{ width: CONDITION_COL_WIDTHS[0] }}>
-                              {t('Cluster')}
+                              <Tooltip content={t('The cluster reporting this condition.')}>
+                                <span>{t('Cluster')}</span>
+                              </Tooltip>
                             </th>
                             <th className="pf-v6-c-table__th" scope="col" style={{ width: CONDITION_COL_WIDTHS[1] }}>
-                              {t('Control Plane')}
+                              <Tooltip content={t('The control plane reporting this condition.')}>
+                                <span>{t('Control Plane')}</span>
+                              </Tooltip>
                             </th>
                             <th className="pf-v6-c-table__th" scope="col" style={{ width: CONDITION_COL_WIDTHS[2] }}>
-                              {t('Type')}
+                              <Tooltip content={t('The type of condition reported by the control plane.')}>
+                                <span>{t('Type')}</span>
+                              </Tooltip>
                             </th>
                             <th className="pf-v6-c-table__th" scope="col" style={{ width: CONDITION_COL_WIDTHS[3] }}>
-                              {t('Status')}
+                              <Tooltip content={t('The condition status: True, False, or Unknown.')}>
+                                <span>{t('Status')}</span>
+                              </Tooltip>
                             </th>
                             <th className="pf-v6-c-table__th" scope="col" style={{ width: CONDITION_COL_WIDTHS[4] }}>
-                              {t('Reason')}
+                              <Tooltip content={t('A machine-readable reason code for the condition.')}>
+                                <span>{t('Reason')}</span>
+                              </Tooltip>
                             </th>
                             <th className="pf-v6-c-table__th" scope="col" style={{ width: CONDITION_COL_WIDTHS[5] }}>
-                              {t('Message')}
+                              <Tooltip content={t('A human-readable message explaining the condition.')}>
+                                <span>{t('Message')}</span>
+                              </Tooltip>
                             </th>
                             <th className="pf-v6-c-table__th" scope="col" style={{ width: CONDITION_COL_WIDTHS[6] }}>
-                              {t('Last Transition')}
+                              <Tooltip content={t('When the condition last changed status.')}>
+                                <span>{t('Last Transition')}</span>
+                              </Tooltip>
                             </th>
                           </tr>
                         </thead>
