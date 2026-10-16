@@ -2,7 +2,15 @@
 
 Complete instructions to go from zero to a working Fleet Service Mesh perspective and backend MultiCluster Mesh addon controller (aka "the backend controller" or "the controller") on a local CRC OpenShift cluster. If you have a two-cluster ACM environment, see [DEMO-SETUP-MULTICLUSTER.md](DEMO-SETUP-MULTICLUSTER.md) instead.
 
-> **Quick start:** After completing steps 1-4 manually (ACM cluster, cert-manager, backend controller, frontend plugin — use either install option in step 4), run `[hack/fleet-mesh/setup-demo.sh install](setup-demo.sh)` to automate steps 5-8: the ManagedClusterSet, per-namespace bindings and Placements, trust chain, RBAC, MCM creation, IstioCNI, Istio CRs, and the standalone discovered CR. (The script also installs cert-manager if it is missing.) The script is idempotent — re-running it on an already-configured cluster finishes successfully without changing the intended configuration. Steps 9-11 (verification, optional Kiali install, optional test app) are not covered by the script.
+> **Quick start:** Only three things are manual — the ACM hub, cert-manager, and the backend controller. Everything else is scripted:
+>
+> 1. **ACM hub** (step 1) — `./hack/install-acm.sh -c release-2.17 install-acm` from the [kiali server repo](https://github.com/kiali/kiali) (installs ACM with observability), or the lean subscription commands in step 1 for a minimal hub.
+> 2. **cert-manager** (step 2) — one `oc apply`. Do this before deploying the backend controller; the controller crash-loops without the cert-manager CRDs.
+> 3. **Backend controller** (step 3) — build the image from the [multicluster-mesh-addon](https://github.com/stolostron/multicluster-mesh-addon) repo, push it to the cluster registry, and helm-install it.
+> 4. Run [hack/fleet-mesh/setup-demo.sh install](setup-demo.sh) from this repo. It handles the rest: the ManifestWorkReplicaSet feature gate on the ClusterManager, the OSSM operator subscription, the ManagedClusterSet with bindings and Placements (step 5), the cert-manager trust chain (step 6), both MultiClusterMesh CRs (step 7), IstioCNI, the Istio CRs in the derived control plane namespaces (step 7a), and the standalone discovered Istio CR (step 8). It also installs cert-manager if it is somehow missing. The script is idempotent — re-running it on an already-configured cluster finishes successfully without changing the intended configuration.
+> 5. **Frontend plugin** (step 4) — `make cluster-deploy` from this repo, or — if you have already pushed the kiali server and operator images — `make cluster-push` from this repo followed by `make operator-create ossmconsole-create` from the kiali server repo (`ossmconsole-create` deploys the OSSMC image you pushed with `cluster-push`).
+>
+> Steps 9-11 (verification, optional Kiali install, optional test app) are not covered by the script.
 
 ## Resource Layout
 
@@ -55,7 +63,55 @@ One option is the [install-acm.sh](https://github.com/kiali/kiali/blob/master/ha
 ./hack/install-acm.sh -c release-2.17 install-acm
 ```
 
-This takes 15-20 minutes. It installs the ACM operator, creates a MultiClusterHub, sets up MinIO for metrics storage, and enables observability. It also auto-registers `local-cluster` as a managed cluster (the hub acts as its own spoke).
+This takes 15-20 minutes. It installs the ACM operator, creates a MultiClusterHub, sets up SeaweedFS for metrics storage, and enables observability. It also auto-registers `local-cluster` as a managed cluster (the hub acts as its own spoke).
+
+For a minimal hub without observability (much lighter on memory — nothing below needs it), install ACM directly with an operator subscription. To see the available channels, run `oc get packagemanifest advanced-cluster-management -n openshift-marketplace -o jsonpath='{.status.channels[*].name}'`:
+
+```bash
+oc create namespace open-cluster-management
+oc apply -f - <<'EOF'
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: open-cluster-management
+  namespace: open-cluster-management
+spec:
+  targetNamespaces:
+  - open-cluster-management
+EOF
+oc apply -f - <<'EOF'
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: acm-operator-subscription
+  namespace: open-cluster-management
+spec:
+  sourceNamespace: openshift-marketplace
+  source: redhat-operators
+  channel: release-2.17
+  installPlanApproval: Automatic
+  name: advanced-cluster-management
+EOF
+
+# Wait for the MultiClusterHub CRD and the operator pod
+until oc get crd multiclusterhubs.operator.open-cluster-management.io &>/dev/null; do sleep 10; done
+oc wait pod -l name=multiclusterhub-operator -n open-cluster-management \
+  --for=condition=Ready --timeout=300s
+
+oc apply -f - <<'EOF'
+apiVersion: operator.open-cluster-management.io/v1
+kind: MultiClusterHub
+metadata:
+  name: multiclusterhub
+  namespace: open-cluster-management
+spec: {}
+EOF
+
+# Takes ~5 minutes
+until [ "$(oc get mch multiclusterhub -n open-cluster-management -o jsonpath='{.status.phase}')" = "Running" ]; do
+  sleep 15
+done
+```
 
 Regardless of how you set up your cluster, verify ACM is ready before proceeding:
 
@@ -67,7 +123,7 @@ oc get managedcluster local-cluster
 # Should show local-cluster as available
 ```
 
-Then enable the ManifestWorkReplicaSet feature gate on the hub's ClusterManager. The backend controller distributes Istio remote discovery secrets through ManifestWorkReplicaSets; without this gate those objects are created but never processed, so remote secrets are silently not distributed.
+If you plan to run `setup-demo.sh` (or the quick start above), skip this — the script enables the gate automatically. For a fully manual install, enable the ManifestWorkReplicaSet feature gate on the hub's ClusterManager yourself. The backend controller distributes Istio remote discovery secrets through ManifestWorkReplicaSets; without this gate those objects are created but never processed, so remote secrets are silently not distributed.
 
 ```bash
 oc patch clustermanager cluster-manager --type=merge \
@@ -96,9 +152,9 @@ oc rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
 
 The backend controller is deployed via Helm. We build the image, push it to the OpenShift internal registry, then use `helm upgrade --install` to deploy.
 
-```bash
-cd <multicluster-mesh-addon-repo>
+Before running this, make sure your current working directory is the location of your local multicluster-mesh-addon repo: `cd <multicluster-mesh-addon-repo>`:
 
+```bash
 # Ensure the image registry external route is exposed
 if ! oc get image.config.openshift.io/cluster \
   -o jsonpath='{.status.externalRegistryHostnames[0]}' 2>/dev/null | grep -q '.'; then
