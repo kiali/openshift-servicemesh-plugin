@@ -84,22 +84,6 @@ describe('useMeshPlacement', () => {
     expect(result.current.selectedNames).toEqual([]);
   });
 
-  it('does not watch selection resources without a placement reference', () => {
-    rstest.mocked(useK8sWatchResource).mockReturnValue([null, false, null]);
-    const { result } = renderHook(() => useMeshPlacement('mesh-ns', undefined));
-    expect(result.current.state).toBe('missingReference');
-    expect(useK8sWatchResource).toHaveBeenNthCalledWith(1, null);
-    expect(useK8sWatchResource).toHaveBeenNthCalledWith(2, null);
-  });
-
-  it('does not start an unscoped decision watch without a namespace', () => {
-    rstest.mocked(useK8sWatchResource).mockReturnValue([null, true, null]);
-    const { result } = renderHook(() => useMeshPlacement('', 'demo-placement'));
-    expect(result.current.selectedNames).toBeNull();
-    expect(useK8sWatchResource).toHaveBeenNthCalledWith(1, null);
-    expect(useK8sWatchResource).toHaveBeenNthCalledWith(2, null);
-  });
-
   it.each([
     { watch: 'placement', error: { code: 403 }, state: 'forbidden' },
     { watch: 'placement', error: { response: { status: 503 } }, state: 'error' },

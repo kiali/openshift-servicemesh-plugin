@@ -25,7 +25,7 @@ interface PlacementSummaryCardProps {
   meshConditions?: K8sCondition[];
   meshGeneration?: number;
   namespace: string;
-  placementName?: string;
+  placementName: string;
   result: MeshPlacementResult;
   sharedMeshCount: number;
 }
@@ -40,8 +40,6 @@ function selectionStateLabel(state: SelectionState, t: (key: string) => string):
       return t('Placement decisions are currently loading');
     case 'missing':
       return t('Placement not found');
-    case 'missingReference':
-      return t('Placement reference missing');
     case 'ready':
       return t('Placement decisions are up to date');
     case 'updating':
@@ -118,7 +116,7 @@ export const PlacementSummaryCard: FC<PlacementSummaryCardProps> = ({
               </Tooltip>
             </DescriptionListTerm>
             <DescriptionListDescription>
-              {placementName ? <Link to={placementDetailLink(namespace, placementName)}>{placementName}</Link> : '-'}
+              <Link to={placementDetailLink(namespace, placementName)}>{placementName}</Link>
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>

@@ -189,9 +189,7 @@ export const ClusterStatusSection: FC<{
 
   if (rows.length === 0) {
     let emptyMessage = t('No clusters are part of this mesh yet.');
-    if (selectionState === 'missingReference') {
-      emptyMessage = t('This mesh does not have a Placement reference.');
-    } else if (selectionState === 'missing') {
+    if (selectionState === 'missing') {
       emptyMessage = t('The referenced Placement was not found in this mesh namespace.');
     } else if (selectionState === 'forbidden' || selectionState === 'error') {
       emptyMessage = t('Selection details are unavailable. Mesh cluster status remains available when reported.');
@@ -244,7 +242,7 @@ const MeshSelectionSection: FC<{
   mesh: MultiClusterMesh;
   namespace: string;
 }> = ({ managedClusterMap, managedClustersLoaded, mcms, mesh, namespace }) => {
-  const placementName = mesh.spec?.placementRef?.name;
+  const placementName = mesh.spec.placementRef.name;
   const result = useMeshPlacement(namespace, placementName);
   const clusterStatuses = mesh.status?.clusterStatus ?? [];
   const sharedMeshCount = Math.max(
@@ -411,11 +409,7 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                       <strong>{t('Placement')}</strong>
                     </DescriptionListTerm>
                     <DescriptionListDescription>
-                      {spec.placementRef?.name ? (
-                        <Link to={placementDetailLink(ns, spec.placementRef.name)}>{spec.placementRef.name}</Link>
-                      ) : (
-                        '-'
-                      )}
+                      <Link to={placementDetailLink(ns, spec.placementRef.name)}>{spec.placementRef.name}</Link>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
@@ -448,7 +442,7 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
           </GridItem>
 
           <MeshSelectionSection
-            key={`${ns}/${spec.placementRef?.name ?? ''}`}
+            key={`${ns}/${spec.placementRef.name}`}
             managedClusterMap={managedClusterMap}
             managedClustersLoaded={managedClustersLoaded}
             mcms={mcms ?? []}

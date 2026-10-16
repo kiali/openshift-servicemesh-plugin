@@ -4,10 +4,13 @@ import { useParams } from 'react-router-dom-v5-compat';
 
 import MeshDetailPage from '../MeshDetailPage';
 import { useMeshControlPlanes } from '../../hooks/useMeshControlPlanes';
+import { useMultiClusterMeshes } from '../../hooks/useMultiClusterMeshes';
 import { makeCluster, makeEnrichedCP, makeMesh } from '../../__fixtures__/testFactories';
 import type { Placement } from '../../types/placement';
 
-rstest.mock('../../hooks/useMultiClusterMeshes', () => ({ useMultiClusterMeshes: () => [[], true, null] }));
+rstest.mock('../../hooks/useMultiClusterMeshes', () => ({
+  useMultiClusterMeshes: rstest.fn(() => [[], true, null])
+}));
 rstest.mock('../../hooks/useManagedClusterMap', () => ({ useManagedClusterMap: () => [new Map(), true, null] }));
 rstest.mock('../../hooks/useDiscoveredKialis', () => ({
   useDiscoveredKialis: () => ({ kialis: [], ossmcs: [], loaded: true })
@@ -86,5 +89,22 @@ describe('managed detail selection watches', () => {
     expect(screen.getByText('new-selected')).toBeInTheDocument();
     expect(screen.queryByText('old-selected')).not.toBeInTheDocument();
     expect(useMeshControlPlanes).toHaveBeenLastCalledWith(['hub'], []);
+  });
+});
+
+describe('shared Placement alert', () => {
+  it('still reports genuinely shared Placements', () => {
+    const mesh = makeMesh();
+    const otherMesh = makeMesh({
+      metadata: { name: 'other-mesh', namespace: 'mesh-system', creationTimestamp: '2026-06-22T12:00:00Z' }
+    });
+    rstest.mocked(useMultiClusterMeshes).mockReturnValue([[mesh, otherMesh], true, null]);
+    rstest.mocked(useK8sWatchResource).mockImplementation(resource => {
+      if (resource?.groupVersionKind?.kind === 'MultiClusterMesh') return [mesh, true, null];
+      if (resource?.isList) return [[{ status: { decisions: [{ clusterName: 'hub' }] } }], true, null];
+      return [placement, true, null];
+    });
+    render(<MeshDetailPage />);
+    expect(screen.getByText('This Placement is shared by 2 meshes.')).toBeInTheDocument();
   });
 });

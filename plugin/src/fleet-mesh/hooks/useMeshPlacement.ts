@@ -5,8 +5,7 @@ import { placementDecisionGroupVersionKind, placementGroupVersionKind } from '..
 import { aggregateDecisions } from '../utils/placementSelection';
 import { isConditionStale } from '../utils/statusUtils';
 
-export type SelectionState =
-  'missingReference' | 'loading' | 'missing' | 'forbidden' | 'error' | 'waiting' | 'updating' | 'ready';
+export type SelectionState = 'loading' | 'missing' | 'forbidden' | 'error' | 'waiting' | 'updating' | 'ready';
 
 export interface MeshPlacementResult {
   decisionError: unknown;
@@ -24,26 +23,22 @@ function statusCode(error: unknown): number | undefined {
 }
 
 /** Watches the selection resources for one managed mesh in its hub namespace. */
-export function useMeshPlacement(namespace: string, placementName: string | undefined): MeshPlacementResult {
-  const enabled = !!namespace && !!placementName;
-  const [placement, placementLoaded, placementError] = useK8sWatchResource<Placement>(
-    enabled ? { groupVersionKind: placementGroupVersionKind, name: placementName, namespace } : null
-  );
-  const [decisions, decisionLoaded, decisionError] = useK8sWatchResource<PlacementDecision[]>(
-    enabled
-      ? {
-          groupVersionKind: placementDecisionGroupVersionKind,
-          isList: true,
-          namespace,
-          selector: { matchLabels: { 'cluster.open-cluster-management.io/placement': placementName } }
-        }
-      : null
-  );
+export function useMeshPlacement(namespace: string, placementName: string): MeshPlacementResult {
+  const [placement, placementLoaded, placementError] = useK8sWatchResource<Placement>({
+    groupVersionKind: placementGroupVersionKind,
+    name: placementName,
+    namespace
+  });
+  const [decisions, decisionLoaded, decisionError] = useK8sWatchResource<PlacementDecision[]>({
+    groupVersionKind: placementDecisionGroupVersionKind,
+    isList: true,
+    namespace,
+    selector: { matchLabels: { 'cluster.open-cluster-management.io/placement': placementName } }
+  });
 
   const selection = useMemo(() => aggregateDecisions(decisions ?? []), [decisions]);
   let state: SelectionState;
-  if (!enabled) state = 'missingReference';
-  else if (placementError) {
+  if (placementError) {
     const code = statusCode(placementError);
     state = code === 404 ? 'missing' : code === 403 ? 'forbidden' : 'error';
   } else if (!placementLoaded) state = 'loading';
