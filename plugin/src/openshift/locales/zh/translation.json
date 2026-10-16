@@ -8,6 +8,7 @@
   "Actions": "Actions",
   "Active": "Active",
   "All ({{count}})": "All ({{count}})",
+  "All Control Planes Not Ready": "All Control Planes Not Ready",
   "All eligible clusters": "All eligible clusters",
   "An error occurred. Please try again.": "发生错误。请重试。",
   "An unexpected error occurred.": "An unexpected error occurred.",

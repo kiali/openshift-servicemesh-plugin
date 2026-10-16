@@ -16,6 +16,7 @@
   "Actions": "Actions",
   "Active": "Active",
   "All ({{count}})": "All ({{count}})",
+  "All Control Planes Not Ready": "All Control Planes Not Ready",
   "All eligible clusters": "All eligible clusters",
   "An error occurred. Please try again.": "Se ha producido un error. Por favor, inténtelo de nuevo.",
   "An unexpected error occurred.": "An unexpected error occurred.",

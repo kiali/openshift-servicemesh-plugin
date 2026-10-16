@@ -214,6 +214,56 @@ describe('useFleetMeshItems', () => {
     }
   );
 
+  it('degrades a managed mesh when some of its control planes are unhealthy', () => {
+    const mcm = makeMesh({
+      metadata: { name: 'my-mesh', namespace: 'mesh-system', creationTimestamp: '2026-06-22T12:00:00Z' },
+      status: { conditions: [{ type: 'Ready', status: 'True' }], clusterStatus: [{ clusterName: 'cluster-a' }] }
+    });
+    const planes = [
+      makeEnrichedCP({
+        clusterName: 'cluster-a',
+        managedBy: { name: 'my-mesh', namespace: 'mesh-system' },
+        status: { conditions: [{ type: 'Ready', status: 'True' }] }
+      }),
+      makeEnrichedCP({
+        clusterName: 'cluster-b',
+        managedBy: { name: 'my-mesh', namespace: 'mesh-system' },
+        status: { conditions: [{ type: 'Ready', status: 'False', reason: 'IstiodNotReady' }] }
+      })
+    ];
+    setupMocks({ mcms: [mcm], enrichedPlanes: planes });
+
+    const { result } = renderHook(() => useFleetMeshItems());
+    const managed = result.current.items.find(i => i.kind === 'managed');
+
+    expect(managed!.statusRank).toBe(2);
+    expect(managed!.conditions).toContainEqual(
+      expect.objectContaining({ reason: 'SomeControlPlanesNotReady', status: 'False' })
+    );
+  });
+
+  it('marks a managed mesh not ready when all of its control planes are unhealthy', () => {
+    const mcm = makeMesh({
+      metadata: { name: 'my-mesh', namespace: 'mesh-system', creationTimestamp: '2026-06-22T12:00:00Z' },
+      status: { conditions: [{ type: 'Ready', status: 'True' }], clusterStatus: [{ clusterName: 'cluster-a' }] }
+    });
+    const planes = [
+      makeEnrichedCP({
+        managedBy: { name: 'my-mesh', namespace: 'mesh-system' },
+        status: { conditions: [{ type: 'Ready', status: 'False', reason: 'IstiodNotReady' }] }
+      })
+    ];
+    setupMocks({ mcms: [mcm], enrichedPlanes: planes });
+
+    const { result } = renderHook(() => useFleetMeshItems());
+    const managed = result.current.items.find(i => i.kind === 'managed');
+
+    expect(managed!.statusRank).toBe(3);
+    expect(managed!.conditions).toContainEqual(
+      expect.objectContaining({ reason: 'AllControlPlanesNotReady', status: 'False' })
+    );
+  });
+
   it.each([{ code: 403 }, new Error('Model does not exist')])(
     'keeps discovery visible after a terminal MCM read failure: %j',
     mcmsError => {

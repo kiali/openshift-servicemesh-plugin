@@ -36,6 +36,7 @@ import { useMeshPlacement } from '../hooks/useMeshPlacement';
 import type { SelectionState } from '../hooks/useMeshPlacement';
 import { buildKialiLinkMap, toControlPlaneLinkTargets } from '../utils/kialiLinkUtils';
 import { isObservabilityDataReady } from '../utils/observabilityReady';
+import { mergeManagedMeshStatus } from '../utils/worstConditions';
 import type { ManagedCluster } from '../types/managedCluster';
 import { getClusterAvailability, availabilityColor, availabilityLabelKey } from '../types/managedCluster';
 import { clusterDetailLink, placementDetailLink } from '../utils/linkUtils';
@@ -378,6 +379,10 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
   const status = mesh.status;
   const clusterStatuses = status?.clusterStatus ?? [];
   const conditions = status?.conditions ?? [];
+  // Header status mirrors the merged status shown on the Meshes list and
+  // Overview: MCM status worsened by unhealthy member control planes. The
+  // Conditions card below keeps the raw MCM conditions.
+  const { conditions: mergedConditions } = mergeManagedMeshStatus(status?.conditions, managedPlanes);
   const issuerRef = spec.security?.trust?.certManager?.issuerRef;
   const issuerName = issuerRef?.name;
 
@@ -397,7 +402,7 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
           </FlexItem>
           <FlexItem>{ns}</FlexItem>
           <FlexItem>
-            <MeshStatus conditions={conditions} conditionType="Ready" />
+            <MeshStatus conditions={mergedConditions} conditionType="Ready" />
           </FlexItem>
         </Flex>
       </PageSection>

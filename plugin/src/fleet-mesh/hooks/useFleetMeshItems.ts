@@ -4,7 +4,7 @@ import { useDiscoveredControlPlanes } from './useDiscoveredControlPlanes';
 import { useEnrichedControlPlanes } from './useEnrichedControlPlanes';
 import { getStatusRank } from '../utils/statusUtils';
 import { oldestTimestamp } from '../utils/oldestTimestamp';
-import { worstConditions } from '../utils/worstConditions';
+import { mergeManagedMeshStatus, worstConditions } from '../utils/worstConditions';
 import type { FleetMeshItem } from '../types/fleetMesh';
 import type { EnrichedControlPlane } from '../types/istio';
 import type { MultiClusterMesh } from '../types/multiClusterMesh';
@@ -59,7 +59,10 @@ function buildItems(
 
     const correlatedPlanes = [...(managedByIndex.get(`${ns}/${name}`) ?? [])];
 
-    const conditions = mcm.status?.conditions;
+    // Managed mesh health merges the MCM's own status with its member control
+    // planes: a partial CP outage degrades the mesh, a full outage marks it
+    // not ready.
+    const { conditions, rank: statusRank } = mergeManagedMeshStatus(mcm.status?.conditions, correlatedPlanes);
 
     const meshID = correlatedPlanes.find(cp => cp.meshID)?.meshID;
 
@@ -78,7 +81,7 @@ function buildItems(
       meshIDConflict: false,
       placementName: mcm.spec?.placementRef?.name,
       placementNamespace: ns,
-      statusRank: getStatusRank(conditions),
+      statusRank,
       trustIssuer: mcm.spec.security?.trust?.certManager?.issuerRef?.name
     };
   });
