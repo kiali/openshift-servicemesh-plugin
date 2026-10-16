@@ -815,8 +815,10 @@ oc --context=my-hub get multiclustermesh secure-mcm -n secure-mcm-ns \
 
 Expected results:
 
-- 2 MCMs both with `Ready=True`; per-cluster status shows `TrustDistributed: True` on
-both `local-cluster` and `my-spoke` (for `secure-mcm` with trust configured)
+- 2 MCMs both with `Ready=True`. For `secure-mcm` (trust configured), per-cluster status
+shows `TrustDistributed: True` on both `local-cluster` and `my-spoke`. `unsecure-mcm` has
+no trust configured, so its per-cluster status is recorded without a `TrustDistributed`
+condition (the UI's Trust Status card reports trust as not configured for it)
 - Control plane namespaces (the auto-derived names from `status.controlPlaneNamespace`)
 exist on both clusters (created by controller) and are labeled with `topology.istio.io/network`
 - OSSM operator CSV in `Succeeded` phase on both clusters (installed as a prerequisite in section 4)

@@ -651,7 +651,8 @@ within 1-2 minutes), they will appear in the table.
 4. Select **Fleet Service Mesh**
 5. The **Overview** page should appear with donut charts for Meshes and Control Planes health
 6. Click **Meshes** in the left nav — the table should show `secure-mcm` and `unsecure-mcm` with their statuses
-7. Click a mesh to see per-cluster conditions: Trust (`TrustDistributed`)
+7. Click a mesh to see per-cluster trust status — the Trust Status card shows `TrustDistributed`
+   per cluster for `secure-mcm` and reports trust as not configured for `unsecure-mcm`
 8. Click **Control Planes** in the left nav — it shows all Istio CRs (managed + discovered)
 
 ## 10. (Optional) Install Kiali server for OSSMC/Service Mesh perspective

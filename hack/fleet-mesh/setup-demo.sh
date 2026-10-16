@@ -145,6 +145,11 @@ wait_for_mesh_ready() {
   local timeout=$3
 
   echo "  Waiting for ${namespace}/${name} to be ready (timeout: ${timeout}s)..."
+  # TrustDistributed only exists when trust is configured; show the Ready reason
+  # instead for meshes like unsecure-mcm that have no trust.
+  local trust_configured
+  trust_configured=$(oc get multiclustermesh "${name}" -n "${namespace}" \
+    -o jsonpath='{.spec.security.trust.certManager.issuerRef.name}' 2>/dev/null || true)
   local elapsed=0
   while true; do
     local ready
@@ -155,10 +160,19 @@ wait_for_mesh_ready() {
       return 0
     fi
 
-    local trust
-    trust=$(oc get multiclustermesh "$name" -n "$namespace" \
-      -o jsonpath='{.status.clusterStatus[0].conditions[?(@.type=="TrustDistributed")].reason}' 2>/dev/null || true)
-    echo "  ... Trust=${trust:-pending} (${elapsed}s)"
+    local detail
+    if [ -n "$trust_configured" ]; then
+      local trust
+      trust=$(oc get multiclustermesh "$name" -n "$namespace" \
+        -o jsonpath='{.status.clusterStatus[0].conditions[?(@.type=="TrustDistributed")].reason}' 2>/dev/null || true)
+      detail="Trust=${trust:-pending}"
+    else
+      local ready_reason
+      ready_reason=$(oc get multiclustermesh "$name" -n "$namespace" \
+        -o jsonpath='{.status.conditions[?(@.type=="Ready")].reason}' 2>/dev/null || true)
+      detail="Ready=${ready_reason:-pending}"
+    fi
+    echo "  ... ${detail} (${elapsed}s)"
 
     if [ "$elapsed" -ge "$timeout" ]; then
       echo "  [WARN] Timed out waiting for ${name} (may still be reconciling)"
