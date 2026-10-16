@@ -39,7 +39,7 @@ import { isObservabilityDataReady } from '../utils/observabilityReady';
 import { mergeManagedMeshStatus } from '../utils/worstConditions';
 import type { ManagedCluster } from '../types/managedCluster';
 import { getClusterAvailability, availabilityColor, availabilityLabelKey } from '../types/managedCluster';
-import { clusterDetailLink, placementDetailLink } from '../utils/linkUtils';
+import { clusterDetailLink } from '../utils/linkUtils';
 import { buildMembershipRows, getPlacementProblem } from '../utils/placementSelection';
 import type { Membership, MembershipRow } from '../utils/placementSelection';
 import { ConditionsTable } from './ConditionsTable';
@@ -402,14 +402,6 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
                     </DescriptionListTerm>
                     <DescriptionListDescription>
                       {managedPlanes[0]?.meshID ?? `${ns}-${name}`}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      <strong>{t('Placement')}</strong>
-                    </DescriptionListTerm>
-                    <DescriptionListDescription>
-                      <Link to={placementDetailLink(ns, spec.placementRef.name)}>{spec.placementRef.name}</Link>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
