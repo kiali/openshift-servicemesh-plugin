@@ -51,20 +51,19 @@ import { VirtualFilterTable } from './VirtualFilterTable';
 import type { CategoryLabel, VirtualFilterColumn } from './VirtualFilterTable';
 import { useKialiTranslation } from 'utils/I18nUtils';
 
-function conditionMessage(condition: K8sCondition): string {
-  if (condition.message) return condition.message;
-  if (condition.reason) return condition.reason;
-  return condition.status;
-}
-
-type ClusterCategory = 'ready' | 'notReady' | 'unknown';
+type ClusterCategory = 'inSync' | 'pendingDeployment' | 'pendingRemoval' | 'unavailable';
 
 function categorizeCluster(row: MembershipRow): ClusterCategory {
-  const trust = row.clusterStatus?.conditions?.find(c => c.type === 'TrustDistributed');
-  if (!trust) return 'unknown';
-  if (trust.status === 'True') return 'ready';
-  if (trust.status === 'Unknown') return 'unknown';
-  return 'notReady';
+  switch (row.membership) {
+    case 'meshOnly':
+      return 'pendingRemoval';
+    case 'selectedAndMesh':
+      return 'inSync';
+    case 'selectedOnly':
+      return 'pendingDeployment';
+    case 'selectionUnavailable':
+      return 'unavailable';
+  }
 }
 
 function syncStatusLabel(membership: Membership, t: (key: string) => string): string {
@@ -119,7 +118,7 @@ function syncStatusHeaderTooltip(t: (key: string) => string): ReactNode {
   );
 }
 
-/** Per-cluster trust status table with filter toggles and search for a single mesh. */
+/** Per-cluster membership table with filter toggles and search for a single mesh. */
 export const ClusterStatusSection: FC<{
   clusterStatuses: ClusterMeshStatus[];
   managedClusterMap?: Map<string, ManagedCluster>;
@@ -143,9 +142,10 @@ export const ClusterStatusSection: FC<{
   const categoryLabels = useMemo<CategoryLabel[]>(
     () => [
       { key: 'all', label: t('All ({{count}})') },
-      { key: 'ready', label: t('Trust distributed ({{count}})') },
-      { key: 'notReady', label: t('Trust pending ({{count}})') },
-      { key: 'unknown', label: t('Unknown ({{count}})') }
+      { key: 'inSync', label: t('In Sync ({{count}})') },
+      { key: 'pendingDeployment', label: t('Pending Deployment ({{count}})') },
+      { key: 'pendingRemoval', label: t('Pending Removal ({{count}})') },
+      { key: 'unavailable', label: t('Sync Status Unavailable ({{count}})') }
     ],
     [t]
   );
@@ -156,7 +156,7 @@ export const ClusterStatusSection: FC<{
         key: 'cluster',
         label: t('Cluster'),
         render: row => <Link to={clusterDetailLink(row.clusterName)}>{row.clusterName}</Link>,
-        width: '22%'
+        width: '30%'
       },
       {
         key: 'membership',
@@ -167,7 +167,7 @@ export const ClusterStatusSection: FC<{
             <span>{syncStatusLabel(row.membership, t)}</span>
           </Tooltip>
         ),
-        width: '22%'
+        width: '35%'
       },
       {
         key: 'clusterStatus',
@@ -181,32 +181,7 @@ export const ClusterStatusSection: FC<{
             </Label>
           );
         },
-        width: '18%'
-      },
-      {
-        key: 'trustStatus',
-        label: t('Trust Status'),
-        render: row =>
-          row.clusterStatus ? (
-            <MeshStatus conditions={row.clusterStatus.conditions} conditionType="TrustDistributed" isCompact />
-          ) : (
-            '-'
-          ),
-        width: '18%'
-      },
-      {
-        key: 'message',
-        label: t('Message'),
-        render: row => {
-          const trustCondition = row.clusterStatus?.conditions?.find(c => c.type === 'TrustDistributed');
-          const msg = trustCondition ? conditionMessage(trustCondition) : '-';
-          return (
-            <Tooltip content={msg}>
-              <span>{msg}</span>
-            </Tooltip>
-          );
-        },
-        width: '20%'
+        width: '35%'
       }
     ],
     [managedClusterMap, managedClustersLoaded, t]

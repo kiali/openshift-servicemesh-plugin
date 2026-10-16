@@ -278,8 +278,9 @@ describe('ClusterStatusSection', () => {
     expect(screen.getByText('In Sync')).toBeInTheDocument();
     expect(screen.getByText('Pending Deployment')).toBeInTheDocument();
     expect(screen.getByText('Pending Removal')).toBeInTheDocument();
-    expect(screen.getByText('Trust distributed (1)')).toBeInTheDocument();
-    expect(screen.getByText('Unknown (1)')).toBeInTheDocument();
+    expect(screen.getByText('In Sync (1)')).toBeInTheDocument();
+    expect(screen.getByText('Pending Deployment (1)')).toBeInTheDocument();
+    expect(screen.getByText('Pending Removal (1)')).toBeInTheDocument();
   });
 
   it('explains every Sync Status value in the header tooltip', async () => {
@@ -333,15 +334,16 @@ describe('ClusterStatusSection', () => {
   });
 
   it('shows correct summary counts', () => {
-    const clusters = [
-      makeCluster('cluster-a', 'True'),
-      makeCluster('cluster-b', 'False'),
-      makeCluster('cluster-c', 'Unknown')
-    ];
-    render(<ClusterStatusSection clusterStatuses={clusters} />);
-    expect(screen.getByText('Trust distributed (1)')).toBeInTheDocument();
-    expect(screen.getByText('Trust pending (1)')).toBeInTheDocument();
-    expect(screen.getByText('Unknown (1)')).toBeInTheDocument();
+    render(
+      <ClusterStatusSection
+        clusterStatuses={[makeCluster('cluster-a', 'True'), makeCluster('cluster-b', 'False')]}
+        selectedNames={['cluster-a', 'cluster-c']}
+        selectionState="ready"
+      />
+    );
+    expect(screen.getByText('In Sync (1)')).toBeInTheDocument();
+    expect(screen.getByText('Pending Deployment (1)')).toBeInTheDocument();
+    expect(screen.getByText('Pending Removal (1)')).toBeInTheDocument();
   });
 
   it('links cluster names to ACM cluster detail pages', () => {
@@ -353,46 +355,51 @@ describe('ClusterStatusSection', () => {
   });
 
   describe('filter toggles', () => {
-    const clusters = [
-      makeCluster('ready-cluster', 'True'),
-      makeCluster('notready-cluster', 'False'),
-      makeCluster('unknown-cluster', 'Unknown')
-    ];
+    const renderMemberships = (): void => {
+      render(
+        <ClusterStatusSection
+          clusterStatuses={[makeCluster('in-sync-cluster', 'True'), makeCluster('leaving-cluster', 'False')]}
+          selectedNames={['in-sync-cluster', 'joining-cluster']}
+          selectionState="ready"
+        />
+      );
+    };
 
-    it('filters to only Ready clusters', async () => {
+    it('filters to only In Sync clusters', async () => {
       const user = userEvent.setup();
-      render(<ClusterStatusSection clusterStatuses={clusters} />);
-      await user.click(screen.getByText('Trust distributed (1)'));
-      expect(screen.getByText('ready-cluster')).toBeInTheDocument();
-      expect(screen.queryByText('notready-cluster')).not.toBeInTheDocument();
-      expect(screen.queryByText('unknown-cluster')).not.toBeInTheDocument();
+      renderMemberships();
+      await user.click(screen.getByText('In Sync (1)'));
+      expect(screen.getByText('in-sync-cluster')).toBeInTheDocument();
+      expect(screen.queryByText('joining-cluster')).not.toBeInTheDocument();
+      expect(screen.queryByText('leaving-cluster')).not.toBeInTheDocument();
     });
 
-    it('filters to only Not Ready clusters', async () => {
+    it('filters to only Pending Deployment clusters', async () => {
       const user = userEvent.setup();
-      render(<ClusterStatusSection clusterStatuses={clusters} />);
-      await user.click(screen.getByText('Trust pending (1)'));
-      expect(screen.getByText('notready-cluster')).toBeInTheDocument();
-      expect(screen.queryByText('ready-cluster')).not.toBeInTheDocument();
+      renderMemberships();
+      await user.click(screen.getByText('Pending Deployment (1)'));
+      expect(screen.getByText('joining-cluster')).toBeInTheDocument();
+      expect(screen.queryByText('in-sync-cluster')).not.toBeInTheDocument();
+      expect(screen.queryByText('leaving-cluster')).not.toBeInTheDocument();
     });
 
-    it('filters to only Unknown clusters', async () => {
+    it('filters to only Pending Removal clusters', async () => {
       const user = userEvent.setup();
-      render(<ClusterStatusSection clusterStatuses={clusters} />);
-      await user.click(screen.getByText('Unknown (1)'));
-      expect(screen.getByText('unknown-cluster')).toBeInTheDocument();
-      expect(screen.queryByText('ready-cluster')).not.toBeInTheDocument();
-      expect(screen.queryByText('notready-cluster')).not.toBeInTheDocument();
+      renderMemberships();
+      await user.click(screen.getByText('Pending Removal (1)'));
+      expect(screen.getByText('leaving-cluster')).toBeInTheDocument();
+      expect(screen.queryByText('in-sync-cluster')).not.toBeInTheDocument();
+      expect(screen.queryByText('joining-cluster')).not.toBeInTheDocument();
     });
 
     it('returns to all clusters when All is clicked after a filter', async () => {
       const user = userEvent.setup();
-      render(<ClusterStatusSection clusterStatuses={clusters} />);
-      await user.click(screen.getByText('Trust distributed (1)'));
+      renderMemberships();
+      await user.click(screen.getByText('In Sync (1)'));
       await user.click(screen.getByText('All (3)'));
-      expect(screen.getByText('ready-cluster')).toBeInTheDocument();
-      expect(screen.getByText('notready-cluster')).toBeInTheDocument();
-      expect(screen.getByText('unknown-cluster')).toBeInTheDocument();
+      expect(screen.getByText('in-sync-cluster')).toBeInTheDocument();
+      expect(screen.getByText('joining-cluster')).toBeInTheDocument();
+      expect(screen.getByText('leaving-cluster')).toBeInTheDocument();
     });
   });
 
