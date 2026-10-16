@@ -92,7 +92,11 @@ The operator deploys plugin resources in the same namespace as the CR. `openshif
  oc get consoleplugin ossmconsole
 ```
 
-The CR status reports errors if the plugin failed to deploy. 2. Wait a minute or two for the OpenShift Console to load the plugin. If the Console was already open, it shows a toast titled **Web console update is available** with: "There has been an update to the web console. Ensure any changes have been saved and refresh your browser to access the latest version." 3. **Refresh the browser** (or use **Refresh web console** on that toast) so the Console reloads with the plugin enabled. After refresh, **Fleet Service Mesh** and its nav items can take about 10–15 seconds to appear ([openshift/console#16922](https://github.com/openshift/console/issues/16922)).
+The CR status reports errors if the plugin failed to deploy.
+
+2. Wait a minute or two for the OpenShift Console to load the plugin. If the Console was already open, it shows a toast titled **Web console update is available** with: "There has been an update to the web console. Ensure any changes have been saved and refresh your browser to access the latest version."
+
+3. **Refresh the browser** (or use **Refresh web console** on that toast) so the Console reloads with the plugin enabled. After refresh, **Fleet Service Mesh** and its nav items can take about 10–15 seconds to appear ([openshift/console#16922](https://github.com/openshift/console/issues/16922)).
 
 ### 4. Confirm Fleet Service Mesh is visible
 
@@ -248,13 +252,13 @@ A table of every mesh the hub knows about.
 | **Managed**    | A `MultiClusterMesh` resource on the hub. Its same-namespace Placement selects clusters from ClusterSets bound to that namespace; the add-on creates the control plane namespace and can distribute trust and discovery secrets. |
 | **Discovered** | Istio control planes that share a mesh ID (from the Istio CR) but are **not** owned by a `MultiClusterMesh`. Includes single **standalone** control planes that have no mesh ID. |
 
-Columns include mesh ID, name, MCM namespace and Placement (managed meshes), cluster count, whether trust is configured (managed only), and status. The Clusters number counts entries in MCM status for managed meshes; for discovered meshes it counts distinct clusters with observed Istio control planes. It is not a Placement selected-cluster count.
+Columns include mesh ID, type, name, MCM namespace and Placement (managed meshes), cluster count, whether trust is configured (managed only), and status. The Clusters number counts entries in MCM status for managed meshes; for discovered meshes it counts distinct clusters with observed Istio control planes. It is not a Placement selected-cluster count.
 
-Managed mesh status in the list and Overview comes from the MultiClusterMesh conditions, so an add-on reconciliation failure remains visible even when its Istio control planes are healthy. Discovered mesh status comes from the observed Istio conditions. Check the Control Planes view for Istio readiness separately from the managed mesh's reconciliation status.
+Managed mesh status in the list and Overview merges the MultiClusterMesh conditions with the health of the mesh's member control planes: an add-on reconciliation failure remains visible even when its Istio control planes are healthy, and unhealthy control planes degrade the mesh (a full control-plane outage marks it not ready). Discovered mesh status comes from the observed Istio conditions. Check the Control Planes view for Istio readiness separately from the managed mesh's reconciliation status.
 
 Open a row to see that mesh's details:
 
-- **Managed mesh** — Placement selection status and selected/mesh/trust-distributed counts, membership transitions, control-plane namespace (as derived by the controller), cert-manager issuer, per-cluster trust status, control planes, trust distribution, and conditions. Placement and PlacementDecisions may update before MCM status converges.
+- **Managed mesh** — Mesh ID, control-plane namespace (as derived by the controller), cert-manager issuer, and creation time; a Cluster selection card with the Placement, selection status, selected/deployed/trust-distributed counts, and selection policy; a per-cluster Clusters table with each cluster's sync status (whether the Placement selection and MCM status agree) and availability; the mesh's control planes; a Trust Status card with per-cluster certificate and distribution status; and the mesh conditions. Placement and PlacementDecisions may update before MCM status converges.
 - **Discovered mesh** — Clusters and control planes that share that mesh ID, availability, and conditions.
 
 The managed mesh detail page treats cluster selection as unknown until it can verify that the Placement and its decisions are current. Selection remains unknown while the Placement data is loading, your user cannot read it, its status reflects an older policy revision, or the number of decision entries does not match the Placement's selected-cluster count. During that time, the page still shows existing mesh status, control-plane information, and trust information. It shows an empty selection only when current selection data confirms that no clusters are selected; an older MCM selection error does not override the current Placement result. When `placementRef` changes, the page loads the newly referenced Placement in the MCM namespace and warns until MCM status catches up.
@@ -267,7 +271,7 @@ Lists only include resources your user is allowed to read.
 
 A table of Istio CRs across managed clusters.
 
-Each row is one control plane: mesh ID, type (**Managed**, **Discovered**, or **Standalone**), name, cluster, namespace, version, **Observe** links, created time, and status.
+Each row is one control plane: name, type (**Managed**, **Discovered**, or **Standalone**), mesh ID, cluster, namespace, version, **Observe** links, created time, and status.
 
 - **Managed** — Correlated to a `MultiClusterMesh` on the hub.
 - **Discovered** — Has a mesh ID but is not owned by a `MultiClusterMesh`.
