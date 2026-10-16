@@ -881,11 +881,13 @@ hack/fleet-mesh/deploy-mesh-hello.sh \
 ### Simulating a degraded cluster
 
 To simulate a degraded state for a cluster (e.g. spoke goes unhealthy), you can delete
-one of the controller's ManifestWorks on the target cluster. The controller will
-re-create it on the next reconcile.
+the controller's ManifestWorks on the target cluster. The label matches every
+mesh-owned ManifestWork for that mesh namespace on the cluster (the control plane
+namespace ManifestWork and, for `secure-mcm`, the cacerts ManifestWork). The
+controller will re-create them on the next reconcile.
 
 ```bash
-# The control plane namespace ManifestWork (name ends in the derived namespace)
+# All mesh-owned ManifestWorks for secure-mcm-ns on my-spoke
 oc --context=my-hub delete manifestwork \
   -n my-spoke -l mesh.open-cluster-management.io/mesh-namespace=secure-mcm-ns
 ```
