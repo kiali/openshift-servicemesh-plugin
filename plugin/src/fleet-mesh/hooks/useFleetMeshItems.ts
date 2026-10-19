@@ -4,7 +4,7 @@ import { useDiscoveredControlPlanes } from './useDiscoveredControlPlanes';
 import { useEnrichedControlPlanes } from './useEnrichedControlPlanes';
 import { getStatusRank } from '../utils/statusUtils';
 import { oldestTimestamp } from '../utils/oldestTimestamp';
-import { worstConditions } from '../utils/worstConditions';
+import { mergeManagedMeshStatus, worstConditions } from '../utils/worstConditions';
 import type { FleetMeshItem } from '../types/fleetMesh';
 import type { EnrichedControlPlane } from '../types/istio';
 import type { MultiClusterMesh } from '../types/multiClusterMesh';
@@ -59,10 +59,10 @@ function buildItems(
 
     const correlatedPlanes = [...(managedByIndex.get(`${ns}/${name}`) ?? [])];
 
-    const { conditions, rank } =
-      correlatedPlanes.length > 0 && correlatedPlanes.some(cp => cp.status?.conditions)
-        ? worstConditions(correlatedPlanes)
-        : { conditions: mcm.status?.conditions, rank: getStatusRank(mcm.status?.conditions) };
+    // Managed mesh health merges the MCM's own status with its member control
+    // planes: a partial CP outage degrades the mesh, a full outage marks it
+    // not ready.
+    const { conditions, rank: statusRank } = mergeManagedMeshStatus(mcm.status?.conditions, correlatedPlanes);
 
     const meshID = correlatedPlanes.find(cp => cp.meshID)?.meshID;
 
@@ -72,7 +72,6 @@ function buildItems(
         creationTimestamp: mcm.metadata?.creationTimestamp
       },
       clusterCount: mcm.status?.clusterStatus?.length ?? 0,
-      clusterSet: mcm.spec.clusterSet,
       conditions,
       detailLink: `/fleet-mesh/meshes/managed/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`,
       kind: 'managed',
@@ -80,7 +79,9 @@ function buildItems(
       mcmNamespace: ns,
       meshID,
       meshIDConflict: false,
-      statusRank: rank,
+      placementName: mcm.spec?.placementRef?.name,
+      placementNamespace: ns,
+      statusRank,
       trustIssuer: mcm.spec.security?.trust?.certManager?.issuerRef?.name
     };
   });
@@ -159,7 +160,7 @@ export function useFleetMeshItems(): UseFleetMeshItemsResult {
     enrichmentError,
     enrichmentLoaded,
     items,
-    loaded: (mcmsLoaded ?? false) && enrichmentLoaded,
+    loaded: ((mcmsLoaded ?? false) || !!mcmsError) && (searchLoaded || !!searchError) && enrichmentLoaded,
     mcms: mcms ?? [],
     mcmsError,
     mcmsLoaded: mcmsLoaded ?? false,

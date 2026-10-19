@@ -36,6 +36,17 @@ describe('deriveStatus', () => {
     });
   });
 
+  it('labels Placement failures from the add-on', () => {
+    expect(deriveStatus([makeCondition('Ready', 'False', 'PlacementNotFound')])).toEqual({
+      color: 'red',
+      label: 'Placement Not Found'
+    });
+    expect(deriveStatus([makeCondition('Ready', 'False', 'NoClustersSelected')])).toEqual({
+      color: 'red',
+      label: 'No Clusters Selected'
+    });
+  });
+
   it('falls back to raw reason when not in friendlyReasons', () => {
     expect(deriveStatus([makeCondition('Ready', 'False', 'WeirdReason')])).toEqual({
       color: 'red',

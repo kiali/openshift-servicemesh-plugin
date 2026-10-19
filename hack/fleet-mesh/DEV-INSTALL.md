@@ -2,29 +2,39 @@
 
 Complete instructions to go from zero to a working Fleet Service Mesh perspective and backend MultiCluster Mesh addon controller (aka "the backend controller" or "the controller") on a local CRC OpenShift cluster. If you have a two-cluster ACM environment, see [DEMO-SETUP-MULTICLUSTER.md](DEMO-SETUP-MULTICLUSTER.md) instead.
 
-> **Quick start:** After completing steps 1-3 manually (ACM cluster, backend controller, frontend plugin — use either install option in step 3), run `[hack/fleet-mesh/setup-demo.sh install](setup-demo.sh)` to automate steps 4-8: cert-manager, infrastructure, trust chain, RBAC, MCM creation, IstioCNI, Istio CRs, and the standalone discovered CR. The script is idempotent — re-running it on an already-configured cluster finishes successfully without changing anything. Steps 9-11 (verification, optional Kiali install, optional test app) are not covered by the script.
+> **Quick start:** Only three things are manual — the ACM hub, cert-manager, and the backend controller. Everything else is scripted:
+>
+> 1. **ACM hub** (step 1) — `./hack/install-acm.sh -c release-2.17 install-acm` from the [kiali server repo](https://github.com/kiali/kiali) (installs ACM with observability), or the lean subscription commands in step 1 for a minimal hub.
+> 2. **cert-manager** (step 2) — one `oc apply`. Do this before deploying the backend controller; the controller crash-loops without the cert-manager CRDs.
+> 3. **Backend controller** (step 3) — build the image from the [multicluster-mesh-addon](https://github.com/stolostron/multicluster-mesh-addon) repo, push it to the cluster registry, and helm-install it.
+> 4. Run [hack/fleet-mesh/setup-demo.sh install](setup-demo.sh) from this repo. It handles the rest: the ManifestWorkReplicaSet feature gate on the ClusterManager, the OSSM operator subscription, the ManagedClusterSet with bindings and Placements (step 5), the cert-manager trust chain (step 6), both MultiClusterMesh CRs (step 7), IstioCNI, the Istio CRs in the derived control plane namespaces (step 7a), and the standalone discovered Istio CR (step 8). It also installs cert-manager if it is somehow missing. The script is idempotent — re-running it on an already-configured cluster finishes successfully without changing the intended configuration.
+> 5. **Frontend plugin** (step 4) — `make cluster-deploy` from this repo, or — if you have already pushed the kiali server and operator images — `make cluster-push` from this repo followed by `make operator-create ossmconsole-create` from the kiali server repo (`ossmconsole-create` deploys the OSSMC image you pushed with `cluster-push`).
+>
+> Steps 9-11 (verification, optional Kiali install, optional test app) are not covered by the script.
 
 ## Resource Layout
 
-| MCM CR         | MCM Namespace     | CP Namespace       | Trust |
-| -------------- | ----------------- | ------------------ | ----- |
-| `secure-mcm`   | `secure-mcm-ns`   | `secure-ns`        | Yes   |
-| `unsecure-mcm` | `unsecure-mcm-ns` | `unsecure-ns`      | No    |
-| — (standalone) | —                 | `istio-discovered` | —     |
+| MCM CR         | MCM Namespace     | CP Namespace                                   | Trust |
+| -------------- | ----------------- | ---------------------------------------------- | ----- |
+| `secure-mcm`   | `secure-mcm-ns`   | auto-derived (`istio-system-secure-mcm-…`)     | Yes   |
+| `unsecure-mcm` | `unsecure-mcm-ns` | auto-derived (`istio-system-unsecure-mcm-…`)   | No    |
+| — (standalone) | —                 | `istio-discovered`                             | —     |
+
+The control plane namespace is derived by the controller from the mesh name and namespace (`istio-system-{meshName}-{SHA-256 prefix}`) and reported in each MCM's `status.controlPlaneNamespace`. Read it from there.
 
 When reconciling an MCM CR, the backend controller:
 
 - Creates the control plane namespace (with `topology.istio.io/network` label) via ManifestWork
-- Installs the OSSM operator via OLM ManifestWork (shared across meshes on the same cluster)
 - Mints per-cluster intermediate CA certificates and distributes `cacerts` secrets (when trust is configured)
 - Creates `ManagedServiceAccount` tokens and distributes remote secrets for cross-cluster endpoint discovery
 
-The backend controller does **not** create Istio CRs, IstioCNI, or east-west gateways. After the operator is installed, those must be created manually or via GitOps on each cluster. The last row is a standalone "discovered" control plane with no MCM association, created manually (step 8).
+The backend controller does **not** install the OSSM operator (it is a prerequisite — installed via OperatorHub, an OLM subscription, or an OperatorPolicy), and does **not** create Istio CRs, IstioCNI, or east-west gateways. Those must be created manually or via GitOps on each cluster. The last row is a standalone "discovered" control plane with no MCM association, created manually (step 8).
 
-> **Note:** This dev environment has **no `istio-system` namespace**. Istio control planes
-> run in `secure-ns`, `unsecure-ns`, and `istio-discovered`. When installing Kiali or
-> pointing OSSMC at Kiali, use one of those namespaces — `secure-ns` is the usual choice
-> because it is the trusted mesh control plane and where the mesh-hello test app runs.
+> **Note:** Istio control planes run in the auto-derived namespaces (for example
+> `istio-system-secure-mcm-1a2b3c4d5e`) and in `istio-discovered`. When installing
+> Kiali or pointing OSSMC at Kiali, use the secure mesh's control plane namespace —
+> read it from `status.controlPlaneNamespace` of `secure-mcm` — because it is the
+> trusted mesh control plane and where the mesh-hello test app runs.
 
 ## Prerequisites
 
@@ -40,7 +50,7 @@ The backend controller does **not** create Istio CRs, IstioCNI, or east-west gat
 
 ## 1. Get an OpenShift cluster with ACM
 
-You need an OpenShift cluster with ACM (Advanced Cluster Management) 2.16+ installed. The image registry must be exposed. How you get this is up to you — any method that produces a working ACM hub cluster will work.
+You need an OpenShift cluster with ACM (Advanced Cluster Management) 2.17+ installed. The image registry must be exposed. How you get this is up to you — any method that produces a working ACM hub cluster will work.
 
 One option is the [install-acm.sh](https://github.com/kiali/kiali/blob/master/hack/install-acm.sh) script in the Kiali repo, which automates a full CRC/OpenShift + ACM setup. Its `init-openshift` command depends on other scripts in the same repo, so you need the [kiali server repo](https://github.com/kiali/kiali) cloned locally. All commands below are run from that repo's directory:
 
@@ -48,12 +58,60 @@ One option is the [install-acm.sh](https://github.com/kiali/kiali/blob/master/ha
 # Start CRC with 12 CPUs, 100GB disk, exposed image registry
 ./hack/install-acm.sh --crc-pull-secret-file <path-to-your-pull-secret-file> init-openshift
 
-# Install ACM 2.16+ (operator, MultiClusterHub, observability)
-# ACM 2.16+ is required for the v1beta1 addon API used by the backend Helm chart.
+# Install ACM 2.17+ (operator, MultiClusterHub, observability).
+# Verify that the hub serves the Placement and ClusterSet API versions used below.
 ./hack/install-acm.sh -c release-2.17 install-acm
 ```
 
-This takes 15-20 minutes. It installs the ACM operator, creates a MultiClusterHub, sets up MinIO for metrics storage, and enables observability. It also auto-registers `local-cluster` as a managed cluster (the hub acts as its own spoke).
+This takes 15-20 minutes. It installs the ACM operator, creates a MultiClusterHub, sets up SeaweedFS for metrics storage, and enables observability. It also auto-registers `local-cluster` as a managed cluster (the hub acts as its own spoke).
+
+For a minimal hub without observability (much lighter on memory — nothing below needs it), install ACM directly with an operator subscription. To see the available channels, run `oc get packagemanifest advanced-cluster-management -n openshift-marketplace -o jsonpath='{.status.channels[*].name}'`:
+
+```bash
+oc create namespace open-cluster-management
+oc apply -f - <<'EOF'
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: open-cluster-management
+  namespace: open-cluster-management
+spec:
+  targetNamespaces:
+  - open-cluster-management
+EOF
+oc apply -f - <<'EOF'
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: acm-operator-subscription
+  namespace: open-cluster-management
+spec:
+  sourceNamespace: openshift-marketplace
+  source: redhat-operators
+  channel: release-2.17
+  installPlanApproval: Automatic
+  name: advanced-cluster-management
+EOF
+
+# Wait for the MultiClusterHub CRD and the operator pod
+until oc get crd multiclusterhubs.operator.open-cluster-management.io &>/dev/null; do sleep 10; done
+oc wait pod -l name=multiclusterhub-operator -n open-cluster-management \
+  --for=condition=Ready --timeout=300s
+
+oc apply -f - <<'EOF'
+apiVersion: operator.open-cluster-management.io/v1
+kind: MultiClusterHub
+metadata:
+  name: multiclusterhub
+  namespace: open-cluster-management
+spec: {}
+EOF
+
+# Takes ~5 minutes
+until [ "$(oc get mch multiclusterhub -n open-cluster-management -o jsonpath='{.status.phase}')" = "Running" ]; do
+  sleep 15
+done
+```
 
 Regardless of how you set up your cluster, verify ACM is ready before proceeding:
 
@@ -65,13 +123,38 @@ oc get managedcluster local-cluster
 # Should show local-cluster as available
 ```
 
-## 2. Build and deploy the backend controller
+If you plan to run `setup-demo.sh` (or the quick start above), skip this — the script enables the gate automatically. For a fully manual install, enable the ManifestWorkReplicaSet feature gate on the hub's ClusterManager yourself. The backend controller distributes Istio remote discovery secrets through ManifestWorkReplicaSets; without this gate those objects are created but never processed, so remote secrets are silently not distributed.
+
+```bash
+oc patch clustermanager cluster-manager --type=merge \
+  -p '{"spec":{"workConfiguration":{"featureGates":[{"feature":"ManifestWorkReplicaSet","mode":"Enable"}]}}}'
+
+# The gate deploys the hub work controller that processes ManifestWorkReplicaSets.
+oc rollout status deployment/cluster-manager-work-controller \
+  -n open-cluster-management-hub --timeout=300s
+```
+
+## 2. Install cert-manager
+
+Required by the backend controller for trust distribution, and a hard startup
+prerequisite: at startup the controller checks for the cert-manager `Certificate`
+CRD on the hub (and for ACM's `ManagedServiceAccount` CRD, which ACM 2.17+
+already provides) and exits fatally — CrashLoopBackOff — if cert-manager is not
+installed. Install it before deploying the controller in the next step.
+
+```bash
+oc apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.2/cert-manager.yaml
+oc rollout status deployment/cert-manager -n cert-manager --timeout=120s
+oc rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
+```
+
+## 3. Build and deploy the backend controller
 
 The backend controller is deployed via Helm. We build the image, push it to the OpenShift internal registry, then use `helm upgrade --install` to deploy.
 
-```bash
-cd <multicluster-mesh-addon-repo>
+Before running this, make sure your current working directory is the location of your local multicluster-mesh-addon repo: `cd <multicluster-mesh-addon-repo>`:
 
+```bash
 # Ensure the image registry external route is exposed
 if ! oc get image.config.openshift.io/cluster \
   -o jsonpath='{.status.externalRegistryHostnames[0]}' 2>/dev/null | grep -q '.'; then
@@ -126,7 +209,7 @@ oc rollout status deployment/multicluster-mesh-controller \
   -n ${BACKEND_NAMESPACE} --timeout=120s
 ```
 
-## 3. Build and deploy the frontend ConsolePlugin
+## 4. Build and deploy the frontend ConsolePlugin
 
 The Fleet Service Mesh perspective is part of the OSSMC ConsolePlugin
 (`ossmconsole`). Choose one of the install options below.
@@ -188,7 +271,7 @@ make ossmconsole-create
 ```
 
 If you install Kiali in step 10 and the Service Mesh perspective does not activate,
-re-run `make ossmconsole-create` so the operator re-discovers the Kiali route in `secure-ns`:
+re-run `make ossmconsole-create` so the operator re-discovers the Kiali route in the Kiali namespace:
 
 The `ossmconsole-create` target applies `operator/deploy/ossmconsole/ossmconsole_cr_dev.yaml` with your locally pushed image reference and creates the pull secret the operator needs.
 
@@ -218,7 +301,7 @@ make cluster-push-operator operator-reload-image
 > Kiali operator, OSSMConsole CR, and Kiali CR on the cluster. Do not use it on a
 > cluster where you need to preserve an existing operator install.
 
-## 3a. Tech preview gate
+## 4a. Tech preview gate
 
 Fleet Service Mesh and Istios and Kialis list pages are an **unsupported tech preview** — off by default in
 production. They are gated behind a single opt-in field on the `OSSMConsole` CR:
@@ -229,7 +312,7 @@ spec:
     techPreview: true   # enables both Fleet Service Mesh AND Istios and Kialis list pages; omit or false disables both
 ```
 
-The dev artifacts used by both install options in step 3 already set this to `true`, so no
+The dev artifacts used by both install options in step 4 already set this to `true`, so no
 extra action is needed for a typical dev loop:
 
 - **Option A** (`make cluster-deploy`) embeds `internal.techPreview: true` directly in
@@ -256,22 +339,12 @@ routes (a known Console core polling delay, not specific to this plugin — see
 > `OSSMConsole` CR with `internal.techPreview: true` — enabling it on the hub has no effect on
 > spokes.
 
-## 4. Install cert-manager
-
-Required by the backend controller for trust distribution.
-
-```bash
-oc apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.2/cert-manager.yaml
-oc rollout status deployment/cert-manager -n cert-manager --timeout=120s
-oc rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
-```
-
 ## 5. Set up infrastructure
 
-Create the ManagedClusterSet and MCM namespaces.
+Create the cluster-scoped ManagedClusterSet, assign `local-cluster` to it, and create the two hub namespaces. A Placement is namespace-scoped, so each MCM namespace needs its **own** ManagedClusterSetBinding and Placement even though both use the same ClusterSet. The add-on reads `spec.placementRef.name` in the MCM's namespace; it does not create these ACM resources.
 
 ```bash
-# Create a ManagedClusterSet and bind local-cluster to it
+# Create a ManagedClusterSet and assign local-cluster to it
 oc apply -f - <<'EOF'
 apiVersion: cluster.open-cluster-management.io/v1beta2
 kind: ManagedClusterSet
@@ -285,7 +358,55 @@ oc label managedcluster local-cluster \
 # Create MCM namespaces
 oc create namespace secure-mcm-ns
 oc create namespace unsecure-mcm-ns
+
+# Bind the ClusterSet and create a Placement in each MCM namespace.
+oc apply -f - <<'EOF'
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: secure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: secure-demo-placement
+  namespace: secure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: unsecure-demo-placement
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+EOF
+
+for ns in secure-mcm-ns unsecure-mcm-ns; do
+  placement="${ns%-mcm-ns}-demo-placement"
+  oc wait managedclustersetbinding/demo-cluster-set -n "$ns" \
+    --for=condition=Bound --timeout=120s
+  oc get placement "$placement" -n "$ns" -o yaml
+  oc get placementdecision -n "$ns" \
+    -l cluster.open-cluster-management.io/placement="$placement" -o yaml
+done
 ```
+
+Wait until each Placement reports `status.numberOfSelectedClusters: 1` and its generated PlacementDecision selects `local-cluster`. ACM creates PlacementDecisions; do not create a PlacementDecision or a policy `PlacementBinding` for the MCM. A Placement selects from the ClusterSets **bound to its namespace**. The explicit `clusterSets` list above limits each demo Placement to `demo-cluster-set`.
 
 ## 6. Set up the trust chain
 
@@ -335,50 +456,32 @@ oc wait certificate mesh-root-ca -n secure-mcm-ns --for=condition=Ready --timeou
 
 ## 7. Create meshes
 
-The backend controller installs the OSSM operator via ManifestWork, which requires the klusterlet work agent to have OLM permissions. On production OpenShift clusters imported into ACM, the klusterlet receives `cluster-admin` during the import process and this step is unnecessary. On CRC/single-cluster setups where `local-cluster` is auto-registered as its own spoke, only scoped permissions are granted.
-
-Check whether the permission is already present:
+The OSSM operator is a prerequisite. Install it once per cluster via an OLM subscription (or through OperatorHub / an OperatorPolicy if you prefer):
 
 ```bash
-oc auth can-i create operatorgroups.operators.coreos.com \
-  --as=system:serviceaccount:open-cluster-management-agent:klusterlet-work-sa
-```
-
-If it outputs `yes`, skip ahead to creating the MCMs below. If it outputs `no`, apply the following ClusterRole to extend the work agent's capabilities:
-
-```bash
-# The klusterlet work agent's permissions are controlled by an aggregating ClusterRole
-# (open-cluster-management:klusterlet-work:aggregate) that automatically merges any
-# ClusterRole labeled "open-cluster-management.io/aggregate-to-work: true".
-# On real spoke clusters imported via the ACM console, the work SA gets cluster-admin
-# and this is not needed. On local-cluster (hub acting as its own spoke), the
-# auto-registration only grants the scoped "admin" role which covers Subscriptions
-# but not OperatorGroups. This ClusterRole fills that gap — no ClusterRoleBinding is
-# needed because the aggregate mechanism handles the binding automatically.
 oc apply -f - <<'EOF'
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
 metadata:
-  name: klusterlet-work-olm
-  labels:
-    open-cluster-management.io/aggregate-to-work: "true"
-rules:
-  - apiGroups: ["operators.coreos.com"]
-    resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-    verbs: ["create", "get", "list", "update", "patch", "delete"]
+  name: servicemesh-operator3
+  namespace: openshift-operators
+spec:
+  channel: stable
+  name: servicemeshoperator3
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic
 EOF
+
+# Wait for the operator's CSV to reach Succeeded
+until oc get csv -n openshift-operators 2>/dev/null | grep -q servicemeshoperator3; do
+  echo "Waiting for OSSM operator CSV..."
+  sleep 10
+done
 ```
 
-Verify the permission is now in effect:
-
-```bash
-oc auth can-i create operatorgroups.operators.coreos.com \
-  --as=system:serviceaccount:open-cluster-management-agent:klusterlet-work-sa
-# Should output: yes
-```
-
-Create both MultiClusterMesh CRs. The controller will create the control plane
-namespace and install the operator on `local-cluster`. It will also distribute
+After the operator is installed and both Placements select `local-cluster`, create both MultiClusterMesh CRs. The controller will create the auto-derived control plane
+namespace on `local-cluster`. It will also distribute
 `cacerts` trust certificates for `secure-mcm`.
 
 After `Ready=True`, proceed to step 7a to create Istio CRs manually.
@@ -392,9 +495,8 @@ metadata:
   name: secure-mcm
   namespace: secure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
-  controlPlane:
-    namespace: secure-ns
+  placementRef:
+    name: secure-demo-placement
   security:
     trust:
       certManager:
@@ -410,40 +512,41 @@ metadata:
   name: unsecure-mcm
   namespace: unsecure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
-  controlPlane:
-    namespace: unsecure-ns
+  placementRef:
+    name: unsecure-demo-placement
 EOF
 ```
 
 Monitor the controller's progress:
 
 ```bash
-# Watch OperatorInstalled condition per cluster
+# Watch TrustDistributed condition per cluster
 oc get multiclustermesh secure-mcm -n secure-mcm-ns \
   -o jsonpath='{.status.clusterStatus}' | jq .
 oc get multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
   -o jsonpath='{.status.clusterStatus}' | jq .
 
+# Read the derived control plane namespaces (needed for the Istio CRs in step 7a)
+oc get multiclustermesh secure-mcm -n secure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}'
+oc get multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}'
+
 # Check ManifestWorks created by the controller
 oc get manifestwork -n local-cluster | grep multicluster-mesh
 ```
 
+`MultiClusterMesh Ready=True` means the selected clusters have been reconciled — including cacerts trust distribution for `secure-mcm`. Check Istio conditions separately. If reconciliation reports `PlacementNotFound` or `NoClustersSelected`, inspect the Placement and Binding in the **same namespace** as that MCM, then inspect all PlacementDecisions with the Placement label. Check the ManagedCluster's `cluster.open-cluster-management.io/clusterset` label and any Placement predicates; ordinary labels do not assign a cluster to a ClusterSet.
+
 ## 7a. Create IstioCNI and Istio CRs on each cluster
 
-The controller installs the operator and creates the control plane namespace, but does
+The controller creates the auto-derived control plane namespace, but does
 **not** create Istio CRs or IstioCNI. The OSSM operator requires a cluster-wide `IstioCNI`
 resource before any Istio control plane can start. After the operator's CSV reaches
 `Succeeded`, create the IstioCNI singleton and then an Istio CR in each control plane
 namespace.
 
 ```bash
-# Wait for the OSSM operator CSV
-until oc get csv -n openshift-operators 2>/dev/null | grep -q servicemeshoperator3; do
-  echo "Waiting for OSSM operator CSV..."
-  sleep 10
-done
-
 # Create the cluster-wide IstioCNI (required before any Istio CR will become Ready)
 oc create namespace istio-cni --dry-run=client -o yaml | oc apply -f -
 
@@ -462,14 +565,20 @@ echo "Waiting for IstioCNI to be ready..."
 oc wait istiocni/default --for=condition=Ready --timeout=120s 2>/dev/null || \
   echo "IstioCNI not yet fully ready (may still be reconciling); proceeding with Istio CRs."
 
+# Read the derived control plane namespaces reported by the controller
+SECURE_CP_NS=$(oc get multiclustermesh secure-mcm -n secure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}')
+UNSECURE_CP_NS=$(oc get multiclustermesh unsecure-mcm -n unsecure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}')
+
 # Create Istio CR for secure-mcm
-oc apply -f - <<'EOF'
+oc apply -f - <<EOF
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: secure-cp
 spec:
-  namespace: secure-ns
+  namespace: ${SECURE_CP_NS}
   values:
     global:
       meshID: secure-mcm-ns-secure-mcm
@@ -479,13 +588,13 @@ spec:
 EOF
 
 # Create Istio CR for unsecure-mcm
-oc apply -f - <<'EOF'
+oc apply -f - <<EOF
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: unsecure-cp
 spec:
-  namespace: unsecure-ns
+  namespace: ${UNSECURE_CP_NS}
   values:
     global:
       meshID: unsecure-mcm-ns-unsecure-mcm
@@ -498,7 +607,7 @@ EOF
 > **Note:** If you need east-west gateways for cross-cluster service discovery, create
 > them after istiod is running. The OCM-native way to fan out Istio configuration
 > consistently across clusters is a `ManifestWorkReplicaSet` referencing a `Placement`
-> that targets the same ClusterSet — this creates a per-cluster `ManifestWork` for each
+> that selects the same clusters — this creates a per-cluster `ManifestWork` for each
 > cluster the Placement selects. This guide will not cover this topic.
 
 ## 8. (Optional) Create a standalone discovered Istio CR
@@ -542,22 +651,24 @@ within 1-2 minutes), they will appear in the table.
 4. Select **Fleet Service Mesh**
 5. The **Overview** page should appear with donut charts for Meshes and Control Planes health
 6. Click **Meshes** in the left nav — the table should show `secure-mcm` and `unsecure-mcm` with their statuses
-7. Click a mesh to see per-cluster conditions: Operator (`OperatorInstalled`)
+7. Click a mesh to see per-cluster trust status — the Trust Status card shows `TrustDistributed`
+   per cluster for `secure-mcm` and reports trust as not configured for `unsecure-mcm`
 8. Click **Control Planes** in the left nav — it shows all Istio CRs (managed + discovered)
 
 ## 10. (Optional) Install Kiali server for OSSMC/Service Mesh perspective
 
 If you want to test the OSSMC/Service Mesh perspective (the Kiali UI integration),
 install a Kiali server. **Complete steps 7-8 first** so the control plane namespaces
-(including `secure-ns`) exist.
+exist.
 
 Once Kiali is running, the OSSMC plugin will detect it, and the **Service Mesh** nav section in the Core Platform (admin) perspective will become functional.
 
-This environment has no `istio-system` namespace — deploy the Kiali **server** into
-`secure-ns` (or another control plane namespace from the Resource Layout table).
-Set `KIALI_NAMESPACE` to the deployment namespace you choose:
+Deploy the Kiali **server** into the secure mesh's control plane namespace (or another
+control plane namespace from the Resource Layout table). Set `KIALI_NAMESPACE` to the
+deployment namespace you choose:
 ```bash
-export KIALI_NAMESPACE=secure-ns
+export KIALI_NAMESPACE=$(oc get multiclustermesh secure-mcm -n secure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}')
 ```
 
 Two Makefile variables are involved:
@@ -570,7 +681,7 @@ Two Makefile variables are involved:
 ### Option A — Helm (no operator required)
 
 Install directly from the [kiali/helm-charts](https://github.com/kiali/helm-charts) repo.
-Use this if you deployed OSSMC via step 3 Option A and do not have the Kiali operator
+Use this if you deployed OSSMC via step 4 Option A and do not have the Kiali operator
 on the cluster.
 
 **Prerequisites:** helm-charts repo cloned locally with charts built (`make build-helm-charts`).
@@ -598,9 +709,9 @@ To remove:
 helm uninstall kiali-server --namespace ${KIALI_NAMESPACE}
 ```
 
-### Option B — Kiali operator (requires step 3 Option B)
+### Option B — Kiali operator (requires step 4 Option B)
 
-If you already installed the Kiali operator in step 3, create a `Kiali` CR so the
+If you already installed the Kiali operator in step 4, create a `Kiali` CR so the
 operator deploys the server from your locally built image.
 
 ```bash
@@ -699,14 +810,14 @@ editing source files, wait for webpack to rebuild and refresh the browser.
 ### Cluster deploy (production-like)
 
 For production-like testing (nginx/TLS packaging, in-cluster ConsolePlugin), use either
-step 3 install option:
+step 4 install option:
 
 ```bash
 # Option A — direct deploy (from openshift-servicemesh-plugin repo)
 cd <openshift-servicemesh-plugin-repo>
 make cluster-deploy
 
-# Option B — via Kiali operator (see step 3 Option B for full prerequisites)
+# Option B — via Kiali operator (see step 4 Option B for full prerequisites)
 cd <openshift-servicemesh-plugin-repo>
 make cluster-push
 
@@ -742,13 +853,14 @@ oc rollout status deployment/multicluster-mesh-controller \
 
 ## Teardown
 
-To fully tear down everything (including items installed in steps 1-3, 10, 11):
+To fully tear down everything (including items installed in steps 1-4, 10, 11):
 
 ```bash
 cd <openshift-servicemesh-plugin-repo>
 
 # Must match the KIALI_NAMESPACE used in step 10
-export KIALI_NAMESPACE=secure-ns
+export KIALI_NAMESPACE=$(oc get multiclustermesh secure-mcm -n secure-mcm-ns \
+  -o jsonpath='{.status.controlPlaneNamespace}')
 
 # Remove the test app (step 11) — skip if you never deployed it
 hack/fleet-mesh/deploy-mesh-hello.sh -m secure-mcm -n secure-mcm-ns uninstall
@@ -759,17 +871,17 @@ helm uninstall kiali-server --namespace ${KIALI_NAMESPACE}
 # Option B (operator):
 # cd <kiali-server-repo> && make kiali-delete
 
-# Remove all demo resources (steps 4-8): cert-manager, infrastructure, trust,
+# Remove all demo resources (steps 2, 5-8): cert-manager, infrastructure, trust,
 # RBAC, MCMs, IstioCNI, Istio CRs, standalone discovered CR
 hack/fleet-mesh/setup-demo.sh uninstall
 
-# Remove the frontend plugin (step 3)
+# Remove the frontend plugin (step 4)
 # Option A (direct deploy):
 make undeploy-plugin
 # Option B (Kiali operator):
 # cd <kiali-server-repo> && make operator-delete
 
-# Remove the backend controller (step 2)
+# Remove the backend controller (step 3)
 helm uninstall multicluster-mesh-addon -n multicluster-mesh-system
 oc delete namespace multicluster-mesh-system --ignore-not-found
 

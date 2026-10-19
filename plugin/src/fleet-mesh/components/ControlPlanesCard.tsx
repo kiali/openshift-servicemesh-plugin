@@ -38,6 +38,7 @@ const ControlPlanesCard: FC<{ kialiLinks?: Map<string, KialiLink[]>; planes: Enr
     const cols: VirtualFilterColumn<EnrichedControlPlane>[] = [
       {
         key: 'name',
+        headerTooltip: t('The name of the Istio control plane. Links to its detail page.'),
         label: 'Name',
         render: cp => (
           <Link
@@ -50,22 +51,31 @@ const ControlPlanesCard: FC<{ kialiLinks?: Map<string, KialiLink[]>; planes: Enr
       },
       {
         key: 'cluster',
+        headerTooltip: t('The cluster where this control plane runs.'),
         label: 'Cluster',
         render: cp => <Link to={clusterDetailLink(cp.clusterName)}>{cp.clusterName}</Link>,
         width: hasKialiLinks ? '20%' : '25%'
       },
       {
         key: 'namespace',
+        headerTooltip: t('The namespace where this control plane (istiod) runs.'),
         label: 'Namespace',
         render: cp => cp.controlPlaneNamespace ?? '-',
         width: hasKialiLinks ? '15%' : '20%'
       },
-      { key: 'version', label: 'Version', render: cp => cp.version ?? '-', width: '12%' }
+      {
+        key: 'version',
+        headerTooltip: t('The Istio version of this control plane.'),
+        label: 'Version',
+        render: cp => cp.version ?? '-',
+        width: '12%'
+      }
     ];
 
     if (hasKialiLinks) {
       cols.push({
         key: 'observe',
+        headerTooltip: t('Opens this control plane in Kiali or the OSSMC Service Mesh perspective.'),
         label: 'Observe',
         render: cp => {
           const links = kialiLinks.get(controlPlaneLinkKey(cp.clusterName, cp.metadata.name));
@@ -78,6 +88,7 @@ const ControlPlanesCard: FC<{ kialiLinks?: Map<string, KialiLink[]>; planes: Enr
 
     cols.push({
       key: 'status',
+      headerTooltip: t('The readiness of this control plane, from its Istio CR Ready condition.'),
       label: 'Status',
       render: cp =>
         cp.status?.conditions ? (

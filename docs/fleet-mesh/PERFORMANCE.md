@@ -4,6 +4,8 @@ This document tracks performance considerations, analysis results, and optimizat
 for the fleet-mesh perspective plugin (`plugin/src/fleet-mesh/`). The scale target is
 200+ clusters, 200+ Istio control planes, and 50+ MultiClusterMesh objects.
 
+Placement selection data is loaded only on a managed mesh detail page: one namespaced Placement watch and one namespaced PlacementDecision list watch filtered by `cluster.open-cluster-management.io/placement`. The Meshes list, Overview, and discovered detail add no PlacementDecision watches. The detail view aggregates decision slices in linear time, then sorts selected clusters and membership rows; it reuses the virtualized cluster table for selected/mesh membership. At the scale above, check decision fanout and reference-switch latency alongside existing ACM Search and Istio enrichment measurements.
+
 ## Architecture Overview
 
 Data fetching falls into four patterns. The Istio enrichment pipeline is shared across
@@ -129,7 +131,7 @@ the same shared utility.
 ### Debounced Enrichment Updates
 
 **Problem:** During chunk-based enrichment, a state update after each chunk triggered a
-full re-render. Combined with the old O(C×M×K) correlation, this caused excessive work
+full re-render. Combined with an O(C×M×K) correlation, this caused excessive work
 during a single enrichment cycle.
 
 **Solution:** Enrichment progress is tracked via `useRef` and state is updated at most

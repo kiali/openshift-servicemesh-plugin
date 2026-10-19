@@ -148,8 +148,8 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global', controlPlane: { namespace: 'istio-system' } },
-        status: { clusterStatus: [{ clusterName: 'cluster-a' }] }
+        spec: { placementRef: { name: 'global-placement' } },
+        status: { controlPlaneNamespace: 'istio-system', clusterStatus: [{ clusterName: 'cluster-a' }] }
       }
     ];
 
@@ -160,7 +160,7 @@ describe('useEnrichedControlPlanes', () => {
     });
   });
 
-  it('correlates using default istio-system when MCM has no explicit controlPlane.namespace', async () => {
+  it('does not correlate when MCM has not reported controlPlaneNamespace', async () => {
     rstest.mocked(fleetK8sGet).mockResolvedValue(makeIstio('istio-system'));
     const results = [makeSearchResult('cluster-a', 'default')];
     const mcms: MultiClusterMesh[] = [
@@ -168,7 +168,7 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global' },
+        spec: { placementRef: { name: 'global-placement' } },
         status: { clusterStatus: [{ clusterName: 'cluster-a' }] }
       }
     ];
@@ -176,11 +176,11 @@ describe('useEnrichedControlPlanes', () => {
     const { result } = renderHook(() => useEnrichedControlPlanes(results as FleetIstio[], mcms));
 
     await waitFor(() => {
-      expect(result.current[0][0].managedBy).toEqual({ name: 'my-mesh', namespace: 'mesh-system' });
+      expect(result.current[0][0].managedBy).toBeUndefined();
     });
   });
 
-  it('correlates using default istio-system when Istio CR controlPlaneNamespace is undefined', async () => {
+  it('does not correlate when the Istio CR namespace is unknown', async () => {
     rstest.mocked(fleetK8sGet).mockResolvedValue({ ...makeIstio(), spec: { version: 'v1.24.0' } });
     const results = [makeSearchResult('cluster-a', 'default')];
     const mcms: MultiClusterMesh[] = [
@@ -188,15 +188,15 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global', controlPlane: { namespace: 'istio-system' } },
-        status: { clusterStatus: [{ clusterName: 'cluster-a' }] }
+        spec: { placementRef: { name: 'global-placement' } },
+        status: { controlPlaneNamespace: 'istio-system', clusterStatus: [{ clusterName: 'cluster-a' }] }
       }
     ];
 
     const { result } = renderHook(() => useEnrichedControlPlanes(results as FleetIstio[], mcms));
 
     await waitFor(() => {
-      expect(result.current[0][0].managedBy).toEqual({ name: 'my-mesh', namespace: 'mesh-system' });
+      expect(result.current[0][0].managedBy).toBeUndefined();
     });
   });
 
@@ -208,8 +208,8 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global', controlPlane: { namespace: 'istio-system' } },
-        status: { clusterStatus: [] }
+        spec: { placementRef: { name: 'global-placement' } },
+        status: { controlPlaneNamespace: 'istio-system', clusterStatus: [] }
       }
     ];
 
@@ -228,8 +228,8 @@ describe('useEnrichedControlPlanes', () => {
         apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
         kind: 'MultiClusterMesh',
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global', controlPlane: { namespace: 'istio-system' } },
-        status: { clusterStatus: [{ clusterName: 'cluster-a' }] }
+        spec: { placementRef: { name: 'global-placement' } },
+        status: { controlPlaneNamespace: 'istio-system', clusterStatus: [{ clusterName: 'cluster-a' }] }
       }
     ];
 

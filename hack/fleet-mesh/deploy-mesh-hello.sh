@@ -99,9 +99,13 @@ read_mesh() {
   oc_mcm get multiclustermesh "${MESH_NAME}" -n "${MESH_NAMESPACE}" &>/dev/null \
     || die "MultiClusterMesh '${MESH_NAME}' not found in namespace '${MESH_NAMESPACE}' (mcm context: ${MCM_CONTEXT:-${OC_CONTEXT:-current}})."
 
+  # The control plane namespace is auto-derived by the controller and reported
+  # in status.controlPlaneNamespace.
   CP_NAMESPACE=$(oc_mcm get multiclustermesh "${MESH_NAME}" -n "${MESH_NAMESPACE}" \
-    -o jsonpath='{.spec.controlPlane.namespace}' 2>/dev/null || true)
-  CP_NAMESPACE="${CP_NAMESPACE:-istio-system}"
+    -o jsonpath='{.status.controlPlaneNamespace}' 2>/dev/null || true)
+  if [ -z "${CP_NAMESPACE}" ]; then
+    die "MultiClusterMesh '${MESH_NAME}' has not reported status.controlPlaneNamespace yet."
+  fi
 
   MESH_ID="${MESH_NAMESPACE}-${MESH_NAME}"
   APP_NS="${MESH_NAME}-testapp"

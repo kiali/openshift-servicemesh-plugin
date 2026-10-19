@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { Timestamp } from '@openshift-console/dynamic-plugin-sdk';
+import { Tooltip } from '@patternfly/react-core';
 import type { K8sCondition } from '../types/common';
 import { statusIcon } from '../utils/statusIcon';
 import { useKialiTranslation } from 'utils/I18nUtils';
@@ -15,19 +16,29 @@ export const ConditionsTable: FC<ConditionsTableProps> = ({ conditions }) => {
       <thead className="pf-v6-c-table__thead">
         <tr className="pf-v6-c-table__tr">
           <th className="pf-v6-c-table__th" scope="col">
-            {t('Type')}
+            <Tooltip content={t('The type of condition reported by the mesh controller.')}>
+              <span>{t('Type')}</span>
+            </Tooltip>
           </th>
           <th className="pf-v6-c-table__th" scope="col">
-            {t('Status')}
+            <Tooltip content={t('The condition status: True, False, or Unknown.')}>
+              <span>{t('Status')}</span>
+            </Tooltip>
           </th>
           <th className="pf-v6-c-table__th" scope="col">
-            {t('Reason')}
+            <Tooltip content={t('A machine-readable reason code for the condition.')}>
+              <span>{t('Reason')}</span>
+            </Tooltip>
           </th>
           <th className="pf-v6-c-table__th" scope="col">
-            {t('Message')}
+            <Tooltip content={t('A human-readable message explaining the condition.')}>
+              <span>{t('Message')}</span>
+            </Tooltip>
           </th>
           <th className="pf-v6-c-table__th" scope="col">
-            {t('Last Transition')}
+            <Tooltip content={t('When the condition last changed status.')}>
+              <span>{t('Last Transition')}</span>
+            </Tooltip>
           </th>
         </tr>
       </thead>

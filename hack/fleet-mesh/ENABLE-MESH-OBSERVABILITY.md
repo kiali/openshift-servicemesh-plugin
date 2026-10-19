@@ -38,7 +38,7 @@ This automates the metrics portions of the [ossm-multicluster tutorial](https://
 
 **Kiali visualization (`--kiali-cr-namespace`):**
 
-- Kiali operator and Kiali CR already installed (`setup-demo-multicluster.sh` stores the CR in `kiali-operator`; the deployment runs in `secure-ns`)
+- Kiali operator and Kiali CR already installed (`setup-demo-multicluster.sh` stores the CR in `kiali-operator`; the deployment runs in the secure mesh's auto-derived control plane namespace — read it from `status.controlPlaneNamespace` of `secure-mcm`)
 
 ## Quick start
 
@@ -51,14 +51,25 @@ SPOKE_CONTEXT="<spoke-kubecontext>"
 SPOKE_NAME="<acm-managed-cluster-name>"
 ```
 
+The demo's control plane namespaces are auto-derived by the mesh controller and
+reported in each MCM's `status.controlPlaneNamespace`. Read them once and use the
+values below:
+
+```bash
+SECURE_CP_NS=$(oc --context="${HUB_CONTEXT}" get multiclustermesh secure-mcm \
+  -n secure-mcm-ns -o jsonpath='{.status.controlPlaneNamespace}')
+UNSECURE_CP_NS=$(oc --context="${HUB_CONTEXT}" get multiclustermesh unsecure-mcm \
+  -n unsecure-mcm-ns -o jsonpath='{.status.controlPlaneNamespace}')
+```
+
 ### Fleet-mesh demo topology
 
 After [`setup-demo-multicluster.sh install`](setup-demo-multicluster.sh), the demo has:
 
 | CP namespace | Mesh type | Clusters | Shared `meshID` | Metrics backend |
 |--------------|-----------|----------|-----------------|-----------------|
-| `secure-ns` | MCM `secure-mcm` | hub (`local-cluster`) + spoke (`${SPOKE_NAME}`) | `secure-mcm-ns-secure-mcm` | **hub** Observatorium |
-| `unsecure-ns` | MCM `unsecure-mcm` | hub + spoke | `unsecure-mcm-ns-unsecure-mcm` | **hub** Observatorium |
+| `${SECURE_CP_NS}` | MCM `secure-mcm` | hub (`local-cluster`) + spoke (`${SPOKE_NAME}`) | `secure-mcm-ns-secure-mcm` | **hub** Observatorium |
+| `${UNSECURE_CP_NS}` | MCM `unsecure-mcm` | hub + spoke | `unsecure-mcm-ns-unsecure-mcm` | **hub** Observatorium |
 | `discovered-hub-ns` | Standalone (no MCM) | hub only | `discovered-hub-id` | **local** UWM |
 | `discovered-spoke-ns` | Standalone (no MCM) | spoke only | `discovered-spoke-id` | **local** UWM |
 
@@ -70,14 +81,14 @@ After [`setup-demo-multicluster.sh install`](setup-demo-multicluster.sh), the de
 
 ### 1. MCM `secure-mcm` — hub + spoke → hub Observatorium (with Kiali on spoke)
 
-Requires a Kiali CR on the spoke (`kiali` in `kiali-operator`; deployment in `secure-ns` — the default [`setup-demo-multicluster.sh install`](setup-demo-multicluster.sh) uses `--install-kiali spoke`). The demo script runs these steps automatically when `--enable-observability true`. To run manually (e.g. after `--enable-observability false`):
+Requires a Kiali CR on the spoke (`kiali` in `kiali-operator`; deployment in `${SECURE_CP_NS}` — the default [`setup-demo-multicluster.sh install`](setup-demo-multicluster.sh) uses `--install-kiali spoke`). The demo script runs these steps automatically when `--enable-observability true`. To run manually (e.g. after `--enable-observability false`):
 
 ```bash
 # Hub side (local-cluster): scrape istiod + mesh-hello; install MCO if needed
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
   --hub-context "${HUB_CONTEXT}" \
   --cluster-context "${HUB_CONTEXT}" \
-  --istio-namespace secure-ns \
+  --istio-namespace ${SECURE_CP_NS} \
   --metrics-backend hub \
   --app-namespaces secure-mcm-testapp \
   --managed-cluster-name local-cluster
@@ -86,7 +97,7 @@ Requires a Kiali CR on the spoke (`kiali` in `kiali-operator`; deployment in `se
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
   --hub-context "${HUB_CONTEXT}" \
   --cluster-context "${SPOKE_CONTEXT}" \
-  --istio-namespace secure-ns \
+  --istio-namespace ${SECURE_CP_NS} \
   --kiali-cr-namespace kiali-operator \
   --metrics-backend hub \
   --app-namespaces secure-mcm-testapp \
@@ -97,20 +108,20 @@ Kiali on the spoke reads hub Thanos via Observatorium, so graphs can include met
 
 ### 2. MCM `unsecure-mcm` — hub + spoke → hub Observatorium (metrics only, no Kiali)
 
-Same pattern: run on **each** cluster. No Kiali is installed for `unsecure-ns` in the default demo (omit `--kiali-cr-namespace`). Add `--app-namespaces` only if you deploy workloads there.
+Same pattern: run on **each** cluster. No Kiali is installed for the unsecure mesh in the default demo (omit `--kiali-cr-namespace`). Add `--app-namespaces` only if you deploy workloads there.
 
 ```bash
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
   --hub-context "${HUB_CONTEXT}" \
   --cluster-context "${HUB_CONTEXT}" \
-  --istio-namespace unsecure-ns \
+  --istio-namespace ${UNSECURE_CP_NS} \
   --metrics-backend hub \
   --managed-cluster-name local-cluster
 
 ./hack/fleet-mesh/enable-mesh-observability.sh install \
   --hub-context "${HUB_CONTEXT}" \
   --cluster-context "${SPOKE_CONTEXT}" \
-  --istio-namespace unsecure-ns \
+  --istio-namespace ${UNSECURE_CP_NS} \
   --metrics-backend hub \
   --managed-cluster-name "${SPOKE_NAME}"
 ```
@@ -263,7 +274,7 @@ ConfigMap allowlist path.
 
 Resources are labeled `app.kubernetes.io/managed-by: enable-mesh-observability`.
 
-Prometheus auth secrets and ServiceAccounts are created in the Kiali **deployment** namespace (`spec.deployment.namespace` on the CR, e.g. `secure-ns` in the fleet-mesh demo).
+Prometheus auth secrets and ServiceAccounts are created in the Kiali **deployment** namespace (`spec.deployment.namespace` on the CR, e.g. `${SECURE_CP_NS}` in the fleet-mesh demo).
 
 | Resource | Namespace | When |
 |----------|-----------|------|
@@ -318,13 +329,13 @@ placement and rule namespace.
 
 ## Validation
 
-For MCM meshes (`secure-ns`, `unsecure-ns`), validate **both** clusters after running install on hub and spoke.
+For MCM meshes (`${SECURE_CP_NS}`, `${UNSECURE_CP_NS}`), validate **both** clusters after running install on hub and spoke.
 
 ```bash
 # Hub cluster metrics path
 ./hack/fleet-mesh/enable-mesh-observability.sh verify \
   --cluster-context "${HUB_CONTEXT}" \
-  --istio-namespace secure-ns \
+  --istio-namespace ${SECURE_CP_NS} \
   --metrics-backend hub \
   --hub-context "${HUB_CONTEXT}" \
   --managed-cluster-name local-cluster
@@ -332,7 +343,7 @@ For MCM meshes (`secure-ns`, `unsecure-ns`), validate **both** clusters after ru
 # Spoke cluster + Kiali
 ./hack/fleet-mesh/enable-mesh-observability.sh verify \
   --cluster-context "${SPOKE_CONTEXT}" \
-  --istio-namespace secure-ns \
+  --istio-namespace ${SECURE_CP_NS} \
   --kiali-cr-namespace kiali-operator \
   --metrics-backend hub \
   --hub-context "${HUB_CONTEXT}" \
@@ -435,9 +446,9 @@ See [Generate traffic for Kiali graphs](#generate-traffic-for-kiali-graphs) abov
 1. Confirm monitors exist on **each** cluster in the mesh:
 
    ```bash
-   oc --context="${HUB_CONTEXT}" get servicemonitor -n secure-ns
+   oc --context="${HUB_CONTEXT}" get servicemonitor -n ${SECURE_CP_NS}
    oc --context="${HUB_CONTEXT}" get podmonitor -n secure-mcm-testapp
-   oc --context="${SPOKE_CONTEXT}" get servicemonitor -n secure-ns
+   oc --context="${SPOKE_CONTEXT}" get servicemonitor -n ${SECURE_CP_NS}
    oc --context="${SPOKE_CONTEXT}" get podmonitor -n secure-mcm-testapp
    ```
 
@@ -498,7 +509,7 @@ See [Generate traffic for Kiali graphs](#generate-traffic-for-kiali-graphs) abov
 
 ### ServiceMonitor in non-`istio-system` namespace
 
-This script places the istiod ServiceMonitor in `--istio-namespace` (e.g. `secure-ns` for fleet-mesh). That is intentional — fleet-mesh does not use `istio-system`.
+This script places the istiod ServiceMonitor in `--istio-namespace` (the mesh's derived control plane namespace for fleet-mesh). That is intentional — fleet-mesh does not use `istio-system`.
 
 ## Relation to ossm-multicluster tutorial
 

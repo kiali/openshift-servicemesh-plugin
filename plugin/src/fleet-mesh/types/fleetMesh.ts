@@ -4,7 +4,6 @@ import type { MultiClusterMesh } from './multiClusterMesh';
 
 export interface FleetMeshItem {
   clusterCount: number;
-  clusterSet?: string;
   conditions?: K8sCondition[];
   controlPlanes?: EnrichedControlPlane[];
   detailLink: string;
@@ -17,6 +16,8 @@ export interface FleetMeshItem {
     creationTimestamp?: string;
     name: string;
   };
+  placementName?: string;
+  placementNamespace?: string;
   statusRank: number;
   trustIssuer?: string;
 }

@@ -180,18 +180,21 @@ export const TrustStatusCard: FC<TrustStatusCardProps> = ({ clusterStatuses, iss
     () => [
       {
         key: 'cluster',
+        headerTooltip: t('The selected cluster to which this trust status applies.'),
         label: 'Cluster',
         render: cs => <Link to={clusterDetailLink(cs.clusterName)}>{cs.clusterName}</Link>,
         width: '20%'
       },
       {
         key: 'certificate',
+        headerTooltip: t('The state of the per-cluster intermediate CA certificate minted by cert-manager.'),
         label: 'Certificate',
         render: cs => certStatusLabel(certsByCluster.get(cs.clusterName), t),
         width: '20%'
       },
       {
         key: 'expires',
+        headerTooltip: t('When the per-cluster CA certificate expires.'),
         label: 'Expires',
         render: cs => {
           const cert = certsByCluster.get(cs.clusterName);
@@ -201,6 +204,7 @@ export const TrustStatusCard: FC<TrustStatusCardProps> = ({ clusterStatuses, iss
       },
       {
         key: 'renews',
+        headerTooltip: t('When cert-manager will renew the per-cluster CA certificate.'),
         label: 'Renews',
         render: cs => {
           const cert = certsByCluster.get(cs.clusterName);
@@ -210,6 +214,7 @@ export const TrustStatusCard: FC<TrustStatusCardProps> = ({ clusterStatuses, iss
       },
       {
         key: 'distribution',
+        headerTooltip: t('The state of the ManifestWork that distributes the cacerts secret to this cluster.'),
         label: 'Distribution',
         render: cs => distributionStatusLabel(mwByCluster.get(cs.clusterName), mwError, t),
         width: '20%'

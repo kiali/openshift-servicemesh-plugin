@@ -23,7 +23,7 @@ const makeCondition = (type: string, status: 'True' | 'False' | 'Unknown', reaso
 
 const makeCluster = (name: string): ClusterMeshStatus => ({
   clusterName: name,
-  conditions: [makeCondition('OperatorInstalled', 'True')]
+  conditions: [makeCondition('TrustDistributed', 'True')]
 });
 
 const makeCert = (

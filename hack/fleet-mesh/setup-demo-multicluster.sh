@@ -52,7 +52,10 @@ CERT_MANAGER_URL="https://github.com/cert-manager/cert-manager/releases/download
 BACKEND_NAMESPACE="${BACKEND_NAMESPACE:-multicluster-mesh-system}"
 BACKEND_IMAGE_NAME="${BACKEND_IMAGE_NAME:-multicluster-mesh-addon}"
 BACKEND_IMAGE_TAG="${BACKEND_IMAGE_TAG:-dev}"
-KIALI_NAMESPACE="${KIALI_NAMESPACE:-secure-ns}"
+# Namespace for the Kiali server deployed alongside the secure mesh. Empty means
+# "use the secure-mcm control plane namespace", which the controller derives and
+# reports in status.controlPlaneNamespace.
+KIALI_NAMESPACE="${KIALI_NAMESPACE:-}"
 
 COMMAND=""
 
@@ -91,6 +94,32 @@ wait_for() {
     echo "  ...still waiting (${elapsed}s elapsed)"
     sleep "${interval}"
   done
+}
+
+# Reads the auto-derived control plane namespace from mesh status. The controller
+# derives it as istio-system-{meshName}-{SHA-256 prefix over "namespace/name"} and
+# publishes it in status.controlPlaneNamespace.
+read_control_plane_namespace() {
+  local mesh_name=$1
+  local mesh_namespace=$2
+
+  oc_hub get multiclustermesh "${mesh_name}" -n "${mesh_namespace}" \
+    -o jsonpath='{.status.controlPlaneNamespace}' 2>/dev/null || true
+}
+
+# Computes the same derivation the controller uses, for uninstall paths where the
+# mesh CR (and its status) may already be gone. Mirrors GetControlPlaneNamespace()
+# in the addon: mesh name truncated to 39 chars with trailing dashes trimmed, plus
+# the first 10 hex chars of SHA-256("meshNamespace/meshName").
+derive_control_plane_namespace() {
+  local mesh_namespace=$1
+  local mesh_name=$2
+  local hash name_part
+
+  hash=$(printf '%s/%s' "${mesh_namespace}" "${mesh_name}" | sha256sum | cut -c1-10)
+  name_part=${mesh_name:0:39}
+  while [[ "${name_part}" == *- ]]; do name_part="${name_part%-}"; done
+  echo "istio-system-${name_part}-${hash}"
 }
 
 delete_subscriptions_matching() {
@@ -316,7 +345,9 @@ verify_context() {
 
 demo_already_installed() {
   oc_hub get multiclustermesh secure-mcm -n secure-mcm-ns &>/dev/null && \
-    oc_hub get multiclustermesh unsecure-mcm -n unsecure-mcm-ns &>/dev/null
+    oc_hub get multiclustermesh unsecure-mcm -n unsecure-mcm-ns &>/dev/null && \
+    oc_hub get placement secure-demo-placement -n secure-mcm-ns &>/dev/null && \
+    oc_hub get placement unsecure-demo-placement -n unsecure-mcm-ns &>/dev/null
 }
 
 verify_mesh_clean() {
@@ -775,6 +806,73 @@ EOF
   oc_hub create namespace secure-mcm-ns --dry-run=client -o yaml | oc_hub apply -f -
 }
 
+install_placements() {
+  info "=== Creating ClusterSet bindings and Placements in both MCM namespaces ==="
+  oc_hub apply -f - <<'EOF'
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: secure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: secure-demo-placement
+  namespace: secure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: demo-cluster-set
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSet: demo-cluster-set
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: unsecure-demo-placement
+  namespace: unsecure-mcm-ns
+spec:
+  clusterSets:
+  - demo-cluster-set
+EOF
+
+  local namespace placement elapsed selected decided expected
+  expected=$(printf '%s\n' local-cluster "${SPOKE_NAME}" | sort -u | paste -sd, -)
+  for namespace in secure-mcm-ns unsecure-mcm-ns; do
+    placement="${namespace%-mcm-ns}-demo-placement"
+    oc_hub wait managedclustersetbinding/demo-cluster-set -n "${namespace}" \
+      --for=condition=Bound --timeout=120s || die "ClusterSet binding is not Bound in ${namespace}"
+    elapsed=0
+    while true; do
+      selected=$(oc_hub get placement "${placement}" -n "${namespace}" \
+        -o jsonpath='{.status.numberOfSelectedClusters}' 2>/dev/null || true)
+      decided=$(oc_hub get placementdecision -n "${namespace}" \
+        -l cluster.open-cluster-management.io/placement="${placement}" \
+        -o jsonpath='{range .items[*].status.decisions[*]}{.clusterName}{"\n"}{end}' 2>/dev/null \
+        | sed '/^$/d' | sort -u | paste -sd, -) || decided=''
+      if [ "${selected}" = 2 ] && [ "${decided}" = "${expected}" ]; then
+        info "[ok] ${namespace}/${placement} selected both demo clusters"
+        break
+      fi
+      if [ "${elapsed}" -ge 120 ]; then
+        oc_hub describe placement "${placement}" -n "${namespace}" || true
+        oc_hub get placementdecision -n "${namespace}" -l cluster.open-cluster-management.io/placement="${placement}" -o yaml || true
+        die "Placement in ${namespace} did not select both demo clusters"
+      fi
+      sleep 5
+      elapsed=$((elapsed + 5))
+    done
+  done
+}
+
 install_trust_chain() {
   info "=== Deploying cert-manager trust chain in secure-mcm-ns ==="
   echo "${CERT_MANAGER_TRUST_CHAIN}" | oc_hub apply -n secure-mcm-ns -f - \
@@ -784,35 +882,53 @@ install_trust_chain() {
     || die "Root CA certificate did not become ready"
 }
 
-grant_klusterlet_olm_rbac() {
-  local oc_fn=$1
-  local label=$2
-
-  if "${oc_fn}" auth can-i create operatorgroups.operators.coreos.com \
-      --as=system:serviceaccount:open-cluster-management-agent:klusterlet-work-sa &>/dev/null; then
-    info "[ok] klusterlet on ${label} already has OLM permissions"
+# The mesh operator is a prerequisite; the controller does not install it.
+# Install the OSSM operator via an OLM subscription on both clusters.
+# The addon distributes Istio remote discovery secrets through ManifestWorkReplicaSet,
+# which requires the ManifestWorkReplicaSet feature gate on the hub's ClusterManager.
+# Without it the ManifestWorkReplicaSet objects are created but never processed —
+# remote secrets are silently not distributed.
+enable_mwrs_feature_gate() {
+  if oc_hub get clustermanager cluster-manager \
+      -o jsonpath='{.spec.workConfiguration.featureGates[?(@.feature=="ManifestWorkReplicaSet")].mode}' 2>/dev/null \
+      | grep -q Enable; then
+    info "[ok] ManifestWorkReplicaSet feature gate already enabled"
     return 0
   fi
 
-  info "=== Granting klusterlet OLM permissions on ${label} ==="
-  "${oc_fn}" apply -f - <<'EOF'
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+  info "=== Enabling ManifestWorkReplicaSet feature gate on ClusterManager ==="
+  oc_hub patch clustermanager cluster-manager --type=merge \
+    -p '{"spec":{"workConfiguration":{"featureGates":[{"feature":"ManifestWorkReplicaSet","mode":"Enable"}]}}}' \
+    || die "Failed to enable ManifestWorkReplicaSet feature gate"
+
+  # The gate deploys the hub work controller that processes ManifestWorkReplicaSets.
+  wait_for "cluster-manager-work-controller available" 300 \
+    "oc_hub rollout status deployment/cluster-manager-work-controller -n open-cluster-management-hub --timeout=10s"
+  info "[ok] cluster-manager-work-controller is available"
+}
+
+install_mesh_operator() {
+  local oc_fn label
+  for oc_fn in oc_hub oc_spoke; do
+    label=$([ "${oc_fn}" = "oc_hub" ] && echo hub || echo spoke)
+    info "=== Installing OSSM operator subscription on ${label} ==="
+    "${oc_fn}" apply -f - <<'EOF'
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
 metadata:
-  name: klusterlet-work-olm
-  labels:
-    open-cluster-management.io/aggregate-to-work: "true"
-rules:
-  - apiGroups: ["operators.coreos.com"]
-    resources: ["operatorgroups", "subscriptions", "catalogsources", "clusterserviceversions"]
-    verbs: ["create", "get", "list", "update", "patch", "delete"]
+  name: servicemesh-operator3
+  namespace: openshift-operators
+spec:
+  channel: stable
+  name: servicemeshoperator3
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic
 EOF
+  done
 }
 
 install_mcm_crs() {
-  grant_klusterlet_olm_rbac oc_hub hub
-  grant_klusterlet_olm_rbac oc_spoke spoke
-
   info "=== Creating MultiClusterMesh CRs ==="
   oc_hub apply -f - <<'EOF'
 apiVersion: mesh.open-cluster-management.io/v1alpha1
@@ -821,9 +937,8 @@ metadata:
   name: unsecure-mcm
   namespace: unsecure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
-  controlPlane:
-    namespace: unsecure-ns
+  placementRef:
+    name: unsecure-demo-placement
 EOF
 
   oc_hub apply -f - <<'EOF'
@@ -833,9 +948,8 @@ metadata:
   name: secure-mcm
   namespace: secure-mcm-ns
 spec:
-  clusterSet: demo-cluster-set
-  controlPlane:
-    namespace: secure-ns
+  placementRef:
+    name: secure-demo-placement
   security:
     trust:
       certManager:
@@ -850,6 +964,11 @@ wait_for_mesh_ready() {
   local timeout=$3
 
   info "Waiting for ${namespace}/${name} to be ready (timeout: ${timeout}s)..."
+  # TrustDistributed only exists when trust is configured; show the Ready reason
+  # instead for meshes like unsecure-mcm that have no trust.
+  local trust_configured
+  trust_configured=$(oc_hub get multiclustermesh "${name}" -n "${namespace}" \
+    -o jsonpath='{.spec.security.trust.certManager.issuerRef.name}' 2>/dev/null || true)
   local elapsed=0
   while true; do
     local ready
@@ -860,10 +979,19 @@ wait_for_mesh_ready() {
       return 0
     fi
 
-    local op
-    op=$(oc_hub get multiclustermesh "${name}" -n "${namespace}" \
-      -o jsonpath='{.status.clusterStatus[0].conditions[?(@.type=="OperatorInstalled")].reason}' 2>/dev/null || true)
-    echo "  ... Operator=${op:-pending} (${elapsed}s)"
+    local detail
+    if [ -n "${trust_configured}" ]; then
+      local trust
+      trust=$(oc_hub get multiclustermesh "${name}" -n "${namespace}" \
+        -o jsonpath='{.status.clusterStatus[0].conditions[?(@.type=="TrustDistributed")].reason}' 2>/dev/null || true)
+      detail="Trust=${trust:-pending}"
+    else
+      local ready_reason
+      ready_reason=$(oc_hub get multiclustermesh "${name}" -n "${namespace}" \
+        -o jsonpath='{.status.conditions[?(@.type=="Ready")].reason}' 2>/dev/null || true)
+      detail="Ready=${ready_reason:-pending}"
+    fi
+    echo "  ... ${detail} (${elapsed}s)"
 
     if [ "${elapsed}" -ge "${timeout}" ]; then
       warn "Timed out waiting for ${name} (may still be reconciling)"
@@ -877,14 +1005,9 @@ wait_for_mesh_ready() {
 wait_for_reconciliation() {
   info "=== Waiting for controller reconciliation ==="
 
-  # `oc wait` returns NotFound immediately when a new controller has not yet
-  # created its first ManifestWork. Polling covers controller startup and the
-  # ManifestWork's Applied condition in one timeout.
-  wait_for "operator ManifestWork applied on local-cluster" 180 \
-    "[ \"\$(oc_hub get manifestwork multicluster-mesh-operator -n local-cluster -o jsonpath='{.status.conditions[?(@.type==\"Applied\")].status}' 2>/dev/null)\" = 'True' ]"
-  wait_for "operator ManifestWork applied on ${SPOKE_NAME}" 180 \
-    "[ \"\$(oc_hub get manifestwork multicluster-mesh-operator -n ${SPOKE_NAME} -o jsonpath='{.status.conditions[?(@.type==\"Applied\")].status}' 2>/dev/null)\" = 'True' ]"
-
+  # The mesh operator is installed by this script (see install_mesh_operator);
+  # wait for its CSV to reach Succeeded on both clusters before the meshes
+  # can fully reconcile.
   local oc_fn csv_name
   for oc_fn in oc_hub oc_spoke; do
     local elapsed=0
@@ -925,14 +1048,25 @@ EOF
 }
 
 install_mcm_istio_crs() {
+  info "=== Resolving auto-derived control plane namespaces ==="
+  wait_for "unsecure-mcm control plane namespace reported" 120 \
+    "[ -n \"\$(read_control_plane_namespace unsecure-mcm unsecure-mcm-ns)\" ]"
+  wait_for "secure-mcm control plane namespace reported" 120 \
+    "[ -n \"\$(read_control_plane_namespace secure-mcm secure-mcm-ns)\" ]"
+  local unsecure_cp_ns secure_cp_ns
+  unsecure_cp_ns=$(read_control_plane_namespace unsecure-mcm unsecure-mcm-ns)
+  secure_cp_ns=$(read_control_plane_namespace secure-mcm secure-mcm-ns)
+  info "unsecure-mcm control plane namespace: ${unsecure_cp_ns}"
+  info "secure-mcm control plane namespace:   ${secure_cp_ns}"
+
   info "=== Creating MCM-managed Istio CRs on hub ==="
-  oc_hub apply -f - <<'EOF'
+  oc_hub apply -f - <<EOF
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: unsecure-cp
 spec:
-  namespace: unsecure-ns
+  namespace: ${unsecure_cp_ns}
   values:
     global:
       meshID: unsecure-mcm-ns-unsecure-mcm
@@ -941,13 +1075,13 @@ spec:
       network: local-cluster
 EOF
 
-  oc_hub apply -f - <<'EOF'
+  oc_hub apply -f - <<EOF
 apiVersion: sailoperator.io/v1
 kind: Istio
 metadata:
   name: secure-cp
 spec:
-  namespace: secure-ns
+  namespace: ${secure_cp_ns}
   values:
     global:
       meshID: secure-mcm-ns-secure-mcm
@@ -963,7 +1097,7 @@ kind: Istio
 metadata:
   name: unsecure-cp
 spec:
-  namespace: unsecure-ns
+  namespace: ${unsecure_cp_ns}
   values:
     global:
       meshID: unsecure-mcm-ns-unsecure-mcm
@@ -978,7 +1112,7 @@ kind: Istio
 metadata:
   name: secure-cp
 spec:
-  namespace: secure-ns
+  namespace: ${secure_cp_ns}
   values:
     global:
       meshID: secure-mcm-ns-secure-mcm
@@ -1033,9 +1167,10 @@ install_istio_resources() {
 
 wait_for_secure_cp_istio() {
   local cp_ns
-  cp_ns=$(oc_hub get multiclustermesh secure-mcm -n secure-mcm-ns \
-    -o jsonpath='{.spec.controlPlane.namespace}' 2>/dev/null || true)
-  cp_ns="${cp_ns:-secure-ns}"
+  cp_ns=$(read_control_plane_namespace secure-mcm secure-mcm-ns)
+  if [ -z "${cp_ns}" ]; then
+    die "secure-mcm has not reported status.controlPlaneNamespace yet"
+  fi
 
   # mesh-hello sidecars need a signing istiod; Istio CRs are created just before verify_install.
   for oc_fn in oc_hub oc_spoke; do
@@ -1124,6 +1259,9 @@ verify_install() {
   echo ""
   echo "MCMs:"
   oc_hub get multiclustermesh --all-namespaces
+  echo "Placements:"
+  oc_hub get placement -n secure-mcm-ns
+  oc_hub get placement -n unsecure-mcm-ns
   echo ""
   echo "Istio CRs on hub:"
   oc_hub get istios --all-namespaces 2>/dev/null || true
@@ -1136,6 +1274,9 @@ verify_install() {
   echo ""
   echo "ManifestWorks on ${SPOKE_NAME}:"
   oc_hub get manifestwork -n "${SPOKE_NAME}" 2>/dev/null | grep multicluster-mesh || true
+  echo ""
+  echo "ManifestWorkReplicaSets (remote secret distribution):"
+  oc_hub get manifestworkreplicaset -A 2>/dev/null || true
   echo ""
   echo "OSSM operator on hub:"
   oc_hub get csv -n openshift-operators 2>/dev/null | grep servicemesh || true
@@ -1190,16 +1331,37 @@ do_install() {
   import_spoke
   install_cert_manager
   install_backend_controller
+  enable_mwrs_feature_gate
   install_infrastructure
+  install_placements
   install_trust_chain
+  install_mesh_operator
   install_mcm_crs
   wait_for_reconciliation
+  resolve_kiali_namespace
   install_kiali_ossmc
   install_istio_resources
   verify_install
   install_mesh_hello
   install_mesh_observability
   print_console_urls
+}
+
+# Defaults KIALI_NAMESPACE to the secure-mcm control plane namespace when the
+# user did not set it. Called after the meshes are ready (status populated) and
+# before anything that deploys or tears down Kiali/observability.
+resolve_kiali_namespace() {
+  if [ -n "${KIALI_NAMESPACE}" ]; then
+    return 0
+  fi
+
+  KIALI_NAMESPACE=$(read_control_plane_namespace secure-mcm secure-mcm-ns)
+  if [ -z "${KIALI_NAMESPACE}" ]; then
+    # Uninstall path: the mesh CR may already be gone, so fall back to the
+    # derivation the controller uses.
+    KIALI_NAMESPACE=$(derive_control_plane_namespace secure-mcm-ns secure-mcm)
+  fi
+  info "Kiali namespace resolved to: ${KIALI_NAMESPACE}"
 }
 
 uninstall_mesh_hello() {
@@ -1263,6 +1425,14 @@ uninstall_cert_manager_stack() {
 }
 
 uninstall_infrastructure() {
+  info "=== Removing demo Placements and ClusterSet bindings ==="
+  local namespace placement
+  for namespace in secure-mcm-ns unsecure-mcm-ns; do
+    placement="${namespace%-mcm-ns}-demo-placement"
+    oc_hub delete placement "${placement}" -n "${namespace}" --ignore-not-found 2>/dev/null || true
+    oc_hub delete managedclustersetbinding demo-cluster-set -n "${namespace}" --ignore-not-found 2>/dev/null || true
+  done
+
   info "=== Removing cluster labels and namespaces ==="
   oc_hub label managedcluster local-cluster \
     cluster.open-cluster-management.io/clusterset- 2>/dev/null || true
@@ -1270,16 +1440,21 @@ uninstall_infrastructure() {
     cluster.open-cluster-management.io/clusterset- 2>/dev/null || true
   oc_hub delete managedclusterset demo-cluster-set --ignore-not-found 2>/dev/null || true
 
-  oc_hub delete namespace unsecure-mcm-ns secure-mcm-ns discovered-hub-ns \
-    unsecure-ns secure-ns --ignore-not-found 2>/dev/null || true
-  oc_spoke delete namespace discovered-spoke-ns unsecure-ns secure-ns \
-    --ignore-not-found 2>/dev/null || true
-}
+  # The control plane namespaces are auto-derived by the controller, which
+  # labels them with the mesh identity; delete by that label on both clusters.
+  local oc_fn mesh_name
+  for oc_fn in oc_hub oc_spoke; do
+    for mesh_name in unsecure-mcm secure-mcm; do
+      "${oc_fn}" delete namespace \
+        -l "mesh.open-cluster-management.io/mesh-name=${mesh_name}" \
+        --ignore-not-found 2>/dev/null || true
+    done
+  done
 
-uninstall_klusterlet_olm_rbac() {
-  info "=== Removing klusterlet OLM RBAC ==="
-  oc_hub delete clusterrole klusterlet-work-olm --ignore-not-found 2>/dev/null || true
-  oc_spoke delete clusterrole klusterlet-work-olm --ignore-not-found 2>/dev/null || true
+  oc_hub delete namespace unsecure-mcm-ns secure-mcm-ns discovered-hub-ns \
+    --ignore-not-found 2>/dev/null || true
+  oc_spoke delete namespace discovered-spoke-ns \
+    --ignore-not-found 2>/dev/null || true
 }
 
 uninstall_sail_crds() {
@@ -1379,6 +1554,7 @@ do_uninstall() {
   info "Spoke context: ${SPOKE_CTX}"
   info "manage-acm-install: ${MANAGE_ACM_INSTALL}"
 
+  resolve_kiali_namespace
   uninstall_mesh_observability
   uninstall_mesh_hello
 
@@ -1386,7 +1562,6 @@ do_uninstall() {
   uninstall_mcms
   uninstall_cert_manager_stack
   uninstall_infrastructure
-  uninstall_klusterlet_olm_rbac
   uninstall_sail_crds
   uninstall_kiali_ossmc
   uninstall_backend

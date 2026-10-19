@@ -158,8 +158,8 @@ describe('ControlPlaneDetailPage', () => {
     it('links mesh ID to managed mesh detail page when correlated to a MultiClusterMesh', async () => {
       const mcm = {
         metadata: { name: 'my-mesh', namespace: 'mesh-system' },
-        spec: { clusterSet: 'global', controlPlane: { namespace: 'istio-system' } },
-        status: { clusterStatus: [{ clusterName: 'cluster-a' }] }
+        spec: { placementRef: { name: 'global-placement' } },
+        status: { controlPlaneNamespace: 'istio-system', clusterStatus: [{ clusterName: 'cluster-a' }] }
       };
       rstest.mocked(useK8sWatchResource).mockReturnValue([[mcm], true, null]);
       rstest.mocked(fleetK8sGet).mockResolvedValue(makeIstio());

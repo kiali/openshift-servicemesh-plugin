@@ -11,30 +11,31 @@ const makeMCM = (
   kind: 'MultiClusterMesh',
   metadata: { name, namespace },
   spec: {
-    clusterSet: 'global',
-    ...(cpNamespace ? { controlPlane: { namespace: cpNamespace } } : {})
+    placementRef: { name: 'global-placement' }
   },
   status: {
+    controlPlaneNamespace: cpNamespace,
     clusterStatus: clusters.map(c => ({ clusterName: c }))
   }
 });
 
 describe('buildMcmIndex', () => {
   it('builds an index keyed by clusterName/namespace', () => {
-    const mcms = [makeMCM('mesh-a', 'ns-a', 'istio-system', ['cluster-1', 'cluster-2'])];
+    const mcms = [makeMCM('mesh-a', 'ns-a', 'istio-system-mesh-a-1234567890', ['cluster-1', 'cluster-2'])];
     const index = buildMcmIndex(mcms);
     expect(index.size).toBe(2);
-    expect(index.get('cluster-1/istio-system')).toEqual({ name: 'mesh-a', namespace: 'ns-a' });
-    expect(index.get('cluster-2/istio-system')).toEqual({ name: 'mesh-a', namespace: 'ns-a' });
+    expect(index.get('cluster-1/istio-system-mesh-a-1234567890')).toEqual({ name: 'mesh-a', namespace: 'ns-a' });
+    expect(index.get('cluster-2/istio-system-mesh-a-1234567890')).toEqual({ name: 'mesh-a', namespace: 'ns-a' });
   });
 
-  it('defaults controlPlane.namespace to istio-system when not set', () => {
+  it('skips MCMs that have not reported status.controlPlaneNamespace', () => {
+    // The controller writes clusterStatus and controlPlaneNamespace in the same
+    // status update, so this cannot happen in practice; the index stays defensive.
     const mcms = [makeMCM('mesh-b', 'ns-b', undefined, ['cluster-x'])];
-    const index = buildMcmIndex(mcms);
-    expect(index.get('cluster-x/istio-system')).toEqual({ name: 'mesh-b', namespace: 'ns-b' });
+    expect(buildMcmIndex(mcms).size).toBe(0);
   });
 
-  it('uses the explicit controlPlane.namespace when set', () => {
+  it('uses the reported status.controlPlaneNamespace when set', () => {
     const mcms = [makeMCM('mesh-c', 'ns-c', 'custom-ns', ['cluster-y'])];
     const index = buildMcmIndex(mcms);
     expect(index.get('cluster-y/custom-ns')).toEqual({ name: 'mesh-c', namespace: 'ns-c' });
@@ -43,18 +44,27 @@ describe('buildMcmIndex', () => {
 
   it('handles multiple MCMs with different clusters', () => {
     const mcms = [
-      makeMCM('mesh-1', 'ns-1', 'istio-system', ['cluster-a']),
+      makeMCM('mesh-1', 'ns-1', 'istio-system-mesh-1-1111111111', ['cluster-a']),
       makeMCM('mesh-2', 'ns-2', 'istio-prod', ['cluster-b', 'cluster-c'])
     ];
     const index = buildMcmIndex(mcms);
     expect(index.size).toBe(3);
-    expect(index.get('cluster-a/istio-system')?.name).toBe('mesh-1');
+    expect(index.get('cluster-a/istio-system-mesh-1-1111111111')?.name).toBe('mesh-1');
     expect(index.get('cluster-b/istio-prod')?.name).toBe('mesh-2');
     expect(index.get('cluster-c/istio-prod')?.name).toBe('mesh-2');
   });
 
   it('returns empty map for empty MCMs array', () => {
     expect(buildMcmIndex([]).size).toBe(0);
+  });
+
+  it('correlates overlapping meshes independently by control plane namespace', () => {
+    const first = makeMCM('mesh', 'team-a', 'cp-a', ['shared-cluster']);
+    const second = makeMCM('mesh', 'team-b', 'cp-b', ['shared-cluster']);
+    const index = buildMcmIndex([first, second]);
+    expect(lookupMcm(index, 'shared-cluster', 'cp-a')).toEqual({ name: 'mesh', namespace: 'team-a' });
+    expect(lookupMcm(index, 'shared-cluster', 'cp-b')).toEqual({ name: 'mesh', namespace: 'team-b' });
+    expect(lookupMcm(index, 'selected-only-cluster', 'cp-a')).toBeUndefined();
   });
 
   it('handles MCM with empty clusterStatus', () => {
@@ -67,7 +77,7 @@ describe('buildMcmIndex', () => {
       apiVersion: 'mesh.open-cluster-management.io/v1alpha1',
       kind: 'MultiClusterMesh',
       metadata: { name: 'no-status', namespace: 'ns' },
-      spec: { clusterSet: 'global' }
+      spec: { placementRef: { name: 'global-placement' } }
     };
     expect(buildMcmIndex([mcm]).size).toBe(0);
   });
@@ -109,7 +119,7 @@ describe('lookupMcm', () => {
     expect(lookupMcm(index, 'cluster-1', 'wrong-ns')).toBeUndefined();
   });
 
-  it('defaults undefined namespace to istio-system', () => {
-    expect(lookupMcm(index, 'cluster-1', undefined)).toEqual({ name: 'mesh-a', namespace: 'ns-a' });
+  it('returns undefined when namespace is not reported', () => {
+    expect(lookupMcm(index, 'cluster-1', undefined)).toBeUndefined();
   });
 });
