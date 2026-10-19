@@ -15,13 +15,6 @@ import type { CategoryLabel, VirtualFilterColumn } from './VirtualFilterTable';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import { clusterMeshStatusRowKey, clusterMeshStatusSearchMatch } from '../utils/tableCallbacks';
 
-const TRUST_CATEGORY_LABELS: CategoryLabel[] = [
-  { key: 'all', label: 'All ({{count}})' },
-  { key: 'ready', label: 'Distributed ({{count}})' },
-  { key: 'pending', label: 'Pending ({{count}})' },
-  { key: 'failed', label: 'Failed ({{count}})' }
-];
-
 const CLUSTER_NAME_LABEL = 'mesh.open-cluster-management.io/cluster-name';
 const MESH_NAME_LABEL = 'mesh.open-cluster-management.io/mesh-name';
 
@@ -77,12 +70,24 @@ export const TrustStatusCard: FC<TrustStatusCardProps> = ({ clusterStatuses, iss
     return map;
   }, [certs]);
 
+  // Labels are translated here (in addition to VirtualFilterTable's t()) so the
+  // i18n extractor sees the keys; the second t() is a no-op on translated text.
+  const categoryLabels = useMemo<CategoryLabel[]>(
+    () => [
+      { key: 'all', label: t('All ({{count}})') },
+      { key: 'ready', label: t('Distributed ({{count}})') },
+      { key: 'pending', label: t('Pending ({{count}})') },
+      { key: 'failed', label: t('Failed ({{count}})') }
+    ],
+    [t]
+  );
+
   const columns = useMemo<VirtualFilterColumn<ClusterMeshStatus>[]>(
     () => [
       {
         key: 'cluster',
         headerTooltip: t('The selected cluster to which this trust status applies.'),
-        label: 'Cluster',
+        label: t('Cluster'),
         render: cs => <Link to={clusterDetailLink(cs.clusterName)}>{cs.clusterName}</Link>,
         width: '25%'
       },
@@ -91,14 +96,14 @@ export const TrustStatusCard: FC<TrustStatusCardProps> = ({ clusterStatuses, iss
         headerTooltip: t(
           'The per-cluster TrustDistributed condition reported by the add-on controller in MultiClusterMesh status.'
         ),
-        label: 'Trust Status',
+        label: t('Trust Status'),
         render: cs => <MeshStatus conditions={cs.conditions} conditionType="TrustDistributed" isCompact />,
         width: '25%'
       },
       {
         key: 'expires',
         headerTooltip: t('When the per-cluster CA certificate expires.'),
-        label: 'Expires',
+        label: t('Expires'),
         render: cs => {
           const cert = certsByCluster.get(cs.clusterName);
           return cert?.status?.notAfter ? <Timestamp timestamp={cert.status.notAfter} /> : '-';
@@ -108,7 +113,7 @@ export const TrustStatusCard: FC<TrustStatusCardProps> = ({ clusterStatuses, iss
       {
         key: 'renews',
         headerTooltip: t('When cert-manager will renew the per-cluster CA certificate.'),
-        label: 'Renews',
+        label: t('Renews'),
         render: cs => {
           const cert = certsByCluster.get(cs.clusterName);
           return cert?.status?.renewalTime ? <Timestamp timestamp={cert.status.renewalTime} /> : '-';
@@ -195,7 +200,7 @@ export const TrustStatusCard: FC<TrustStatusCardProps> = ({ clusterStatuses, iss
       <CardBody>
         <VirtualFilterTable
           categorize={categorizeTrust}
-          categoryLabels={TRUST_CATEGORY_LABELS}
+          categoryLabels={categoryLabels}
           columns={columns}
           emptyMessage="No clusters match the current filter."
           items={clusterStatuses}
