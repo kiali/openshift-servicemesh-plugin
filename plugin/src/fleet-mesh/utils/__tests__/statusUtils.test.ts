@@ -36,6 +36,20 @@ describe('deriveStatus', () => {
     });
   });
 
+  it('returns orange with the friendly label for a transient TrustDistributed reason', () => {
+    expect(deriveStatus([makeCondition('TrustDistributed', 'False', 'CacertsPending')], 'TrustDistributed')).toEqual({
+      color: 'orange',
+      label: 'Trust Pending'
+    });
+  });
+
+  it('returns the display label for TrustDistributed=True', () => {
+    expect(deriveStatus([makeCondition('TrustDistributed', 'True')], 'TrustDistributed')).toEqual({
+      color: 'green',
+      label: 'Distributed'
+    });
+  });
+
   it('labels Placement failures from the add-on', () => {
     expect(deriveStatus([makeCondition('Ready', 'False', 'PlacementNotFound')])).toEqual({
       color: 'red',
@@ -85,6 +99,10 @@ describe('getStatusRank', () => {
 
   it('returns 3 for red (not ready)', () => {
     expect(getStatusRank([makeCondition('Ready', 'False')])).toBe(3);
+  });
+
+  it('returns 2 for a transient reason (pending, not failed)', () => {
+    expect(getStatusRank([makeCondition('TrustDistributed', 'False', 'CacertsPending')], 'TrustDistributed')).toBe(2);
   });
 
   it('returns 1 for undefined conditions', () => {
