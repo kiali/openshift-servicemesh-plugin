@@ -179,7 +179,7 @@ const ControlPlaneDetailContent: FC<{ cluster: string; name: string; type: CpTyp
               <Alert variant="warning" isInline title={t('Data may be stale — background refresh failed.')} />
             </GridItem>
           )}
-          <GridItem span={5}>
+          <GridItem span={12}>
             <Card isCompact>
               <CardBody>
                 <DescriptionList isCompact columnModifier={{ default: '2Col' }}>
