@@ -19,6 +19,14 @@ const friendlyReasons: Record<string, string> = {
   ReconcileError: 'Reconcile Error'
 };
 
+// Backend reasons that indicate an in-progress state rather than a failure.
+const transientReasons = new Set(['CacertsPending']);
+
+// Display labels for True conditions; types not listed fall back to the raw type.
+const trueLabels: Record<string, string> = {
+  TrustDistributed: 'Distributed'
+};
+
 /** Explicit keys let the locale extractor see reason labels while unknown backend reasons remain readable. */
 export function translateStatusLabel(label: string, t: (key: string) => string): string {
   switch (label) {
@@ -26,6 +34,8 @@ export function translateStatusLabel(label: string, t: (key: string) => string):
       return t('All Control Planes Not Ready');
     case 'Clusters Not Ready':
       return t('Clusters Not Ready');
+    case 'Distributed':
+      return t('Distributed');
     case 'Trust Pending':
       return t('Trust Pending');
     case 'Missing Product Claim':
@@ -59,13 +69,14 @@ export function deriveStatus(
           return { label: 'Degraded', color: 'orange' };
         }
       }
-      return { label: targetType, color: 'green' };
+      return { label: trueLabels[targetType] ?? targetType, color: 'green' };
     }
     if (target.status === 'Unknown') {
       return { label: 'Unknown', color: 'grey' };
     }
     const reason = target.reason ?? `Not ${targetType}`;
-    return { label: friendlyReasons[reason] ?? reason, color: 'red' };
+    const label = friendlyReasons[reason] ?? reason;
+    return { label, color: transientReasons.has(reason) ? 'orange' : 'red' };
   }
 
   const degraded = conditions.find(c => c.status !== 'True');

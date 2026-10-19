@@ -58,14 +58,20 @@ describe('MeshStatus', () => {
   });
 
   describe('custom conditionType', () => {
-    it('shows TrustDistributed when TrustDistributed=True', () => {
+    it('shows Distributed when TrustDistributed=True', () => {
       render(<MeshStatus conditions={[trustDistributed]} conditionType="TrustDistributed" />);
-      expect(screen.getByText('TrustDistributed')).toBeInTheDocument();
+      expect(screen.getByText('Distributed')).toBeInTheDocument();
     });
 
     it('shows friendly reason for TrustDistributed=False', () => {
       render(<MeshStatus conditions={[trustPending]} conditionType="TrustDistributed" />);
       expect(screen.getByText('Reconcile Error')).toBeInTheDocument();
+    });
+
+    it('renders an orange label for the transient CacertsPending reason', () => {
+      const condition: K8sCondition = { type: 'TrustDistributed', status: 'False', reason: 'CacertsPending' };
+      render(<MeshStatus conditions={[condition]} conditionType="TrustDistributed" />);
+      expect(screen.getByText('Trust Pending').closest('.pf-v6-c-label')).toHaveClass('pf-m-orange');
     });
   });
 
@@ -93,7 +99,7 @@ describe('MeshStatus', () => {
       { type: 'Other', status: 'False' }
     ];
     render(<MeshStatus conditions={conditions} conditionType="TrustDistributed" />);
-    expect(screen.getByText('TrustDistributed')).toBeInTheDocument();
+    expect(screen.getByText('Distributed')).toBeInTheDocument();
   });
 
   it('shows Healthy when all non-target conditions are True', () => {

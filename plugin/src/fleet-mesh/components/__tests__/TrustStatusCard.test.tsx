@@ -3,13 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { TrustStatusCard } from '../TrustStatusCard';
 import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
 import type { Certificate } from '../../types/certManager';
-import type { ManifestWork } from '../../types/manifestWork';
 import type { ClusterMeshStatus } from '../../types/multiClusterMesh';
 import type { K8sCondition } from '../../types/common';
 
 const CLUSTER_NAME_LABEL = 'mesh.open-cluster-management.io/cluster-name';
 const MESH_NAME_LABEL = 'mesh.open-cluster-management.io/mesh-name';
-const MESH_NAMESPACE_LABEL = 'mesh.open-cluster-management.io/mesh-namespace';
 
 // ---------------------------------------------------------------------------
 // Test data factories
@@ -21,17 +19,15 @@ const makeCondition = (type: string, status: 'True' | 'False' | 'Unknown', reaso
   reason
 });
 
-const makeCluster = (name: string): ClusterMeshStatus => ({
+const makeCluster = (
+  name: string,
+  trust?: { reason?: string; status: 'True' | 'False' | 'Unknown' }
+): ClusterMeshStatus => ({
   clusterName: name,
-  conditions: [makeCondition('TrustDistributed', 'True')]
+  conditions: trust ? [makeCondition('TrustDistributed', trust.status, trust.reason)] : []
 });
 
-const makeCert = (
-  clusterName: string,
-  readyStatus: 'True' | 'False' | 'Unknown',
-  reason?: string,
-  timestamps?: { notAfter?: string; renewalTime?: string }
-): Certificate => ({
+const makeCert = (clusterName: string, timestamps?: { notAfter?: string; renewalTime?: string }): Certificate => ({
   apiVersion: 'cert-manager.io/v1',
   kind: 'Certificate',
   metadata: {
@@ -43,48 +39,18 @@ const makeCert = (
     }
   },
   status: {
-    conditions: [makeCondition('Ready', readyStatus, reason)],
+    conditions: [makeCondition('Ready', 'True')],
     ...timestamps
   }
 });
 
-const makeMW = (clusterName: string, applied: boolean, available: boolean): ManifestWork => ({
-  apiVersion: 'work.open-cluster-management.io/v1',
-  kind: 'ManifestWork',
-  metadata: {
-    name: `mw-${clusterName}`,
-    namespace: clusterName,
-    labels: {
-      [CLUSTER_NAME_LABEL]: clusterName,
-      [MESH_NAME_LABEL]: 'test-mesh',
-      [MESH_NAMESPACE_LABEL]: 'mesh-system'
-    }
-  },
-  status: {
-    conditions: [
-      makeCondition('Applied', applied ? 'True' : 'False'),
-      makeCondition('Available', available ? 'True' : 'False')
-    ]
-  }
-});
-
-// Convenience: set up the mock implementation so cert and MW calls are
-// distinguished by GVK kind. Re-renders (from filter/search interactions)
+// Convenience: set up the mock implementation for the Certificate watch (the
+// only watch the card starts). Re-renders (from filter/search interactions)
 // keep getting the right data without exhausting a once-queue.
-const setupWatches = (
-  certs: Certificate[],
-  mws: ManifestWork[],
-  opts?: {
-    certsError?: unknown;
-    certsLoaded?: boolean;
-    mwError?: unknown;
-    mwLoaded?: boolean;
-  }
-): void => {
-  const { certsLoaded = true, certsError = null, mwLoaded = true, mwError = null } = opts ?? {};
+const setupWatches = (certs: Certificate[], opts?: { certsError?: unknown; certsLoaded?: boolean }): void => {
+  const { certsLoaded = true, certsError = null } = opts ?? {};
   rstest.mocked(useK8sWatchResource).mockImplementation((params: { groupVersionKind?: { kind?: string } } | null) => {
     if (params?.groupVersionKind?.kind === 'Certificate') return [certs, certsLoaded, certsError];
-    if (params?.groupVersionKind?.kind === 'ManifestWork') return [mws, mwLoaded, mwError];
     return [null, false, null];
   });
 };
@@ -103,11 +69,16 @@ afterEach(() => rstest.clearAllMocks());
 // ---------------------------------------------------------------------------
 
 describe('TrustStatusCard — no issuer', () => {
-  it('renders the not-configured message (i18nKey) and does not start any watches', () => {
+  it('renders the not-configured message and does not start any watches', () => {
     render(<TrustStatusCard {...defaultProps} issuerName="" clusterStatuses={[]} />);
     expect(screen.getByText('Trust Status')).toBeInTheDocument();
-    expect(screen.getByText('trustNotConfiguredMessage')).toBeInTheDocument();
-    // Hooks must always be called (rules of hooks), but both are passed null — no real watch started.
+    // The Trans mock renders the i18nKey as flat text, so the <code> tags appear literally.
+    expect(
+      screen.getByText(
+        'Trust is not configured for this mesh. Set <code>spec.security.trust.certManager.issuerRef</code> on the MultiClusterMesh to enable CA trust distribution.'
+      )
+    ).toBeInTheDocument();
+    // Hooks must always be called (rules of hooks), but the watch is passed null — no real watch started.
     expect(rstest.mocked(useK8sWatchResource)).not.toHaveBeenCalledWith(
       expect.objectContaining({ groupVersionKind: expect.anything() })
     );
@@ -120,13 +91,7 @@ describe('TrustStatusCard — no issuer', () => {
 
 describe('TrustStatusCard — loading', () => {
   it('shows spinner when certs are not yet loaded', () => {
-    setupWatches([], [], { certsLoaded: false });
-    render(<TrustStatusCard {...defaultProps} />);
-    expect(screen.getByLabelText('Loading trust status')).toBeInTheDocument();
-  });
-
-  it('shows spinner when mw watch is still loading and no mwError', () => {
-    setupWatches([], [], { certsLoaded: true, mwLoaded: false, mwError: null });
+    setupWatches([], { certsLoaded: false });
     render(<TrustStatusCard {...defaultProps} />);
     expect(screen.getByLabelText('Loading trust status')).toBeInTheDocument();
   });
@@ -138,20 +103,10 @@ describe('TrustStatusCard — loading', () => {
 
 describe('TrustStatusCard — errors', () => {
   it('shows certs error card when cert watch fails', () => {
-    setupWatches([], [], { certsError: new Error('cert watch failed') });
+    setupWatches([], { certsError: new Error('cert watch failed') });
     render(<TrustStatusCard {...defaultProps} />);
     expect(screen.getByText('Unable to load certificate data')).toBeInTheDocument();
     expect(screen.getByText('An unexpected error occurred.')).toBeInTheDocument();
-  });
-
-  it('renders the full table when mwError is set but certs are loaded', () => {
-    // mwError is row-level — the component does not early-return;
-    // it renders the table with "Unavailable" in the distribution column.
-    const certs = [makeCert('cluster-a', 'True')];
-    setupWatches(certs, [], { mwError: new Error('mw watch failed') });
-    render(<TrustStatusCard {...defaultProps} />);
-    expect(screen.getByText('cluster-a')).toBeInTheDocument();
-    expect(screen.getByText('Unavailable')).toBeInTheDocument();
   });
 });
 
@@ -161,72 +116,78 @@ describe('TrustStatusCard — errors', () => {
 
 describe('TrustStatusCard — empty states', () => {
   it('shows no-clusters message when clusterStatuses is empty', () => {
-    setupWatches([], []);
+    setupWatches([]);
     render(<TrustStatusCard {...defaultProps} clusterStatuses={[]} />);
     expect(screen.getByText('No clusters are part of this mesh yet.')).toBeInTheDocument();
   });
 
-  it('shows not-reconciling message when certs and mws are both empty', () => {
-    setupWatches([], []);
-    render(<TrustStatusCard {...defaultProps} />);
-    expect(
-      screen.getByText('No certificates have been created yet — the controller may still be reconciling.')
-    ).toBeInTheDocument();
+  it('renders trust status from the CR condition even when no certificates exist yet', () => {
+    setupWatches([]);
+    render(
+      <TrustStatusCard
+        {...defaultProps}
+        clusterStatuses={[makeCluster('cluster-a', { status: 'False', reason: 'CacertsPending' })]}
+      />
+    );
+    expect(screen.getByText('cluster-a')).toBeInTheDocument();
+    expect(screen.getByText('Trust Pending')).toBeInTheDocument();
+    // No certs yet: Expires and Renews show dashes.
+    expect(screen.getAllByText('-').length).toBeGreaterThanOrEqual(2);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Row rendering — cert and distribution status labels
+// Row rendering — trust status from the CR condition, timestamps from certs
 // ---------------------------------------------------------------------------
 
 describe('TrustStatusCard — row status labels', () => {
-  it('shows Distributed when cert is Ready and MW is Applied + Available', () => {
+  it('shows the TrustDistributed condition status and cert timestamps', () => {
     const certs = [
-      makeCert('cluster-a', 'True', undefined, {
+      makeCert('cluster-a', {
         notAfter: '2026-12-31T00:00:00Z',
         renewalTime: '2026-11-30T00:00:00Z'
       })
     ];
-    const mws = [makeMW('cluster-a', true, true)];
-    setupWatches(certs, mws);
-    render(<TrustStatusCard {...defaultProps} />);
-    expect(screen.getByText('Ready')).toBeInTheDocument();
+    setupWatches(certs);
+    render(<TrustStatusCard {...defaultProps} clusterStatuses={[makeCluster('cluster-a', { status: 'True' })]} />);
     expect(screen.getByText('Distributed')).toBeInTheDocument();
     expect(screen.getByText('2026-12-31T00:00:00Z')).toBeInTheDocument();
     expect(screen.getByText('2026-11-30T00:00:00Z')).toBeInTheDocument();
   });
 
   it('shows dash in Expires and Renews columns when cert has no timestamp fields', () => {
-    const certs = [makeCert('cluster-a', 'True')];
-    const mws = [makeMW('cluster-a', true, true)];
-    setupWatches(certs, mws);
+    setupWatches([makeCert('cluster-a')]);
     render(<TrustStatusCard {...defaultProps} />);
     // Two dashes: one for Expires, one for Renews
     expect(screen.getAllByText('-').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('shows Applied when cert is Ready but MW is only Applied (not yet Available)', () => {
-    const certs = [makeCert('cluster-a', 'True')];
-    const mws = [makeMW('cluster-a', true, false)];
-    setupWatches(certs, mws);
-    render(<TrustStatusCard {...defaultProps} />);
-    expect(screen.getByText('Applied')).toBeInTheDocument();
+  it('shows Trust Pending when TrustDistributed is False with CacertsPending', () => {
+    setupWatches([]);
+    render(
+      <TrustStatusCard
+        {...defaultProps}
+        clusterStatuses={[makeCluster('cluster-a', { status: 'False', reason: 'CacertsPending' })]}
+      />
+    );
+    expect(screen.getByText('Trust Pending')).toBeInTheDocument();
   });
 
-  it('shows cert reason when cert is not Ready', () => {
-    const certs = [makeCert('cluster-a', 'False', 'IssuerNotReady')];
-    const mws = [makeMW('cluster-a', false, false)];
-    setupWatches(certs, mws);
-    render(<TrustStatusCard {...defaultProps} />);
-    expect(screen.getByText('IssuerNotReady')).toBeInTheDocument();
+  it('shows the raw reason when TrustDistributed is False with an unknown reason', () => {
+    setupWatches([]);
+    render(
+      <TrustStatusCard
+        {...defaultProps}
+        clusterStatuses={[makeCluster('cluster-a', { status: 'False', reason: 'SomeTrustError' })]}
+      />
+    );
+    expect(screen.getByText('SomeTrustError')).toBeInTheDocument();
   });
 
-  it('shows Pending cert label when no cert exists for a cluster', () => {
-    // Use Applied=true so distribution shows "Applied" — keeps "Pending" unambiguous in the cert column.
-    setupWatches([], [makeMW('cluster-a', true, false)]);
-    render(<TrustStatusCard {...defaultProps} />);
-    expect(screen.getByText('Pending')).toBeInTheDocument();
-    expect(screen.getByText('Applied')).toBeInTheDocument();
+  it('shows Unknown when the cluster has no TrustDistributed condition', () => {
+    setupWatches([]);
+    render(<TrustStatusCard {...defaultProps} clusterStatuses={[makeCluster('cluster-a')]} />);
+    expect(screen.getByText('Unknown')).toBeInTheDocument();
   });
 });
 
@@ -235,15 +196,14 @@ describe('TrustStatusCard — row status labels', () => {
 // ---------------------------------------------------------------------------
 
 describe('TrustStatusCard — filters', () => {
-  const clusters = [makeCluster('dist-cluster'), makeCluster('pending-cluster'), makeCluster('failed-cluster')];
-  const certs = [
-    makeCert('dist-cluster', 'True'),
-    makeCert('failed-cluster', 'False')
-    // no cert for pending-cluster → pending
+  const clusters = [
+    makeCluster('dist-cluster', { status: 'True' }),
+    makeCluster('pending-cluster', { status: 'False', reason: 'CacertsPending' }),
+    makeCluster('failed-cluster', { status: 'False', reason: 'SomeTrustError' })
   ];
-  const mws = [makeMW('dist-cluster', true, true)];
+  const certs = [makeCert('dist-cluster')];
 
-  beforeEach(() => setupWatches(certs, mws));
+  beforeEach(() => setupWatches(certs));
 
   it('filters to only Distributed clusters', async () => {
     const user = userEvent.setup();
@@ -276,12 +236,11 @@ describe('TrustStatusCard — filters', () => {
 // ---------------------------------------------------------------------------
 
 describe('TrustStatusCard — search', () => {
-  const clusters = [makeCluster('alpha-cluster'), makeCluster('beta-cluster')];
-  const certs = [makeCert('alpha-cluster', 'True'), makeCert('beta-cluster', 'True')];
-  const mws = [makeMW('alpha-cluster', true, true), makeMW('beta-cluster', true, true)];
+  const clusters = [makeCluster('alpha-cluster', { status: 'True' }), makeCluster('beta-cluster', { status: 'True' })];
+  const certs = [makeCert('alpha-cluster'), makeCert('beta-cluster')];
 
   beforeEach(() => {
-    setupWatches(certs, mws);
+    setupWatches(certs);
     rstest.useFakeTimers();
   });
   afterEach(() => {
@@ -314,9 +273,7 @@ describe('TrustStatusCard — search', () => {
 
 describe('TrustStatusCard — cluster links', () => {
   it('links cluster names to ACM cluster detail pages', () => {
-    const certs = [makeCert('cluster-a', 'True')];
-    const mws = [makeMW('cluster-a', true, true)];
-    setupWatches(certs, mws);
+    setupWatches([makeCert('cluster-a')]);
     render(<TrustStatusCard {...defaultProps} />);
     expect(screen.getByRole('link', { name: 'cluster-a' })).toHaveAttribute(
       'href',
