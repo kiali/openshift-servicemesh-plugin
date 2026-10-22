@@ -20,8 +20,10 @@ Layout:
   persists `storageState` for the suite projects. OSSMC always runs on OpenShift; there is no
   anonymous strategy.
 - `ossmc/` — OSSMC-owned specs and helpers (Console login, sidebar navigation).
-- `tsconfig.json` — typechecks only the OSSMC-owned files; the vendored tree is excluded because
-  kiali does not typecheck `frontend/e2e` either (Playwright transpiles without typechecking).
+- `tsconfig.json` — typechecks only the OSSMC-owned files that do not import the vendored
+  tree (`global-setup/`, `ossmc/utils/`). The vendored tree — and the `ossmc/` specs, pages
+  and fixtures that import it — is excluded because kiali does not typecheck `frontend/e2e`
+  either (it has latent type errors; Playwright transpiles without typechecking).
 
 Projects mirror the Cypress run scope `(@core-1 or @core-2 or @ambient or @waypoint or
 @waypoint-tracing) and not @skip-ossmc`: each project greps its tag and excludes `@skip-ossmc`.

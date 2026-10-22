@@ -4,5 +4,13 @@
     "types": ["node"]
   },
   "include": ["**/*.ts"],
-  "exclude": ["tests/**", "pages/**", "utils/**", "fixtures/**"]
+  "exclude": [
+    "tests/**",
+    "pages/**",
+    "utils/**",
+    "fixtures/**",
+    "ossmc/fixtures/**",
+    "ossmc/pages/**",
+    "ossmc/tests/**"
+  ]
 }
