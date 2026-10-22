@@ -7,7 +7,21 @@ import pluginCypress from 'eslint-plugin-cypress';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['build/**', 'cypress/integration/kiali/**', 'dist/**', 'mock-server/**', 'public/**', 'src/kiali/**'] },
+  {
+    ignores: [
+      'build/**',
+      'cypress/integration/kiali/**',
+      'dist/**',
+      'mock-server/**',
+      'public/**',
+      'src/kiali/**',
+      // Vendored kiali Playwright e2e tree (synced by hack/copy-frontend-src-to-ossmc.sh)
+      'e2e/tests/**',
+      'e2e/pages/**',
+      'e2e/utils/**',
+      'e2e/fixtures/**'
+    ]
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

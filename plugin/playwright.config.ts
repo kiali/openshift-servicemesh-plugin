@@ -42,7 +42,9 @@ const reporters: ReporterDescription[] = [
  * (e.g. @waypoint vs @waypoint-tracing).
  */
 export default defineConfig({
-  testDir: './e2e/tests',
+  // Specs live in the vendored kiali tree (e2e/tests) and OSSMC-specific specs
+  // (e2e/ossmc). Setup files are matched per-project via testMatch/testDir.
+  testDir: './e2e',
   // Failure artifacts (screenshots, videos, traces) under playwright/ like Cypress outputs.
   outputDir: 'playwright/test-results',
   fullyParallel: true,

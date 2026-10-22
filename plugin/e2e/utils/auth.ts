@@ -1,10 +1,6 @@
 import path from 'path';
 
-/**
- * Shared auth state path used by auth.setup.ts and playwright.config.ts projects.
- *
- * Uses __dirname (not import.meta) because the plugin package is CommonJS —
- * Playwright transpiles the config and its imports to CJS, where import.meta
- * is a syntax error.
- */
+// __dirname is a CommonJS global; kiali's ESM dirname helper does not apply here.
+
+/** Shared auth state path used by auth.setup.ts and playwright.config.ts projects. */
 export const AUTH_FILE = path.join(__dirname, '../../playwright/.auth/user.json');
