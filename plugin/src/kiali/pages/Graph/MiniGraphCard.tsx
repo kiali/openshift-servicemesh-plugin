@@ -190,12 +190,7 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
 
     return (
       <>
-        <Card
-          id={'MiniGraphCard'}
-          data-test="mini-graph"
-          data-ready={!isLoading && this.state.isReady}
-          className={cardStyle}
-        >
+        <Card id={'MiniGraphCard'} data-test="mini-graph" className={cardStyle}>
           <CardHeader
             actions={{
               actions: (
@@ -211,7 +206,7 @@ class MiniGraphCardComponent extends React.Component<MiniGraphCardProps, MiniGra
                         id="minigraph-toggle"
                         ref={toggleRef}
                         className={kebabToggleStyle}
-                        aria-label="Actions"
+                        aria-label={t('Actions')}
                         variant="plain"
                         onClick={() => this.onGraphActionsToggle(!this.state.isKebabOpen)}
                         isExpanded={this.state.isKebabOpen}

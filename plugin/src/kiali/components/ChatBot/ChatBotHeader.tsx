@@ -18,7 +18,7 @@ import {
 import { OpenDrawerRightIcon, OutlinedWindowRestoreIcon, TrashIcon, WindowMinimizeIcon } from '@patternfly/react-icons';
 import { t } from 'utils/I18nUtils';
 import { useDispatch, useSelector } from 'react-redux';
-import type { KialiAppState } from 'store/Store';
+import { KialiAppState } from 'store/Store';
 import { ChatAIActions } from 'actions/ChatAIActions';
 
 type ChatBotHeaderProps = {
@@ -31,10 +31,10 @@ type ChatBotHeaderProps = {
 };
 
 export const ChatBotHeader: React.FC<ChatBotHeaderProps> = ({ onCloseChat, onSelectProviderModel, onNewChat }) => {
-  const selectedProvider = useSelector((state: KialiAppState) => state.aiChat.selectedProvider);
-  const selectedModel = useSelector((state: KialiAppState) => state.aiChat.selectedModel);
-  const displayMode = useSelector((state: KialiAppState) => state.aiChat.displayMode);
-  const providers = useSelector((state: KialiAppState) => state.aiChat.providers);
+  const selectedProvider = useSelector((state: KialiAppState) => state.ai.chat.selectedProvider);
+  const selectedModel = useSelector((state: KialiAppState) => state.ai.chat.selectedModel);
+  const displayMode = useSelector((state: KialiAppState) => state.ai.chat.displayMode);
+  const providers = useSelector((state: KialiAppState) => state.ai.chat.providers);
   const dispatch = useDispatch();
 
   if (!selectedProvider || !selectedModel) {
@@ -58,11 +58,7 @@ export const ChatBotHeader: React.FC<ChatBotHeaderProps> = ({ onCloseChat, onSel
               <DropdownGroup label={`${provider.name}`} labelHeadingLevel="h3">
                 <DropdownList>
                   {provider.models.map(model => (
-                    <DropdownItem
-                      data-test={`ai-chatbot-provider-model-${provider.name}-${model.name}`}
-                      key={`${provider.name}:${model.name}`}
-                      value={`${provider.name}:${model.name}`}
-                    >
+                    <DropdownItem key={`${provider.name}:${model.name}`} value={`${provider.name}:${model.name}`}>
                       {`${model.name}`}
                     </DropdownItem>
                   ))}
