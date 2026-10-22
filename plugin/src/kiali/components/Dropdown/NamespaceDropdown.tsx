@@ -258,7 +258,6 @@ class NamespaceDropdownComponent extends React.PureComponent<NamespaceDropdownPr
           >
             <input
               type="checkbox"
-              aria-label={namespace.name}
               value={namespace.name}
               checked={!!selectedMap[namespace.name]}
               onChange={this.onNamespaceToggled}

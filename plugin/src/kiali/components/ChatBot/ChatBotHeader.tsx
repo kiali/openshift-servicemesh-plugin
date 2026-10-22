@@ -18,7 +18,7 @@ import {
 import { OpenDrawerRightIcon, OutlinedWindowRestoreIcon, TrashIcon, WindowMinimizeIcon } from '@patternfly/react-icons';
 import { t } from 'utils/I18nUtils';
 import { useDispatch, useSelector } from 'react-redux';
-import type { KialiAppState } from 'store/Store';
+import { KialiAppState } from 'store/Store';
 import { ChatAIActions } from 'actions/ChatAIActions';
 
 type ChatBotHeaderProps = {
@@ -58,11 +58,7 @@ export const ChatBotHeader: React.FC<ChatBotHeaderProps> = ({ onCloseChat, onSel
               <DropdownGroup label={`${provider.name}`} labelHeadingLevel="h3">
                 <DropdownList>
                   {provider.models.map(model => (
-                    <DropdownItem
-                      data-test={`ai-chatbot-provider-model-${provider.name}-${model.name}`}
-                      key={`${provider.name}:${model.name}`}
-                      value={`${provider.name}:${model.name}`}
-                    >
+                    <DropdownItem key={`${provider.name}:${model.name}`} value={`${provider.name}:${model.name}`}>
                       {`${model.name}`}
                     </DropdownItem>
                   ))}

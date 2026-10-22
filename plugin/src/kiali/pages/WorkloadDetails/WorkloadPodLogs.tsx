@@ -849,7 +849,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
               }}
             />
           </Tooltip>
-          <p key={`al-p-${index}`} className={logMessageStyle} style={{ color: spanColor }} data-test="span-log-line">
+          <p key={`al-p-${index}`} className={logMessageStyle} style={{ color: spanColor }}>
             {this.entryToString(e)}
           </p>
         </div>

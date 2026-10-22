@@ -425,7 +425,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
       const typeaheadToggle = (toggleRef: React.Ref<MenuToggleElement>): React.ReactNode => (
         <MenuToggle
           id="filter_select_value-toggle"
-          data-test="filter-value-toggle"
           ref={toggleRef}
           variant="typeahead"
           onClick={this.onFilterValueToggle}
@@ -438,7 +437,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
               onClick={this.onFilterValueToggle}
               onChange={(_event, value) => this.updateCurrentValue(value)}
               id="typeahead-select-input"
-              data-test="filter-type-input"
               autoComplete="off"
               innerRef={this.textInputRef}
               onKeyDown={this.onTypeaheadInputKeyDown}
@@ -454,7 +452,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
       return (
         <Select
           id="filter_select_value"
-          data-test="filter-value-select"
           selected={this.state.activeFilters.filters.map(filter => filter.value)}
           onSelect={(_event, value) => this.filterValueSelected(value)}
           onOpenChange={isFilterValueOpen => this.setState({ isFilterValueOpen })}
@@ -489,7 +486,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
       const selectToggle = (toggleRef: React.Ref<MenuToggleElement>): React.ReactNode => (
         <MenuToggle
           id="filter_select_value-toggle"
-          data-test="filter-value-toggle"
           ref={toggleRef}
           onClick={this.onFilterValueToggle}
           isExpanded={this.state.isFilterValueOpen}
@@ -502,7 +498,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
       return (
         <Select
           id="filter_select_value"
-          data-test="filter-value-select"
           selected={FilterSelected.getSelected().filters.map(filter => filter.value)}
           onSelect={(_event, value) => {
             this.filterValueSelected(value);
@@ -594,7 +589,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
     const filterTypeToggle = (toggleRef: React.Ref<MenuToggleElement>): React.ReactNode => (
       <MenuToggle
         id="filter_select_type-toggle"
-        data-test="filter-type-toggle"
         className={formSelectStyle}
         ref={toggleRef}
         onClick={this.onFilterTypeToggle}
@@ -608,7 +602,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
     const filterValueToggle = (toggleRef: React.Ref<MenuToggleElement>): React.ReactNode => (
       <MenuToggle
         id="filter_select_value-toggle"
-        data-test="filter-value-toggle"
         ref={toggleRef}
         onClick={this.onFilterValueToggle}
         isExpanded={this.state.isFilterValueOpen}
@@ -622,7 +615,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
       <>
         <Toolbar
           id="filter-selection"
-          data-test="filter-toolbar"
           className={this.props.toolbarClass ? classes(toolbarStyle, this.props.toolbarClass) : toolbarStyle}
         >
           {this.props.childrenFirst && this.renderChildren()}
@@ -631,7 +623,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
               <ToolbarFilter categoryName="">
                 <Select
                   id="filter_select_type"
-                  data-test="filter-type-select"
                   onSelect={(_event, value) => this.selectFilterType(value as string)}
                   onOpenChange={isFilterTypeOpen => this.setState({ isFilterTypeOpen })}
                   toggle={filterTypeToggle}
@@ -693,7 +684,6 @@ export class StatefulFiltersComponent extends React.Component<StatefulFiltersPro
                   <div className={paddingStyle}>Label Operation</div>
                   <Select
                     id="filter_select_value"
-                    data-test="filter-value-select"
                     onSelect={(_event, value) => {
                       this.updateActiveFilters({
                         filters: this.state.activeFilters.filters,
