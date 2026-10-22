@@ -1,6 +1,11 @@
 import { defineConfig, devices, type ReporterDescription } from '@playwright/test';
 import { AUTH_FILE } from './e2e/utils/auth';
 
+// This repo always runs the suite against the OSSMC console plugin: activate
+// the vendored kiali OSSMC branches (test skips and UI differences such as
+// /projects detail links). Must be set before the specs are imported.
+process.env.PLAYWRIGHT_OSSMC = 'true';
+
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:9000';
 const isCI = !!process.env.CI;
 

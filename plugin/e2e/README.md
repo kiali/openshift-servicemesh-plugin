@@ -28,6 +28,10 @@ Layout:
 Projects mirror the Cypress run scope `(@core-1 or @core-2 or @ambient or @waypoint or
 @waypoint-tracing) and not @skip-ossmc`: each project greps its tag and excludes `@skip-ossmc`.
 
+`playwright.config.ts` sets `PLAYWRIGHT_OSSMC=true` before the specs load: the vendored kiali
+tree branches on it for OSSMC-only UI differences (e.g. `/projects` detail links) and for the
+tests that are skipped in OSSMC mode.
+
 ## Running
 
 Point the suite at an OpenShift Console serving the plugin (e.g. `make start` + `make start-console`,
