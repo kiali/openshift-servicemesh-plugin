@@ -76,7 +76,6 @@ export enum URLParam {
   MESH_FIND = 'meshFind',
   MESH_HIDE = 'meshHide',
   MESH_GATEWAYS = 'meshGateways',
-  MESH_KIALI = 'meshKiali',
   MESH_LAYOUT = 'meshLayout',
   MESH_WAYPOINTS = 'meshWaypoints',
   TRACING_ERRORS_ONLY = 'errs',

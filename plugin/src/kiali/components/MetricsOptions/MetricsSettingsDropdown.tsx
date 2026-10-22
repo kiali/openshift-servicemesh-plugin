@@ -1,11 +1,11 @@
 import * as React from 'react';
-import type { MenuToggleElement } from '@patternfly/react-core';
 import {
   Checkbox,
   Divider,
   Dropdown,
   DropdownList,
   MenuToggle,
+  MenuToggleElement,
   Radio,
   Tooltip,
   TooltipPosition
@@ -13,8 +13,7 @@ import {
 import { kialiStyle } from 'styles/StyleUtils';
 import { isEqual } from 'lodash-es';
 import { location, router, URLParam } from '../../app/History';
-import type { MetricsSettings, Quantiles, LabelsSettings } from './MetricsSettings';
-import { allQuantiles } from './MetricsSettings';
+import { MetricsSettings, Quantiles, allQuantiles, LabelsSettings } from './MetricsSettings';
 import {
   mergeLabelFilter,
   prettyLabelValues,
@@ -22,10 +21,9 @@ import {
   retrieveMetricsSettings
 } from 'components/Metrics/Helper';
 import { itemStyleWithoutInfo, titleStyle } from 'styles/DropdownStyles';
-import type { PromLabel } from 'types/Metrics';
+import { PromLabel } from 'types/Metrics';
 import { KialiIcon } from 'config/KialiIcon';
 import { classes } from 'typestyle';
-import { t } from 'utils/I18nUtils';
 
 interface Props {
   direction: string;
@@ -43,10 +41,6 @@ type State = MetricsSettings & {
 };
 
 const checkboxSelectAllStyle = kialiStyle({ marginLeft: '0.5rem' });
-const histogramTitleStyle = kialiStyle({
-  alignItems: 'center',
-  display: 'flex'
-});
 const secondLevelStyle = kialiStyle({ marginLeft: '1rem' });
 const spacerStyle = kialiStyle({ height: '0.5rem' });
 const titleLabelStyle = kialiStyle({ marginBottom: '0.5rem', fontSize: 'small' });
@@ -83,7 +77,7 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
     // TODO Move the sync of URL and state to a global place
     const changeDirection = prevProps.direction !== this.props.direction;
     const settings = retrieveMetricsSettings();
-    const initLabelSettings = changeDirection ? settings.labelsSettings : new Map();
+    let initLabelSettings = changeDirection ? settings.labelsSettings : new Map();
     const stateLabelsSettings = changeDirection ? initLabelSettings : this.state.labelsSettings;
     const labelsSettings = combineLabelsSettings(this.props.labelsSettings, stateLabelsSettings);
 
@@ -98,6 +92,10 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
       }, this.checkSelected);
     }
   }
+
+  private onToggle = (isOpen: boolean): void => {
+    this.setState({ isOpen: isOpen });
+  };
 
   onGroupingChanged = (label: PromLabel, checked: boolean): void => {
     const objLbl = this.state.labelsSettings.get(label);
@@ -214,7 +212,7 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
       <Dropdown
         toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
           <MenuToggle ref={toggleRef} onClick={() => this.onToggle(!this.state.isOpen)} isExpanded={this.state.isOpen}>
-            {t('Metrics Settings')}
+            Metrics Settings
           </MenuToggle>
         )}
         isOpen={this.state.isOpen}
@@ -236,7 +234,7 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
           <Checkbox
             id="bulk-select-id"
             key="bulk-select-key"
-            aria-label={t('Select all metric/label filters')}
+            aria-label="Select all metric/label filters"
             isChecked={this.state.allSelected}
             onChange={() => {
               if (this.state.allSelected) {
@@ -246,7 +244,7 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
               }
             }}
           />
-          <span className={checkboxSelectAllStyle}>{t('Select all metric/label filters')}</span>
+          <span className={checkboxSelectAllStyle}>Select all metric/label filters</span>
         </div>
         <Divider />
       </div>
@@ -292,7 +290,7 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
             <Checkbox
               id={lblObj.displayName}
               className={checkboxStyle}
-              label={t(lblObj.displayName)}
+              label={lblObj.displayName}
               isChecked={lblObj.checked}
               onChange={(_event, checked) => this.onGroupingChanged(promName, checked)}
             />
@@ -304,7 +302,7 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
 
     return (
       <>
-        <label className={classes(titleLabelStyle, titleStyle, labelStyle)}>{t('Show metrics by:')}</label>
+        <label className={classes(titleLabelStyle, titleStyle, labelStyle)}>Show metrics by:</label>
         {displayGroupingLabels}
         <div className={spacerStyle} />
       </>
@@ -321,7 +319,7 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
             isChecked={this.state.showAverage && this.props.hasHistogramsAverage}
             isDisabled={!this.props.hasHistogramsAverage}
             onChange={(_event, checked) => this.onHistogramAverageChanged(checked)}
-            label={t('Average')}
+            label="Average"
           />
         </label>
       </div>
@@ -337,7 +335,7 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
                 isChecked={checked && this.props.hasHistogramsPercentiles}
                 isDisabled={!this.props.hasHistogramsPercentiles}
                 onChange={(_event, checked) => this.onHistogramOptionsChanged(o, checked)}
-                label={t('Quantile {{quantile}}', { quantile: o })}
+                label={`Quantile ${o}`}
               />
             </label>
           </div>
@@ -347,35 +345,28 @@ export class MetricsSettingsDropdown extends React.Component<Props, State> {
 
     return (
       <>
-        <div className={histogramTitleStyle}>
-          <label className={classes(titleLabelStyle, titleStyle, labelStyle)} style={{ paddingRight: '0.5rem' }}>
-            {t('Histograms:')}
-          </label>
+        <label className={classes(titleLabelStyle, titleStyle, labelStyle)} style={{ paddingRight: '0.5rem' }}>
+          Histograms:
+        </label>
 
-          <Tooltip
-            key="tooltip_histograms"
-            position={TooltipPosition.right}
-            content={
-              <div style={{ textAlign: 'left' }}>
-                <div>
-                  {t(
-                    '"No data available" is displayed for a histogram that does not have telemetry supporting the selected option. If no histograms support the necessary telemetry, the option will be disabled.'
-                  )}
-                </div>
+        <Tooltip
+          key="tooltip_histograms"
+          position={TooltipPosition.right}
+          content={
+            <div style={{ textAlign: 'left' }}>
+              <div>
+                "No data available" is displayed for a histogram that does not have telemetry supporting the selected
+                option. If no histograms support the necessary telemetry, the option will be disabled.
               </div>
-            }
-          >
-            <KialiIcon.Info />
-          </Tooltip>
-        </div>
+            </div>
+          }
+        >
+          <KialiIcon.Info />
+        </Tooltip>
 
         {displayHistogramOptions}
         <div className={spacerStyle} />
       </>
     );
   }
-
-  private onToggle = (isOpen: boolean): void => {
-    this.setState({ isOpen: isOpen });
-  };
 }

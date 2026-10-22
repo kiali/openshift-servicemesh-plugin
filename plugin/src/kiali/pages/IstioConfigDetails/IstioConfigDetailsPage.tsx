@@ -73,8 +73,7 @@ import type { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
 import { basicTabStyle } from 'styles/TabStyles';
 import { drawerPanelStyle, editorStyle } from 'styles/EditorStyle';
-import { ColorScheme } from 'types/Common';
-import { mapAppearanceFromState, resolveColorScheme } from 'utils/AppearanceUtils';
+import { Theme } from 'types/Common';
 import type { ApiError } from 'types/Api';
 import { dump, loadAll } from 'js-yaml';
 import { ResizeHeightObserver } from 'utils/ResizeHeightObserver';
@@ -113,9 +112,8 @@ const IDLE_BLOCKER: { location: undefined; proceed: undefined; reset: undefined;
 };
 
 interface ReduxProps {
-  colorScheme: string;
   kiosk: string;
-  systemAppearanceRevision: number;
+  theme: string;
 }
 
 type IstioConfigDetailsProps = ReduxProps & {
@@ -179,7 +177,7 @@ const IstioConfigDetailsPageComponent: React.FC<IstioConfigDetailsProps> = (prop
     yamlModifiedRef.current = '';
   }, []);
 
-  const { kiosk, colorScheme, istioConfigId } = props;
+  const { kiosk, theme, istioConfigId } = props;
   // Parent kiosk (e.g. OSSMC): no in-app leave/reload modals — only beforeunload for tab close/refresh.
   const parentKiosk = isParentKiosk(kiosk);
 
@@ -396,7 +394,7 @@ const IstioConfigDetailsPageComponent: React.FC<IstioConfigDetailsProps> = (prop
           }
 
           const msg: ErrorMsg = {
-            title: t('No Istio object is selected'),
+            title: 'No Istio object is selected',
             description: `${configId.objectName} is not found in the mesh`
           };
 
@@ -797,7 +795,7 @@ const IstioConfigDetailsPageComponent: React.FC<IstioConfigDetailsProps> = (prop
             key={editorRevision}
             defaultValue={editorDefaultValue}
             language="yaml"
-            theme={resolveColorScheme(colorScheme) === ColorScheme.DARK ? 'vs-dark' : 'light'}
+            theme={theme === Theme.DARK ? 'vs-dark' : 'light'}
             height="100%"
             onChange={handleEditorChange}
             onMount={handleEditorDidMount}
@@ -934,7 +932,7 @@ const IstioConfigDetailsPageComponent: React.FC<IstioConfigDetailsProps> = (prop
 
 const mapStateToProps = (state: KialiAppState): ReduxProps => ({
   kiosk: state.globalState.kiosk,
-  ...mapAppearanceFromState(state)
+  theme: state.globalState.theme
 });
 
 export { IstioConfigDetailsPageComponent };

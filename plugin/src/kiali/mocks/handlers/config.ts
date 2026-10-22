@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
-import { RunMode, type ServerConfig } from '../../types/ServerConfig';
+import { ServerConfig, RunMode } from '../../types/ServerConfig';
 import { getScenarioConfig } from '../scenarios';
-import type { ChatAIConfig } from 'types/Chatbot';
+import { ChatAIConfig } from 'types/Chatbot';
 
 // Cluster config type
 type ClusterConfigType = Record<
@@ -63,9 +63,8 @@ const generateControlPlanes = (): Record<string, string> => {
 
 const generateChatAIConfig = (): ChatAIConfig => {
   const scenarioConfig = getScenarioConfig();
-  if (!scenarioConfig.ai?.chat) {
+  if (!scenarioConfig.chatAI) {
     return {
-      allowed: true,
       enabled: false,
       providers: [],
       defaultProvider: '',
@@ -75,10 +74,9 @@ const generateChatAIConfig = (): ChatAIConfig => {
     };
   }
   return {
-    allowed: scenarioConfig.ai?.chat.allowed ?? true,
-    enabled: scenarioConfig.ai?.chat.enabled ?? false,
+    enabled: scenarioConfig.chatAI.enabled ?? false,
     providers:
-      scenarioConfig.ai?.chat.providers?.map(provider => ({
+      scenarioConfig.chatAI.providers?.map(provider => ({
         name: provider.name,
         description: provider.description ?? '',
         defaultModel: provider.defaultModel ?? '',
@@ -89,9 +87,9 @@ const generateChatAIConfig = (): ChatAIConfig => {
             model: model.model ?? ''
           })) ?? []
       })) ?? [],
-    defaultProvider: scenarioConfig.ai?.chat.defaultProvider ?? '',
+    defaultProvider: scenarioConfig.chatAI.defaultProvider ?? '',
     store: {
-      enabled: scenarioConfig.ai?.chat.store?.enabled ?? scenarioConfig.ai?.chat.enabled ?? false
+      enabled: scenarioConfig.chatAI.store?.enabled ?? scenarioConfig.chatAI.enabled ?? false
     }
   };
 };
@@ -102,10 +100,7 @@ const generateServerConfig = (): ServerConfig => {
   return {
     ambientEnabled: scenarioConfig.ambientEnabled,
     authStrategy: 'anonymous',
-    ai: {
-      enabled: scenarioConfig.ai?.enabled ?? false,
-      chat: generateChatAIConfig()
-    },
+    chatAI: generateChatAIConfig(),
     clusterWideAccess: true,
     clusters: generateClustersConfig(),
     controlPlanes: generateControlPlanes(),
@@ -182,7 +177,7 @@ const generateServerConfig = (): ServerConfig => {
           }
         },
         i18n: {
-          language: '',
+          language: 'en',
           showSelector: true
         },
         list: {

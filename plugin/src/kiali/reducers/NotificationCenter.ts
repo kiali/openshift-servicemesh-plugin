@@ -1,6 +1,6 @@
-import { MessageType, type NotificationMessage } from '../types/NotificationCenter';
-import type { NotificationCenterState } from '../store/Store';
-import type { KialiAppAction } from '../actions/KialiAppAction';
+import { MessageType, NotificationMessage } from '../types/NotificationCenter';
+import { NotificationCenterState } from '../store/Store';
+import { KialiAppAction } from '../actions/KialiAppAction';
 import { getType } from 'typesafe-actions';
 import { NotificationCenterActions } from '../actions/NotificationCenterActions';
 import { updateState } from '../utils/Reducer';
@@ -88,7 +88,7 @@ export const NotificationCenterReducer = (
 ): NotificationCenterState => {
   switch (action.type) {
     case getType(NotificationCenterActions.addMessage): {
-      const { content, detail, groupId, messageType, isAlert, showOnce } = action.payload;
+      const { content, detail, groupId, messageType, isAlert } = action.payload;
 
       const groups = state.groups.map(group => {
         if (group.id === groupId) {
@@ -99,15 +99,12 @@ export const NotificationCenterReducer = (
             return message.content === content;
           });
 
-          if (showOnce && existingMessage) {
-            return group;
-          }
-
           // remove the old message from the list
           const filteredArray = filter(group.messages, message => {
             return message.content !== content;
           });
 
+          let newMessage: NotificationMessage;
           let count = 1;
           let firstTriggered: Date | undefined = undefined;
 
@@ -118,7 +115,7 @@ export const NotificationCenterReducer = (
             count += existingMessage.count;
           }
 
-          const newMessage = createMessage(
+          newMessage = createMessage(
             state.nextId,
             content,
             detail,
@@ -136,10 +133,7 @@ export const NotificationCenterReducer = (
         }
         return group;
       });
-      if (!groups.some((g, i) => g !== state.groups[i])) {
-        return state;
-      }
-      return updateState(state, { groups, nextId: state.nextId + 1 });
+      return updateState(state, { groups: groups, nextId: state.nextId + 1 });
     }
 
     case getType(NotificationCenterActions.removeMessage): {

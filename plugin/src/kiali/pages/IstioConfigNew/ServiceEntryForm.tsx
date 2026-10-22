@@ -21,7 +21,6 @@ import { PFColors } from '../../components/Pf/PfColors';
 import { isValid } from 'utils/Common';
 import { KialiIcon } from 'config/KialiIcon';
 import { SimpleTable } from 'components/Table/SimpleTable';
-import { t } from 'utils/I18nUtils';
 
 const MESH_EXTERNAL = 'MESH_EXTERNAL';
 const MESH_INTERNAL = 'MESH_INTERNAL';
@@ -38,19 +37,19 @@ const protocols = ['HTTP', 'HTTPS', 'GRPC', 'HTTP2', 'MONGO', 'TCP', 'TLS'];
 
 const columns: ThProps[] = [
   {
-    title: t('Port Number'),
+    title: 'Port Number',
     width: 20
   },
   {
-    title: t('Port Name'),
+    title: 'Port Name',
     width: 20
   },
   {
-    title: t('Protocol'),
+    title: 'Protocol',
     width: 20
   },
   {
-    title: t('Target Port'),
+    title: 'Target Port',
     width: 20
   },
   {
@@ -395,7 +394,7 @@ export class ServiceEntryForm extends React.Component<Props, ServiceEntryFormSta
               {p.protocol}
             </MenuToggle>
           )}
-          aria-label={t('Protocol Select')}
+          aria-label="Protocol Select"
         >
           <SelectList>
             {protocols.map((option, index) => (
@@ -429,7 +428,7 @@ export class ServiceEntryForm extends React.Component<Props, ServiceEntryFormSta
   render(): React.ReactNode {
     return (
       <>
-        <FormGroup label={t('Hosts')} isRequired={true} fieldId="hosts">
+        <FormGroup label="Hosts" isRequired={true} fieldId="hosts">
           <TextInput
             value={this.state.serviceEntry.hosts?.join(',')}
             isRequired={true}
@@ -445,14 +444,14 @@ export class ServiceEntryForm extends React.Component<Props, ServiceEntryFormSta
             <HelperText>
               <HelperTextItem>
                 {isValid(this.state.validHosts)
-                  ? t('The hosts associated with the ServiceEntry.')
-                  : t('Invalid hosts for this ServiceEntry. Enter one or more hosts separated by comma.')}
+                  ? 'The hosts associated with the ServiceEntry.'
+                  : 'Invalid hosts for this ServiceEntry. Enter one or more hosts separated by comma.'}
               </HelperTextItem>
             </HelperText>
           </FormHelperText>
         </FormGroup>
 
-        <FormGroup label={t('Location')} isRequired={true} fieldId="location">
+        <FormGroup label="Location" isRequired={true} fieldId="location">
           <Select
             id="location"
             isOpen={this.state.isLocationSelectOpen}
@@ -470,7 +469,7 @@ export class ServiceEntryForm extends React.Component<Props, ServiceEntryFormSta
                 {this.state.serviceEntry.location}
               </MenuToggle>
             )}
-            aria-label={t('Location Select')}
+            aria-label="Location Select"
           >
             <SelectList>
               {location.map((option, index) => (
@@ -482,8 +481,8 @@ export class ServiceEntryForm extends React.Component<Props, ServiceEntryFormSta
           </Select>
         </FormGroup>
 
-        <FormGroup label={t('Ports')} fieldId="ports" isRequired={true}>
-          <SimpleTable label={t('Ports')} columns={columns} rows={this.rows()} />
+        <FormGroup label="Ports" fieldId="ports" isRequired={true}>
+          <SimpleTable label="Ports" columns={columns} rows={this.rows()} />
 
           <Button
             id="addPortBtn"
@@ -492,15 +491,15 @@ export class ServiceEntryForm extends React.Component<Props, ServiceEntryFormSta
             className={addPortsStyle}
             onClick={this.onAddNewPort}
           >
-            {t('Add Port')}
+            Add Port
           </Button>
 
           {(!this.state.serviceEntry.ports || this.state.serviceEntry.ports.length === 0) && (
-            <div className={noPortsStyle}>{t('ServiceEntry has no Ports defined')}</div>
+            <div className={noPortsStyle}>ServiceEntry has no Ports defined</div>
           )}
         </FormGroup>
 
-        <FormGroup label={t('Resolution')} isRequired={true} fieldId="resolution">
+        <FormGroup label="Resolution" isRequired={true} fieldId="resolution">
           <Select
             id="resolution"
             isOpen={this.state.isResolutionSelectOpen}
@@ -518,7 +517,7 @@ export class ServiceEntryForm extends React.Component<Props, ServiceEntryFormSta
                 {this.state.serviceEntry.resolution}
               </MenuToggle>
             )}
-            aria-label={t('Resolution Select')}
+            aria-label="Resolution Select"
           >
             <SelectList>
               {resolution.map((option, index) => (

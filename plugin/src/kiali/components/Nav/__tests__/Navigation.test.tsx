@@ -1,21 +1,23 @@
 import { render, screen } from '@testing-library/react';
 import { NavigationComponent } from '../Navigation';
-import type { ExternalServiceInfo } from '../../../types/StatusState';
+import { ExternalServiceInfo } from '../../../types/StatusState';
 import { MemoryRouter } from 'react-router-dom-v5-compat';
 import { store } from 'store/ConfigStore';
 import { Provider } from 'react-redux';
 import { LoginActions } from 'actions/LoginActions';
-import { ColorScheme } from 'types/Common';
-import * as HistoryActual from 'app/History' with { rstest: 'importActual' };
+import { Theme } from 'types/Common';
 
-rstest.mock('app/History', () => ({
-  ...HistoryActual,
-  router: {
-    state: { location: { pathname: '/overview', search: '', hash: '' } },
-    basename: '',
-    navigate: rstest.fn()
-  }
-}));
+rstest.mock('app/History', async () => {
+  const actual = await rstest.importActual<typeof import('app/History')>('app/History');
+  return {
+    ...actual,
+    router: {
+      state: { location: { pathname: '/overview', search: '', hash: '' } },
+      basename: '',
+      navigate: rstest.fn()
+    }
+  };
+});
 
 const session = {
   expiresOn: '2018-05-29 21:51:40.186179601 +0200 CEST m=+36039.431579761',
@@ -40,7 +42,7 @@ describe('Masthead Navigation', () => {
             tracingUrl={''}
             externalServices={externalServicesInfo}
             kiosk={''}
-            colorScheme={ColorScheme.LIGHT}
+            theme={Theme.LIGHT}
             showNotificationCenter={false}
             chatbotEnabled={false}
           />
@@ -61,7 +63,7 @@ describe('Masthead Navigation', () => {
             tracingUrl={''}
             externalServices={externalServicesInfo}
             kiosk={'true'}
-            colorScheme={ColorScheme.LIGHT}
+            theme={Theme.LIGHT}
             showNotificationCenter={false}
             chatbotEnabled={false}
           />

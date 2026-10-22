@@ -4,7 +4,6 @@ import { JWTRule } from '../../types/IstioObjects';
 import { JwtRuleBuilder } from './RequestAuthorizationForm/JwtRuleBuilder';
 import { JwtRuleList } from './RequestAuthorizationForm/JwtRuleList';
 import { isValid } from 'utils/Common';
-import { t } from 'utils/I18nUtils';
 
 type Props = {
   onChange: (requestAuthentication: RequestAuthenticationState) => void;
@@ -152,7 +151,7 @@ export class RequestAuthenticationForm extends React.Component<Props, RequestAut
   render(): React.ReactNode {
     return (
       <>
-        <FormGroup label={t('Workload Selector')} fieldId="workloadSelectorSwitch">
+        <FormGroup label="Workload Selector" fieldId="workloadSelectorSwitch">
           <Switch
             id="workloadSelectorSwitch"
             label=" "
@@ -162,7 +161,7 @@ export class RequestAuthenticationForm extends React.Component<Props, RequestAut
         </FormGroup>
 
         {this.state.addWorkloadSelector && (
-          <FormGroup fieldId="workloadLabels" label={t('Labels')}>
+          <FormGroup fieldId="workloadLabels" label="Labels">
             <TextInput
               id="gwHosts"
               name="gwHosts"
@@ -176,25 +175,25 @@ export class RequestAuthenticationForm extends React.Component<Props, RequestAut
               <HelperText>
                 <HelperTextItem>
                   {isValid(this.state.workloadSelectorValid)
-                    ? t('One or more labels to select a workload where the RequestAuthentication is applied.')
-                    : t('Enter a label in the format <label>=<value>. Enter one or multiple labels separated by comma.')}
+                    ? 'One or more labels to select a workload where the RequestAuthentication is applied.'
+                    : 'Enter a label in the format <label>=<value>. Enter one or multiple labels separated by comma.'}
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
         )}
 
-        <FormGroup label={t('JWT Rules')} fieldId="addJWTRules">
+        <FormGroup label="JWT Rules" fieldId="addJWTRules">
           <Switch id="addJWTRules" label=" " isChecked={this.state.addJWTRules} onChange={this.onChangeJwtRules} />
         </FormGroup>
 
         {this.state.addJWTRules && (
           <>
-            <FormGroup label={t('JWT Rule Builder')} fieldId="jwtRulesBuilder">
+            <FormGroup label="JWT Rule Builder" fieldId="jwtRulesBuilder">
               <JwtRuleBuilder onAddJwtRule={this.onAddJwtRule} />
             </FormGroup>
 
-            <FormGroup label={t('JWT Rules List')} fieldId="jwtRulesList">
+            <FormGroup label="JWT Rules List" fieldId="jwtRulesList">
               <JwtRuleList jwtRules={this.state.jwtRules} onRemoveJwtRule={this.onRemoveJwtRule} />
             </FormGroup>
           </>

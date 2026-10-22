@@ -8,7 +8,6 @@ import { FilterSelected } from 'components/Filters/StatefulFilters';
 import { healthIndicatorStyle } from 'styles/HealthStyle';
 import { createIcon } from 'config/KialiIcon';
 import { KialiLink } from 'components/Link/KialiLink';
-import { useKialiTranslation } from 'utils/I18nUtils';
 
 type Props = {
   id: string;
@@ -19,7 +18,6 @@ type Props = {
 };
 
 export const MeshHealthIndicator: React.FC<Props> = (props: Props) => {
-  const { t } = useKialiTranslation();
   const setFilters = (): void => {
     const filters: ActiveFilter[] = [
       {
@@ -55,7 +53,7 @@ export const MeshHealthIndicator: React.FC<Props> = (props: Props) => {
 
   return (
     <Tooltip
-      aria-label={t('Health indicator')}
+      aria-label={'Health indicator'}
       position={TooltipPosition.auto}
       content={tooltipContent}
       className={healthIndicatorStyle}

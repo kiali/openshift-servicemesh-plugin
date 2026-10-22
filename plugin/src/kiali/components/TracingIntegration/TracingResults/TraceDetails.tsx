@@ -30,7 +30,6 @@ import { HeatMap, healthColorMap } from 'components/HeatMap/HeatMap';
 import { formatDuration, isWaypointProxySpan, sameSpans } from 'utils/tracing/TracingHelper';
 import { TracingUrlProvider } from 'types/Tracing';
 import { map, round } from 'lodash-es';
-import { t } from 'utils/I18nUtils';
 
 type ReduxProps = {
   loadMetricsStats: (queries: MetricsStatsQuery[], isCompact: boolean, cluster?: string) => void;
@@ -249,7 +248,7 @@ class TraceDetailsComponent extends React.Component<Props> {
             </GridItem>
 
             <GridItem span={6}>
-              <Tooltip content={t('Traces are identified as similar based on counting the number of spans and the occurrences of operation names. Only traces currently on the chart are processed.')}>
+              <Tooltip content="Traces are identified as similar based on counting the number of spans and the occurrences of operation names. Only traces currently on the chart are processed.">
                 <>
                   <InfoAltIcon /> <strong>Similar traces</strong>
                   <br />

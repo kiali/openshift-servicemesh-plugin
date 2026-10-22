@@ -7,7 +7,6 @@ import { authenticationConfig } from '../../config/AuthenticationConfig';
 import { PFColors } from 'components/Pf/PfColors';
 import { kialiStyle } from 'styles/StyleUtils';
 import { KialiIcon } from 'config/KialiIcon';
-import { useKialiTranslation } from 'utils/I18nUtils';
 
 type SessionTimeoutProps = {
   onDismiss: () => void;
@@ -24,11 +23,10 @@ const sessionTimeoutStyle = kialiStyle({
 });
 
 export const SessionTimeout: React.FC<SessionTimeoutProps> = (props: SessionTimeoutProps) => {
-  const { t } = useKialiTranslation();
   const textForAuthStrategy = (_strategy: AuthStrategy): React.ReactNode => {
     const line1 =
       props.timeOutCountDown <= 0
-        ? t('Your session has expired.')
+        ? 'Your session has expired.'
         : `Your session will expire in ${props.timeOutCountDown.toFixed()} seconds.`;
 
     const line2 = 'You will need to re-login. Please save your changes, if any.';
@@ -63,7 +61,7 @@ export const SessionTimeout: React.FC<SessionTimeoutProps> = (props: SessionTime
       isOpen={props.show}
       onClose={defaultAction}
       actions={buttons}
-      title={t('Session Timeout')}
+      title="Session Timeout"
       width="40%"
     >
       <span>

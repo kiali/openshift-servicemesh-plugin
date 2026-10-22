@@ -22,7 +22,6 @@ import { KialiIcon } from 'config/KialiIcon';
 import { TraceLimit, TraceLimitOption } from 'components/Metrics/TraceLimit';
 import { endPerfTimer, startPerfTimer } from '../../utils/PerformanceUtils';
 import { ApiResponse } from '../../types/Api';
-import { t } from 'utils/I18nUtils';
 
 type ReduxStateProps = {
   selectedTrace?: JaegerTrace;
@@ -120,7 +119,7 @@ class SummaryPanelNodeTracesComponent extends React.Component<Props, State> {
           <Button
             id="manual-refresh"
             onClick={() => this.loadTraces()}
-            aria-label={t('Refresh')}
+            aria-label="Refresh"
             variant={ButtonVariant.secondary}
             className={refreshButtonStyle}
           >
@@ -131,7 +130,7 @@ class SummaryPanelNodeTracesComponent extends React.Component<Props, State> {
         <Divider className={dividerStyle} />
 
         {this.state.traces.length > 0 && (
-          <SimpleList style={{ marginBottom: '0.5rem' }} aria-label={t('Traces list')} data-test="traces-list">
+          <SimpleList style={{ marginBottom: '0.5rem' }} aria-label="Traces list" data-test="traces-list">
             {this.state.traces.map(trace => {
               return (
                 <SimpleListItem

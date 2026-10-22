@@ -1,20 +1,17 @@
 import * as React from 'react';
-import type { SummaryTable } from './BaseTable';
-import { SummaryTableRenderer } from './BaseTable';
-import type { IRow, ISortBy } from '@patternfly/react-table';
-import type { RouteSummary } from '../../../types/IstioObjects';
-import type { ActiveFilter, FilterType } from '../../../types/Filters';
-import { FILTER_ACTION_APPEND, AllFilterTypes } from '../../../types/Filters';
-import type { SortField } from '../../../types/SortFilters';
-import type { Namespace } from '../../../types/Namespace';
+import { SummaryTable, SummaryTableRenderer } from './BaseTable';
+import { IRow, ISortBy } from '@patternfly/react-table';
+import { RouteSummary } from '../../../types/IstioObjects';
+import { ActiveFilter, FILTER_ACTION_APPEND, FilterType, AllFilterTypes } from '../../../types/Filters';
+import { SortField } from '../../../types/SortFilters';
+import { Namespace } from '../../../types/Namespace';
 import { defaultFilter, istioConfigLink, serviceLink } from '../../../helpers/EnvoyHelpers';
 import { Tooltip } from '@patternfly/react-core';
 import { PFColors } from 'components/Pf/PfColors';
 import { KialiIcon } from 'config/KialiIcon';
 import { kialiStyle } from 'styles/StyleUtils';
-import type { SortableTh } from 'components/Table/SimpleTable';
+import { SortableTh } from 'components/Table/SimpleTable';
 import { dicTypeToGVK, gvkType } from '../../../types/IstioConfigList';
-import { t } from 'utils/I18nUtils';
 
 export class RouteTable implements SummaryTable {
   namespace: string;
@@ -65,7 +62,7 @@ export class RouteTable implements SummaryTable {
     return [
       {
         id: 'name',
-        title: t('Name'),
+        title: 'Name',
         isNumeric: false,
         param: 'name',
         compare: (a, b) => {
@@ -74,7 +71,7 @@ export class RouteTable implements SummaryTable {
       },
       {
         id: 'domains',
-        title: t('Domains'),
+        title: 'Domains',
         isNumeric: false,
         param: 'doms',
         compare: (a, b) => {
@@ -85,7 +82,7 @@ export class RouteTable implements SummaryTable {
       },
       {
         id: 'match',
-        title: t('Match'),
+        title: 'Match',
         isNumeric: false,
         param: 'match',
         compare: (a, b) => {
@@ -94,7 +91,7 @@ export class RouteTable implements SummaryTable {
       },
       {
         id: 'vs',
-        title: t('Virtual Service'),
+        title: 'Virtual Service',
         isNumeric: false,
         param: 'vs',
         compare: (a, b) => {
@@ -107,11 +104,11 @@ export class RouteTable implements SummaryTable {
   head(): SortableTh[] {
     return [
       {
-        title: t('Name'),
+        title: 'Name',
         sortable: true
       },
       {
-        title: t('Domains'),
+        title: 'Domains',
         sortable: true,
         info: {
           tooltip: (
@@ -122,7 +119,7 @@ export class RouteTable implements SummaryTable {
         }
       },
       {
-        title: t('Match'),
+        title: 'Match',
         sortable: true,
         info: {
           tooltip: (
@@ -133,7 +130,7 @@ export class RouteTable implements SummaryTable {
         }
       },
       {
-        title: t('Virtual Service'),
+        title: 'Virtual Service',
         sortable: true
       }
     ];
@@ -158,7 +155,7 @@ export class RouteTable implements SummaryTable {
       <Tooltip
         content={
           <div className={kialiStyle({ textAlign: 'left' })}>
-            {t('Network connection between source and destination that is configured in envoy')}
+            Network connection between source a destination that is configured in envoy
           </div>
         }
       >
@@ -179,16 +176,18 @@ export class RouteTable implements SummaryTable {
 
         return this.sortingDirection === 'asc' ? sortField!.compare(a, b) : sortField!.compare(b, a);
       })
-      .map((summary: RouteSummary): IRow => {
-        return {
-          cells: [
-            summary.name,
-            serviceLink(summary.domains, this.namespaces, this.namespace, true),
-            summary.match,
-            istioConfigLink(summary.virtual_service, dicTypeToGVK[gvkType.VirtualService])
-          ]
-        };
-      });
+      .map(
+        (summary: RouteSummary): IRow => {
+          return {
+            cells: [
+              summary.name,
+              serviceLink(summary.domains, this.namespaces, this.namespace, true),
+              summary.match,
+              istioConfigLink(summary.virtual_service, dicTypeToGVK[gvkType.VirtualService])
+            ]
+          };
+        }
+      );
   }
 }
 

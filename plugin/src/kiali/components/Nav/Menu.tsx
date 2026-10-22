@@ -7,7 +7,7 @@ import { kialiStyle } from 'styles/StyleUtils';
 import { ExternalServiceInfo } from '../../types/StatusState';
 import { KialiIcon } from 'config/KialiIcon';
 import { GetTracingUrlProvider } from '../../utils/tracing/UrlProviders';
-import { useKialiTranslation } from 'utils/I18nUtils';
+import { t } from 'utils/I18nUtils';
 import { isControlPlaneAccessible } from '../../utils/MeshUtils';
 import { isTempoService } from '../../utils/tracing/UrlProviders/Tempo';
 import { TempoUrlFormat } from '../../types/StatusState';
@@ -48,7 +48,6 @@ type MenuProps = {
 };
 
 export const Menu: React.FC<MenuProps> = (props: MenuProps) => {
-  const { t } = useKialiTranslation();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -145,7 +144,7 @@ export const Menu: React.FC<MenuProps> = (props: MenuProps) => {
   };
 
   return (
-    <Nav aria-label={t('Nav')}>
+    <Nav aria-label="Nav">
       <NavList className={navListStyle}>{renderMenuItems()}</NavList>
     </Nav>
   );

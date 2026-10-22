@@ -59,43 +59,9 @@ const valueDisplayStyle = kialiStyle({
 const popoverTextAreaStyle = kialiStyle({
   fontFamily: 'var(--pf-t--global--font--family--mono)',
   fontSize: 'var(--pf-t--global--font--size--sm)',
-  maxHeight: '20rem',
-  overflowY: 'auto',
-  resize: 'none',
-  width: '100%'
-});
-
-const annotationValuePopoverStyle = kialiStyle({
-  $nest: {
-    '.pf-v6-c-popover__title': {
-      width: '100%'
-    },
-    '.pf-v6-c-popover__title-text': {
-      display: 'block',
-      width: '100%'
-    }
-  }
-});
-
-const popoverHeaderStyle = kialiStyle({
-  alignItems: 'center',
-  display: 'flex',
-  gap: PFSpacer.md,
-  width: '100%'
-});
-
-const popoverHeaderTitleStyle = kialiStyle({
-  flex: '1 1 auto',
-  minWidth: 0,
-  overflowWrap: 'anywhere',
-  wordBreak: 'break-word'
-});
-
-const popoverHeaderActionsStyle = kialiStyle({
-  display: 'flex',
-  flexShrink: 0,
-  gap: PFSpacer.xs,
-  marginLeft: 'auto'
+  minHeight: '20rem',
+  width: '100%',
+  resize: 'vertical'
 });
 
 const toEntries = (record: Record<string, string>): Entry[] => {
@@ -132,8 +98,6 @@ const disabledEditorStyle = kialiStyle({
 });
 
 interface EditValuePopoverProps {
-  // First Controller Annotations row sits near the modal top; left-start keeps the Value header on-screen.
-  alignStart?: boolean;
   entryKey: string;
   id: string;
   onChange: (value: string) => void;
@@ -141,14 +105,15 @@ interface EditValuePopoverProps {
   value: string;
 }
 
-const EditValuePopover: React.FC<EditValuePopoverProps> = ({
-  alignStart = false,
-  entryKey,
-  id,
-  onChange,
-  onVisibleChange,
-  value
-}) => {
+const popoverActionsStyle = kialiStyle({
+  display: 'flex',
+  gap: '0.25rem',
+  position: 'absolute',
+  top: PFSpacer.sm,
+  right: PFSpacer.md
+});
+
+const EditValuePopover: React.FC<EditValuePopoverProps> = ({ entryKey, id, onChange, onVisibleChange, value }) => {
   const [draft, setDraft] = React.useState(value);
   const [isVisible, setIsVisible] = React.useState(false);
 
@@ -157,69 +122,43 @@ const EditValuePopover: React.FC<EditValuePopoverProps> = ({
     onVisibleChange?.(visible);
   };
 
-  const valueAriaLabel = entryKey
-    ? t('Annotation value for {{key}}', { key: entryKey })
-    : t('Value');
-
-  const title = entryKey || t('Value');
-
-  const headerActions = (
-    <div className={popoverHeaderActionsStyle}>
-      <Tooltip content={t('Save')} trigger="mouseenter">
-        <Button
-          aria-label={t('Save')}
-          data-test="annotation-value-save"
-          variant="plain"
-          size="sm"
-          icon={<KialiIcon.Check />}
-          onClick={() => {
-            onChange(draft);
-            setVisible(false);
-          }}
-        />
-      </Tooltip>
-      <Tooltip content={t('Cancel')} trigger="mouseenter">
-        <Button
-          aria-label={t('Cancel')}
-          data-test="annotation-value-cancel"
-          variant="plain"
-          size="sm"
-          icon={<KialiIcon.Close />}
-          onClick={() => {
-            setDraft(value);
-            setVisible(false);
-          }}
-        />
-      </Tooltip>
-    </div>
-  );
-
   return (
     <Popover
-      className={annotationValuePopoverStyle}
       appendTo={() =>
         (document.querySelector('[aria-labelledby="workload-annotations-wizard-title"]') as HTMLElement) ||
         document.body
       }
-      headerContent={
-        <div className={popoverHeaderStyle}>
-          <span className={popoverHeaderTitleStyle}>{title}</span>
-          {headerActions}
-        </div>
-      }
+      headerContent={entryKey || t('Value')}
       bodyContent={
-        <TextArea
-          aria-label={valueAriaLabel}
-          className={popoverTextAreaStyle}
-          data-test="annotation-value-input"
-          id={id}
-          onChange={(_event, v) => setDraft(v)}
-          rows={10}
-          value={draft}
-        />
+        <>
+          <div className={popoverActionsStyle}>
+            <Tooltip content={t('Save')} trigger="mouseenter">
+              <Button
+                variant="plain"
+                size="sm"
+                icon={<KialiIcon.Check />}
+                onClick={() => {
+                  onChange(draft);
+                  setVisible(false);
+                }}
+              />
+            </Tooltip>
+            <Tooltip content={t('Cancel')} trigger="mouseenter">
+              <Button
+                variant="plain"
+                size="sm"
+                icon={<KialiIcon.Close />}
+                onClick={() => {
+                  setDraft(value);
+                  setVisible(false);
+                }}
+              />
+            </Tooltip>
+          </div>
+          <TextArea className={popoverTextAreaStyle} id={id} onChange={(_event, v) => setDraft(v)} value={draft} />
+        </>
       }
       elementToFocus={`#${id}`}
-      enableFlip={!alignStart}
       hideOnOutsideClick={false}
       isVisible={isVisible}
       shouldOpen={() => {
@@ -231,17 +170,11 @@ const EditValuePopover: React.FC<EditValuePopoverProps> = ({
         setVisible(false);
       }}
       minWidth="40rem"
-      position={alignStart ? 'left-start' : 'left'}
+      position="left"
       showClose={false}
       withFocusTrap
     >
-      <Button
-        aria-label={t('Edit value')}
-        data-test="annotation-value-edit"
-        variant="plain"
-        icon={<KialiIcon.PencilAlt />}
-        size="sm"
-      />
+      <Button variant="plain" icon={<KialiIcon.PencilAlt />} size="sm" />
     </Popover>
   );
 };
@@ -301,7 +234,6 @@ const AnnotationSection: React.FC<SectionProps> = ({
               </Th>
               <Th>
                 <EditValuePopover
-                  alignStart={sectionId === 'controller' && index === 0}
                   entryKey={key}
                   id={`${sectionId}_popover_value_${index}`}
                   onChange={v => onChange(index, [key, v])}

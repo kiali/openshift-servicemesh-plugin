@@ -2,13 +2,12 @@ import { store } from '../store/ConfigStore';
 import { MessageType } from '../types/NotificationCenter';
 import { NotificationCenterActions } from '../actions/NotificationCenterActions';
 import { getErrorDetail, getErrorString } from '../services/Api';
-import { type ApiError, isApiError } from 'types/Api';
+import { ApiError, isApiError } from 'types/Api';
 
 export type Message = {
   content: string;
   detail?: string;
   isAlert?: boolean;
-  showOnce?: boolean;
   type: MessageType;
 };
 
@@ -32,76 +31,70 @@ const addMessage = (msg: Message): void => {
       msg.detail ?? '',
       getMessageTypeGroup(msg.type),
       msg.type,
-      msg.isAlert ?? true,
-      msg.showOnce ?? false
+      msg.isAlert ?? true
     )
   );
 };
 
-// addDanger adds a Danger level notification message. Defaults: detail='', isAlert=true, showOnce=false
-export const addDanger = (content: string, detail = '', isAlert = true, showOnce = false): void => {
+// addDanger adds a Danger level notification message. Defaults: detail='', isAlert=true
+export const addDanger = (content: string, detail = '', isAlert = true): void => {
   store.dispatch(
     NotificationCenterActions.addMessage(
       content,
       detail,
       getMessageTypeGroup(MessageType.DANGER),
       MessageType.DANGER,
-      isAlert,
-      showOnce
+      isAlert
     )
   );
 };
 
-// addWarning adds a Warning level notification message. Defaults: detail='', isAlert=true, showOnce=false
-export const addWarning = (content: string, detail = '', isAlert = true, showOnce = false): void => {
+// addWarning adds a Warning level notification message. Defaults: detail='', isAlert=true
+export const addWarning = (content: string, detail = '', isAlert = true): void => {
   store.dispatch(
     NotificationCenterActions.addMessage(
       content,
       detail,
       getMessageTypeGroup(MessageType.WARNING),
       MessageType.WARNING,
-      isAlert,
-      showOnce
+      isAlert
     )
   );
 };
 
-// addSuccess adds a Success level notification message. Defaults: detail='', isAlert=true, showOnce=false
-export const addSuccess = (content: string, detail = '', isAlert = true, showOnce = false): void => {
+// addSuccess adds a Success level notification message. Defaults: detail='', isAlert=true
+export const addSuccess = (content: string, detail = '', isAlert = true): void => {
   store.dispatch(
     NotificationCenterActions.addMessage(
       content,
       detail,
       getMessageTypeGroup(MessageType.SUCCESS),
       MessageType.SUCCESS,
-      isAlert,
-      showOnce
+      isAlert
     )
   );
 };
 
-// addInfo adds an Info level notification message. Defaults: detail='', isAlert=true, showOnce=false
-export const addInfo = (content: string, detail = '', isAlert = true, showOnce = false): void => {
+// addInfo adds an Info level notification message. Defaults: detail='', isAlert=true
+export const addInfo = (content: string, detail = '', isAlert = true): void => {
   store.dispatch(
     NotificationCenterActions.addMessage(
       content,
       detail,
       getMessageTypeGroup(MessageType.INFO),
       MessageType.INFO,
-      isAlert,
-      showOnce
+      isAlert
     )
   );
 };
 
 // addError converts an Error into a notification message. It parses the Error into additional message content, and
-// detail. Defaults: isAlert=true, type=DANGER, showOnce=false
+// detail. Defaults: isAlert=true, type=DANGER
 export const addError = (
   message: string,
   error: Error,
   isAlert = true,
-  type: MessageType = MessageType.DANGER,
-  showOnce = false
+  type: MessageType = MessageType.DANGER
 ): void => {
   if (isApiError(error)) {
     const err = extractApiError(message, error);
@@ -109,12 +102,11 @@ export const addError = (
     addMessage({
       ...err,
       type: type,
-      isAlert,
-      showOnce
+      isAlert
     });
   } else {
     store.dispatch(
-      NotificationCenterActions.addMessage(message, error.message, getMessageTypeGroup(type), type, isAlert, showOnce)
+      NotificationCenterActions.addMessage(message, error.message, getMessageTypeGroup(type), type, isAlert)
     );
   }
 };

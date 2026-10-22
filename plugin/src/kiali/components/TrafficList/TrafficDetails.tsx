@@ -2,15 +2,15 @@ import * as React from 'react';
 import { Card, CardBody, Toolbar, ToolbarGroup, ToolbarItem } from '@patternfly/react-core';
 import { classes } from 'typestyle';
 import { addDanger } from '../../utils/AlertUtils';
-import type {
+import {
   GraphDefinition,
   GraphEdgeWrapper,
   GraphNodeData,
+  NodeType,
   DestService,
   ProtocolTraffic,
   SEInfo
 } from '../../types/Graph';
-import { NodeType } from '../../types/Graph';
 import {
   tabCardStyle,
   constrainedScrollStyle,
@@ -21,12 +21,12 @@ import {
 } from 'styles/FlexStyles';
 import { MetricsObjectTypes } from '../../types/Metrics';
 import { GraphDataSource } from 'services/GraphDataSource';
-import type { DurationInSeconds, TimeInMilliseconds } from 'types/Common';
+import { DurationInSeconds, TimeInMilliseconds } from 'types/Common';
 import * as FilterHelper from '../FilterList/FilterHelper';
 import * as TrafficListFilters from './FiltersAndSorts';
-import type { KialiAppState } from '../../store/Store';
+import { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
-import { durationSelector, languageSelector } from '../../store/Selectors';
+import { durationSelector } from '../../store/Selectors';
 import { TrafficListComponent } from 'components/TrafficList/TrafficListComponent';
 import { KioskElement } from '../Kiosk/KioskElement';
 import { TimeDurationModal } from '../Time/TimeDurationModal';
@@ -77,7 +77,6 @@ export interface TrafficItem {
 
 type ReduxProps = {
   duration: DurationInSeconds;
-  language: string;
 };
 
 type TrafficDetailsProps = ReduxProps & {
@@ -147,7 +146,6 @@ class TrafficDetailsComponent extends React.Component<TrafficDetailsProps, Traff
 
               <div className={scrollableContentStyle}>
                 <TrafficListComponent
-                  key={this.props.language}
                   currentSortField={FilterHelper.currentSortField(TrafficListFilters.sortFields)}
                   isSortAscending={FilterHelper.isCurrentSortAscending()}
                   trafficItems={this.state.traffic}
@@ -349,8 +347,7 @@ class TrafficDetailsComponent extends React.Component<TrafficDetailsProps, Traff
 
 const mapStateToProps = (state: KialiAppState): ReduxProps => {
   return {
-    duration: durationSelector(state),
-    language: languageSelector(state)
+    duration: durationSelector(state)
   };
 };
 

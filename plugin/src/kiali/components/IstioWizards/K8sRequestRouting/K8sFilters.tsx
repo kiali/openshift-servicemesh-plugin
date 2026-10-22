@@ -2,7 +2,6 @@ import * as React from 'react';
 import { Label } from '@patternfly/react-core';
 import { kialiStyle } from 'styles/StyleUtils';
 import { FILTERING_SELECTED_TOOLTIP, wizardTooltip } from '../WizardHelp';
-import { t } from 'utils/I18nUtils';
 
 type Props = {
   filters: string[];
@@ -34,10 +33,10 @@ export class K8sFilters extends React.Component<Props> {
             marginRight: '32px'
           }}
         >
-          {t('Filtering selected')}
+          Filtering selected
           {wizardTooltip(FILTERING_SELECTED_TOOLTIP)}
         </span>
-        {filters.length > 0 ? filters : <b>{t('No Request Filter')}</b>}
+        {filters.length > 0 ? filters : <b>No Request Filter</b>}
       </div>
     );
   }

@@ -1,8 +1,8 @@
 import * as React from 'react';
 import Editor from '@monaco-editor/react';
-import type { editor } from 'monaco-editor';
-import { useKialiColorScheme } from '../../../utils/AppearanceUtils';
-import { ColorScheme } from '../../../types/Common';
+import { editor } from 'monaco-editor';
+import { useKialiTheme } from '../../../utils/ThemeUtils';
+import { Theme } from '../../../types/Common';
 import { ConfigButtonsTargetPanel } from '../../../components/Mesh/ConfigButtonsTargetPanel';
 import { kialiStyle } from 'styles/StyleUtils';
 import { PFColors } from 'components/Pf/PfColors';
@@ -15,15 +15,9 @@ interface TargetPanelEditorProps {
   targetName: string;
 }
 
-const editorContainerStyle = kialiStyle({
-  backgroundColor: PFColors.BackgroundColor100,
+const editorStyle = kialiStyle({
   marginTop: '0.5rem',
-  overflow: 'hidden',
-  $nest: {
-    '& > section': {
-      overflow: 'hidden'
-    }
-  }
+  backgroundColor: PFColors.BackgroundColor100
 });
 
 const editorOptions: editor.IStandaloneEditorConstructionOptions = {
@@ -34,41 +28,33 @@ const editorOptions: editor.IStandaloneEditorConstructionOptions = {
   overviewRulerLanes: 0,
   renderLineHighlight: 'none',
   scrollBeyondLastLine: false,
-  scrollbar: {
-    alwaysConsumeMouseWheel: false,
-    handleMouseWheel: false,
-    horizontal: 'hidden',
-    vertical: 'hidden'
-  },
   wordWrap: 'on'
 };
 
-export const TargetPanelEditor: React.FC<TargetPanelEditorProps> = ({ configData, includeTitle, targetName }) => {
-  const darkTheme = useKialiColorScheme() === ColorScheme.DARK;
+export const TargetPanelEditor: React.FC<TargetPanelEditorProps> = (props: TargetPanelEditorProps) => {
+  const darkTheme = useKialiTheme() === Theme.DARK;
   const [editorHeight, setEditorHeight] = React.useState<string>('200px');
 
-  const yaml = ((): string => {
-    try {
-      return dump(configData || 'N/A', yamlDumpOptions);
-    } catch {
-      return 'N/A';
-    }
-  })();
-
-  const updateEditorHeight = (ed: editor.IStandaloneCodeEditor): void => {
-    setEditorHeight(`${ed.getContentHeight()}px`);
-  };
+  let yaml = '';
+  try {
+    yaml = dump(props.configData || 'N/A', yamlDumpOptions);
+  } catch {
+    yaml = 'N/A';
+  }
 
   const onEditorDidMount = (ed: editor.IStandaloneCodeEditor): void => {
-    updateEditorHeight(ed);
-    ed.onDidContentSizeChange(() => updateEditorHeight(ed));
+    const lineHeight = ed.getOption(editor.EditorOption.lineHeight);
+    const padding = ed.getOption(editor.EditorOption.padding);
+    const lineCount = ed.getModel()?.getLineCount() ?? yaml.split('\n').length;
+    const totalPadding = (padding.top ?? 0) + (padding.bottom ?? 0);
+    setEditorHeight(`${lineCount * lineHeight + totalPadding}px`);
   };
 
   return (
     <>
-      <ConfigButtonsTargetPanel copyText={yaml} includeTitle={includeTitle} targetName={targetName} />
+      <ConfigButtonsTargetPanel copyText={yaml} includeTitle={props.includeTitle} targetName={props.targetName} />
 
-      <div className={editorContainerStyle} data-test="target-panel-editor">
+      <div className={editorStyle} data-test="target-panel-editor">
         <Editor
           value={yaml}
           language="yaml"

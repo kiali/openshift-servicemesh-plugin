@@ -5,7 +5,6 @@ import { ValidationTypes } from '../../types/IstioObjects';
 import { Validation } from './Validation';
 import { highestSeverity } from '../../types/ServiceInfo';
 import { kialiStyle } from 'styles/StyleUtils';
-import { useKialiTranslation } from 'utils/I18nUtils';
 
 type ValidationListProps = {
   checks?: ObjectCheck[];
@@ -21,7 +20,6 @@ const tooltipContentStyle = kialiStyle({
 });
 
 export const ValidationList: React.FC<ValidationListProps> = (props: ValidationListProps) => {
-  const { t } = useKialiTranslation();
   const content = (
     <div className={tooltipContentStyle}>
       {(props.checks ?? []).map(check => {
@@ -41,7 +39,7 @@ export const ValidationList: React.FC<ValidationListProps> = (props: ValidationL
 
   const tooltip = (
     <Tooltip
-      aria-label={t('Validations list')}
+      aria-label="Validations list"
       position={props.tooltipPosition ?? TooltipPosition.left}
       enableFlip={true}
       content={isValid ? 'Valid' : content}

@@ -11,7 +11,6 @@ import { PFColors } from 'components/Pf/PfColors';
 import { KialiIcon } from 'config/KialiIcon';
 import { kialiStyle } from 'styles/StyleUtils';
 import { SortableTh } from 'components/Table/SimpleTable';
-import { t } from 'utils/I18nUtils';
 
 export class ListenerTable implements SummaryTable {
   namespace: string;
@@ -93,7 +92,7 @@ export class ListenerTable implements SummaryTable {
     return [
       {
         id: 'address',
-        title: t('Address'),
+        title: 'Address',
         isNumeric: false,
         param: 'addess',
         compare: (a, b) => {
@@ -102,7 +101,7 @@ export class ListenerTable implements SummaryTable {
       },
       {
         id: 'port',
-        title: t('Port'),
+        title: 'Port',
         isNumeric: true,
         param: 'port',
         compare: (a, b) => {
@@ -111,7 +110,7 @@ export class ListenerTable implements SummaryTable {
       },
       {
         id: 'match',
-        title: t('Match'),
+        title: 'Match',
         isNumeric: false,
         param: 'match',
         compare: (a, b) => {
@@ -120,7 +119,7 @@ export class ListenerTable implements SummaryTable {
       },
       {
         id: 'destination',
-        title: t('Destination'),
+        title: 'Destination',
         isNumeric: false,
         param: 'destination',
         compare: (a, b) => {
@@ -133,7 +132,7 @@ export class ListenerTable implements SummaryTable {
   head = (): SortableTh[] => {
     return [
       {
-        title: t('Address'),
+        title: 'Address',
         sortable: true,
         info: {
           tooltip: (
@@ -145,15 +144,15 @@ export class ListenerTable implements SummaryTable {
         }
       },
       {
-        title: t('Port'),
+        title: 'Port',
         sortable: true
       },
       {
-        title: t('Match'),
+        title: 'Match',
         sortable: true
       },
       {
-        title: t('Destination'),
+        title: 'Destination',
         sortable: true,
         info: {
           tooltip: (

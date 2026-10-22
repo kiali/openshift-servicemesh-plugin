@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { AboutModal, Content, Title, Button, TitleSizes, ButtonVariant, Alert } from '@patternfly/react-core';
 import kialiIconAbout from '../../assets/img/kiali/icon-aboutbkg.svg';
-import type { Status } from '../../types/StatusState';
-import { StatusKey } from '../../types/StatusState';
+import { Status, StatusKey } from '../../types/StatusState';
 import { config, kialiIconDark, kialiIconLight } from '../../config';
 import { kialiStyle } from 'styles/StyleUtils';
 import { KialiIcon } from 'config/KialiIcon';
@@ -10,9 +9,9 @@ import { ReactComponent as IstioLogo } from '../../assets/img/mesh/istio.svg';
 import { KialiLink } from '../Link/KialiLink';
 import { PFColors } from 'components/Pf/PfColors';
 import { isControlPlaneAccessible } from '../../utils/MeshUtils';
-import { useKialiColorScheme } from 'utils/AppearanceUtils';
+import { useKialiTheme } from 'utils/ThemeUtils';
 import { useKialiTranslation } from 'utils/I18nUtils';
-import { ColorScheme } from 'types/Common';
+import { Theme } from 'types/Common';
 
 type AboutUIModalProps = {
   isOpen: boolean;
@@ -63,7 +62,7 @@ const externalLinksTitleStyle = kialiStyle({
 
 export const AboutUIModal: React.FC<AboutUIModalProps> = (props: AboutUIModalProps) => {
   const { t } = useKialiTranslation();
-  const darkTheme = useKialiColorScheme() === ColorScheme.DARK;
+  const darkTheme = useKialiTheme() === Theme.DARK;
 
   const renderMeshLink = (): React.ReactNode => {
     if (config?.about?.mesh) {

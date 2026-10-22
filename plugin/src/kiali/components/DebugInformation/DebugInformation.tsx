@@ -2,19 +2,18 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { serverConfig } from '../../config';
-import type { ComputedServerConfig } from '../../config/ServerConfig';
-import type { KialiAppState } from '../../store/Store';
+import { ComputedServerConfig } from '../../config/ServerConfig';
+import { KialiAppState } from '../../store/Store';
 import { Alert, AlertActionCloseButton, AlertVariant, Button, ButtonVariant, Tab } from '@patternfly/react-core';
 import { Modal, ModalVariant } from '@patternfly/react-core/deprecated';
 import { yamlDumpOptions } from '../../types/IstioConfigDetails';
 import Editor from '@monaco-editor/react';
 import { ParameterizedTabs } from '../Tab/Tabs';
-import type { AuthConfig } from '../../types/Auth';
+import { AuthConfig } from '../../types/Auth';
 import { authenticationConfig } from '../../config/AuthenticationConfig';
 import { basicTabStyle } from 'styles/TabStyles';
 import { editorStyle } from 'styles/EditorStyle';
-import { ColorScheme } from 'types/Common';
-import { resolveColorScheme } from 'utils/AppearanceUtils';
+import { Theme } from 'types/Common';
 import { kialiStyle } from 'styles/StyleUtils';
 import { classes } from 'typestyle';
 import { usePreviousValue } from 'utils/ReactUtils';
@@ -227,7 +226,7 @@ const DebugInformationComponent: React.FC<DebugInformationProps> = (props: Debug
 
   const copyText = copyTextMap[currentTab];
 
-  const isDarkTheme = resolveColorScheme(props.appState.globalState.colorScheme) === ColorScheme.DARK;
+  const isDarkTheme = props.appState.globalState.theme === Theme.DARK;
 
   const renderTabs = (): React.ReactNode[] => {
     const kialiConfig = (

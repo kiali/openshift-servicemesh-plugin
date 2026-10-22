@@ -839,19 +839,19 @@ export class ServiceWizard extends React.Component<ServiceWizardProps, ServiceWi
         items.push({
           objectGVK: dicTypeToGVK[gvkType.DestinationRule],
           items: [this.state.previews.dr],
-          title: t('Destination Rule')
+          title: 'Destination Rule'
         });
       }
 
       if (this.state.previews.gw) {
-        items.push({ objectGVK: dicTypeToGVK[gvkType.Gateway], items: [this.state.previews.gw], title: t('Gateway') });
+        items.push({ objectGVK: dicTypeToGVK[gvkType.Gateway], items: [this.state.previews.gw], title: 'Gateway' });
       }
 
       if (this.state.previews.k8sgateway) {
         items.push({
           objectGVK: dicTypeToGVK[gvkType.K8sGateway],
           items: [this.state.previews.k8sgateway],
-          title: t('K8s Gateway')
+          title: 'K8s Gateway'
         });
       }
 
@@ -859,7 +859,7 @@ export class ServiceWizard extends React.Component<ServiceWizardProps, ServiceWi
         items.push({
           objectGVK: dicTypeToGVK[gvkType.K8sHTTPRoute],
           items: [this.state.previews.k8shttproute],
-          title: t('K8s HTTPRoute')
+          title: 'K8s HTTPRoute'
         });
       }
 
@@ -867,7 +867,7 @@ export class ServiceWizard extends React.Component<ServiceWizardProps, ServiceWi
         items.push({
           objectGVK: dicTypeToGVK[gvkType.K8sGRPCRoute],
           items: [this.state.previews.k8sgrpcroute],
-          title: t('K8s GRPCRoute')
+          title: 'K8s GRPCRoute'
         });
       }
 
@@ -875,7 +875,7 @@ export class ServiceWizard extends React.Component<ServiceWizardProps, ServiceWi
         items.push({
           objectGVK: dicTypeToGVK[gvkType.PeerAuthentication],
           items: [this.state.previews.pa],
-          title: t('Peer Authentication')
+          title: 'Peer Authentication'
         });
       }
 
@@ -883,7 +883,7 @@ export class ServiceWizard extends React.Component<ServiceWizardProps, ServiceWi
         items.push({
           objectGVK: dicTypeToGVK[gvkType.VirtualService],
           items: [this.state.previews.vs],
-          title: t('VirtualService')
+          title: 'VirtualService'
         });
       }
     }

@@ -4,28 +4,24 @@ import { kialiStyle } from 'styles/StyleUtils';
 import { SummaryPanelEdge } from './SummaryPanelEdge';
 import { SummaryPanelGraph } from './SummaryPanelGraph';
 import { SummaryPanelAppBox } from './SummaryPanelAppBox';
-import type { SummaryPanelPropType, BoxByType, SummaryData, FocusNode } from '../../types/Graph';
-import { NodeAttr } from '../../types/Graph';
+import { SummaryPanelPropType, BoxByType, SummaryData, NodeAttr, FocusNode } from '../../types/Graph';
 import { KialiIcon } from 'config/KialiIcon';
 import { SummaryPanelNode } from './SummaryPanelNode';
-import type { TracingState } from 'reducers/TracingState';
+import { TracingState } from 'reducers/TracingState';
 import { SummaryPanelTraceDetails } from './SummaryPanelTraceDetails';
-import type { KialiAppState } from 'store/Store';
+import { KialiAppState } from 'store/Store';
 import { SummaryPanelClusterBox } from './SummaryPanelClusterBox';
 import { SummaryPanelNamespaceBox } from './SummaryPanelNamespaceBox';
 import { GraphTourStops } from 'pages/Graph/GraphHelpTour';
 import { TourStop } from 'components/Tour/TourStop';
 import { summaryPanelWidth } from './SummaryPanelCommon';
-import type { WizardAction, WizardMode } from 'components/IstioWizards/WizardActions';
-import type { ServiceDetailsInfo } from '../../types/ServiceInfo';
-import type { PeerAuthentication } from '../../types/IstioObjects';
+import { WizardAction, WizardMode } from 'components/IstioWizards/WizardActions';
+import { ServiceDetailsInfo } from '../../types/ServiceInfo';
+import { PeerAuthentication } from '../../types/IstioObjects';
 import { classes } from 'typestyle';
 import { panelBodyStyle, panelStyle } from './SummaryPanelStyle';
 import { PFColors } from 'components/Pf/PfColors';
-import type { GraphElement } from '@patternfly/react-topology';
-import { contrastOverlayNest } from 'styles/ThemeSurfaces';
-import { languageSelector } from 'store/Selectors';
-import { t } from 'utils/I18nUtils';
+import { GraphElement } from '@patternfly/react-topology';
 
 type SummaryPanelState = {
   isVisible: boolean;
@@ -33,7 +29,6 @@ type SummaryPanelState = {
 
 type ReduxProps = {
   kiosk: string;
-  language: string;
   tracingState: TracingState;
 };
 
@@ -56,13 +51,7 @@ const mainStyle = kialiStyle({
   fontSize: 'var(--graph-side-panel--font-size)',
   padding: '0',
   position: 'relative',
-  backgroundColor: PFColors.BackgroundColor100,
-  $nest: contrastOverlayNest({
-    highContrast: {
-      border: 'none',
-      borderLeft: `1px solid ${PFColors.BorderDefault}`
-    }
-  })
+  backgroundColor: PFColors.BackgroundColor100
 });
 
 const expandedStyle = kialiStyle({ height: '100%' });
@@ -95,8 +84,7 @@ const toggleSidePanelStyle = kialiStyle({
   position: 'absolute',
   textAlign: 'center',
   transform: 'rotate(-90deg)',
-  transformOrigin: 'left top 0',
-  $nest: contrastOverlayNest()
+  transformOrigin: 'left top 0'
 });
 
 class SummaryPanelComponent extends React.Component<MainSummaryPanelPropType, SummaryPanelState> {
@@ -124,7 +112,7 @@ class SummaryPanelComponent extends React.Component<MainSummaryPanelPropType, Su
         : expandedStyle
       : collapsedStyle;
 
-    const tourStops = [GraphTourStops.SidePanel];
+    let tourStops = [GraphTourStops.SidePanel];
 
     tourStops.unshift(GraphTourStops.Graph);
     tourStops.unshift(GraphTourStops.ContextualMenu);
@@ -136,11 +124,11 @@ class SummaryPanelComponent extends React.Component<MainSummaryPanelPropType, Su
             <div className={classes(toggleSidePanelStyle)} onClick={this.togglePanel}>
               {this.state.isVisible ? (
                 <>
-                  <KialiIcon.AngleDoubleDown /> {t('Hide')}
+                  <KialiIcon.AngleDoubleDown /> Hide
                 </>
               ) : (
                 <>
-                  <KialiIcon.AngleDoubleUp /> {t('Show')}
+                  <KialiIcon.AngleDoubleUp /> Show
                 </>
               )}
             </div>
@@ -176,7 +164,6 @@ class SummaryPanelComponent extends React.Component<MainSummaryPanelPropType, Su
           case 'app':
             return (
               <SummaryPanelAppBox
-                key={this.props.language}
                 data={summary}
                 duration={this.props.duration}
                 graphType={this.props.graphType}
@@ -192,7 +179,6 @@ class SummaryPanelComponent extends React.Component<MainSummaryPanelPropType, Su
           case 'cluster':
             return (
               <SummaryPanelClusterBox
-                key={this.props.language}
                 data={summary}
                 duration={this.props.duration}
                 graphType={this.props.graphType}
@@ -208,7 +194,6 @@ class SummaryPanelComponent extends React.Component<MainSummaryPanelPropType, Su
           case 'namespace':
             return (
               <SummaryPanelNamespaceBox
-                key={this.props.language}
                 data={summary}
                 duration={this.props.duration}
                 graphType={this.props.graphType}
@@ -226,11 +211,10 @@ class SummaryPanelComponent extends React.Component<MainSummaryPanelPropType, Su
         }
       }
       case 'edge':
-        return <SummaryPanelEdge key={this.props.language} {...this.props} />;
+        return <SummaryPanelEdge {...this.props} />;
       case 'graph':
         return (
           <SummaryPanelGraph
-            key={this.props.language}
             data={summary}
             duration={this.props.duration}
             graphType={this.props.graphType}
@@ -246,7 +230,6 @@ class SummaryPanelComponent extends React.Component<MainSummaryPanelPropType, Su
       case 'node':
         return (
           <SummaryPanelNode
-            key={this.props.language}
             data={this.props.data}
             duration={this.props.duration}
             graphType={this.props.graphType}
@@ -274,7 +257,6 @@ class SummaryPanelComponent extends React.Component<MainSummaryPanelPropType, Su
 
 const mapStateToProps = (state: KialiAppState): ReduxProps => ({
   kiosk: state.globalState.kiosk,
-  language: languageSelector(state),
   tracingState: state.tracingState
 });
 

@@ -15,7 +15,6 @@ import {
   SELECTOR
 } from './ListenerBuilder';
 import { KialiIcon } from 'config/KialiIcon';
-import { useKialiTranslation } from 'utils/I18nUtils';
 
 type ListenerListProps = {
   listeners: Listener[];
@@ -32,6 +31,37 @@ const addListenerStyle = kialiStyle({
   marginLeft: '0.5rem',
   marginTop: '0.25rem'
 });
+
+const columns: ThProps[] = [
+  {
+    title: 'Name',
+    width: 20
+  },
+  {
+    title: 'Hostname',
+    width: 20
+  },
+  {
+    title: 'Port',
+    width: 10
+  },
+  {
+    title: 'Protocol',
+    width: 10
+  },
+  {
+    title: 'From Namespaces',
+    width: 10
+  },
+  {
+    title: 'Labels',
+    width: 25
+  },
+  {
+    title: '',
+    width: 10
+  }
+];
 
 export const addSelectorLabels = (value: string): [boolean, Record<string, string>] => {
   if (value.length === 0) {
@@ -70,39 +100,6 @@ export const addSelectorLabels = (value: string): [boolean, Record<string, strin
 };
 
 export const ListenerList: React.FC<ListenerListProps> = (props: ListenerListProps) => {
-  const { t } = useKialiTranslation();
-
-  const columns: ThProps[] = [
-    {
-      title: t('Name'),
-      width: 20
-    },
-    {
-      title: t('Hostname'),
-      width: 20
-    },
-    {
-      title: t('Port'),
-      width: 10
-    },
-    {
-      title: t('Protocol'),
-      width: 10
-    },
-    {
-      title: t('From Namespaces'),
-      width: 10
-    },
-    {
-      title: t('Labels'),
-      width: 25
-    },
-    {
-      title: '',
-      width: 10
-    }
-  ];
-
   const onAddListener = (): void => {
     const newListener: ListenerForm = {
       hostname: '',
@@ -191,7 +188,7 @@ export const ListenerList: React.FC<ListenerListProps> = (props: ListenerListPro
 
   return (
     <>
-      <Table aria-label={t('Listener List')}>
+      <Table aria-label="Listener List">
         <Thead>
           <Tr>
             {columns.map((column, index) => (
@@ -217,7 +214,7 @@ export const ListenerList: React.FC<ListenerListProps> = (props: ListenerListPro
           ) : (
             <Tr>
               <Td colSpan={columns.length}>
-                <div className={noListenerStyle}>{t('No Listeners defined')}</div>
+                <div className={noListenerStyle}>No Listeners defined</div>
               </Td>
             </Tr>
           )}
@@ -231,7 +228,7 @@ export const ListenerList: React.FC<ListenerListProps> = (props: ListenerListPro
         onClick={onAddListener}
         className={addListenerStyle}
       >
-        {t('Add Listener to Listener List')}
+        Add Listener to Listener List
       </Button>
     </>
   );

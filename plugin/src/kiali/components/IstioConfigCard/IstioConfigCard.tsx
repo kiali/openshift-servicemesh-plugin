@@ -1,7 +1,6 @@
 import * as React from 'react';
-import type { IstioConfigItem } from '../../types/IstioConfigList';
-import type { IRow, ThProps } from '@patternfly/react-table';
-import { TableVariant } from '@patternfly/react-table';
+import { IstioConfigItem } from '../../types/IstioConfigList';
+import { IRow, TableVariant, ThProps } from '@patternfly/react-table';
 import {
   Card,
   CardBody,
@@ -20,7 +19,6 @@ import { PFBadge } from '../Pf/PfBadges';
 import { IstioObjectLink } from '../Link/IstioObjectLink';
 import { SimpleTable } from 'components/Table/SimpleTable';
 import { getGVKTypeString, getIstioObjectGVK } from '../../utils/IstioConfigUtils';
-import { useKialiTranslation } from 'utils/I18nUtils';
 
 type IstioConfigCardProps = {
   items: IstioConfigItem[];
@@ -33,13 +31,12 @@ const emtpytStyle = kialiStyle({
 });
 
 export const IstioConfigCard: React.FC<IstioConfigCardProps> = (props: IstioConfigCardProps) => {
-  const { t } = useKialiTranslation();
-  const columns: ThProps[] = [{ title: t('Name') }, { title: t('Status'), width: 10 }];
+  const columns: ThProps[] = [{ title: 'Name' }, { title: 'Status', width: 10 }];
 
   const noIstioConfig: React.ReactNode = (
     <EmptyState variant={EmptyStateVariant.sm} className={emtpytStyle}>
       <EmptyStateBody className={emtpytStyle} data-test="istio-config-empty">
-        {t('No Istio Config found for {{name}}', { name: props.name })}
+        No Istio Config found for {props.name}
       </EmptyStateBody>
     </EmptyState>
   );
@@ -90,13 +87,13 @@ export const IstioConfigCard: React.FC<IstioConfigCardProps> = (props: IstioConf
     <Card isCompact={true} id="IstioConfigCard">
       <CardHeader actions={{ actions: <></>, hasNoOffset: false }}>
         <Title headingLevel="h3" size={TitleSizes.lg}>
-          {t('Istio Config')}
+          Istio Config
         </Title>
       </CardHeader>
 
       <CardBody>
         <SimpleTable
-          label={t('Istio Config List')}
+          label="Istio Config List"
           columns={columns}
           rows={rows}
           variant={TableVariant.compact}

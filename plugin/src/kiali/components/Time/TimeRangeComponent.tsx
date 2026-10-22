@@ -1,20 +1,25 @@
 import * as React from 'react';
 
-import type { DurationInSeconds, BoundsInMilliseconds, TimeRange } from '../../types/Common';
-import { guardTimeRange, durationToBounds, isEqualTimeRange } from '../../types/Common';
+import {
+  DurationInSeconds,
+  BoundsInMilliseconds,
+  guardTimeRange,
+  TimeRange,
+  durationToBounds,
+  isEqualTimeRange
+} from '../../types/Common';
 import { ToolbarDropdown } from '../Dropdown/ToolbarDropdown';
-import { mapValues } from 'lodash-es';
-import { serverConfig } from '../../config/ServerConfig';
+import { serverConfig, humanDurations } from '../../config/ServerConfig';
 import { retrieveTimeRange, storeTimeRange } from './TimeRangeHelper';
 import { DateTimePicker } from './DateTimePicker';
-import type { KialiAppState } from '../../store/Store';
+import { KialiAppState } from '../../store/Store';
 import { timeRangeSelector } from '../../store/Selectors';
-import type { KialiDispatch } from 'types/Redux';
+import { KialiDispatch } from 'types/Redux';
 import { UserSettingsActions } from '../../actions/UserSettingsActions';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { kialiStyle } from 'styles/StyleUtils';
-import { formatLastDuration, t } from 'utils/I18nUtils';
+import { t } from 'utils/I18nUtils';
 
 type ReduxStateProps = {
   timeRange: TimeRange;
@@ -111,7 +116,7 @@ export class TimeRangeComp extends React.Component<Props> {
   }
 
   renderDuration = (d?: DurationInSeconds): React.ReactNode => {
-    const durations = mapValues(serverConfig.durations, formatLastDuration);
+    const durations = humanDurations(serverConfig, t('Last'), undefined);
     const options = { custom: t('Custom'), ...durations };
     const value = d ?? 'custom';
 

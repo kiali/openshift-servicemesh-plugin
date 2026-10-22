@@ -1,7 +1,7 @@
 import { isEmpty, mapValues, reject } from 'lodash-es';
-import { RunMode, type ServerConfig } from '../types/ServerConfig';
+import { RunMode, ServerConfig } from '../types/ServerConfig';
 import { parseHealthConfig } from './HealthConfig';
-import type { MeshCluster } from '../types/Mesh';
+import { MeshCluster } from '../types/Mesh';
 
 export type Durations = { [key: number]: string };
 
@@ -72,16 +72,12 @@ const computeValidDurations = (cfg: ComputedServerConfig): void => {
 const defaultServerConfig: ComputedServerConfig = {
   ambientEnabled: false,
   authStrategy: '',
-  ai: {
+  chatAI: {
     enabled: false,
-    chat: {
-      allowed: false,
-      enabled: false,
-      providers: [],
-      defaultProvider: '',
-      store: {
-        enabled: false
-      }
+    providers: [],
+    defaultProvider: '',
+    store: {
+      enabled: false
     }
   },
   clusters: {},
@@ -132,8 +128,8 @@ const defaultServerConfig: ComputedServerConfig = {
         }
       },
       i18n: {
-        language: '',
-        showSelector: true
+        language: 'en',
+        showSelector: false
       },
       list: {
         includeHealth: true,

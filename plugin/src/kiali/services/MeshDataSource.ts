@@ -1,11 +1,11 @@
-import type { AppenderString, TimeInSeconds } from '../types/Common';
+import { AppenderString, TimeInSeconds } from '../types/Common';
 import { addError } from '../utils/AlertUtils';
 import { PromisesRegistry } from '../utils/CancelablePromises';
 import * as API from './Api';
 import { decorateMeshData } from '../store/Selectors/MeshData';
 import EventEmitter from 'eventemitter3';
 import { createSelector } from 'reselect';
-import type { DecoratedMeshElements, MeshDefinition, MeshElements, MeshQuery } from 'types/Mesh';
+import { DecoratedMeshElements, MeshDefinition, MeshElements, MeshQuery } from 'types/Mesh';
 import { UNKNOWN } from 'types/Graph';
 
 export const EMPTY_MESH_DATA = { nodes: [], edges: [] };
@@ -47,7 +47,6 @@ type EmitEvents = {
 export interface MeshFetchParams {
   includeLabels?: boolean; // // TODO: Actually deal with this option if we want to do find/hide on labels
   showGateways?: boolean;
-  showKiali?: boolean;
   showWaypoints?: boolean;
 }
 
@@ -106,12 +105,11 @@ export class MeshDataSource {
 
     const restParams: MeshQuery = {
       includeGateways: fetchParams.showGateways,
-      includeKiali: fetchParams.showKiali,
       includeWaypoints: fetchParams.showWaypoints
     };
 
     // Some appenders are expensive so only specify an appender if needed.
-    const appenders: AppenderString = '';
+    let appenders: AppenderString = '';
 
     restParams.appenders = appenders;
 
@@ -121,7 +119,6 @@ export class MeshDataSource {
     const isPreviousDataInvalid =
       previousFetchParams.includeLabels !== this._fetchParams.includeLabels ||
       previousFetchParams.showGateways !== this.fetchParameters.showGateways ||
-      previousFetchParams.showKiali !== this.fetchParameters.showKiali ||
       previousFetchParams.showWaypoints !== this.fetchParameters.showWaypoints;
     if (isPreviousDataInvalid) {
       // Reset the mesh data
@@ -142,6 +139,16 @@ export class MeshDataSource {
   public removeListener: OnEvents = (eventName: any, callback: any): void => {
     this.eventEmitter.removeListener(eventName, callback);
   };
+
+  // Some helpers
+
+  // Private methods
+
+  /*
+  private static defaultFetchParams(): FetchParams {
+    return {};
+  }
+  */
 
   private emit: EmitEvents = (eventName: string, ...args: unknown[]) => {
     this.eventEmitter.emit(eventName, ...args);

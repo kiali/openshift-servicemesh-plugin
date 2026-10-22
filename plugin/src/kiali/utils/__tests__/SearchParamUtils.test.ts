@@ -1,11 +1,25 @@
-import { PARENT_KIOSK_SESSION_KEY } from 'utils/AppearanceUtils';
+let mockKioskValue = '';
+
+rstest.mock('store/ConfigStore', () => ({
+  store: {
+    getState: () => ({
+      globalState: {
+        kiosk: mockKioskValue
+      }
+    }),
+    dispatch: rstest.fn(),
+    subscribe: rstest.fn(),
+    replaceReducer: rstest.fn()
+  }
+}));
+
 import { getKioskMode, isKioskMode, getParamsSeparator } from '../SearchParamUtils';
 
 describe('getKioskMode', () => {
   const originalLocation = window.location;
 
   afterEach(() => {
-    sessionStorage.clear();
+    mockKioskValue = '';
     Object.defineProperty(window, 'location', { value: originalLocation, configurable: true });
   });
 
@@ -14,55 +28,47 @@ describe('getKioskMode', () => {
       value: { ...originalLocation, search: '?kiosk=https://console.example.com' },
       configurable: true
     });
-    sessionStorage.setItem(PARENT_KIOSK_SESSION_KEY, 'https://other.example.com');
+    mockKioskValue = 'https://other.example.com';
 
     expect(getKioskMode()).toBe('https://console.example.com');
   });
 
-  it('falls back to sessionStorage when URL parameter is absent', () => {
+  it('falls back to Redux store when URL parameter is absent', () => {
     Object.defineProperty(window, 'location', {
       value: { ...originalLocation, search: '' },
       configurable: true
     });
-    sessionStorage.setItem(PARENT_KIOSK_SESSION_KEY, 'https://console.example.com');
+    mockKioskValue = 'https://console.example.com';
 
     expect(getKioskMode()).toBe('https://console.example.com');
   });
 
-  it('falls back to sessionStorage when URL has empty kiosk value', () => {
+  it('falls back to Redux when URL has empty kiosk value', () => {
     Object.defineProperty(window, 'location', {
       value: { ...originalLocation, search: '?kiosk=' },
       configurable: true
     });
-    sessionStorage.setItem(PARENT_KIOSK_SESSION_KEY, 'https://console.example.com');
+    mockKioskValue = 'https://console.example.com';
 
     expect(getKioskMode()).toBe('https://console.example.com');
   });
 
-  it('returns empty string when URL has empty kiosk and sessionStorage is also empty', () => {
+  it('returns empty string when URL has empty kiosk and Redux is also empty', () => {
     Object.defineProperty(window, 'location', {
       value: { ...originalLocation, search: '?kiosk=' },
       configurable: true
     });
+    mockKioskValue = '';
 
     expect(getKioskMode()).toBe('');
   });
 
-  it('returns empty string when neither URL nor sessionStorage has a value', () => {
+  it('returns empty string when neither URL nor Redux has a value', () => {
     Object.defineProperty(window, 'location', {
       value: { ...originalLocation, search: '' },
       configurable: true
     });
-
-    expect(getKioskMode()).toBe('');
-  });
-
-  it('ignores standalone kiosk flag in sessionStorage', () => {
-    Object.defineProperty(window, 'location', {
-      value: { ...originalLocation, search: '' },
-      configurable: true
-    });
-    sessionStorage.setItem(PARENT_KIOSK_SESSION_KEY, 'true');
+    mockKioskValue = '';
 
     expect(getKioskMode()).toBe('');
   });
@@ -72,16 +78,16 @@ describe('isKioskMode', () => {
   const originalLocation = window.location;
 
   afterEach(() => {
-    sessionStorage.clear();
+    mockKioskValue = '';
     Object.defineProperty(window, 'location', { value: originalLocation, configurable: true });
   });
 
-  it('returns true when kiosk mode is active via sessionStorage', () => {
+  it('returns true when kiosk mode is active via Redux', () => {
     Object.defineProperty(window, 'location', {
       value: { ...originalLocation, search: '' },
       configurable: true
     });
-    sessionStorage.setItem(PARENT_KIOSK_SESSION_KEY, 'https://console.example.com');
+    mockKioskValue = 'https://console.example.com';
 
     expect(isKioskMode()).toBe(true);
   });
@@ -91,6 +97,7 @@ describe('isKioskMode', () => {
       value: { ...originalLocation, search: '' },
       configurable: true
     });
+    mockKioskValue = '';
 
     expect(isKioskMode()).toBe(false);
   });
@@ -100,6 +107,7 @@ describe('isKioskMode', () => {
       value: { ...originalLocation, search: '?kiosk=true' },
       configurable: true
     });
+    mockKioskValue = '';
 
     expect(isKioskMode()).toBe(true);
   });

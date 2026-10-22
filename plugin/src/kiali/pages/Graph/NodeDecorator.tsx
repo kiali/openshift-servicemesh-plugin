@@ -1,13 +1,14 @@
 import * as React from 'react';
 import { Tooltip } from '@patternfly/react-core';
-import type { Node, TopologyQuadrant } from '@patternfly/react-topology';
 import {
   DEFAULT_DECORATOR_RADIUS,
   Decorator,
+  Node,
+  TopologyQuadrant,
   getDefaultShapeDecoratorCenter,
   observer
 } from '@patternfly/react-topology';
-import type { IconType } from 'config/Icons';
+import { IconType } from 'config/Icons';
 import { kialiStyle } from 'styles/StyleUtils';
 import { PFColors } from 'components/Pf/PfColors';
 
@@ -22,7 +23,7 @@ const decoratorStyle = kialiStyle({
   color: PFColors.White,
   $nest: {
     '& .pf-topology__node__decorator__bg': {
-      fill: PFColors.Purple40
+      fill: PFColors.Purple500
     },
     '& .pf-topology__node__decorator__icon': {
       color: PFColors.White,

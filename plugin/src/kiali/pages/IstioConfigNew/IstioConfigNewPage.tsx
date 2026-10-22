@@ -586,7 +586,7 @@ const IstioConfigNewPageComponent: React.FC<Props> = (props: Props) => {
               <SidecarForm sidecar={sidecar} onChange={onChangeSidecar} />
             )}
 
-            <FormGroup fieldId="labels" label={t('Labels')}>
+            <FormGroup fieldId="labels" label="Labels">
               <div className={editStyle}>
                 <Labels labels={labels} expanded={true} />
 

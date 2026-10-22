@@ -1,15 +1,13 @@
-import type { MenuToggleElement } from '@patternfly/react-core';
-import { Radio, Checkbox, Dropdown, DropdownList, MenuToggle } from '@patternfly/react-core';
+import { Radio, Checkbox, Dropdown, DropdownList, MenuToggleElement, MenuToggle } from '@patternfly/react-core';
 import * as React from 'react';
 import { connect } from 'react-redux';
-import type { KialiDispatch } from 'types/Redux';
+import { KialiDispatch } from 'types/Redux';
 import { bindActionCreators } from 'redux';
-import type { KialiAppState } from '../../../store/Store';
+import { KialiAppState } from '../../../store/Store';
 import { GraphToolbarActions } from '../../../actions/GraphToolbarActions';
 import { TrafficRate, isAmbientRate, isGrpcRate, isHttpRate, isTcpRate } from '../../../types/Graph';
 import { startCase } from 'lodash-es';
 import { trafficRatesSelector } from 'store/Selectors';
-import { useKialiTranslation } from 'utils/I18nUtils';
 import {
   BoundingClientAwareComponent,
   PropertyType
@@ -45,7 +43,6 @@ interface TrafficRateOptionType {
 const marginBottom = 20;
 
 const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficProps) => {
-  const { t } = useKialiTranslation();
   const [isOpen, setIsOpen] = React.useState<boolean>(false);
 
   const onToggle = (isOpen: boolean): void => {
@@ -58,7 +55,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
     const trafficRateOptions: TrafficRateOptionType[] = [
       {
         id: TrafficRate.AMBIENT_GROUP,
-        labelText: t(startCase(TrafficRate.AMBIENT_GROUP)),
+        labelText: startCase(TrafficRate.AMBIENT_GROUP),
         isChecked: trafficRates.includes(TrafficRate.AMBIENT_GROUP),
         isHidden: !serverConfig.ambientEnabled,
         tooltip: (
@@ -70,7 +67,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
       },
       {
         id: TrafficRate.GRPC_GROUP,
-        labelText: t(startCase(TrafficRate.GRPC_GROUP)),
+        labelText: startCase(TrafficRate.GRPC_GROUP),
         isChecked: trafficRates.includes(TrafficRate.GRPC_GROUP),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -81,7 +78,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
       },
       {
         id: TrafficRate.HTTP_GROUP,
-        labelText: t(startCase(TrafficRate.HTTP_GROUP)),
+        labelText: startCase(TrafficRate.HTTP_GROUP),
         isChecked: trafficRates.includes(TrafficRate.HTTP_GROUP),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -92,7 +89,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
       },
       {
         id: TrafficRate.TCP_GROUP,
-        labelText: t(startCase(TrafficRate.TCP_GROUP)),
+        labelText: startCase(TrafficRate.TCP_GROUP),
         isChecked: trafficRates.includes(TrafficRate.TCP_GROUP),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -106,7 +103,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
     const ambientOptions: TrafficRateOptionType[] = [
       {
         id: TrafficRate.AMBIENT_WAYPOINT,
-        labelText: t('Waypoint'),
+        labelText: 'Waypoint',
         isChecked: trafficRates.includes(TrafficRate.AMBIENT_WAYPOINT),
         tooltip: (
           <div style={{ textAlign: 'left' }}>Limit to only waypoint-reported traffic, for the enabled protocols.</div>
@@ -114,7 +111,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
       },
       {
         id: TrafficRate.AMBIENT_ZTUNNEL,
-        labelText: t('Ztunnel'),
+        labelText: 'Ztunnel',
         isChecked: trafficRates.includes(TrafficRate.AMBIENT_ZTUNNEL),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -124,7 +121,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
       },
       {
         id: TrafficRate.AMBIENT_TOTAL,
-        labelText: t('Total'),
+        labelText: 'Total',
         isChecked: trafficRates.includes(TrafficRate.AMBIENT_TOTAL),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -137,7 +134,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
     const grpcOptions: TrafficRateOptionType[] = [
       {
         id: TrafficRate.GRPC_RECEIVED,
-        labelText: t('Received Messages'),
+        labelText: 'Received Messages',
         isChecked: trafficRates.includes(TrafficRate.GRPC_RECEIVED),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -147,7 +144,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
       },
       {
         id: TrafficRate.GRPC_REQUEST,
-        labelText: t('Requests'),
+        labelText: 'Requests',
         isChecked: trafficRates.includes(TrafficRate.GRPC_REQUEST),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -157,7 +154,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
       },
       {
         id: TrafficRate.GRPC_SENT,
-        labelText: t('Sent Messages'),
+        labelText: 'Sent Messages',
         isChecked: trafficRates.includes(TrafficRate.GRPC_SENT),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -167,7 +164,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
       },
       {
         id: TrafficRate.GRPC_TOTAL,
-        labelText: t('Total Messages'),
+        labelText: 'Total Messages',
         isChecked: trafficRates.includes(TrafficRate.GRPC_TOTAL),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -180,7 +177,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
     const httpOptions: TrafficRateOptionType[] = [
       {
         id: TrafficRate.HTTP_REQUEST,
-        labelText: t('Requests'),
+        labelText: 'Requests',
         isChecked: trafficRates.includes(TrafficRate.HTTP_REQUEST),
         tooltip: (
           <div style={{ textAlign: 'left' }}>
@@ -193,19 +190,19 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
     const tcpOptions: TrafficRateOptionType[] = [
       {
         id: TrafficRate.TCP_RECEIVED,
-        labelText: t('Received Bytes'),
+        labelText: 'Received Bytes',
         isChecked: trafficRates.includes(TrafficRate.TCP_RECEIVED),
         tooltip: <div style={{ textAlign: 'left' }}>Received bytes rate in bytes-per-second (bps).</div>
       },
       {
         id: TrafficRate.TCP_SENT,
-        labelText: t('Sent Bytes'),
+        labelText: 'Sent Bytes',
         isChecked: trafficRates.includes(TrafficRate.TCP_SENT),
         tooltip: <div style={{ textAlign: 'left' }}>Sent bytes rate in bytes-per-second (bps).</div>
       },
       {
         id: TrafficRate.TCP_TOTAL,
-        labelText: t('Total Bytes'),
+        labelText: 'Total Bytes',
         isChecked: trafficRates.includes(TrafficRate.TCP_TOTAL),
         tooltip: (
           <div style={{ textAlign: 'left' }}>Combined (Sent + Received) byte rate in bytes-per-second (bps).</div>
@@ -421,7 +418,7 @@ const GraphTrafficComponent: React.FC<GraphTrafficProps> = (props: GraphTrafficP
           onClick={() => onToggle(!isOpen)}
           isExpanded={isOpen}
         >
-          {t('Traffic')}
+          Traffic
         </MenuToggle>
       )}
       isOpen={isOpen}

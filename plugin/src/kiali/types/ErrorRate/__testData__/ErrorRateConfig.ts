@@ -66,16 +66,12 @@ export const generateRequestHealth = (
 export const serverRateConfig = {
   authStrategy: '',
   ambientEnabled: false,
-  ai: {
+  chatAI: {
     enabled: false,
-    chat: {
-      allowed: false,
-      enabled: false,
-      providers: [],
-      defaultProvider: '',
-      store: {
-        enabled: false
-      }
+    providers: [],
+    defaultProvider: '',
+    store: {
+      enabled: false
     }
   },
   clusters: {},

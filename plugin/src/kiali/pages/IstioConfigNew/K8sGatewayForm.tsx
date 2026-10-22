@@ -6,7 +6,6 @@ import { addSelectorLabels, ListenerList } from './GatewayForm/ListenerList';
 import { isValidHostname, isValidName, isValidTLS, SELECTOR } from './GatewayForm/ListenerBuilder';
 import { isValidAddress } from './GatewayForm/AddressBuilder';
 import { serverConfig } from '../../config';
-import { t } from 'utils/I18nUtils';
 
 type Props = {
   k8sGateway: K8sGatewayState;
@@ -115,7 +114,7 @@ export class K8sGatewayForm extends React.Component<Props, K8sGatewayFormState> 
     return (
       <>
         {serverConfig.gatewayAPIClasses.length > 1 && (
-          <FormGroup label={t('Gateway Class')} fieldId="gatewayClass">
+          <FormGroup label="Gateway Class" fieldId="gatewayClass">
             <Select
               id="gatewayClass"
               isOpen={this.state.isGatewayClassSelectOpen}
@@ -142,7 +141,7 @@ export class K8sGatewayForm extends React.Component<Props, K8sGatewayFormState> 
                     this.state.gatewayClass}
                 </MenuToggle>
               )}
-              aria-label={t('Gateway Class Select')}
+              aria-label="Gateway Class Select"
             >
               <SelectList>
                 {serverConfig.gatewayAPIClasses.map((option, index) => (
@@ -155,7 +154,7 @@ export class K8sGatewayForm extends React.Component<Props, K8sGatewayFormState> 
           </FormGroup>
         )}
 
-        <FormGroup label={t('Listeners')} fieldId="listener" isRequired={true}>
+        <FormGroup label="Listeners" fieldId="listener" isRequired={true}>
           <ListenerList
             onChange={this.onChangeListener}
             listenersForm={this.state.listenersForm}
@@ -163,7 +162,7 @@ export class K8sGatewayForm extends React.Component<Props, K8sGatewayFormState> 
           />
         </FormGroup>
 
-        <FormGroup label={t('Addresses')} fieldId="gwAddressList">
+        <FormGroup label="Addresses" fieldId="gwAddressList">
           <AddressList onChange={this.onChangeAddress} addressList={this.state.addresses} />
         </FormGroup>
       </>

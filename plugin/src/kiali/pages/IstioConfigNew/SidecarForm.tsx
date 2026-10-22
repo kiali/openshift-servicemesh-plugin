@@ -16,11 +16,10 @@ import { isSidecarHostValid } from '../../utils/IstioConfigUtils';
 import { isValid } from 'utils/Common';
 import { KialiIcon } from 'config/KialiIcon';
 import { SimpleTable } from 'components/Table/SimpleTable';
-import { t } from 'utils/I18nUtils';
 
 const columns: ThProps[] = [
   {
-    title: t('Egress Host'),
+    title: 'Egress Host',
     width: 60
   },
   {
@@ -32,6 +31,8 @@ const noEgressHostsStyle = kialiStyle({
   marginTop: '1rem',
   color: PFColors.Red500
 });
+
+const hostsHelperText = 'Enter a valid namespace/FQDN Egress host.';
 
 export type EgressHost = {
   host: string;
@@ -202,7 +203,7 @@ export class SidecarForm extends React.Component<Props, SidecarState> {
 
               {!this.state.validEgressHost && (
                 <div key="hostsHelperText" className={noEgressHostsStyle}>
-                  {t('Enter a valid namespace/FQDN Egress host.')}
+                  {hostsHelperText}
                 </div>
               )}
             </>,
@@ -220,7 +221,7 @@ export class SidecarForm extends React.Component<Props, SidecarState> {
   render(): React.ReactNode {
     return (
       <>
-        <FormGroup label={t('Workload Selector')} fieldId="workloadSelectorSwitch">
+        <FormGroup label="Workload Selector" fieldId="workloadSelectorSwitch">
           <Switch
             id="workloadSelectorSwitch"
             label={' '}
@@ -237,7 +238,7 @@ export class SidecarForm extends React.Component<Props, SidecarState> {
         </FormGroup>
 
         {this.state.addWorkloadSelector && (
-          <FormGroup fieldId="workloadLabels" label={t('Labels')}>
+          <FormGroup fieldId="workloadLabels" label="Labels">
             <TextInput
               id="gwHosts"
               name="gwHosts"
@@ -251,19 +252,19 @@ export class SidecarForm extends React.Component<Props, SidecarState> {
               <HelperText>
                 <HelperTextItem>
                   {isValid(this.state.workloadSelectorValid)
-                    ? t('One or more labels to select a workload where the Sidecar is applied.')
-                    : t('Enter a label in the format <label>=<value>. Enter one or multiple labels separated by comma.')}
+                    ? 'One or more labels to select a workload where the Sidecar is applied.'
+                    : 'Enter a label in the format <label>=<value>. Enter one or multiple labels separated by comma.'}
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
         )}
 
-        <FormGroup label={t('Egress')} fieldId="egressHostTable">
-          <SimpleTable label={t('Egress Hosts')} columns={columns} rows={this.rows()} />
+        <FormGroup label="Egress" fieldId="egressHostTable">
+          <SimpleTable label="Egress Hosts" columns={columns} rows={this.rows()} />
 
           {this.state.egressHosts.length === 0 && (
-            <div className={noEgressHostsStyle}>{t('Sidecar has no Egress Hosts Defined')}</div>
+            <div className={noEgressHostsStyle}>Sidecar has no Egress Hosts Defined</div>
           )}
         </FormGroup>
       </>

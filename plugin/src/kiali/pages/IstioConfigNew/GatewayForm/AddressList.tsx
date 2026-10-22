@@ -6,7 +6,6 @@ import { Button, ButtonVariant } from '@patternfly/react-core';
 import { AddressBuilder } from './AddressBuilder';
 import { PFColors } from '../../../components/Pf/PfColors';
 import { KialiIcon } from 'config/KialiIcon';
-import { useKialiTranslation } from 'utils/I18nUtils';
 
 type AddressListProps = {
   addressList: Address[];
@@ -35,7 +34,6 @@ const columns: ThProps[] = [
 ];
 
 export const AddressList: React.FC<AddressListProps> = (props: AddressListProps) => {
-  const { t } = useKialiTranslation();
   const onAddAddress = (): void => {
     const newAddress: Address = {
       type: 'IPAddress',
@@ -64,7 +62,7 @@ export const AddressList: React.FC<AddressListProps> = (props: AddressListProps)
 
   return (
     <>
-      <Table aria-label={t('Address List')}>
+      <Table aria-label="Address List">
         <Thead>
           <Tr>
             {columns.map((column, index) => (
@@ -91,7 +89,7 @@ export const AddressList: React.FC<AddressListProps> = (props: AddressListProps)
           ) : (
             <Tr>
               <Td colSpan={columns.length}>
-                <div className={noAddressStyle}>{t('No Addresses defined')}</div>
+                <div className={noAddressStyle}>No Addresses defined</div>
               </Td>
             </Tr>
           )}
@@ -105,7 +103,7 @@ export const AddressList: React.FC<AddressListProps> = (props: AddressListProps)
         onClick={onAddAddress}
         className={addAddressStyle}
       >
-        {t('Add Address to Addresses List')}
+        Add Address to Addresses List
       </Button>
     </>
   );

@@ -11,7 +11,7 @@ import {
   defaultTab as workloadDefaultTab
 } from '../../pages/WorkloadDetails/WorkloadDetailsPage';
 import { subTabStyle } from 'styles/TabStyles';
-import { t, useKialiTranslation } from 'utils/I18nUtils';
+import { t } from 'utils/I18nUtils';
 import { SimpleTable } from '../Table/SimpleTable';
 import { WaypointWorkloadsTable } from './WaypointWorkloadsTable';
 import { WaypointForLabel, WaypointType } from '../../types/Ambient';
@@ -41,7 +41,7 @@ export const isWaypointFor = (wk: Workload): string => {
 
 const showProxyStatus = (workload: Workload): React.ReactNode => {
   const cols: ThProps[] = [
-    { title: t('Pod Name') },
+    { title: 'Pod Name' },
     { title: 'CDS' },
     { title: 'LDS' },
     { title: 'EDS' },
@@ -59,11 +59,10 @@ const showProxyStatus = (workload: Workload): React.ReactNode => {
     };
   });
 
-  return <SimpleTable label={t('Proxy Status')} columns={cols} rows={rows} />;
+  return <SimpleTable label={'Proxy Status'} columns={cols} rows={rows} />;
 };
 
 export const WaypointConfig: React.FC<WaypointConfigProps> = (props: WaypointConfigProps) => {
-  const { t } = useKialiTranslation();
   const waypointFor = isWaypointFor(props.workload);
   let defaultTab: string;
   switch (waypointFor) {

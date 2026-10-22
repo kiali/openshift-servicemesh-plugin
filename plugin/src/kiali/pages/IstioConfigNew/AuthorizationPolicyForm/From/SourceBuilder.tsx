@@ -171,7 +171,7 @@ export const SourceBuilder: React.FC<Props> = (props: Props) => {
                   {newSourceField}
                 </MenuToggle>
               )}
-              aria-label={t('Source Field Select')}
+              aria-label="Source Field Select"
             >
               <SelectList>
                 {sourceFields.map((option, index) => (

@@ -1,11 +1,12 @@
 import { HistoryManager, URLParam } from '../app/History';
-import { isParentKiosk } from 'components/Kiosk/KioskActions';
-import { PARENT_KIOSK_SESSION_KEY } from 'utils/AppearanceUtils';
+// Direct store import is needed because kiosk detection is used in non-React
+// contexts (class components, utility helpers) where hooks are unavailable.
+import { store } from 'store/ConfigStore';
 
-// In OSSMC the kiosk URL parameter is set once during the initial load and
-// subsequent SPA navigations lose it. sessionStorage preserves parent kiosk
-// context without relying on redux-persist, which would leak OSSMC state into
-// standalone Kiali opened later in the same browser tab.
+// In OSSMC the kiosk URL parameter is set once during the initial iframe load
+// and subsequent SPA navigations lose it. The Redux store preserves the value
+// set by AuthenticationController.setDocLayout, so we fall back to it when the
+// URL parameter is absent.
 export const getKioskMode = (): string => {
   const urlParams = new URLSearchParams(window.location.search);
   const kioskParam = urlParams.get('kiosk');
@@ -14,13 +15,7 @@ export const getKioskMode = (): string => {
     return kioskParam;
   }
 
-  const sessionKiosk = sessionStorage.getItem(PARENT_KIOSK_SESSION_KEY) ?? '';
-
-  if (isParentKiosk(sessionKiosk)) {
-    return sessionKiosk;
-  }
-
-  return '';
+  return store?.getState()?.globalState?.kiosk ?? '';
 };
 
 export const isKioskMode = (): boolean => {

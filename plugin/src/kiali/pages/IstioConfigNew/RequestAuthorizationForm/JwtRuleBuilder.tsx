@@ -7,7 +7,6 @@ import { PFColors } from '../../../components/Pf/PfColors';
 import { isValidUrl } from '../../../utils/IstioConfigUtils';
 import { KialiIcon } from 'config/KialiIcon';
 import { SimpleTable } from 'components/Table/SimpleTable';
-import { t } from 'utils/I18nUtils';
 
 type Props = {
   onAddJwtRule: (rule: JWTRule) => void;
@@ -34,11 +33,11 @@ const INIT_JWT_RULE_FIELDS = [
 
 const columns: ThProps[] = [
   {
-    title: t('JWT Rule Field'),
+    title: 'JWT Rule Field',
     width: 30
   },
   {
-    title: t('Values'),
+    title: 'Values',
     width: 70
   },
   {
@@ -262,7 +261,7 @@ export class JwtRuleBuilder extends React.Component<Props, State> {
                   {this.state.newJwtField}
                 </MenuToggle>
               )}
-              aria-label={t('JWT Field Select')}
+              aria-label="JWT Field Select"
             >
               <SelectList>
                 {this.state.jwtRuleFields.map((option, index) => (
@@ -317,7 +316,7 @@ export class JwtRuleBuilder extends React.Component<Props, State> {
   render(): React.ReactNode {
     return (
       <>
-        <SimpleTable label={t('JWT Rule Builder')} columns={columns} rows={this.rows()} />
+        <SimpleTable label="JWT Rule Builder" columns={columns} rows={this.rows()} />
 
         <Button
           variant={ButtonVariant.link}

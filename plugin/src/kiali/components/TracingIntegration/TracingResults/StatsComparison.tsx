@@ -2,22 +2,22 @@ import * as React from 'react';
 import { InfoAltIcon } from '@patternfly/react-icons';
 import { round } from 'lodash-es';
 import { HeatMap, healthColorMap } from 'components/HeatMap/HeatMap';
-import type { MetricsStats } from 'types/Metrics';
+import { MetricsStats } from 'types/Metrics';
 import { PFColors } from 'components/Pf/PfColors';
 import { Button, ButtonVariant, Tooltip } from '@patternfly/react-core';
-import type { EnvoySpanInfo, RichSpanData } from 'types/TracingInfo';
-import type { StatsMatrix, StatsWithIntervalIndex } from 'utils/tracing/TraceStats';
+import { EnvoySpanInfo, RichSpanData } from 'types/TracingInfo';
 import {
   compactStatsIntervals,
   statsIntervals,
   getSpanStats,
   statsQuantilesWithAvg,
+  StatsMatrix,
   statsToMatrix,
+  StatsWithIntervalIndex,
   statsPerPeer,
   statsCompareKind,
   compactStatsQuantilesWithAvg
 } from 'utils/tracing/TraceStats';
-import { t } from 'utils/I18nUtils';
 
 const statToText = {
   avg: { short: 'avg', long: 'average' },
@@ -87,9 +87,7 @@ export const renderMetricsComparison = (
         {!isCompact && (
           <Tooltip
             key={`${key}-tt`}
-            content={t(
-              'This heatmap is a comparison matrix of this request duration against duration statistics aggregated over time. Move the pointer over cells to get more details.'
-            )}
+            content="This heatmap is a comparison matrix of this request duration against duration statistics aggregated over time. Move the pointer over cells to get more details."
           >
             <>
               <InfoAltIcon key={`${key}-ic`} /> <strong key={`${key}-ic-title`}>Comparison map: </strong>
@@ -103,9 +101,9 @@ export const renderMetricsComparison = (
   }
 
   return (
-    <Tooltip key={`${key}-tt`} content={t('Click to load more statistics for this request')}>
+    <Tooltip key={`${key}-tt`} content="Click to load more statistics for this request">
       <Button key={`${key}-load`} onClick={load} variant={ButtonVariant.link}>
-        <strong key={`${key}-load-title`}>{t('Load statistics')}</strong>
+        <strong key={`${key}-load-title`}>Load statistics</strong>
       </Button>
     </Tooltip>
   );

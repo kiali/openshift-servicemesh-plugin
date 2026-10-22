@@ -1,7 +1,7 @@
-import { createStore, applyMiddleware, combineReducers, type Store } from 'redux';
+import { createStore, applyMiddleware, combineReducers, Store } from 'redux';
 import { NotificationCenterActions } from '../NotificationCenterActions';
 import { NotificationCenterThunkActions } from '../NotificationCenterThunkActions';
-import type { NotificationCenterState } from '../../store/Store';
+import { NotificationCenterState } from '../../store/Store';
 import { MessageType } from '../../types/NotificationCenter';
 import { NotificationCenterReducer } from '../../reducers/NotificationCenter';
 
@@ -49,9 +49,8 @@ describe('NotificationCenterActions', () => {
       content: 'my message',
       detail: 'my detail',
       groupId: 'great-messages',
-      isAlert: true,
       messageType: MessageType.WARNING,
-      showOnce: false
+      isAlert: true
     };
     const action = NotificationCenterActions.addMessage(
       'my message',
@@ -61,17 +60,6 @@ describe('NotificationCenterActions', () => {
       true
     );
     expect(action.payload).toEqual(expectedPayload);
-  });
-  it('should add a message with showOnce', () => {
-    const action = NotificationCenterActions.addMessage(
-      'my message',
-      'my detail',
-      'great-messages',
-      MessageType.WARNING,
-      true,
-      true
-    );
-    expect(action.payload.showOnce).toBe(true);
   });
   it('should remove a single message', () => {
     const action = NotificationCenterActions.removeMessage(5);

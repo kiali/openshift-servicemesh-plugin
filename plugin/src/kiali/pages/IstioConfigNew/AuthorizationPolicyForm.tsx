@@ -159,7 +159,7 @@ export const AuthorizationPolicyForm: React.FC<Props> = (props: Props) => {
               {policy}
             </MenuToggle>
           )}
-          aria-label={t('Policy Select')}
+          aria-label="Policy Select"
         >
           <SelectList>
             {rulesFormValues.map((option, index) => (
@@ -232,7 +232,7 @@ export const AuthorizationPolicyForm: React.FC<Props> = (props: Props) => {
                 {action}
               </MenuToggle>
             )}
-            aria-label={t('Action Select')}
+            aria-label="Action Select"
           >
             <SelectList>
               {actions.map((option, index) => (

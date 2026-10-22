@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { NavigationComponent } from '../Navigation';
-import type { ExternalServiceInfo } from '../../../types/StatusState';
+import { ExternalServiceInfo } from '../../../types/StatusState';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom-v5-compat';
 import { pathRoutes } from 'routes';
 import { Provider } from 'react-redux';
 import { store } from 'store/ConfigStore';
 import { LoginActions } from 'actions/LoginActions';
-import { ColorScheme } from 'types/Common';
+import { Theme } from 'types/Common';
 
 rstest.mock('../RenderPage', () => {
   const React = require('react');
@@ -39,7 +39,7 @@ const router = createMemoryRouter([
         tracingUrl={''}
         externalServices={externalServicesInfo}
         kiosk={''}
-        colorScheme={ColorScheme.LIGHT}
+        theme={Theme.LIGHT}
         showNotificationCenter={false}
         chatbotEnabled={false}
       />

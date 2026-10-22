@@ -1,12 +1,11 @@
 import * as API from 'services/Api';
 import { addError } from 'utils/AlertUtils';
-import type { JaegerTrace, TracingError } from 'types/TracingInfo';
-import type { TracingQuery } from 'types/Tracing';
-import type { TargetKind } from 'types/Common';
+import { JaegerTrace, TracingError } from 'types/TracingInfo';
+import { TracingQuery } from 'types/Tracing';
+import { TargetKind } from 'types/Common';
 import { getTimeRangeMicros } from 'utils/tracing/TracingHelper';
 import { transformTraceData } from 'utils/tracing/TraceTransform';
 import { endPerfTimer, startPerfTimer } from '../../utils/PerformanceUtils';
-import { t } from 'utils/I18nUtils';
 
 export type FetchOptions = {
   cluster?: string;
@@ -92,10 +91,7 @@ export class TracesFetcher {
           const coveredTime = Math.min(this.lastFetchMicros, endDate) - Math.max(firstTraceTimestamp, q.startMicros);
           const percentageCovered = Math.trunc((coveredTime / (endDate - q.startMicros)) * 100);
           this.onInfo(
-            t(
-              'The {{limit}} traces cover only {{percentage}}% of the time period. You may want to increase the fetch limit, reduce the time range, or define a custom time range.',
-              { limit: q.limit, percentage: percentageCovered }
-            )
+            `The ${q.limit} traces cover only ${percentageCovered}% of the time period. You may want to increase the fetch limit, reduce the time range, or define a custom time range.`
           );
         } else {
           // Empty message

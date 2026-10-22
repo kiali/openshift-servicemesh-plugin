@@ -3,14 +3,12 @@ import { summaryTitle } from 'pages/Graph/SummaryPanelCommon';
 import * as React from 'react';
 import { kialiStyle } from 'styles/StyleUtils';
 import { renderInOutRateChartHttp, renderInOutRateChartGrpc } from './RateChart';
-import { useKialiTranslation } from 'utils/I18nUtils';
 
 const tableStyle = kialiStyle({
   marginBottom: '0.5rem'
 });
 
 type InOutRateTableGrpcPropType = {
-  hideIn?: boolean;
   inRate: number;
   inRateGrpcErr: number;
   inRateNR: number;
@@ -21,11 +19,6 @@ type InOutRateTableGrpcPropType = {
 };
 
 export const InOutRateTableGrpc: React.FC<InOutRateTableGrpcPropType> = (props: InOutRateTableGrpcPropType) => {
-  const { t } = useKialiTranslation();
-  const totalLabel = t('Total');
-  const successLabel = t('% Success');
-  const errorLabel = t('% Error');
-
   // for the table and graph
   const inErrRate: number = props.inRateGrpcErr + props.inRateNR;
   const outErrRate: number = props.outRateGrpcErr + props.outRateNR;
@@ -42,54 +35,51 @@ export const InOutRateTableGrpc: React.FC<InOutRateTableGrpcPropType> = (props: 
         <Thead>
           <Tr>
             <Th />
-            <Th dataLabel={totalLabel} textCenter>
-              {totalLabel}
+            <Th dataLabel="Total" textCenter>
+              Total
             </Th>
-            <Th dataLabel={successLabel} textCenter>
-              {successLabel}
+            <Th dataLabel="% Success" textCenter>
+              % Success
             </Th>
-            <Th dataLabel={errorLabel} textCenter>
-              {errorLabel}
+            <Th dataLabel="% Error" textCenter>
+              % Error
             </Th>
           </Tr>
         </Thead>
         <Tbody>
-          {!props.hideIn && (
-            <Tr>
-              <Td>In</Td>
-              <Td dataLabel={totalLabel} textCenter>
-                {props.inRate.toFixed(2)}
-              </Td>
-              <Td dataLabel={successLabel} textCenter>
-                {percentOkIn.toFixed(2)}
-              </Td>
-              <Td dataLabel={errorLabel} textCenter>
-                {percentErrIn.toFixed(2)}
-              </Td>
-            </Tr>
-          )}
+          <Tr>
+            <Td>In</Td>
+            <Td dataLabel="Total" textCenter>
+              {props.inRate.toFixed(2)}
+            </Td>
+            <Td dataLabel="% Success" textCenter>
+              {percentOkIn.toFixed(2)}
+            </Td>
+            <Td dataLabel="% Error" textCenter>
+              {percentErrIn.toFixed(2)}
+            </Td>
+          </Tr>
           <Tr>
             <Td>Out</Td>
-            <Td dataLabel={totalLabel} textCenter>
+            <Td dataLabel="Total" textCenter>
               {props.outRate.toFixed(2)}
             </Td>
-            <Td dataLabel={successLabel} textCenter>
+            <Td dataLabel="% Success" textCenter>
               {percentOkOut.toFixed(2)}
             </Td>
-            <Td dataLabel={errorLabel} textCenter>
+            <Td dataLabel="% Error" textCenter>
               {percentErrOut.toFixed(2)}
             </Td>
           </Tr>
         </Tbody>
       </Table>
 
-      {renderInOutRateChartGrpc(percentOkIn, percentErrIn, percentOkOut, percentErrOut, props.hideIn)}
+      {renderInOutRateChartGrpc(percentOkIn, percentErrIn, percentOkOut, percentErrOut)}
     </div>
   );
 };
 
 type InOutRateTableHttpPropType = {
-  hideIn?: boolean;
   inRate: number;
   inRate3xx: number;
   inRate4xx: number;
@@ -104,11 +94,6 @@ type InOutRateTableHttpPropType = {
 };
 
 export const InOutRateTableHttp: React.FC<InOutRateTableHttpPropType> = (props: InOutRateTableHttpPropType) => {
-  const { t } = useKialiTranslation();
-  const totalLabel = t('Total');
-  const successLabel = t('% Success');
-  const errorLabel = t('% Error');
-
   // for the table
   const inErrRate: number = props.inRate4xx + props.inRate5xx + props.inRateNR;
   const outErrRate: number = props.outRate4xx + props.outRate5xx + props.outRateNR;
@@ -141,41 +126,39 @@ export const InOutRateTableHttp: React.FC<InOutRateTableHttpPropType> = (props: 
         <Thead>
           <Tr>
             <Th />
-            <Th dataLabel={totalLabel} textCenter>
-              {totalLabel}
+            <Th dataLabel="Total" textCenter>
+              Total
             </Th>
-            <Th dataLabel={successLabel} textCenter>
-              {successLabel}
+            <Th dataLabel="% Success" textCenter>
+              % Success
             </Th>
-            <Th dataLabel={errorLabel} textCenter>
-              {errorLabel}
+            <Th dataLabel="% Error" textCenter>
+              % Error
             </Th>
           </Tr>
         </Thead>
         <Tbody>
-          {!props.hideIn && (
-            <Tr>
-              <Td>In</Td>
-              <Td dataLabel={totalLabel} textCenter>
-                {props.inRate.toFixed(2)}
-              </Td>
-              <Td dataLabel={successLabel} textCenter>
-                {percentInSuccess.toFixed(2)}
-              </Td>
-              <Td dataLabel={errorLabel} textCenter>
-                {percentInErr.toFixed(2)}
-              </Td>
-            </Tr>
-          )}
+          <Tr>
+            <Td>In</Td>
+            <Td dataLabel="Total" textCenter>
+              {props.inRate.toFixed(2)}
+            </Td>
+            <Td dataLabel="% Success" textCenter>
+              {percentInSuccess.toFixed(2)}
+            </Td>
+            <Td dataLabel="% Error" textCenter>
+              {percentInErr.toFixed(2)}
+            </Td>
+          </Tr>
           <Tr>
             <Td>Out</Td>
-            <Td dataLabel={totalLabel} textCenter>
+            <Td dataLabel="Total" textCenter>
               {props.outRate.toFixed(2)}
             </Td>
-            <Td dataLabel={successLabel} textCenter>
+            <Td dataLabel="% Success" textCenter>
               {percentOutSuccess.toFixed(2)}
             </Td>
-            <Td dataLabel={errorLabel} textCenter>
+            <Td dataLabel="% Error" textCenter>
               {percentOutErr.toFixed(2)}
             </Td>
           </Tr>
@@ -192,8 +175,7 @@ export const InOutRateTableHttp: React.FC<InOutRateTableHttpPropType> = (props: 
         percent3xxOut,
         percent4xxOut,
         percent5xxOut,
-        percentNROut,
-        props.hideIn
+        percentNROut
       )}
     </div>
   );

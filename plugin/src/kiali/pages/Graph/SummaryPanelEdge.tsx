@@ -1,10 +1,18 @@
 import * as React from 'react';
 import { RateTableGrpc, RateTableHttp } from '../../components/SummaryPanel/RateTable';
 import { RequestChart, StreamChart } from '../../components/SummaryPanel/RpsChart';
-import type { ResponseTimeUnit } from '../../components/SummaryPanel/ResponseTimeChart';
-import { ResponseTimeChart } from '../../components/SummaryPanel/ResponseTimeChart';
-import type { DecoratedGraphEdgeData, DecoratedGraphNodeData, SummaryPanelPropType } from '../../types/Graph';
-import { GraphType, NodeType, prettyProtocol, Protocol, TrafficRate, UNKNOWN } from '../../types/Graph';
+import { ResponseTimeChart, ResponseTimeUnit } from '../../components/SummaryPanel/ResponseTimeChart';
+import {
+  DecoratedGraphEdgeData,
+  DecoratedGraphNodeData,
+  GraphType,
+  NodeType,
+  prettyProtocol,
+  Protocol,
+  SummaryPanelPropType,
+  TrafficRate,
+  UNKNOWN
+} from '../../types/Graph';
 import { renderBadgedLink } from './SummaryLink';
 import {
   getDatapoints,
@@ -19,22 +27,20 @@ import {
   summaryFont,
   summaryPanel
 } from './SummaryPanelCommon';
-import type { Datapoint, IstioMetricsMap, Labels, Metric } from '../../types/Metrics';
-import type { CancelablePromise } from '../../utils/CancelablePromises';
-import { makeCancelablePromise } from '../../utils/CancelablePromises';
+import { Datapoint, IstioMetricsMap, Labels, Metric } from '../../types/Metrics';
+import { CancelablePromise, makeCancelablePromise } from '../../utils/CancelablePromises';
 import { ResponseFlagsTable } from 'components/SummaryPanel/ResponseFlagsTable';
 import { ResponseHostsTable } from 'components/SummaryPanel/ResponseHostsTable';
 import { KialiIcon } from 'config/KialiIcon';
 import { Tab, Tooltip } from '@patternfly/react-core';
 import { SimpleTabs } from 'components/Tab/SimpleTabs';
-import type { Direction } from 'types/MetricsOptions';
+import { Direction } from 'types/MetricsOptions';
 import { kialiStyle } from 'styles/StyleUtils';
-import type { Edge } from '@patternfly/react-topology';
+import { Edge } from '@patternfly/react-topology';
 import { classes } from 'typestyle';
 import { panelBodyStyle, panelHeadingStyle, panelStyle } from './SummaryPanelStyle';
-import type { ApiResponse } from 'types/Api';
+import { ApiResponse } from 'types/Api';
 import { icons, serverConfig } from 'config';
-import { t } from 'utils/I18nUtils';
 
 type SummaryPanelEdgeMetricsState = {
   errRates: Datapoint[];
@@ -199,23 +205,17 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
         <div>
           <div className={panelHeadingStyle}>
             {getTitle(`Edge (${prettyProtocol(protocol)})`)}
-            {renderBadgedLink(
-              source,
-              undefined,
-              `${t('From')}:  `,
-              undefined,
-              isBidirectional ? fromToStyle : undefined
-            )}
+            {renderBadgedLink(source, undefined, 'From:  ', undefined, isBidirectional ? fromToStyle : undefined)}
             {renderBadgedLink(
               dest,
               undefined,
-              `${t('To')}:        `,
+              'To:        ',
               undefined,
               isBidirectional ? fromToStyle : undefined
             )}{' '}
             {isBidirectional && (
               <div className={switchWaypointIcon}>
-                <Tooltip key="waypoint" position="top" content={t('Switch From/To')}>
+                <Tooltip key="waypoint" position="top" content="Switch From/To">
                   <a
                     href="#"
                     onClick={this.updateTab}
@@ -235,7 +235,7 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
           {(isHttp || isGrpc) && (
             <div className={summaryBodyTabs}>
               <SimpleTabs id="edge_summary_rate_tabs" defaultTab={0} style={{ paddingBottom: '0.5rem' }}>
-                <Tab style={summaryFont} title={t('Traffic')} eventKey={0}>
+                <Tab style={summaryFont} title="Traffic" eventKey={0}>
                   <div style={summaryFont}>
                     {isGrpc && (
                       <>
@@ -251,7 +251,7 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
                     {isHttp && (
                       <>
                         <RateTableHttp
-                          title={t('HTTP requests per second:')}
+                          title="HTTP requests per second:"
                           rate={this.safeRate(edgeData.http)}
                           rate3xx={this.safeRate(edgeData.http3xx)}
                           rate4xx={this.safeRate(edgeData.http4xx)}
@@ -264,7 +264,7 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
                 </Tab>
 
                 {isRequests && (
-                  <Tab style={summaryFont} title={t('Flags')} eventKey={1}>
+                  <Tab style={summaryFont} title="Flags" eventKey={1}>
                     <div style={summaryFont}>
                       <ResponseFlagsTable
                         title={`Response flags by ${isGrpc ? 'GRPC code:' : 'HTTP code:'}`}
@@ -273,7 +273,7 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
                     </div>
                   </Tab>
                 )}
-                <Tab style={summaryFont} title={t('Hosts')} eventKey={2}>
+                <Tab style={summaryFont} title="Hosts" eventKey={2}>
                   <div style={summaryFont}>
                     <ResponseHostsTable
                       title={`Hosts by ${isGrpc ? 'GRPC code:' : 'HTTP code:'}`}
@@ -290,19 +290,19 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
           {isTcp && (
             <div className={summaryBodyTabs}>
               <SimpleTabs id="edge_summary_flag_hosts_tabs" defaultTab={0} style={{ paddingBottom: '0.5rem' }}>
-                <Tab style={summaryFont} eventKey={0} title={t('Flags')}>
+                <Tab style={summaryFont} eventKey={0} title="Flags">
                   <div style={summaryFont}>
                     <ResponseFlagsTable
-                      title={t('Response flags by code:')}
+                      title="Response flags by code:"
                       responses={isReversed ? edgeData.waypoint!.fromEdge!.responses : edgeData.responses}
                     />
                   </div>
                 </Tab>
 
-                <Tab style={summaryFont} eventKey={1} title={t('Hosts')}>
+                <Tab style={summaryFont} eventKey={1} title="Hosts">
                   <div style={summaryFont}>
                     <ResponseHostsTable
-                      title={t('Hosts by code:')}
+                      title="Hosts by code:"
                       responses={isReversed ? edgeData.waypoint!.fromEdge!.responses : edgeData.responses}
                     />
                   </div>
@@ -592,8 +592,7 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
     this.metricsPromise.promise
       .then(response => {
         const metrics = response.data;
-        let { rates: reqRates, errRates, rtAvg, rtMed, rt95, rt99, sent, received } = defaultMetricsState;
-        const { unit } = defaultMetricsState;
+        let { rates: reqRates, errRates, rtAvg, rtMed, rt95, rt99, sent, received, unit } = defaultMetricsState;
         if (isHttp || (isGrpc && isRequests)) {
           reqRates = this.getNodeDataPoints(
             metrics.request_count,
@@ -769,7 +768,7 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
         // assume gRPC messages, it's the only option other than requests
         requestChart = (
           <StreamChart
-            label={t('gRPC Message Traffic')}
+            label="gRPC Message Traffic"
             sentRates={this.state.sent!}
             receivedRates={this.state.received!}
             unit="messages"
@@ -780,7 +779,7 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
       if (isWaypointEdge && this.state.waypointReverseSent && this.state.waypointReverseReceived) {
         streamChart = (
           <StreamChart
-            label={t('TCP Traffic (Waypoint)')}
+            label="TCP Traffic (Waypoint)"
             sentRates={this.state.waypointReverseSent}
             receivedRates={this.state.waypointReverseReceived}
             unit="bytes"
@@ -789,7 +788,7 @@ export class SummaryPanelEdge extends React.Component<SummaryPanelPropType, Summ
       } else {
         streamChart = (
           <StreamChart
-            label={t('TCP Traffic')}
+            label="TCP Traffic"
             sentRates={this.state.sent}
             receivedRates={this.state.received}
             unit="bytes"

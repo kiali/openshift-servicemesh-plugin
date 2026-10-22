@@ -7,12 +7,10 @@ import {
   renderDestServicesLinks,
   renderHealth
 } from './SummaryLink';
-import type { DecoratedGraphNodeData, DestService, RankResult, SummaryPanelPropType } from '../../types/Graph';
-import { NodeType } from '../../types/Graph';
+import { DecoratedGraphNodeData, DestService, NodeType, RankResult, SummaryPanelPropType } from '../../types/Graph';
 import { getTitle, summaryBodyTabs, summaryFont, summaryPanel } from './SummaryPanelCommon';
 import { KialiIcon } from 'config/KialiIcon';
 import { clickHandler, getOptions } from 'pages/Graph/ContextMenu/NodeContextMenu';
-import type { MenuToggleElement } from '@patternfly/react-core';
 import {
   Dropdown,
   DropdownGroup,
@@ -20,20 +18,21 @@ import {
   DropdownList,
   ExpandableSection,
   MenuToggle,
+  MenuToggleElement,
   Tab
 } from '@patternfly/react-core';
 import { SummaryPanelNodeTraffic } from './SummaryPanelNodeTraffic';
 import { SummaryPanelNodeTraces } from './SummaryPanelNodeTraces';
 import { SimpleTabs } from 'components/Tab/SimpleTabs';
-import type { TracingState } from 'reducers/TracingState';
+import { TracingState } from 'reducers/TracingState';
 import { classes } from 'typestyle';
 import { kialiStyle } from 'styles/StyleUtils';
 import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
-import type { ServiceDetailsInfo } from 'types/ServiceInfo';
+import { ServiceDetailsInfo } from 'types/ServiceInfo';
 import { LoadingWizardActionsDropdownGroup } from 'components/IstioWizards/LoadingWizardActionsDropdownGroup';
-import type { WizardAction, WizardMode } from 'components/IstioWizards/WizardActions';
+import { WizardAction, WizardMode } from 'components/IstioWizards/WizardActions';
 import { ServiceWizardActionsDropdownGroup } from 'components/IstioWizards/ServiceWizardActionsDropdownGroup';
-import type { PeerAuthentication } from '../../types/IstioObjects';
+import { PeerAuthentication } from '../../types/IstioObjects';
 import { useServiceDetailForGraphNode } from '../../hooks/services';
 import { useKialiSelector } from '../../hooks/redux';
 import { groupMenuStyle, kebabToggleStyle, titleStyle } from 'styles/DropdownStyles';
@@ -41,12 +40,11 @@ import { isMultiCluster, serverConfig } from '../../config';
 import { panelBodyStyle, panelHeadingStyle, panelStyle } from './SummaryPanelStyle';
 import { dicTypeToGVK, gvkType } from '../../types/IstioConfigList';
 import { renderWaypointLabel } from '../../components/Ambient/WaypointLabel';
-import type { Node } from '@patternfly/react-topology';
+import { Node } from '@patternfly/react-topology';
 import { KialiLink } from 'components/Link/KialiLink';
 import { KialiPageLink } from 'components/Link/KialiPageLink';
-import type { KioskData, KioskMode } from 'types/Common';
+import { KioskData, KioskMode } from 'types/Common';
 import { getNamespaceDetailUrl } from 'utils/NamespaceUtils';
-import { t } from 'utils/I18nUtils';
 
 type SummaryPanelNodeState = {
   isActionOpen: boolean;
@@ -160,12 +158,12 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
     if (options.length > 0) {
       items.push(
         <React.Fragment key="show-group">
-          <div className={titleStyle}>{t('Show')}</div>
+          <div className={titleStyle}>Show</div>
           <DropdownGroup key="show" className={groupMenuStyle}>
             {options.map((o, i) => {
               return (
                 <DropdownItem key={`option-${i}`} onClick={() => clickHandler(o, this.props.kiosk)}>
-                  {t(o.text)} {o.target === '_blank' && <KialiIcon.ExternalLink />}
+                  {o.text} {o.target === '_blank' && <KialiIcon.ExternalLink />}
                 </DropdownItem>
               );
             })}
@@ -239,7 +237,7 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
                       ref={toggleRef}
                       id="summary-node-kebab"
                       className={kebabToggleStyle}
-                      aria-label={t('Actions')}
+                      aria-label="Actions"
                       variant="plain"
                       onClick={() => this.onToggleActions(!this.state.isActionOpen)}
                       isExpanded={this.state.isActionOpen}
@@ -354,11 +352,7 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
   };
 
   private renderVsHostnames = (nodeData: DecoratedGraphNodeData): React.ReactNode => {
-    const hostnames = nodeData.hasVS?.hostnames;
-    if (!hostnames) {
-      return null;
-    }
-    return this.renderHostnamesSection(hostnames);
+    return this.renderHostnamesSection(nodeData.hasVS?.hostnames!);
   };
 
   private renderHostnamesSection = (hostnames: string[]): React.ReactNode => {
@@ -392,13 +386,13 @@ export class SummaryPanelNodeComponent extends React.Component<SummaryPanelNodeC
     return (
       <div className={summaryBodyTabs}>
         <SimpleTabs id="graph_summary_tabs" defaultTab={0} style={{ paddingBottom: '0.5rem' }}>
-          <Tab style={summaryFont} title={t('Traffic')} eventKey={0}>
+          <Tab style={summaryFont} title="Traffic" eventKey={0}>
             <div style={summaryFont}>
               <SummaryPanelNodeTraffic {...this.props} />
             </div>
           </Tab>
 
-          <Tab style={summaryFont} title={t('Traces')} eventKey={1}>
+          <Tab style={summaryFont} title="Traces" eventKey={1}>
             <SummaryPanelNodeTraces
               kiosk={this.props.kiosk}
               nodeData={nodeData}
