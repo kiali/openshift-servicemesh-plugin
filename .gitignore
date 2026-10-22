@@ -31,6 +31,9 @@ plugin/cypress/videos
 plugin/cypress/screenshots
 plugin/cypress/results
 
+# Playwright
+plugin/playwright/
+
 # i18n
 plugin/src/kiali/locales/en
 plugin/src/openshift/locales/en

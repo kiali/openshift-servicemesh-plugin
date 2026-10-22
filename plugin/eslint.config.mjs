@@ -125,5 +125,11 @@ export default tseslint.config(
       'cypress/no-unnecessary-waiting': 'warn',
       'cypress/unsafe-to-chain-command': 'warn'
     }
+  },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.node }
+    }
   }
 );
