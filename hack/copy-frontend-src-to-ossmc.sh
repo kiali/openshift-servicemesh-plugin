@@ -23,13 +23,17 @@ SOURCE_REPO="${TMP_DIR}/kiali-source"
 # SOURCE_DIR = Relative directory inside the local Kiali repo whose content will be copied.
 # SOURCE_LOCALES_DIR = Relative directory inside the local Kiali repo whose locales will be copied.
 # SOURCE_TESTS_DIR = Relative directory inside the local Kiali repo whose cypress tests will be copied.
+# SOURCE_E2E_SUBDIRS = Subdirectories of frontend/e2e (Playwright) that will be copied.
 # DEST_DIR = Relative directory inside the local OSSM repo where the Kiali files will be copied.
 # DEST_TESTS_DIR = Relative directory inside the local OSSM repo where the Kiali cypress tests will be copied.
+# DEST_E2E_DIR = Relative directory inside the local OSSM repo where the Kiali Playwright e2e tree will be copied.
 SOURCE_DIR="frontend/src"
 SOURCE_LOCALES_DIR="frontend/public/locales"
 SOURCE_TESTS_DIR="frontend/cypress/integration"
+SOURCE_E2E_SUBDIRS="tests pages utils fixtures"
 DEST_DIR="plugin/src/kiali"
 DEST_TESTS_DIR="plugin/cypress/integration/kiali"
+DEST_E2E_DIR="plugin/e2e"
 
 # The URL of the remote git repo to clone
 DEFAULT_SOURCE_REPO_URL="https://github.com/kiali/kiali.git"
@@ -108,8 +112,10 @@ done
 ABS_SOURCE_DIR="${SOURCE_REPO}/${SOURCE_DIR}"
 ABS_SOURCE_LOCALES_DIR="${SOURCE_REPO}/${SOURCE_LOCALES_DIR}"
 ABS_SOURCE_TESTS_DIR="${SOURCE_REPO}/${SOURCE_TESTS_DIR}"
+ABS_SOURCE_E2E_DIR="${SOURCE_REPO}/frontend/e2e"
 ABS_DEST_DIR="${DEST_REPO}/${DEST_DIR}"
 ABS_DEST_TESTS_DIR="${DEST_REPO}/${DEST_TESTS_DIR}"
+ABS_DEST_E2E_DIR="${DEST_REPO}/${DEST_E2E_DIR}"
 
 # Validate the dest directories exist
 
@@ -210,6 +216,38 @@ rm ${ABS_DEST_TESTS_DIR}/common/hooks.ts
 find ${ABS_DEST_TESTS_DIR} -name '*.ts' -exec \
   sed -i "s|../support/|../../support/|g" {} +
 
+# Sync the Kiali Playwright e2e tree (frontend/e2e -> plugin/e2e). The
+# OSSMC-specific files (global-setup/, ossmc/) are not touched. The Playwright
+# tests live on the kiali epic/playwright-migration branch until that migrates
+# to master; syncing from a ref without frontend/e2e skips this section.
+if [ -d "${ABS_SOURCE_E2E_DIR}" ]; then
+  echo
+  echo "Copying Kiali Playwright e2e tree:"
+  echo "  ${ABS_SOURCE_E2E_DIR}/{${SOURCE_E2E_SUBDIRS// /,}} -> ${ABS_DEST_E2E_DIR}/"
+  mkdir -p "${ABS_DEST_E2E_DIR}"
+  for e2e_dir in ${SOURCE_E2E_SUBDIRS}; do
+    rm -rf "${ABS_DEST_E2E_DIR:?}/${e2e_dir}"
+    cp -R "${ABS_SOURCE_E2E_DIR}/${e2e_dir}" "${ABS_DEST_E2E_DIR}/"
+  done
+
+  # The plugin package is CommonJS. Kiali's ESM dirname helper
+  # (import.meta.url) is a syntax error once Playwright transpiles the
+  # imported files to CJS; __dirname is available natively instead.
+  find ${ABS_DEST_E2E_DIR}/tests ${ABS_DEST_E2E_DIR}/pages ${ABS_DEST_E2E_DIR}/utils ${ABS_DEST_E2E_DIR}/fixtures -name '*.ts' -exec \
+    sed -i -e "/^import { fileURLToPath } from 'url';$/d" \
+           -e "s|^const __dirname = path\.dirname(fileURLToPath(import\.meta\.url));$|// __dirname is a CommonJS global; kiali's ESM dirname helper does not apply here.|" {} +
+
+  # OSSMC keeps the kiali istio hack scripts under _output/kiali
+  # (see hack/download-hack-scripts.sh), not at the repo root.
+  sed -i "s|path\.join(REPO_ROOT, 'hack/istio')|path.join(REPO_ROOT, '_output/kiali/hack/istio')|" \
+    ${ABS_DEST_E2E_DIR}/utils/demoApps.ts
+else
+  echo
+  echo "NOTE: ${ABS_SOURCE_E2E_DIR} not found - skipping the Playwright e2e sync."
+  echo "      The kiali Playwright tests currently live on the epic/playwright-migration branch."
+  echo "      Re-run with: $0 --source-ref epic/playwright-migration"
+fi
+
 cat > ${ABS_DEST_DIR}/README.md <<EOM
 **WARNING**: The code in this directory comes from the kiali/kiali repository and should never be modified here.
 
@@ -224,6 +262,7 @@ if [ "${SKIP_BRANCH}" == "true" ]; then
 else
   git add ${ABS_DEST_DIR}
   git add ${ABS_DEST_TESTS_DIR}
+  git add ${ABS_DEST_E2E_DIR}
 
   if git diff-index --quiet HEAD --; then
     echo "There are no changes that need to be committed."

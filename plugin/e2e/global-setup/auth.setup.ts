@@ -2,7 +2,7 @@ import { test as setup } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { AUTH_FILE } from '../utils/auth';
-import { consoleCredentials, loginOpenShiftConsole } from '../utils/console-auth';
+import { consoleCredentials, loginOpenShiftConsole } from '../ossmc/utils/console-auth';
 
 /**
  * Auth setup project — logs into the OpenShift Console via OAuth (htpasswd IdP)

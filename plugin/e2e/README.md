@@ -8,11 +8,20 @@ Object Models extending `BasePage`, suite membership via `tag` options matched b
 
 Layout:
 
-- `global-setup/auth.setup.ts` — OpenShift Console OAuth login (htpasswd IdP), persists
-  `storageState` for the suite projects. OSSMC always runs on OpenShift; there is no anonymous
-  strategy.
-- `tests/` — specs (synced from kiali `frontend/e2e/` plus OSSMC-specific specs)
-- `pages/`, `utils/` — page objects and shared helpers
+- `tests/`, `pages/`, `utils/`, `fixtures/` — **vendored from kiali `frontend/e2e/`**; never modify
+  them here. Synced by `hack/copy-frontend-src-to-ossmc.sh` (from the kiali repo):
+  ```bash
+  hack/copy-frontend-src-to-ossmc.sh --source-ref epic/playwright-migration --skip-branch
+  ```
+  The sync rewrites two kiali-isms for this repo: the ESM `import.meta.url` dirname helper becomes
+  the `__dirname` CJS global (the plugin package is CommonJS), and `utils/demoApps.ts` points at
+  `_output/kiali/hack/istio` (kiali hack scripts land there via `hack/download-hack-scripts.sh`).
+- `global-setup/auth.setup.ts` — OSSMC-owned. OpenShift Console OAuth login (htpasswd IdP),
+  persists `storageState` for the suite projects. OSSMC always runs on OpenShift; there is no
+  anonymous strategy.
+- `ossmc/` — OSSMC-owned specs and helpers (Console login, sidebar navigation).
+- `tsconfig.json` — typechecks only the OSSMC-owned files; the vendored tree is excluded because
+  kiali does not typecheck `frontend/e2e` either (Playwright transpiles without typechecking).
 
 Projects mirror the Cypress run scope `(@core-1 or @core-2 or @ambient or @waypoint or
 @waypoint-tracing) and not @skip-ossmc`: each project greps its tag and excludes `@skip-ossmc`.
