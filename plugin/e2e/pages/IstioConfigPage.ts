@@ -20,6 +20,7 @@ import {
   waitForIstioObjectDetails as waitForIstioObjectDetailsApi
 } from '../utils/istioConfigApi';
 import { kialiUrl } from '../utils/kialiUrl';
+import { isOssmc, ossmcCsrfHeaders } from '../utils/ossmc';
 
 const TYPE_FILTERS = [
   'AuthorizationPolicy',
@@ -397,22 +398,23 @@ export class IstioConfigPage extends BasePage {
   }
 
   async filterBy(filter: string, filterValue: string): Promise<void> {
-    await this.page.locator('button#filter_select_type-toggle').click();
-    await this.page
-      .locator('div#filter_select_type button')
-      .filter({ hasText: new RegExp(`^${filter}$`) })
-      .click();
+    await this.page.getByTestId('filter-type-toggle').click();
+    await this.page.getByTestId('filter-type-select').getByRole('option', { name: filter, exact: true }).click();
 
     if (filter === 'Istio Name') {
-      await this.page.locator('input#filter_input_value').fill(filterValue);
-      await this.page.locator('input#filter_input_value').press('Enter');
-    } else if (filter === 'Type') {
-      const input = this.page.locator('input[placeholder="Filter by Type"]');
+      const input = this.page.locator('input#filter_input_value');
       await input.fill(filterValue);
       await input.press('Enter');
-      await this.page.locator(`li[label="${filterValue}"] button`).click();
+    } else if (filter === 'Type') {
+      const input = this.page.getByTestId('filter-type-input').locator('input');
+      await input.fill(filterValue);
+      await input.press('Enter');
+      await this.page
+        .getByTestId('istio-type-dropdown')
+        .getByRole('option', { name: filterValue, exact: true })
+        .click();
     } else if (filter === 'Config') {
-      await this.page.locator('button#filter_select_value-toggle').click();
+      await this.page.getByTestId('filter-value-toggle').click();
       await this.filterOption(filterValue).click();
     }
 
@@ -607,37 +609,18 @@ export class IstioConfigPage extends BasePage {
   }
 
   async expectConfigWizard(title: string): Promise<void> {
-    await expect(this.page.locator('h1')).toContainText(title);
+    await expect(this.page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
   }
 
   async typesInInput(id: string, value: string): Promise<void> {
     await this.page.locator(`input[id="${id}"]`).fill(value);
   }
 
-  async chooseModeFromSelect(option: string, id: string): Promise<void> {
-    const select = this.page.locator(`select[id="${id}"]`);
-    if ((await select.count()) > 0) {
-      await select.selectOption(option);
-      return;
-    }
-    await this.page.locator(`button[id="${id}-toggle"]`).click();
-    const optionLocator = this.page.getByRole('option', { name: new RegExp(option, 'i') });
-    if ((await optionLocator.count()) > 0) {
-      await optionLocator.first().click();
-      return;
-    }
-    await this.page
-      .locator('.pf-v6-c-menu__list-item')
-      .filter({ hasText: new RegExp(option, 'i') })
-      .first()
-      .click();
-  }
-
   async expectObjectListed(type: string, name: string, namespace: string): Promise<void> {
     const row = this.getBySel(`VirtualItem_Ns${namespace}_${type}_${name}`);
     await expect(async () => {
       await this.refreshList();
-      await expect(row.locator('svg')).toBeVisible();
+      await expect(row.locator('svg').first()).toBeVisible();
     }).toPass({ intervals: [5_000], timeout: 60_000 });
   }
 
@@ -656,7 +639,30 @@ export class IstioConfigPage extends BasePage {
     await expect(ref).toHaveCount(0);
   }
 
-  async deleteCurrentConfig(): Promise<void> {
+  async deleteCurrentConfig(config: {
+    group: string;
+    kind: string;
+    name: string;
+    namespace: string;
+    version: string;
+  }): Promise<void> {
+    if (isOssmc()) {
+      // OSSMC renders Kiali in kiosk mode, where the detail page hides its
+      // Actions toolbar; delete through the same Kiali API the dropdown uses.
+      const response = await this.page.request.delete(
+        kialiUrl(
+          `/api/namespaces/${config.namespace}/istio/${config.group}/${config.version}/${config.kind}/${config.name}`
+        ),
+        { headers: await ossmcCsrfHeaders(this.page) }
+      );
+      if (!response.ok()) {
+        throw new Error(
+          `Failed to delete ${config.kind}/${config.name}: ${response.status()} ${await response.text()}`
+        );
+      }
+      await waitForLoadingComplete(this.page);
+      return;
+    }
     await this.page.locator('#actions-toggle').click();
     await this.page.locator('#actions').getByText('Delete', { exact: true }).click();
     await this.page.locator('#pf-modal-part-1').getByRole('button', { name: 'Delete' }).click();

@@ -1,12 +1,14 @@
 import type { Page } from '@playwright/test';
 import { kubectlScaleAndWait } from './kubectl';
 import { kialiUrl } from './kialiUrl';
+import { ossmcCsrfHeaders } from './ossmc';
 
 const workloadGvk = 'apps/v1, Kind=Deployment';
 
 const patchNamespace = async (page: Page, namespace: string, labels: Record<string, string | null>): Promise<void> => {
   const response = await page.request.patch(kialiUrl(`/api/namespaces/${namespace}`), {
-    data: { metadata: { labels } }
+    data: { metadata: { labels } },
+    headers: await ossmcCsrfHeaders(page)
   });
   if (!response.ok()) {
     throw new Error(`Failed to patch namespace ${namespace}: ${response.status()}`);
@@ -36,7 +38,8 @@ const patchWorkloadInjection = async (
             }
           }
         }
-      }
+      },
+      headers: await ossmcCsrfHeaders(page)
     }
   );
   if (!response.ok()) {
@@ -61,17 +64,6 @@ export async function setupWorkloadWithoutSidecar(page: Page, namespace: string,
 export async function setupWorkloadWithSidecar(page: Page, namespace: string, workload: string): Promise<void> {
   await setNamespaceInjection(page, namespace, 'enabled');
   await patchWorkloadInjection(page, namespace, workload, 'true', null);
-  await restartWorkload(namespace, workload);
-}
-
-export async function ensureWorkloadNoInjectionOverride(
-  page: Page,
-  namespace: string,
-  workload: string,
-  hasSidecar: boolean
-): Promise<void> {
-  await setNamespaceInjection(page, namespace, hasSidecar ? 'enabled' : 'disabled');
-  await patchWorkloadInjection(page, namespace, workload, null, null);
   await restartWorkload(namespace, workload);
 }
 

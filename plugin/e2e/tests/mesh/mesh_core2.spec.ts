@@ -15,7 +15,7 @@ test.describe('Mesh page core-2', () => {
     try {
       kubectlScaleDeployment('istio-system', 'grafana', 1);
     } catch {
-      // Best-effort restore after Grafana upscale test (matches Cypress @component-health-upscale).
+      // Best-effort restore of default Grafana replicas after the upscale test.
     }
   });
 
@@ -24,6 +24,7 @@ test.describe('Mesh page core-2', () => {
     test.skip(!hasGrafanaDeployment(), 'Grafana deployment is not installed in istio-system');
 
     await meshPage.open();
+    await meshPage.enableKialiInfraDiscovery();
     await meshPage.selectMeshNodeByLabel('Grafana');
     await meshPage.expectNodeSidePanel('Grafana');
     test.skip(

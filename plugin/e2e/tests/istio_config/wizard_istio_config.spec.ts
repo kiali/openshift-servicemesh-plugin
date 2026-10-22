@@ -20,6 +20,12 @@ test.describe.serial('Istio Config wizard core-caching', () => {
     await selectNamespace(page, namespace);
   });
 
+  // Runs even when a test fails, so a leftover Sidecar CR (workloadSelector app=details,
+  // egress istio-system/*) doesn't scope the details-v1 Envoy config of parallel tests.
+  test.afterEach(() => {
+    deleteSidecar('mysidecarwithlabels', namespace);
+  });
+
   test(
     'Dropdown for cluster selection should not be visible in single cluster setup',
     coreCachingOnly,
@@ -31,7 +37,7 @@ test.describe.serial('Istio Config wizard core-caching', () => {
   );
 
   test(
-    'Create an Sidecar with labels and annotations',
+    'Create a Sidecar with labels and annotations',
     coreCachingOnly,
     async ({ istioConfigPage, istioConfigWizardPage }) => {
       deleteSidecar('mysidecarwithlabels', namespace);
@@ -45,7 +51,6 @@ test.describe.serial('Istio Config wizard core-caching', () => {
       await istioConfigWizardPage.expectPreviewContains('key1: value1');
       await istioConfigWizardPage.createIstioConfig();
       await istioConfigPage.expectObjectListed('Sidecar', 'mysidecarwithlabels', namespace);
-      deleteSidecar('mysidecarwithlabels', namespace);
     }
   );
 

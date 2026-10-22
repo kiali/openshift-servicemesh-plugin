@@ -1,8 +1,6 @@
 import { test } from '../../fixtures/kialiFixtures';
-import { hasGrafanaDeployment } from '../../utils/kialiConfig';
+import { hasGrafanaDeployment, isOssmc } from '../../utils/kialiConfig';
 import { coreCachingAndMultiMesh, coreCachingAndOffline, coreCachingOnly } from '../../utils/suite-tags';
-
-const isOssmc = (): boolean => process.env.PLAYWRIGHT_OSSMC === 'true';
 
 test.describe('Mesh page core-caching', () => {
   test.beforeEach(async ({ meshPage }) => {
@@ -32,16 +30,19 @@ test.describe('Mesh page core-caching', () => {
 
   test('Grafana Infra', coreCachingOnly, async ({ meshPage }) => {
     test.skip(!hasGrafanaDeployment(), 'Grafana deployment is not installed in istio-system');
+    await meshPage.enableKialiInfraDiscovery();
     await meshPage.selectMeshNodeByLabel('Grafana');
     await meshPage.expectNodeSidePanel('Grafana');
   });
 
   test('Tracing Infra', coreCachingOnly, async ({ meshPage }) => {
+    await meshPage.enableKialiInfraDiscovery();
     await meshPage.selectTracingNode();
     await meshPage.expectTracingSidePanel();
   });
 
   test('Prometheus Infra', coreCachingOnly, async ({ meshPage }) => {
+    await meshPage.enableKialiInfraDiscovery();
     await meshPage.selectMeshNodeByLabel('Prometheus');
     await meshPage.expectNodeSidePanel('Prometheus');
   });
@@ -72,15 +73,15 @@ test.describe('Mesh page core-caching', () => {
     await meshPage.expectNodeSidePanel('bookinfo-gateway');
   });
 
-  test('See the Mesh menu link', coreCachingAndOffline, async ({ sidebarPage }) => {
-    test.skip(isOssmc(), 'Mesh sidebar menu is not shown in OSSMC (Cypress @skip-ossmc)');
+  test('See the Mesh menu link', coreCachingOnly, async ({ sidebarPage }) => {
+    test.skip(isOssmc(), 'Mesh sidebar menu is not shown in OSSMC kiosk mode');
     await sidebarPage.openOverview();
     await sidebarPage.ensureSidebarOpen();
     await sidebarPage.expectMeshMenuVisible();
   });
 
-  test('See the Mesh link in the about', coreCachingAndOffline, async ({ overviewPage }) => {
-    test.skip(isOssmc(), 'About mesh link is not shown in OSSMC (Cypress @skip-ossmc)');
+  test('See the Mesh link in the about', coreCachingOnly, async ({ overviewPage }) => {
+    test.skip(isOssmc(), 'About mesh link is not shown in OSSMC kiosk mode');
     await overviewPage.open();
     await overviewPage.openHelpAndAbout();
     await overviewPage.expectModalTitle('Kiali');
@@ -88,6 +89,7 @@ test.describe('Mesh page core-caching', () => {
   });
 
   test('User opens and interacts with the Trace Configuration modal', coreCachingOnly, async ({ meshPage }) => {
+    await meshPage.enableKialiInfraDiscovery();
     await meshPage.selectTracingNode();
     await meshPage.openTraceConfigurationModal();
     await meshPage.expectTraceConfigurationModal();

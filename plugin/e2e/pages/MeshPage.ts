@@ -386,6 +386,8 @@ export class MeshPage extends BasePage {
   }
 
   async expectMeshTourVisible(visible: boolean): Promise<void> {
+    // Read-only .pf-v6-c-popover scope: the tour popover has no role/label that a
+    // role-based locator can target, and the 'Shortcuts' text keeps it unambiguous.
     const popover = this.page.locator('.pf-v6-c-popover').filter({ hasText: 'Shortcuts' });
     if (visible) {
       await expect(popover).toBeVisible();
@@ -565,7 +567,14 @@ export class MeshPage extends BasePage {
 
   async setMeshDisplayOption(option: string, enabled: boolean): Promise<void> {
     const lower = option.toLowerCase();
-    const optionId = lower === 'gateways' ? 'filterGateways' : lower === 'waypoints' ? 'filterWaypoints' : option;
+    const optionId =
+      lower === 'gateways'
+        ? 'filterGateways'
+        : lower === 'waypoints'
+          ? 'filterWaypoints'
+          : lower === 'kiali'
+            ? 'filterKiali'
+            : option;
     const input = this.page.locator(`div#mesh-display-menu input#${optionId}`);
     if (enabled) {
       await input.check();
@@ -574,17 +583,27 @@ export class MeshPage extends BasePage {
     }
   }
 
+  // External observability services (Grafana, Prometheus, tracing, Perses, Kiali) are only
+  // discovered when the "Show Kiali" display option is enabled (off by default).
+  async enableKialiInfraDiscovery(): Promise<void> {
+    await this.toggleMeshDisplayMenu(true);
+    await this.setMeshDisplayOption('kiali', true);
+    await this.toggleMeshDisplayMenu(false);
+    await this.waitForLoad();
+  }
+
   async openTraceConfigurationModal(): Promise<void> {
     const diagnosePromise = this.page
       .waitForResponse(response => response.url().includes('/api/tracing/diagnose') && response.ok())
       .catch(() => undefined);
     await this.page.getByRole('button', { name: 'Configuration Tester' }).click();
-    await expect(this.page.locator('.pf-v6-c-modal-box')).toBeVisible();
+    await expect(this.page.getByRole('dialog')).toBeVisible();
     await diagnosePromise;
   }
 
   async expectTraceConfigurationModal(): Promise<void> {
-    await expect(this.page.locator('.pf-v6-c-modal-box')).toBeVisible();
+    const dialog = this.page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
     await expect(this.page.getByRole('heading', { name: 'Configuration Tester' })).toBeVisible();
   }
 
@@ -594,15 +613,18 @@ export class MeshPage extends BasePage {
   }
 
   async expectTraceConfigFooterActions(): Promise<void> {
-    await expect(this.page.locator('.pf-v6-c-modal-box__footer')).toBeVisible();
-    await expect(this.page.locator('.pf-v6-c-modal-box__footer').getByRole('button', { name: 'Close' })).toBeVisible();
+    const dialog = this.page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    // The deprecated PF Modal renders two "Close" buttons (header X + footer action); scope
+    // to the footer (implicit contentinfo role) to keep the locator strict-mode safe.
+    await expect(dialog.getByRole('contentinfo').getByRole('button', { name: 'Close' })).toBeVisible();
   }
 
   async clickRediscover(): Promise<void> {
     const responsePromise = this.page.waitForResponse(
       response => response.url().includes('/api/tracing/diagnose') && response.ok()
     );
-    await this.page.locator('.pf-v6-c-modal-box').getByRole('button', { name: 'Rediscover' }).click();
+    await this.page.getByRole('dialog').getByRole('button', { name: 'Rediscover' }).click();
     await responsePromise;
     await expect(this.page.locator('#discover-spinner')).toHaveCount(0);
   }
