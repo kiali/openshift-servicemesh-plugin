@@ -1,0 +1,42 @@
+# don't forget to pass environment variables to docker run like this:
+# podman run -e PLAYWRIGHT_BASE_URL=<OCP_URL> -e PLAYWRIGHT_USERNAME=<username> -e PLAYWRIGHT_PASSWD=<passwd> quay.io/kiali/kiali-ossmc-playwright-tests:dev
+# more details in plugin/e2e/README.md
+
+# same node major version as plugin/package.json engines
+FROM node:24
+
+# we need to set HOME when running on OCP with random UID, otherwise the home is set to / and any writing there will fail with permission denied
+ENV HOME=/tmp/kiali
+
+# install required packages and oc bin
+WORKDIR /usr/bin
+RUN apt -y update && \
+    apt install -y tar gzip bash gettext curl && \
+    apt-get clean && \
+    curl -Lo ./oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz && \
+    tar -xf oc.tar.gz && \
+    rm -f oc.tar.gz
+
+# copy also hack scripts which will be used to install demo apps
+COPY hack $HOME/hack
+COPY plugin/ $HOME/
+
+WORKDIR $HOME
+
+# Install and enable corepack to use yarn
+RUN npm install -g corepack && corepack enable
+
+RUN yarn install --immutable
+
+# Chromium + OS deps for headless runs; version matches the installed @playwright/test
+RUN yarn playwright install --with-deps chromium
+
+# Set required permissions for OpenShift usage
+RUN chgrp -R 0 $HOME && \
+    chmod -R g=u $HOME
+
+# CI=1 enables blob+junit reporting, retries and the capped worker count (see playwright.config.ts)
+ENV CI=1
+
+# Run Playwright tests (full suite; filter with PLAYWRIGHT_GREP / PLAYWRIGHT_GREP_INVERT env vars).
+CMD ["yarn", "playwright:run:test-group:junit"]

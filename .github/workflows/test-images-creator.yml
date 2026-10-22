@@ -70,3 +70,32 @@ jobs:
     - name: "Build cypress test image"
       run: |
         make container-build-cypress-tests container-push-cypress-tests-quay
+
+  build_and_push_playwright_tests:
+    name: Generate and push ossmc playwright test docker images
+    runs-on: ubuntu-latest
+    env:
+      # These ENVs are expected in Make file!
+      IMAGE_ORG: ${{ inputs.quay_org }}
+      PLAYWRIGHT_TESTS_CONTAINER_VERSION: ${{ inputs.images_tag }}
+    steps:
+    - name: Log information
+      run: |
+        echo "Branch": ${{ inputs.release_branch }}
+        echo "Quay organization": ${{ inputs.quay_org }}
+        echo "Images tag": ${{ inputs.images_tag }}
+    - name: Checkout code
+      uses: actions/checkout@de0fac2e4500dabe000d67214ff5f5447ce83dd  # v6.0.2
+      with:
+        ref: ${{ inputs.release_branch }}
+    - name: Login to Quay.io
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee  # v4.2.0
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_USER }}
+        password: ${{ secrets.QUAY_PASSWORD }}
+    - name: "Build playwright test image"
+      run: |
+        # kiali master has no frontend/e2e until the Playwright migration merges;
+        # build from the epic branch until then.
+        make KIALI_BRANCH=${{ inputs.release_branch == 'master' && 'epic/playwright-migration' || inputs.release_branch }} container-build-playwright-tests container-push-playwright-tests-quay
