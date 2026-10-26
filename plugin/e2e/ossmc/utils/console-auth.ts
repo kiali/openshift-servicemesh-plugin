@@ -39,10 +39,12 @@ async function clickAuthProviderIfPresent(page: Page, authProvider?: string): Pr
   if (!authProvider) {
     return;
   }
-  const idp = page.getByText(authProvider, { exact: true });
-  if (await idp.isVisible({ timeout: 15_000 }).catch(() => false)) {
-    await idp.click();
-  }
+  // The IdP list is rendered client-side after the console SPA boots, well
+  // after the load event, so the click must wait for it (isVisible() returns
+  // immediately and would silently skip the click). A click timeout means
+  // there is no IdP selection page (active session or single-IdP redirect).
+  const idp = page.getByRole('link', { name: authProvider, exact: true });
+  await idp.click({ timeout: 15_000 }).catch(() => undefined);
 }
 
 export function consoleCredentials(): {
