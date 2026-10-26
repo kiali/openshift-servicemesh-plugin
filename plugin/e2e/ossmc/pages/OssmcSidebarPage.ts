@@ -44,7 +44,9 @@ export class OssmcSidebarPage extends BasePage {
   }
 
   navLink(pageName: OssmcPageName): Locator {
-    return this.page.locator(`a[data-test="nav"][href*="/ossmconsole/${OSSMC_PAGES[pageName]}"]`);
+    // End-anchored so /ossmconsole/istio does not also match the tech-preview
+    // /ossmconsole/istios nav item (strict mode would reject the duplicate).
+    return this.page.locator(`a[data-test="nav"][href$="/ossmconsole/${OSSMC_PAGES[pageName]}"]`);
   }
 
   async navigateTo(pageName: OssmcPageName): Promise<void> {
