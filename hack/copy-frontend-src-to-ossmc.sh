@@ -241,6 +241,13 @@ if [ -d "${ABS_SOURCE_E2E_DIR}" ]; then
   # (see hack/download-hack-scripts.sh), not at the repo root.
   sed -i "s|path\.join(REPO_ROOT, 'hack/istio')|path.join(REPO_ROOT, '_output/kiali/hack/istio')|" \
     ${ABS_DEST_E2E_DIR}/utils/demoApps.ts
+
+  # Direct page.goto calls and shared navigation must use the same Console routes.
+  # Keep the adapter outside the vendored tree so future syncs preserve it.
+  cat > "${ABS_DEST_E2E_DIR}/utils/kialiUrl.ts" <<'E2E_URL_EOF'
+// Preserved by hack/copy-frontend-src-to-ossmc.sh when refreshing the upstream tests.
+export { kialiUrl } from '../ossmc/utils/kialiUrl';
+E2E_URL_EOF
 else
   echo
   echo "NOTE: ${ABS_SOURCE_E2E_DIR} not found - skipping the Playwright e2e sync."
