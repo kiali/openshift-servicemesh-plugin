@@ -18,7 +18,8 @@ Layout:
   `_output/kiali/hack/istio` (kiali hack scripts land there via `hack/download-hack-scripts.sh`).
   The sync also replaces `utils/kialiUrl.ts` with a re-export of the OSSMC-owned URL adapter,
   which translates standalone `/console/` paths to Console plugin routes, including native
-  Kubernetes resource tabs. API paths pass through unchanged.
+  Kubernetes resource tabs. Kiali `/api` paths are routed through the Console service proxy
+  at `/api/proxy/plugin/ossmconsole/kiali/api`; existing proxy URLs pass through unchanged.
 - `global-setup/auth.setup.ts` — OSSMC-owned. OpenShift Console OAuth login (htpasswd IdP),
   persists `storageState` for the suite projects. OSSMC always runs on OpenShift; there is no
   anonymous strategy.
@@ -62,7 +63,8 @@ Environment variables:
 
 Use `yarn playwright:install` — not `yarn playwright install`.
 
-Route translation checks run without a cluster or browser:
+URL adaptation checks, including a direct API request against a local test server, run without
+a cluster or browser:
 
 ```bash
 yarn test:e2e:routes

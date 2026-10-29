@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
 import { afterEach, test } from 'node:test';
-import type { Page } from '@playwright/test';
+import { request, type Page } from '@playwright/test';
 
 import { kialiUrl } from '../../utils/kialiUrl';
 import { gotoConsolePage } from '../../utils/navigation';
@@ -88,7 +89,7 @@ test('rejects incomplete Istio detail paths', () => {
   );
 });
 
-test('leaves Console-native paths and API requests unchanged', () => {
+test('browser route translation leaves Console-native and API paths untouched', () => {
   for (const path of ['/ossmconsole/overview', '/k8s/cluster/projects/bookinfo/ossmconsole', '/api/config', '/']) {
     assert.equal(toOssmcConsolePath(path), path);
   }
@@ -106,11 +107,10 @@ test('preserves standalone Kiali paths and web roots outside OSSMC mode', () => 
   assert.equal(kialiUrl('/console/overview?refresh=0'), 'https://kiali.example/kiali/console/overview?refresh=0');
 });
 
-test('adapts direct URL-helper navigation without rewriting API requests', () => {
+test('adapts direct graph navigation through the shared URL helper', () => {
   process.env.PLAYWRIGHT_OSSMC = 'true';
   process.env.PLAYWRIGHT_BASE_URL = 'https://console.example/';
   assert.equal(kialiUrl('/console/graph/namespaces?refresh=0'), 'https://console.example/ossmconsole/graph?refresh=0');
-  assert.equal(kialiUrl('/api/config'), 'https://console.example/api/config');
 });
 
 test('adapts the vendored gotoConsolePage entry point', async () => {
@@ -127,4 +127,78 @@ test('adapts the vendored gotoConsolePage entry point', async () => {
     destination,
     'https://console.example/k8s/ns/bookinfo/services/reviews/ossmconsole?refresh=0&tab=traffic'
   );
+});
+
+const apiPaths = [
+  ['/api', '/api'],
+  ['/api/', '/api/'],
+  ['/api?ready=true', '/api?ready=true'],
+  ['/api/config', '/api/config'],
+  ['api/config', '/api/config'],
+  [
+    '/api/namespaces?namespaces=bookinfo%2Calpha&clusterName=east',
+    '/api/namespaces?namespaces=bookinfo%2Calpha&clusterName=east'
+  ],
+  [
+    '/api/namespaces/bookinfo/workloads/reviews-v1?health=true',
+    '/api/namespaces/bookinfo/workloads/reviews-v1?health=true'
+  ]
+];
+
+for (const [input, expected] of apiPaths) {
+  test(`routes ${input} through the Console Kiali proxy`, () => {
+    process.env.PLAYWRIGHT_OSSMC = 'true';
+    process.env.PLAYWRIGHT_BASE_URL = 'https://console.example/';
+    assert.equal(kialiUrl(input), `https://console.example/api/proxy/plugin/ossmconsole/kiali${expected}`);
+  });
+}
+
+test('does not add a second proxy prefix or rewrite non-API paths', () => {
+  process.env.PLAYWRIGHT_OSSMC = 'true';
+  process.env.PLAYWRIGHT_BASE_URL = 'https://console.example';
+  for (const path of [
+    '/api/proxy/plugin/ossmconsole/kiali/api/config?clusterName=east',
+    '/api/proxy/plugin/another-plugin/backend/api/config',
+    '/ossmconsole/overview',
+    '/k8s/cluster/projects/bookinfo/ossmconsole',
+    '/apiculture'
+  ]) {
+    assert.equal(kialiUrl(path), `https://console.example${path}`);
+  }
+});
+
+test('preserves standalone Kiali API URLs and web roots', () => {
+  process.env.PLAYWRIGHT_OSSMC = 'false';
+  process.env.PLAYWRIGHT_BASE_URL = 'https://kiali.example/kiali/';
+  assert.equal(kialiUrl('/api/config?clusterName=east'), 'https://kiali.example/kiali/api/config?clusterName=east');
+});
+
+test('direct Playwright API requests reach the proxied endpoint', async () => {
+  let requestedUrl = '';
+  const server = createServer((req, res) => {
+    requestedUrl = req.url ?? '';
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ ambientEnabled: true }));
+  });
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  try {
+    const address = server.address();
+    assert.ok(address && typeof address !== 'string');
+    process.env.PLAYWRIGHT_OSSMC = 'true';
+    process.env.PLAYWRIGHT_BASE_URL = `http://127.0.0.1:${address.port}`;
+    const context = await request.newContext();
+    try {
+      const response = await context.get(kialiUrl('/api/config?clusterName=east'));
+      assert.equal(response.status(), 200);
+      assert.deepEqual(await response.json(), { ambientEnabled: true });
+      assert.equal(requestedUrl, '/api/proxy/plugin/ossmconsole/kiali/api/config?clusterName=east');
+    } finally {
+      await context.dispose();
+    }
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close(error => (error ? reject(error) : resolve())));
+  }
 });

@@ -6,5 +6,13 @@ export function kialiUrl(path: string): string {
   const defaultBase = isOssmc ? 'http://localhost:9000' : 'http://localhost:3001';
   const base = (process.env.PLAYWRIGHT_BASE_URL ?? defaultBase).replace(/\/$/, '');
   const suffix = path.startsWith('/') ? path : `/${path}`;
-  return `${base}${isOssmc ? toOssmcConsolePath(suffix) : suffix}`;
+  if (!isOssmc) {
+    return `${base}${suffix}`;
+  }
+
+  const ossmcPath =
+    /^\/api(?:\/|[?#]|$)/.test(suffix) && !suffix.startsWith('/api/proxy/')
+      ? `/api/proxy/plugin/ossmconsole/kiali${suffix}`
+      : toOssmcConsolePath(suffix);
+  return `${base}${ossmcPath}`;
 }
