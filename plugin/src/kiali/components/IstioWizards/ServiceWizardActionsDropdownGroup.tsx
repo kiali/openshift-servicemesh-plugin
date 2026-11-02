@@ -78,7 +78,7 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
     handleActionClick(eventKey);
   };
 
-  const triggerDelete = (): void => {
+  const triggerDelete = React.useCallback((): void => {
     const now = Date.now();
     if (now - lastTriggerRef.current < 400) {
       return;
@@ -87,7 +87,7 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
     if (props.onDelete) {
       props.onDelete(DELETE_TRAFFIC_ROUTING);
     }
-  };
+  }, [props]);
 
   const getDropdownItemTooltipMessage = (isGatewayAPI: boolean, hasExistingTrafficRouting: boolean): string => {
     if (isViewOnly && !hasExistingTrafficRouting) {

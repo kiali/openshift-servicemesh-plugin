@@ -62,10 +62,6 @@ const loginStyle = kialiStyle({
 });
 
 export class LoginPageComponent extends React.Component<LoginProps, LoginState> {
-  static contextTypes = {
-    store: (): null => null
-  };
-
   constructor(props: LoginProps) {
     super(props);
 

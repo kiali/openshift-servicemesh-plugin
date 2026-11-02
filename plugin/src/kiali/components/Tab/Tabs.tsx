@@ -1,7 +1,6 @@
 // Assisted-by: OpenAI Codex
 import * as React from 'react';
-import type { TabProps } from '@patternfly/react-core';
-import { Tabs } from '@patternfly/react-core';
+import { Tabs, type TabProps } from '@patternfly/react-core';
 import { classes } from 'typestyle';
 
 import { location, router } from '../../app/History';
