@@ -36,7 +36,7 @@ import { isObservabilityDataReady } from '../utils/observabilityReady';
 import type { EnrichedControlPlane } from '../types/istio';
 import type { K8sCondition } from '../types/common';
 import type { ClusterAvailability } from '../types/managedCluster';
-import { getClusterAvailability, availabilityColor, availabilityLabelKey } from '../types/managedCluster';
+import { getClusterAvailability, availabilityColor, translateAvailabilityLabel } from '../types/managedCluster';
 import { oldestTimestamp } from '../utils/oldestTimestamp';
 import { worstConditions } from '../utils/worstConditions';
 import { clusterDetailLink } from '../utils/linkUtils';
@@ -62,13 +62,6 @@ const CONDITION_COL_KEYS = [
 const discoveredClusterRowKey = (name: string): string => name;
 const discoveredClusterSearchMatch = (name: string, query: string): boolean =>
   name.toLowerCase().includes(query.toLowerCase());
-
-const DISCOVERED_CLUSTER_CATEGORIES: CategoryLabel[] = [
-  { key: 'all', label: 'All ({{count}})' },
-  { key: 'available', label: 'Available ({{count}})' },
-  { key: 'unavailable', label: 'Unavailable ({{count}})' },
-  { key: 'unreachable', label: 'Unreachable ({{count}})' }
-];
 
 function uniqueNetworks(planes: EnrichedControlPlane[]): string[] {
   const networks = new Set<string>();
@@ -110,6 +103,18 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
     [clusterAvailabilityMap]
   );
 
+  // Labels are translated here so the i18n extractor sees the keys;
+  // VirtualFilterTable replaces the {{count}} placeholder itself.
+  const discoveredClusterCategories = useMemo<CategoryLabel[]>(
+    () => [
+      { key: 'all', label: t('All ({{count}})') },
+      { key: 'available', label: t('Available ({{count}})') },
+      { key: 'unavailable', label: t('Unavailable ({{count}})') },
+      { key: 'unreachable', label: t('Unreachable ({{count}})') }
+    ],
+    [t]
+  );
+
   const clusterColumns = useMemo<VirtualFilterColumn<string>[]>(
     () => [
       {
@@ -129,7 +134,7 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
           const availability = clusterAvailabilityMap.get(clusterName) ?? 'unreachable';
           return (
             <Label color={availabilityColor(availability)} isCompact>
-              {t(availabilityLabelKey(availability))}
+              {translateAvailabilityLabel(availability, t)}
             </Label>
           );
         },
@@ -340,7 +345,7 @@ const DiscoveredMeshDetailContent: FC<{ meshID: string }> = ({ meshID }) => {
               <CardBody>
                 <VirtualFilterTable
                   categorize={discoveredClusterCategorize}
-                  categoryLabels={DISCOVERED_CLUSTER_CATEGORIES}
+                  categoryLabels={discoveredClusterCategories}
                   columns={clusterColumns}
                   emptyMessage="No clusters match the current filter."
                   items={uniqueClusterNames}

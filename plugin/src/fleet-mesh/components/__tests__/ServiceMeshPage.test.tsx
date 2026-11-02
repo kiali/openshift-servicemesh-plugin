@@ -1,9 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { useListPageFilter } from '@openshift-console/dynamic-plugin-sdk';
+import { useFleetSearchPoll } from '@stolostron/multicluster-sdk';
 import ServiceMeshPage from '../ServiceMeshPage';
 import { useFleetMeshItems } from '../../hooks/useFleetMeshItems';
 import type { FleetMeshItem } from '../../types/fleetMesh';
 import type { UseFleetMeshItemsResult } from '../../hooks/useFleetMeshItems';
+import { makeMesh } from '../../__fixtures__/testFactories';
+import type { MultiClusterMesh } from '../../types/multiClusterMesh';
 
 rstest.mock('../../hooks/useFleetMeshItems', { mock: true });
 
@@ -131,21 +134,26 @@ describe('ServiceMeshPage', () => {
     expect(screen.getByText('Unable to load control plane data. Some meshes may not be shown.')).toBeInTheDocument();
   });
 
-  it('filters Placement names case-insensitively and excludes discovered meshes for nonempty input', () => {
+  it('filters Mesh IDs case-insensitively for nonempty input', () => {
     const items = [
-      makeItem({ metadata: { name: 'east-mesh' }, placementName: 'east-placement' }),
-      makeItem({ metadata: { name: 'west-mesh' }, placementName: 'west-placement' }),
-      makeItem({ metadata: { name: 'discovered-mesh' }, kind: 'discovered', placementName: undefined })
+      makeItem({ metadata: { name: 'east-mesh' }, meshID: 'mesh-system-east-mesh' }),
+      makeItem({ metadata: { name: 'west-mesh' }, meshID: 'mesh-system-west-mesh' }),
+      makeItem({
+        metadata: { name: 'discovered-mesh' },
+        kind: 'discovered',
+        meshID: 'discovered-id',
+        placementName: undefined
+      })
     ];
     mockHook({ items });
     render(<ServiceMeshPage />);
     const filters = rstest.mocked(useListPageFilter).mock.calls.at(-1)?.[1];
-    const placementFilter = filters?.find(filter => filter.type === 'placement');
-    expect(placementFilter).toBeDefined();
+    const meshIDFilter = filters?.find(filter => filter.type === 'meshID');
+    expect(meshIDFilter).toBeDefined();
     const matches = (selected: string[]): string[] =>
-      items.filter(item => placementFilter!.filter({ selected }, item)).map(item => item.metadata.name);
+      items.filter(item => meshIDFilter!.filter({ selected }, item)).map(item => item.metadata.name);
     expect(matches(['EAST'])).toEqual(['east-mesh']);
-    expect(matches(['west-placement'])).toEqual(['west-mesh']);
+    expect(matches(['discovered'])).toEqual(['discovered-mesh']);
     expect(matches(['missing'])).toEqual([]);
     expect(matches([''])).toEqual(['east-mesh', 'west-mesh', 'discovered-mesh']);
     expect(matches([])).toEqual(['east-mesh', 'west-mesh', 'discovered-mesh']);
@@ -246,5 +254,148 @@ describe('ServiceMeshPage', () => {
     mockHook({ items });
     render(<ServiceMeshPage />);
     expect(screen.getByText('Mesh ID Conflict')).toBeInTheDocument();
+  });
+
+  describe('Operator column', () => {
+    /** Branches the SDK mock on the queried kind so both hook queries can be set at once. */
+    const mockOperatorSearch = (
+      deployments: { cluster: string; metadata: { name: string } }[] = [],
+      roster: { cluster: string; metadata: { name: string } }[] = [],
+      error?: Error
+    ): void => {
+      rstest
+        .mocked(useFleetSearchPoll)
+        .mockImplementation(((watchOptions?: { groupVersionKind?: { kind?: string } }) =>
+          watchOptions?.groupVersionKind?.kind === 'Deployment'
+            ? [deployments, true, error, rstest.fn()]
+            : [roster, true, error, rstest.fn()]) as unknown as typeof useFleetSearchPoll);
+    };
+
+    const makeMcm = (clusterNames: string[]): MultiClusterMesh =>
+      makeMesh({ status: { clusterStatus: clusterNames.map(clusterName => ({ clusterName })) } });
+
+    // clearAllMocks does not reset implementations set with mockImplementation,
+    // so restore the loading default after each test to avoid leakage.
+    afterEach(() => {
+      rstest.mocked(useFleetSearchPoll).mockReturnValue([undefined, false, undefined, rstest.fn()]);
+    });
+
+    it('shows an installed/total count label per managed mesh', () => {
+      mockOperatorSearch(
+        [{ cluster: 'cluster-a', metadata: { name: 'servicemesh-operator3' } }],
+        [
+          { cluster: 'cluster-a', metadata: { name: 'default' } },
+          { cluster: 'cluster-b', metadata: { name: 'default' } }
+        ]
+      );
+      mockHook({ items: [makeItem({ mcm: makeMcm(['cluster-a', 'cluster-b']) })] });
+      render(<ServiceMeshPage />);
+      expect(screen.getByText('1/2')).toBeInTheDocument();
+    });
+
+    it('shows a green-count label for every cluster when all have the operator', () => {
+      mockOperatorSearch(
+        [
+          { cluster: 'cluster-a', metadata: { name: 'servicemesh-operator3' } },
+          { cluster: 'cluster-b', metadata: { name: 'servicemesh-operator3' } }
+        ],
+        [
+          { cluster: 'cluster-a', metadata: { name: 'default' } },
+          { cluster: 'cluster-b', metadata: { name: 'default' } }
+        ]
+      );
+      mockHook({ items: [makeItem({ mcm: makeMcm(['cluster-a', 'cluster-b']) })] });
+      render(<ServiceMeshPage />);
+      expect(screen.getByText('2/2')).toBeInTheDocument();
+    });
+
+    it('shows Unknown when search data is unavailable', () => {
+      mockOperatorSearch([], [], new Error('search down'));
+      mockHook({ items: [makeItem({ mcm: makeMcm(['cluster-a']) })] });
+      render(<ServiceMeshPage />);
+      expect(screen.getByText('Unknown')).toBeInTheDocument();
+      expect(screen.queryByText('0/1')).not.toBeInTheDocument();
+    });
+
+    it('lets the unknown filter find rows showing Unknown during a search outage', () => {
+      mockOperatorSearch([], [], new Error('search down'));
+      const items = [makeItem({ mcm: makeMcm(['cluster-a']) })];
+      mockHook({ items });
+      render(<ServiceMeshPage />);
+      expect(screen.getByText('Unknown')).toBeInTheDocument();
+      const filters = rstest.mocked(useListPageFilter).mock.calls.at(-1)?.[1];
+      const operatorFilter = filters?.find(filter => filter.type === 'operator');
+      expect(operatorFilter!.filter({ selected: ['unknown'] }, items[0])).toBe(true);
+    });
+
+    it('keeps the confirmed count, grey, when a selected cluster is not visible to search', () => {
+      mockOperatorSearch(
+        [{ cluster: 'cluster-a', metadata: { name: 'servicemesh-operator3' } }],
+        [{ cluster: 'cluster-a', metadata: { name: 'default' } }]
+      );
+      mockHook({ items: [makeItem({ mcm: makeMcm(['cluster-a', 'cluster-not-indexed']) })] });
+      render(<ServiceMeshPage />);
+      expect(screen.getByText('1/2')).toBeInTheDocument();
+      expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
+    });
+
+    it('shows Unknown without a count when no selected cluster is visible to search', () => {
+      mockOperatorSearch(
+        [{ cluster: 'cluster-a', metadata: { name: 'servicemesh-operator3' } }],
+        [{ cluster: 'cluster-a', metadata: { name: 'default' } }]
+      );
+      mockHook({ items: [makeItem({ mcm: makeMcm(['cluster-not-indexed']) })] });
+      render(<ServiceMeshPage />);
+      expect(screen.getByText('Unknown')).toBeInTheDocument();
+      expect(screen.queryByText('0/1')).not.toBeInTheDocument();
+    });
+
+    it('shows a dash for discovered meshes', () => {
+      mockOperatorSearch(
+        [{ cluster: 'cluster-a', metadata: { name: 'servicemesh-operator3' } }],
+        [{ cluster: 'cluster-a', metadata: { name: 'default' } }]
+      );
+      mockHook({
+        items: [makeItem({ metadata: { name: 'discovered-mesh' }, kind: 'discovered', placementName: undefined })]
+      });
+      render(<ServiceMeshPage />);
+      expect(screen.queryByText('0/1')).not.toBeInTheDocument();
+      expect(screen.queryByText('1/1')).not.toBeInTheDocument();
+      expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
+    });
+
+    it('shows no operator labels while the status is loading', () => {
+      mockHook({ items: [makeItem({ mcm: makeMcm(['cluster-a']) })] });
+      render(<ServiceMeshPage />);
+      expect(screen.queryByText('1/1')).not.toBeInTheDocument();
+      expect(screen.queryByText('0/1')).not.toBeInTheDocument();
+      expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
+    });
+
+    it('filters rows by aggregated operator status', () => {
+      mockOperatorSearch(
+        [{ cluster: 'cluster-a', metadata: { name: 'servicemesh-operator3' } }],
+        [
+          { cluster: 'cluster-a', metadata: { name: 'default' } },
+          { cluster: 'cluster-b', metadata: { name: 'default' } }
+        ]
+      );
+      const items = [
+        makeItem({ mcm: makeMcm(['cluster-a']) }),
+        makeItem({ metadata: { name: 'broken-mesh' }, mcm: makeMcm(['cluster-a', 'cluster-b']) }),
+        makeItem({ metadata: { name: 'discovered-mesh' }, kind: 'discovered', placementName: undefined })
+      ];
+      mockHook({ items });
+      render(<ServiceMeshPage />);
+      const filters = rstest.mocked(useListPageFilter).mock.calls.at(-1)?.[1];
+      const operatorFilter = filters?.find(filter => filter.type === 'operator');
+      expect(operatorFilter).toBeDefined();
+      const matches = (selected: string[]): string[] =>
+        items.filter(item => operatorFilter!.filter({ selected }, item)).map(item => item.metadata.name);
+      expect(matches(['installed'])).toEqual(['test-mesh']);
+      expect(matches(['missing'])).toEqual(['broken-mesh']);
+      expect(matches(['unknown'])).toEqual([]);
+      expect(matches([''])).toEqual(['test-mesh', 'broken-mesh', 'discovered-mesh']);
+    });
   });
 });

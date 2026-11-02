@@ -476,4 +476,86 @@ describe('ClusterStatusSection', () => {
       expect(screen.getByText('Unreachable')).toBeInTheDocument();
     });
   });
+
+  describe('OSSM Operator column', () => {
+    const clusters = [makeCluster('cluster-a', 'True'), makeCluster('cluster-b', 'True')];
+
+    it('shows Installed and Missing labels per cluster', () => {
+      render(
+        <ClusterStatusSection
+          clusterStatuses={clusters}
+          operatorStatus={
+            new Map([
+              ['cluster-a', 'installed'],
+              ['cluster-b', 'missing']
+            ])
+          }
+          operatorStatusLoaded
+          selectedNames={['cluster-a', 'cluster-b']}
+          selectionState="ready"
+        />
+      );
+      expect(screen.getByText('OSSM Operator')).toBeInTheDocument();
+      expect(screen.getByText('Installed')).toBeInTheDocument();
+      expect(screen.getByText('Missing')).toBeInTheDocument();
+    });
+
+    it('shows Unknown for every cluster when search data is unavailable', () => {
+      render(
+        <ClusterStatusSection
+          clusterStatuses={clusters}
+          operatorStatus={null}
+          operatorStatusLoaded
+          selectionState="ready"
+        />
+      );
+      expect(screen.getAllByText('Unknown')).toHaveLength(2);
+      expect(screen.queryByText('Installed')).not.toBeInTheDocument();
+      expect(screen.queryByText('Missing')).not.toBeInTheDocument();
+    });
+
+    it('shows Unknown for a cluster that search does not see, rather than Missing', () => {
+      render(
+        <ClusterStatusSection
+          clusterStatuses={clusters}
+          operatorStatus={new Map([['cluster-a', 'installed']])}
+          operatorStatusLoaded
+          selectionState="ready"
+        />
+      );
+      expect(screen.getByText('Installed')).toBeInTheDocument();
+      expect(screen.getByText('Unknown')).toBeInTheDocument();
+      expect(screen.queryByText('Missing')).not.toBeInTheDocument();
+    });
+
+    it('shows no operator labels while the status is loading', () => {
+      render(<ClusterStatusSection clusterStatuses={clusters} operatorStatusLoaded={false} selectionState="ready" />);
+      expect(screen.queryByText('Installed')).not.toBeInTheDocument();
+      expect(screen.queryByText('Missing')).not.toBeInTheDocument();
+      expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
+    });
+
+    it('explains Missing with a tooltip', async () => {
+      render(
+        <ClusterStatusSection
+          clusterStatuses={clusters}
+          operatorStatus={
+            new Map([
+              ['cluster-a', 'installed'],
+              ['cluster-b', 'missing']
+            ])
+          }
+          operatorStatusLoaded
+          selectedNames={['cluster-a', 'cluster-b']}
+          selectionState="ready"
+        />
+      );
+      fireEvent.mouseEnter(screen.getByText('Missing').closest('.pf-v6-c-label') as HTMLElement);
+      expect(
+        await screen.findByText(
+          'The control plane cannot come up on this cluster until the OSSM operator is installed.'
+        )
+      ).toBeInTheDocument();
+    });
+  });
 });

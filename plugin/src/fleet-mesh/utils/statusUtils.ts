@@ -13,6 +13,7 @@ const friendlyReasons: Record<string, string> = {
   AllControlPlanesNotReady: 'All Control Planes Not Ready',
   CacertsPending: 'Trust Pending',
   ClustersNotReady: 'Clusters Not Ready',
+  IstiodNotReady: 'Istiod Not Ready',
   MissingProductClaim: 'Missing Product Claim',
   NoClustersSelected: 'No Clusters Selected',
   PlacementNotFound: 'Placement Not Found',
@@ -36,6 +37,8 @@ export function translateStatusLabel(label: string, t: (key: string) => string):
       return t('Clusters Not Ready');
     case 'Distributed':
       return t('Distributed');
+    case 'Istiod Not Ready':
+      return t('Istiod Not Ready');
     case 'Trust Pending':
       return t('Trust Pending');
     case 'Missing Product Claim':
@@ -47,7 +50,9 @@ export function translateStatusLabel(label: string, t: (key: string) => string):
     case 'Reconcile Error':
       return t('Reconcile Error');
     default:
-      return t(label);
+      // Unknown backend reason strings have no translations; return them as-is
+      // rather than through t(), which would log a missing-key warning.
+      return label;
   }
 }
 
