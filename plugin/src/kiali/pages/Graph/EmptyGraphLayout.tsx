@@ -9,7 +9,7 @@ import {
 } from '@patternfly/react-core';
 import { kialiStyle } from 'styles/StyleUtils';
 import { isEmpty, isEqual } from 'lodash-es';
-import { Namespace } from '../../types/Namespace';
+import type { Namespace } from '../../types/Namespace';
 import { KialiIcon } from '../../config/KialiIcon';
 import type { DecoratedGraphElements } from '../../types/Graph';
 import { ManualRefreshEmptyState } from 'components/Refresh/ManualRefreshEmptyState';
