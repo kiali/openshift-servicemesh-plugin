@@ -1,5 +1,6 @@
 # don't forget to pass environment variables to docker run like this:
 # podman run -e PLAYWRIGHT_BASE_URL=<OCP_URL> -e PLAYWRIGHT_USERNAME=<username> -e PLAYWRIGHT_PASSWD=<passwd> quay.io/kiali/kiali-ossmc-playwright-tests:dev
+# this runs the core suites by default; set or empty PLAYWRIGHT_GREP to change the selection
 # more details in plugin/e2e/README.md
 
 # same node major version as plugin/package.json engines
@@ -43,5 +44,9 @@ RUN chgrp -R 0 $HOME && \
 # CI=1 enables blob+junit reporting, retries and the capped worker count (see playwright.config.ts)
 ENV CI=1
 
-# Run Playwright tests (full suite; filter with PLAYWRIGHT_GREP / PLAYWRIGHT_GREP_INVERT env vars).
+# Default to the core suites, like the Cypress image (the ambient/waypoint suites
+# need cluster configurations the default target does not have). Override or
+# empty PLAYWRIGHT_GREP to select a different set (see plugin/e2e/README.md).
+ENV PLAYWRIGHT_GREP="@core-1|@core-2"
+
 CMD ["yarn", "playwright:run:test-group:junit"]

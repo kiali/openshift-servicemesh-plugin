@@ -15,10 +15,13 @@ export class NamespaceDetailPage extends BasePage {
     if (isOssmc()) {
       await this.page.route('**/api/namespaces/graph*', route => route.continue());
     }
+    // The graph request fires during the navigation itself; the wait must be
+    // registered before it, or the response can arrive before the listener.
+    const graphResponse = isOssmc()
+      ? this.page.waitForResponse(response => response.url().includes('/api/namespaces/graph'))
+      : Promise.resolve();
     await gotoConsolePage(this.page, `namespaces/${namespace}`, query);
-    if (isOssmc()) {
-      await this.page.waitForResponse(response => response.url().includes('/api/namespaces/graph'));
-    }
+    await graphResponse;
     await waitForLoadingComplete(this.page);
   }
 
