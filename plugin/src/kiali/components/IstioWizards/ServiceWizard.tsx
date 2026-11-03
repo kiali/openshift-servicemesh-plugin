@@ -11,7 +11,6 @@ import {
   Tab,
   Tabs
 } from '@patternfly/react-core';
-import type { WorkloadOverview } from '../../types/ServiceInfo';
 import * as API from '../../services/Api';
 import { addError, addSuccess } from '../../utils/AlertUtils';
 import { RequestRouting } from './RequestRouting';

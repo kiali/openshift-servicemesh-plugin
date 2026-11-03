@@ -1,6 +1,6 @@
 import { PFColors } from 'components/Pf/PfColors';
 import * as API from 'services/Api';
-import type { TimeRange} from 'types/Common';
+import type { TimeRange } from 'types/Common';
 import { durationToBounds, guardTimeRange } from 'types/Common';
 import { addError } from 'utils/AlertUtils';
 import type { Span, TracingQuery } from 'types/Tracing';

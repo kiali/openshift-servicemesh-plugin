@@ -1,14 +1,7 @@
 import * as React from 'react';
 import { Card, CardBody, CardTitle, EmptyState, EmptyStateBody, Grid, GridItem } from '@patternfly/react-core';
-import type {
-  AIUsageResponse,
-  ChatSessionUsageBudget,
-  UsageValueKind
-} from 'types/Chatbot';
-import {
-  formatCost,
-  formatTokensInMillions
-} from 'types/Chatbot';
+import type { AIUsageResponse, ChatSessionUsageBudget, UsageValueKind } from 'types/Chatbot';
+import { formatCost, formatTokensInMillions } from 'types/Chatbot';
 import {
   Chart,
   ChartAxis,

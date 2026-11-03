@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { isK8sGatewayHostValid } from '../../../utils/IstioConfigUtils';
-import type {
-  MenuToggleElement} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import {
   Button,
   ButtonVariant,
@@ -16,7 +15,7 @@ import { isValid } from '../../../utils/Common';
 import type { ListenerForm } from '../K8sGatewayForm';
 import { Td, Tr } from '@patternfly/react-table';
 import { addSelectorLabels } from './ListenerList';
-import type { K8sGatewayTLS} from '../../../types/IstioObjects';
+import type { K8sGatewayTLS } from '../../../types/IstioObjects';
 import { MAX_PORT, MIN_PORT } from '../../../types/IstioObjects';
 import { KialiIcon } from 'config/KialiIcon';
 import { useKialiTranslation } from 'utils/I18nUtils';

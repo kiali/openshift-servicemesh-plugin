@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { FormGroup, FormHelperText, HelperText, HelperTextItem, Switch, TextInput } from '@patternfly/react-core';
 import { ServerList } from './GatewayForm/ServerList';
-import type { Server, ServerForm, ServerTLSSettings} from '../../types/IstioObjects';
+import type { Server, ServerForm, ServerTLSSettings } from '../../types/IstioObjects';
 import { MAX_PORT, MIN_PORT } from '../../types/IstioObjects';
 import { isValid } from 'utils/Common';
 import { areValidHosts } from './GatewayForm/ServerBuilder';

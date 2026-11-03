@@ -1,15 +1,6 @@
 import * as React from 'react';
-import type {
-  MenuToggleElement} from '@patternfly/react-core';
-import {
-  Button,
-  ButtonVariant,
-  MenuToggle,
-  Select,
-  SelectList,
-  SelectOption,
-  TextInput
-} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
+import { Button, ButtonVariant, MenuToggle, Select, SelectList, SelectOption, TextInput } from '@patternfly/react-core';
 import { Td, Tr } from '@patternfly/react-table';
 import type { Address } from '../../../types/IstioObjects';
 import { isValid } from 'utils/Common';
