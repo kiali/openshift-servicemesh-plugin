@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { StatusCondition} from '../../types/IstioObjects';
+import type { StatusCondition } from '../../types/IstioObjects';
 import { ValidationTypes } from '../../types/IstioObjects';
 import { kialiStyle } from 'styles/StyleUtils';
 import { Tooltip, TooltipPosition } from '@patternfly/react-core';

@@ -1,16 +1,7 @@
 import * as React from 'react';
 import type { IRow, ThProps } from '@patternfly/react-table';
-import type {
-  MenuToggleElement} from '@patternfly/react-core';
-import {
-  Button,
-  ButtonVariant,
-  MenuToggle,
-  Select,
-  SelectList,
-  SelectOption,
-  TextInput
-} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
+import { Button, ButtonVariant, MenuToggle, Select, SelectList, SelectOption, TextInput } from '@patternfly/react-core';
 import { isValidIp } from '../../../../utils/IstioConfigUtils';
 import { kialiStyle } from 'styles/StyleUtils';
 import { PFColors } from '../../../../components/Pf/PfColors';

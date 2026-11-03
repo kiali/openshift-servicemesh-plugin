@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { Edge, Node } from '@patternfly/react-topology';
-import type { DecoratedGraphNodeData, SummaryPanelPropType} from 'types/Graph';
+import type { DecoratedGraphNodeData, SummaryPanelPropType } from 'types/Graph';
 import { GraphType, NodeType, TrafficRate } from 'types/Graph';
 import { SummaryPanelNodeTraffic } from '../SummaryPanelNodeTraffic';
 

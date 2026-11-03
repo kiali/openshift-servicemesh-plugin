@@ -1,10 +1,7 @@
 import * as React from 'react';
-import type { ObjectCheck} from '../../types/IstioObjects';
+import type { ObjectCheck } from '../../types/IstioObjects';
 import { ValidationTypes } from '../../types/IstioObjects';
-import type {
-  ProxyStatus,
-  Status
-} from '../../types/Health';
+import type { ProxyStatus, Status } from '../../types/Health';
 import {
   DEGRADED,
   hasProxyStatusInfoSeverity,

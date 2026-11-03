@@ -1,8 +1,7 @@
 import * as React from 'react';
 import type { Node, NodeModel } from '@patternfly/react-topology';
 import { kialiStyle } from 'styles/StyleUtils';
-import type {
-  TargetPanelCommonProps} from './TargetPanelCommon';
+import type { TargetPanelCommonProps } from './TargetPanelCommon';
 import {
   renderInfraSummary,
   shouldRefreshData,
@@ -15,14 +14,14 @@ import { PFBadge, PFBadges } from 'components/Pf/PfBadges';
 import { Card, CardBody, CardHeader, Title, TitleSizes, Tooltip, TooltipPosition } from '@patternfly/react-core';
 import { Paths, serverConfig } from 'config';
 import type { ValidationStatus } from 'types/IstioObjects';
-import type { NamespaceAction} from '../../Namespaces/NamespaceActions';
+import type { NamespaceAction } from '../../Namespaces/NamespaceActions';
 import { NamespaceActions } from '../../Namespaces/NamespaceActions';
 import type { NamespaceInfo, NamespaceStatus } from 'types/NamespaceInfo';
 import { NamespaceMTLSStatus } from 'components/MTls/NamespaceMTLSStatus';
 import { ResourceHealthStatus } from '../components/ResourceHealthStatus';
-import type { DirectionType} from 'types/Common';
+import type { DirectionType } from 'types/Common';
 import { Show } from 'types/Common';
-import type { MeshResourceType} from 'types/Mesh';
+import type { MeshResourceType } from 'types/Mesh';
 import { switchMeshResourceType } from 'types/Mesh';
 import { PromisesRegistry } from 'utils/CancelablePromises';
 import { ControlPlaneDonut } from '../components/ControlPlaneDonut';
@@ -35,12 +34,12 @@ import { ValidationSummaryLink } from 'components/Link/ValidationSummaryLink';
 import { ValidationSummary } from 'components/Validations/ValidationSummary';
 import { NamespaceTrafficChart } from '../components/NamespaceTrafficChart';
 import * as API from '../../../services/Api';
-import type { IstioMetricsOptions} from 'types/MetricsOptions';
+import type { IstioMetricsOptions } from 'types/MetricsOptions';
 import { buildReporter } from 'types/MetricsOptions';
 import { computePrometheusRateParams } from 'services/Prometheus';
 import type { ApiError } from 'types/Api';
 import { t } from 'utils/I18nUtils';
-import type { Health} from 'types/Health';
+import type { Health } from 'types/Health';
 import { DEGRADED, FAILURE, HEALTHY, NOT_READY } from 'types/Health';
 import { router } from '../../../app/History';
 import { addDanger, addError } from '../../../utils/AlertUtils';

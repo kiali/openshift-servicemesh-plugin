@@ -4,7 +4,13 @@ import { kialiStyle } from 'styles/StyleUtils';
 import { Tooltip, Button, ButtonVariant, pluralize } from '@patternfly/react-core';
 import { SelectList, SelectOption } from '@patternfly/react-core';
 import { URLParam } from '../../app/History';
-import type { JaegerTrace, RichSpanData, EnvoySpanInfo, OpenTracingHTTPInfo, OpenTracingTCPInfo } from 'types/TracingInfo';
+import type {
+  JaegerTrace,
+  RichSpanData,
+  EnvoySpanInfo,
+  OpenTracingHTTPInfo,
+  OpenTracingTCPInfo
+} from 'types/TracingInfo';
 import type { KialiAppState } from 'store/Store';
 import { TracingThunkActions } from 'actions/TracingThunkActions';
 import { GraphActions } from 'actions/GraphActions';
