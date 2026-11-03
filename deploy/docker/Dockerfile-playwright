@@ -17,11 +17,16 @@ RUN apt -y update && \
     tar -xf oc.tar.gz && \
     rm -f oc.tar.gz
 
-# copy also hack scripts which will be used to install demo apps
+# Copy the repo preserving the layout the e2e utils expect: demoApps resolves
+# the repo root from plugin/e2e/utils (../../..) and reads hack/ and
+# _output/kiali/hack from it. _output holds the kiali istio hack scripts
+# downloaded by hack/download-hack-scripts.sh, which the make
+# container-build-playwright-tests target runs before the image build.
 COPY hack $HOME/hack
-COPY plugin/ $HOME/
+COPY plugin $HOME/plugin
+COPY _output $HOME/_output
 
-WORKDIR $HOME
+WORKDIR $HOME/plugin
 
 # Install and enable corepack to use yarn
 RUN npm install -g corepack && corepack enable
