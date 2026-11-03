@@ -1,6 +1,5 @@
 import * as React from 'react';
-import type {
-  MenuToggleElement} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import {
   Button,
   ButtonVariant,
@@ -14,7 +13,7 @@ import {
   SelectOption,
   TextInput
 } from '@patternfly/react-core';
-import type { IRow, ThProps} from '@patternfly/react-table';
+import type { IRow, ThProps } from '@patternfly/react-table';
 import { Td, Tr } from '@patternfly/react-table';
 import { isGatewayHostValid } from '../../../utils/IstioConfigUtils';
 import type { ServerForm } from '../../../types/IstioObjects';

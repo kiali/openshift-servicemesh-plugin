@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { ThProps} from '@patternfly/react-table';
+import type { ThProps } from '@patternfly/react-table';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { kialiStyle } from 'styles/StyleUtils';
 import { PFColors } from '../../../components/Pf/PfColors';
