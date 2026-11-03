@@ -2,9 +2,10 @@
 /**
  * Run a grep-filtered Playwright suite for Jenkins TEST_TAGS.
  *
- * Auth setup must run first without PLAYWRIGHT_GREP: the setup test title is
- * "authenticate" (no suite tag), so --grep=@core-1 would skip it and leave
- * playwright/.auth/user.json missing → instant ENOENT on every suite project.
+ * The config folds PLAYWRIGHT_GREP / PLAYWRIGHT_GREP_INVERT into each suite
+ * project's membership rules (project grep replaces the top-level value), so
+ * one invocation is enough: the unfiltered setup project runs first as a
+ * dependency, then only the suite projects whose tests match the filter.
  */
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
@@ -14,27 +15,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pluginRoot = path.resolve(__dirname, '..');
 const playwrightBin = path.join(pluginRoot, 'node_modules', '.bin', 'playwright');
 
-const run = (args, env) => {
-  const result = spawnSync(playwrightBin, args, {
-    cwd: pluginRoot,
-    env,
-    stdio: 'inherit'
-  });
-  return result.status ?? 1;
-};
-
-const baseEnv = { ...process.env };
-const { PLAYWRIGHT_GREP, PLAYWRIGHT_GREP_INVERT, ...setupEnv } = baseEnv;
-
-console.log('Running auth setup project (ignoring PLAYWRIGHT_GREP)...');
-const setupStatus = run(['test', '--project=setup'], setupEnv);
-if (setupStatus !== 0) {
-  process.exit(setupStatus);
-}
-
 console.log(
-  `Running filtered tests (grep=${PLAYWRIGHT_GREP ?? '<none>'}, grepInvert=${PLAYWRIGHT_GREP_INVERT ?? '<none>'})...`
+  `Running filtered tests (grep=${process.env.PLAYWRIGHT_GREP ?? '<none>'}, grepInvert=${process.env.PLAYWRIGHT_GREP_INVERT ?? '<none>'})...`
 );
 // Unique blob so Jenkins combine:reports can merge with other suite zips (Cypress results-[hash].xml).
-const suiteEnv = { ...baseEnv, PLAYWRIGHT_BLOB_NAME: baseEnv.PLAYWRIGHT_BLOB_NAME ?? 'test-group' };
-process.exit(run(['test', '--pass-with-no-tests'], suiteEnv));
+const suiteEnv = { ...process.env, PLAYWRIGHT_BLOB_NAME: process.env.PLAYWRIGHT_BLOB_NAME ?? 'test-group' };
+const result = spawnSync(playwrightBin, ['test', '--pass-with-no-tests'], {
+  cwd: pluginRoot,
+  env: suiteEnv,
+  stdio: 'inherit'
+});
+process.exit(result.status ?? 1);
