@@ -59,7 +59,7 @@ Environment variables:
 | `PLAYWRIGHT_AUTH_PROVIDER` / `AUTH_PROVIDER` | —                       | OAuth IdP to select when several are configured                     |
 | `PLAYWRIGHT_IGNORE_HTTPS_ERRORS`             | auto for `https://`     | Accept self-signed console certs                                    |
 | `PLAYWRIGHT_GREP` / `PLAYWRIGHT_GREP_INVERT` | —                       | Jenkins TEST_TAGS filtering (see `playwright:run:test-group:junit`) |
-| `PLAYWRIGHT_BLOB_NAME`                       | `results`               | Per-suite blob/junit name for chained CI runs                       |
+| `PLAYWRIGHT_BLOB_NAME`                       | `results`               | Per-suite blob directory/junit name for chained CI runs             |
 
 Use `yarn playwright:install` — not `yarn playwright install`.
 

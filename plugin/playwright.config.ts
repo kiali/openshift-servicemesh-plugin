@@ -18,6 +18,9 @@ const videoMode = (process.env.PLAYWRIGHT_VIDEO ?? 'retain-on-failure') as 'on' 
  * idea as Cypress results-[hash].xml. combine:reports then jrm-merges the XMLs
  * (and optionally merge-reports the blobs). Never overwrite a shared
  * junit-results.xml across suites or Jenkins only sees the last suite.
+ * Each suite also gets its own blob directory: Playwright clears the whole
+ * blob outputDir at the start of a run, so sibling suites sharing one
+ * directory would keep only the last suite's zip.
  */
 const suiteReportName = process.env.PLAYWRIGHT_BLOB_NAME ?? 'results';
 const junitOutputFile = `playwright/results/junit-${suiteReportName}.xml`;
@@ -31,7 +34,7 @@ const reporters: ReporterDescription[] = [
           'blob',
           {
             fileName: `${suiteReportName}.zip`,
-            outputDir: 'playwright/blob-report'
+            outputDir: `playwright/blob-report/${suiteReportName}`
           }
         ]
       ] as ReporterDescription[])

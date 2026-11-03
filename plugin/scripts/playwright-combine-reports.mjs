@@ -40,18 +40,41 @@ const countTestCases = filePath => {
   return (xml.match(/<testcase[\s>]/g) ?? []).length;
 };
 
-// HTML report from blobs (does not own Jenkins JUnit counts).
-const blobZips = fs.existsSync(blobDir) ? fs.readdirSync(blobDir).filter(name => name.endsWith('.zip')) : [];
+// HTML report from blobs (does not own Jenkins JUnit counts). Suites write to
+// per-suite subdirectories (Playwright clears a shared blob outputDir at the
+// start of each run), and merge-reports only scans .zip files in the single
+// directory it is given, so stage the zips into one directory first.
+const blobZips = fs.existsSync(blobDir)
+  ? fs
+      .readdirSync(blobDir, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
+      .flatMap(suiteDir =>
+        fs
+          .readdirSync(path.join(blobDir, suiteDir.name))
+          .filter(name => name.endsWith('.zip'))
+          .map(name => path.join(blobDir, suiteDir.name, name))
+      )
+      .sort()
+  : [];
 
 if (blobZips.length > 0) {
-  console.log(`Merging ${blobZips.length} blob report(s) from playwright/blob-report/ (HTML)`);
-  const result = spawnSync(
-    playwrightBin,
-    ['merge-reports', '--config=playwright.merge.config.ts', './playwright/blob-report'],
-    { cwd: pluginRoot, stdio: 'inherit', env: process.env }
-  );
-  if (result.status !== 0) {
-    console.warn(`merge-reports exited with ${result.status}; continuing with junit merge`);
+  console.log(`Merging ${blobZips.length} blob report(s) from playwright/blob-report/*/ (HTML)`);
+  const stagingDir = fs.mkdtempSync(path.join(pluginRoot, 'playwright', 'blob-merge-'));
+  try {
+    blobZips.forEach((zip, index) => {
+      // Keep a deterministic suite order: merge-reports processes zips sorted by name.
+      fs.copyFileSync(zip, path.join(stagingDir, `${String(index + 1).padStart(3, '0')}-${path.basename(zip)}`));
+    });
+    const result = spawnSync(playwrightBin, ['merge-reports', '--config=playwright.merge.config.ts', stagingDir], {
+      cwd: pluginRoot,
+      stdio: 'inherit',
+      env: process.env
+    });
+    if (result.status !== 0) {
+      console.warn(`merge-reports exited with ${result.status}; continuing with junit merge`);
+    }
+  } finally {
+    fs.rmSync(stagingDir, { recursive: true, force: true });
   }
 }
 
