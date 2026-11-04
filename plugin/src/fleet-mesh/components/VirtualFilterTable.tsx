@@ -6,6 +6,7 @@ import { useKialiTranslation } from 'utils/I18nUtils';
 
 export interface CategoryLabel {
   key: string;
+  /** Already-translated label; any {{count}} placeholder is replaced with the category count. */
   label: string;
 }
 
@@ -84,7 +85,7 @@ export function VirtualFilterTable<T>({
             {categoryLabels.map(cat => (
               <ToggleGroupItem
                 key={cat.key}
-                text={t(cat.label, { count: cat.key === allKey ? items.length : counts[cat.key] })}
+                text={cat.label.replace('{{count}}', String(cat.key === allKey ? items.length : counts[cat.key]))}
                 isSelected={filter === cat.key}
                 onChange={() => setFilter(cat.key)}
               />

@@ -54,6 +54,28 @@ complete. This is appropriate because it processes fewer CPs (only the mesh's me
 clusters), but the asymmetry means future scale growth in clusters-per-mesh should be
 monitored.
 
+### Operator presence
+
+`useOperatorPresence` runs two exact-match ACM Search queries on a 30s poll,
+each returning at most one row per matching resource:
+
+- the operator **Deployment**, matched by the `app.kubernetes.io/component=sail-operator`
+  label both operator distributions (productized OSSM and upstream Sail) carry —
+  one row per operator Deployment;
+- the **`default` namespace**, matched by exact name — one row per cluster
+  Search can see.
+
+The roster query is not an operator signal: it exists because a cluster absent
+from Search results is ambiguous between "no operator there" and "Search cannot
+see that cluster" (a downed collector produces no query error), and the Missing
+verdict is only reported for clusters Search demonstrably sees. Pages with no
+managed meshes skip both queries entirely (an undefined `groupVersionKind`
+makes the SDK skip the query). An earlier design fetched the fleet's entire
+CSV list and prefix-matched names client-side; that scales with
+clusters × namespaces (an all-namespaces OLM install surfaces its CSV in every
+namespace — ~100 rows per operator per cluster) and was replaced by the
+label query above.
+
 ### Observability links
 
 `useDiscoveredKialis` runs a parallel discovery + enrichment pipeline for Kiali and

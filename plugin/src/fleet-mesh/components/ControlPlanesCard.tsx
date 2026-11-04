@@ -20,19 +20,24 @@ const cpSearchMatch = (cp: EnrichedControlPlane, query: string): boolean => {
   return cp.clusterName.toLowerCase().includes(q) || cp.metadata.name.toLowerCase().includes(q);
 };
 
-const CATEGORY_LABELS: CategoryLabel[] = [
-  { key: 'all', label: 'All ({{count}})' },
-  { key: 'ready', label: 'Ready ({{count}})' },
-  { key: 'notReady', label: 'Not Ready ({{count}})' },
-  { key: 'unknown', label: 'Unknown ({{count}})' }
-];
-
 const ControlPlanesCard: FC<{ kialiLinks?: Map<string, KialiLink[]>; planes: EnrichedControlPlane[] }> = ({
   kialiLinks,
   planes
 }) => {
   const { t } = useKialiTranslation();
   const hasKialiLinks = kialiLinks && kialiLinks.size > 0;
+
+  // Labels are translated here so the i18n extractor sees the keys;
+  // VirtualFilterTable replaces the {{count}} placeholder itself.
+  const categoryLabels = useMemo<CategoryLabel[]>(
+    () => [
+      { key: 'all', label: t('All ({{count}})') },
+      { key: 'ready', label: t('Ready ({{count}})') },
+      { key: 'notReady', label: t('Not Ready ({{count}})') },
+      { key: 'unknown', label: t('Unknown ({{count}})') }
+    ],
+    [t]
+  );
 
   const columns = useMemo<VirtualFilterColumn<EnrichedControlPlane>[]>(() => {
     const cols: VirtualFilterColumn<EnrichedControlPlane>[] = [
@@ -112,7 +117,7 @@ const ControlPlanesCard: FC<{ kialiLinks?: Map<string, KialiLink[]>; planes: Enr
       <CardBody>
         <VirtualFilterTable
           categorize={categorizeCp}
-          categoryLabels={CATEGORY_LABELS}
+          categoryLabels={categoryLabels}
           columns={columns}
           emptyMessage="No control planes match the current filter."
           items={planes}

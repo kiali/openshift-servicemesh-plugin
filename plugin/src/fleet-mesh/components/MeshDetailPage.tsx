@@ -34,17 +34,21 @@ import { useManagedClusterMap } from '../hooks/useManagedClusterMap';
 import { useDiscoveredKialis } from '../hooks/useDiscoveredKialis';
 import { useMeshPlacement } from '../hooks/useMeshPlacement';
 import type { SelectionState } from '../hooks/useMeshPlacement';
+import { useOperatorPresence } from '../hooks/useOperatorPresence';
+import type { OperatorStatusByCluster } from '../utils/operatorPresence';
+import { getOperatorStatus } from '../utils/operatorPresence';
 import { buildKialiLinkMap, toControlPlaneLinkTargets } from '../utils/kialiLinkUtils';
 import { isObservabilityDataReady } from '../utils/observabilityReady';
 import { mergeManagedMeshStatus } from '../utils/worstConditions';
 import type { ManagedCluster } from '../types/managedCluster';
-import { getClusterAvailability, availabilityColor, availabilityLabelKey } from '../types/managedCluster';
+import { getClusterAvailability, availabilityColor, translateAvailabilityLabel } from '../types/managedCluster';
 import { clusterDetailLink } from '../utils/linkUtils';
 import { buildMembershipRows, getPlacementProblem } from '../utils/placementSelection';
 import type { Membership, MembershipRow } from '../utils/placementSelection';
 import { ConditionsTable } from './ConditionsTable';
 import { ControlPlanesCard } from './ControlPlanesCard';
 import { MeshStatus } from './MeshStatus';
+import { OperatorStatusLabel } from './OperatorStatusLabel';
 import { PlacementSummaryCard } from './PlacementSummaryCard';
 import { TrustStatusCard } from './TrustStatusCard';
 import { VirtualFilterTable } from './VirtualFilterTable';
@@ -123,6 +127,8 @@ export const ClusterStatusSection: FC<{
   clusterStatuses: ClusterMeshStatus[];
   managedClusterMap?: Map<string, ManagedCluster>;
   managedClustersLoaded?: boolean;
+  operatorStatus?: OperatorStatusByCluster;
+  operatorStatusLoaded?: boolean;
   placementProblem?: K8sCondition;
   selectedNames?: string[] | null;
   selectionState?: SelectionState;
@@ -130,6 +136,8 @@ export const ClusterStatusSection: FC<{
   clusterStatuses,
   managedClusterMap,
   managedClustersLoaded = true,
+  operatorStatus,
+  operatorStatusLoaded = false,
   placementProblem,
   selectedNames,
   selectionState
@@ -157,7 +165,7 @@ export const ClusterStatusSection: FC<{
         headerTooltip: t('The managed cluster this row applies to. Links to the ACM cluster detail page.'),
         label: t('Cluster'),
         render: row => <Link to={clusterDetailLink(row.clusterName)}>{row.clusterName}</Link>,
-        width: '30%'
+        width: '25%'
       },
       {
         key: 'membership',
@@ -168,7 +176,7 @@ export const ClusterStatusSection: FC<{
             <span>{syncStatusLabel(row.membership, t)}</span>
           </Tooltip>
         ),
-        width: '35%'
+        width: '30%'
       },
       {
         key: 'clusterStatus',
@@ -179,14 +187,24 @@ export const ClusterStatusSection: FC<{
           const availability = getClusterAvailability(managedClusterMap?.get(row.clusterName));
           return (
             <Label color={availabilityColor(availability)} isCompact>
-              {t(availabilityLabelKey(availability))}
+              {translateAvailabilityLabel(availability, t)}
             </Label>
           );
         },
-        width: '35%'
+        width: '25%'
+      },
+      {
+        key: 'operator',
+        headerTooltip: t('Whether the OSSM operator appears to be installed on this cluster.'),
+        label: t('OSSM Operator'),
+        render: row => {
+          if (!operatorStatusLoaded) return '-';
+          return <OperatorStatusLabel status={getOperatorStatus(operatorStatus ?? null, row.clusterName)} />;
+        },
+        width: '20%'
       }
     ],
-    [managedClusterMap, managedClustersLoaded, t]
+    [managedClusterMap, managedClustersLoaded, operatorStatus, operatorStatusLoaded, t]
   );
 
   if (rows.length === 0) {
@@ -243,7 +261,9 @@ const MeshSelectionSection: FC<{
   mcms: MultiClusterMesh[];
   mesh: MultiClusterMesh;
   namespace: string;
-}> = ({ managedClusterMap, managedClustersLoaded, mcms, mesh, namespace }) => {
+  operatorStatus?: OperatorStatusByCluster;
+  operatorStatusLoaded?: boolean;
+}> = ({ managedClusterMap, managedClustersLoaded, mcms, mesh, namespace, operatorStatus, operatorStatusLoaded }) => {
   const placementName = mesh.spec.placementRef.name;
   const result = useMeshPlacement(namespace, placementName);
   const clusterStatuses = mesh.status?.clusterStatus ?? [];
@@ -270,6 +290,8 @@ const MeshSelectionSection: FC<{
           clusterStatuses={clusterStatuses}
           managedClusterMap={managedClusterMap}
           managedClustersLoaded={managedClustersLoaded}
+          operatorStatus={operatorStatus}
+          operatorStatusLoaded={operatorStatusLoaded}
           placementProblem={
             result.placementLoaded && !result.placementError ? getPlacementProblem(result.placement) : undefined
           }
@@ -296,6 +318,7 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
     () => enrichedPlanes.filter(cp => cp.managedBy?.name === name && cp.managedBy?.namespace === ns),
     [enrichedPlanes, name, ns]
   );
+  const { loaded: operatorStatusLoaded, statusByCluster: operatorStatus } = useOperatorPresence();
 
   // The controller publishes the derived control plane namespace only after the first
   // reconcile, so Kiali discovery is deferred until it (and the cluster list) exist.
@@ -466,6 +489,8 @@ const MeshDetailContent: FC<{ name: string; ns: string }> = ({ ns, name }) => {
             mcms={mcms ?? []}
             mesh={mesh}
             namespace={ns}
+            operatorStatus={operatorStatus}
+            operatorStatusLoaded={operatorStatusLoaded}
           />
 
           <GridItem span={12}>

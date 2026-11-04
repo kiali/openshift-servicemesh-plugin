@@ -36,6 +36,10 @@ type ControlPlaneRowData = {
   observabilityReady: boolean;
 };
 
+// Must match the columnManagementID passed to useActiveColumns: the column
+// management modal writes and useActiveColumns reads the same user preference key.
+const COLUMN_MANAGEMENT_ID = 'fleet-service-mesh~control-planes';
+
 const NoControlPlanesMsg: FC = () => {
   const { t } = useKialiTranslation();
   return (
@@ -148,12 +152,6 @@ function buildSearchFilters(t: (key: string) => string): RowSearchFilter<Enriche
       type: 'cluster'
     },
     {
-      filter: (input, obj) => fuzzyCaseInsensitive(input.selected?.[0], obj.controlPlaneNamespace ?? ''),
-      filterGroupName: t('Namespace'),
-      placeholder: t('Filter by namespace...'),
-      type: 'namespace'
-    },
-    {
       filter: (input, obj) => fuzzyCaseInsensitive(input.selected?.[0], obj.version ?? ''),
       filterGroupName: t('Version'),
       placeholder: t('Filter by version...'),
@@ -184,7 +182,7 @@ const ControlPlanesPage: FC = () => {
   const [activeColumns, userSettingsLoaded] = useActiveColumns({
     columns,
     showNamespaceOverride: false,
-    columnManagementID: 'fleet-service-mesh~control-planes'
+    columnManagementID: COLUMN_MANAGEMENT_ID
   });
 
   return (
@@ -192,6 +190,19 @@ const ControlPlanesPage: FC = () => {
       <ListPageHeader title={t('Control Planes')} />
       <ListPageBody>
         <ListPageFilter
+          columnLayout={{
+            columns,
+            id: COLUMN_MANAGEMENT_ID,
+            selectedColumns: new Set(activeColumns.map(col => col.id)),
+            // Intentionally different from useActiveColumns' flag above: false
+            // there means the Namespace column is not forced into the table
+            // (it is user-toggleable), while true here keeps the column
+            // management modal from rendering its "only shown in All projects"
+            // note, which does not apply to a perspective with no project
+            // selector.
+            showNamespaceOverride: true,
+            type: t('Control Planes')
+          }}
           data={staticData}
           loaded={searchLoaded}
           onFilterChange={onFilterChange}
