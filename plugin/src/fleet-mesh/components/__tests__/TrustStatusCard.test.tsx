@@ -126,11 +126,11 @@ describe('TrustStatusCard — empty states', () => {
     render(
       <TrustStatusCard
         {...defaultProps}
-        clusterStatuses={[makeCluster('cluster-a', { status: 'False', reason: 'CacertsPending' })]}
+        clusterStatuses={[makeCluster('cluster-a', { status: 'False', reason: 'CertificatePending' })]}
       />
     );
     expect(screen.getByText('cluster-a')).toBeInTheDocument();
-    expect(screen.getByText('Trust Pending')).toBeInTheDocument();
+    expect(screen.getByText('Certificate Pending')).toBeInTheDocument();
     // No certs yet: Expires and Renews show dashes.
     expect(screen.getAllByText('-').length).toBeGreaterThanOrEqual(2);
   });
@@ -162,15 +162,15 @@ describe('TrustStatusCard — row status labels', () => {
     expect(screen.getAllByText('-').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('shows Trust Pending when TrustDistributed is False with CacertsPending', () => {
+  it.each([
+    ['CertificatePending', 'Certificate Pending'],
+    ['DistributionPending', 'Distribution Pending']
+  ])('shows the friendly pending label when TrustDistributed is False with %s', (reason, label) => {
     setupWatches([]);
     render(
-      <TrustStatusCard
-        {...defaultProps}
-        clusterStatuses={[makeCluster('cluster-a', { status: 'False', reason: 'CacertsPending' })]}
-      />
+      <TrustStatusCard {...defaultProps} clusterStatuses={[makeCluster('cluster-a', { status: 'False', reason })]} />
     );
-    expect(screen.getByText('Trust Pending')).toBeInTheDocument();
+    expect(screen.getByText(label)).toBeInTheDocument();
   });
 
   it('shows the raw reason when TrustDistributed is False with an unknown reason', () => {
@@ -198,7 +198,8 @@ describe('TrustStatusCard — row status labels', () => {
 describe('TrustStatusCard — filters', () => {
   const clusters = [
     makeCluster('dist-cluster', { status: 'True' }),
-    makeCluster('pending-cluster', { status: 'False', reason: 'CacertsPending' }),
+    makeCluster('cert-pending-cluster', { status: 'False', reason: 'CertificatePending' }),
+    makeCluster('distribution-pending-cluster', { status: 'False', reason: 'DistributionPending' }),
     makeCluster('failed-cluster', { status: 'False', reason: 'SomeTrustError' })
   ];
   const certs = [makeCert('dist-cluster')];
@@ -214,12 +215,14 @@ describe('TrustStatusCard — filters', () => {
     expect(screen.queryByText('failed-cluster')).not.toBeInTheDocument();
   });
 
-  it('filters to only Pending clusters', async () => {
+  it('filters to only Pending clusters (both pending reasons)', async () => {
     const user = userEvent.setup();
     render(<TrustStatusCard {...defaultProps} clusterStatuses={clusters} />);
-    await user.click(screen.getByText('Pending (1)'));
-    expect(screen.getByText('pending-cluster')).toBeInTheDocument();
+    await user.click(screen.getByText('Pending (2)'));
+    expect(screen.getByText('cert-pending-cluster')).toBeInTheDocument();
+    expect(screen.getByText('distribution-pending-cluster')).toBeInTheDocument();
     expect(screen.queryByText('dist-cluster')).not.toBeInTheDocument();
+    expect(screen.queryByText('failed-cluster')).not.toBeInTheDocument();
   });
 
   it('filters to only Failed clusters', async () => {

@@ -11,8 +11,9 @@ export function isConditionStale(condition: K8sCondition | undefined, generation
 // Maps K8s condition reason codes to user-friendly English strings (also the i18n keys).
 const friendlyReasons: Record<string, string> = {
   AllControlPlanesNotReady: 'All Control Planes Not Ready',
-  CacertsPending: 'Trust Pending',
+  CertificatePending: 'Certificate Pending',
   ClustersNotReady: 'Clusters Not Ready',
+  DistributionPending: 'Distribution Pending',
   IstiodNotReady: 'Istiod Not Ready',
   MissingProductClaim: 'Missing Product Claim',
   NoClustersSelected: 'No Clusters Selected',
@@ -21,7 +22,7 @@ const friendlyReasons: Record<string, string> = {
 };
 
 // Backend reasons that indicate an in-progress state rather than a failure.
-const transientReasons = new Set(['CacertsPending']);
+export const transientReasons = new Set(['CertificatePending', 'DistributionPending']);
 
 // Display labels for True conditions; types not listed fall back to the raw type.
 const trueLabels: Record<string, string> = {
@@ -33,14 +34,16 @@ export function translateStatusLabel(label: string, t: (key: string) => string):
   switch (label) {
     case 'All Control Planes Not Ready':
       return t('All Control Planes Not Ready');
+    case 'Certificate Pending':
+      return t('Certificate Pending');
     case 'Clusters Not Ready':
       return t('Clusters Not Ready');
+    case 'Distribution Pending':
+      return t('Distribution Pending');
     case 'Distributed':
       return t('Distributed');
     case 'Istiod Not Ready':
       return t('Istiod Not Ready');
-    case 'Trust Pending':
-      return t('Trust Pending');
     case 'Missing Product Claim':
       return t('Missing Product Claim');
     case 'Placement Not Found':
