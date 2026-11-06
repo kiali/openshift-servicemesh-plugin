@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { FC } from 'react';
-import { Link } from 'react-router-dom-v5-compat';
+import { Link } from 'react-router';
 import { ResourceLink } from '@openshift-console/dynamic-plugin-sdk';
 import { Card, CardBody, CardTitle, Flex, FlexItem } from '@patternfly/react-core';
 import type { ISortBy, OnSort } from '@patternfly/react-table';

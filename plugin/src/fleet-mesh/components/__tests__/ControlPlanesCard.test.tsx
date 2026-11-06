@@ -1,9 +1,14 @@
+import type { ReactNode } from 'react';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ControlPlanesCard } from '../ControlPlanesCard';
 import { makeEnrichedCP } from '../../__fixtures__/testFactories';
 import type { EnrichedControlPlane } from '../../types/istio';
 import type { KialiLink } from '../../types/kiali';
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 function makeCp(cluster: string, name: string, overrides: Partial<EnrichedControlPlane> = {}): EnrichedControlPlane {
   return makeEnrichedCP({

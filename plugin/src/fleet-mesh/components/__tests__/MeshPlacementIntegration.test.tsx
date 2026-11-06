@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
-import { useParams } from 'react-router-dom-v5-compat';
+import { useParams } from 'react-router';
 
 import MeshDetailPage from '../MeshDetailPage';
 import { useMeshControlPlanes } from '../../hooks/useMeshControlPlanes';
@@ -8,6 +9,10 @@ import { useMultiClusterMeshes } from '../../hooks/useMultiClusterMeshes';
 import { makeCluster, makeEnrichedCP, makeMesh } from '../../__fixtures__/testFactories';
 import type { Placement } from '../../types/placement';
 
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 rstest.mock('../../hooks/useMultiClusterMeshes', () => ({
   useMultiClusterMeshes: rstest.fn(() => [[], true, null])
 }));
