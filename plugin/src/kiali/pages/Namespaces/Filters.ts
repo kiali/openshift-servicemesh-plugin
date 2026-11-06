@@ -1,13 +1,6 @@
 import { t } from 'utils/I18nUtils';
-import type {
-  ActiveFiltersInfo,
-  RunnableFilter,
-  FilterValue
-} from '../../types/Filters';
-import {
-  FILTER_ACTION_APPEND,
-  AllFilterTypes
-} from '../../types/Filters';
+import type { ActiveFiltersInfo, RunnableFilter, FilterValue } from '../../types/Filters';
+import { FILTER_ACTION_APPEND, AllFilterTypes } from '../../types/Filters';
 import { DEGRADED, FAILURE, HEALTHY, NA, NOT_READY, statusFromString } from '../../types/Health';
 import type { NamespaceInfo } from '../../types/NamespaceInfo';
 import { MTLSStatuses } from '../../types/TLSStatus';

@@ -1,17 +1,11 @@
 import * as React from 'react';
-import type { Point} from '../../../utils/MathUtils';
+import type { Point } from '../../../utils/MathUtils';
 import { clamp, distance } from '../../../utils/MathUtils';
-import type {
-  TrafficPointRenderer
-} from './TrafficPointRenderer';
-import {
-  getMoveAnimation,
-  TrafficPointCircleRenderer,
-  TrafficPointDiamondRenderer
-} from './TrafficPointRenderer';
+import type { TrafficPointRenderer } from './TrafficPointRenderer';
+import { getMoveAnimation, TrafficPointCircleRenderer, TrafficPointDiamondRenderer } from './TrafficPointRenderer';
 import { Protocol } from '../../../types/Graph';
 import { timerConfig, tcpTimerConfig } from './AnimationTimerConfig';
-import type { Controller, Edge} from '@patternfly/react-topology';
+import type { Controller, Edge } from '@patternfly/react-topology';
 import { EdgeAnimationSpeed, EdgeStyle } from '@patternfly/react-topology';
 import type { EdgeData } from 'pages/Graph/GraphElems';
 import { PFColors } from 'components/Pf/PfColors';

@@ -1,8 +1,8 @@
 import * as React from 'react';
-import type { MenuToggleElement} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { FormGroup, MenuToggle, Select, SelectList, SelectOption } from '@patternfly/react-core';
 import { AddressList } from './GatewayForm/AddressList';
-import type { Address, Listener} from '../../types/IstioObjects';
+import type { Address, Listener } from '../../types/IstioObjects';
 import { MAX_PORT, MIN_PORT } from '../../types/IstioObjects';
 import { addSelectorLabels, ListenerList } from './GatewayForm/ListenerList';
 import { isValidHostname, isValidName, isValidTLS, SELECTOR } from './GatewayForm/ListenerBuilder';

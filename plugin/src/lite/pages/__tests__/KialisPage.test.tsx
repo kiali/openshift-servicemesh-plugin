@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { k8sGet, k8sPatch, useAccessReview, useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
@@ -5,6 +6,11 @@ import KialisPage, { getKialiServiceTarget } from '../KialisPage';
 import { __resetKialiRouteHostCache } from '../../hooks/useKialiRouteHosts';
 import { makeKialiResource, makeOssmConsoleResource } from '../../__fixtures__/testFactories';
 import type { LiteOssmConsoleResource } from '../../types/ossmconsole';
+
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 afterEach(() => {
   rstest.clearAllMocks();

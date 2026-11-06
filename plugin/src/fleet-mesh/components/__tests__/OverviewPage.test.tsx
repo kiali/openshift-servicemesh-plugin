@@ -1,9 +1,15 @@
+import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import OverviewPage from '../OverviewPage';
 import { useFleetMeshItems } from '../../hooks/useFleetMeshItems';
 import type { UseFleetMeshItemsResult } from '../../hooks/useFleetMeshItems';
 import type { FleetMeshItem } from '../../types/fleetMesh';
 import { makeMesh, makeEnrichedCP } from '../../__fixtures__/testFactories';
+
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 rstest.mock('../../hooks/useFleetMeshItems', { mock: true });
 
