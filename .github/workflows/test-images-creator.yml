@@ -96,7 +96,7 @@ jobs:
         password: ${{ secrets.QUAY_PASSWORD }}
     - name: "Build playwright test image"
       run: |
-        # kiali master has no frontend/e2e until the Playwright migration merges;
-        # build from the epic branch until then. OSSMC main and master both map
-        # to the kiali epic branch (kiali has no main branch).
+        # Use setup scripts from the matching Kiali epic while the migration is
+        # in progress. The frontend and Playwright tests come from this checkout.
+        # OSSMC main and master both map to the epic (kiali has no main branch).
         make KIALI_BRANCH=${{ (inputs.release_branch == 'master' || inputs.release_branch == 'main') && 'epic/playwright-migration' || inputs.release_branch }} container-build-playwright-tests container-push-playwright-tests-quay
