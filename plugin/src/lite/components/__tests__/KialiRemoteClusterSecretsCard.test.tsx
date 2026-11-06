@@ -1,6 +1,12 @@
+import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { KialiRemoteClusterSecretsCard, VISIBLE_REMOTE_CLUSTER_SECRET_ROWS } from '../KialiRemoteClusterSecretsCard';
+
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 describe('KialiRemoteClusterSecretsCard', () => {
   it('renders secret names with a count in the title and a namespace secrets list link', () => {

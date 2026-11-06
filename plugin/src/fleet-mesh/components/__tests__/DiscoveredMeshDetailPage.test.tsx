@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DiscoveredMeshDetailPage from '../DiscoveredMeshDetailPage';
-import { useParams } from 'react-router-dom-v5-compat';
+import { useParams } from 'react-router';
 import { useMultiClusterMeshes } from '../../hooks/useMultiClusterMeshes';
 import { useDiscoveredControlPlanes } from '../../hooks/useDiscoveredControlPlanes';
 import { useEnrichedControlPlanes } from '../../hooks/useEnrichedControlPlanes';
@@ -9,6 +10,10 @@ import { useManagedClusters } from '../../hooks/useManagedClusters';
 import { makeEnrichedCP as makeBaseCP } from '../../__fixtures__/testFactories';
 import type { EnrichedControlPlane } from '../../types/istio';
 
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 rstest.mock('../../hooks/useMultiClusterMeshes', { mock: true });
 rstest.mock('../../hooks/useDiscoveredControlPlanes', { mock: true });
 rstest.mock('../../hooks/useEnrichedControlPlanes', { mock: true });

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { FC } from 'react';
-import { useParams, Link } from 'react-router-dom-v5-compat';
+import { useParams, Link } from 'react-router';
 import { Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Alert,

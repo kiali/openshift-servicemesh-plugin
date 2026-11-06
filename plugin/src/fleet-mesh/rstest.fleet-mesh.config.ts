@@ -7,8 +7,7 @@ export const fleetMeshTestConfig = {
   resolve: {
     alias: {
       '@patternfly/react-charts/victory': './src/fleet-mesh/__mocks__/chartsMock.tsx',
-      '@stolostron/multicluster-sdk': './src/fleet-mesh/__mocks__/multiclusterSdkMock.tsx',
-      'react-router-dom-v5-compat': './src/fleet-mesh/__mocks__/routerMock.tsx'
+      '@stolostron/multicluster-sdk': './src/fleet-mesh/__mocks__/multiclusterSdkMock.tsx'
     }
   }
 };

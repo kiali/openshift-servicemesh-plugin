@@ -24,8 +24,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@openshift-console/dynamic-plugin-sdk': './src/__mocks__/consoleSdkMock.ts',
-      ...fleetMeshTestConfig.resolve.alias,
-      ...liteTestConfig.resolve.alias
+      ...fleetMeshTestConfig.resolve.alias
     }
   }
 });

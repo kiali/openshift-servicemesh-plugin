@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { FC, ReactNode } from 'react';
-import { useParams, Link } from 'react-router-dom-v5-compat';
+import { useParams, Link } from 'react-router';
 import { useK8sWatchResource, Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Alert,

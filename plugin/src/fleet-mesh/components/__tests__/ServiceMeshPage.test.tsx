@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { useListPageFilter } from '@openshift-console/dynamic-plugin-sdk';
 import { useFleetSearchPoll } from '@stolostron/multicluster-sdk';
@@ -7,6 +8,11 @@ import type { FleetMeshItem } from '../../types/fleetMesh';
 import type { UseFleetMeshItemsResult } from '../../hooks/useFleetMeshItems';
 import { makeMesh } from '../../__fixtures__/testFactories';
 import type { MultiClusterMesh } from '../../types/multiClusterMesh';
+
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 rstest.mock('../../hooks/useFleetMeshItems', { mock: true });
 
