@@ -8,8 +8,7 @@ type ConsoleLoginOptions = {
 
 /**
  * OpenShift Console OAuth login (htpasswd IdP). OSSMC always runs inside the
- * OpenShift Console, so unlike standalone Kiali there is no auth-strategy
- * detection: the console itself requires a cluster login.
+ * OpenShift Console, whose login state is separate from Kiali authentication.
  *
  * The OAuth server (oauth-openshift.<domain>) is usually a different origin
  * than the console — Playwright follows cross-origin redirects natively, so no
@@ -25,37 +24,44 @@ export async function loginOpenShiftConsole(
 ): Promise<void> {
   await page.goto('/');
 
-  if (!page.url().includes('oauth-openshift')) {
-    // The Console served the SPA without an OAuth redirect: a local bridge
-    // with BRIDGE_USER_AUTH=disabled (or an already-valid session).
+  // Console serves its shell before client-side authentication redirects finish.
+  // Only the explicit server flag identifies an authentication-disabled bridge.
+  const authDisabled = await page
+    .evaluate(
+      () => (window as Window & { SERVER_FLAGS?: { authDisabled?: boolean } }).SERVER_FLAGS?.authDisabled === true
+    )
+    .catch(() => false);
+  if (authDisabled) {
     return;
+  }
+
+  const userMenu = page.locator('[data-test="user-dropdown-toggle"]');
+  const usernameInput = page.locator('#inputUsername');
+  const providerLink = authProvider ? page.getByRole('link', { name: authProvider, exact: true }) : undefined;
+  const loginReady = providerLink ? userMenu.or(usernameInput).or(providerLink) : userMenu.or(usernameInput);
+  await expect(loginReady.first()).toBeVisible({ timeout: 60_000 });
+  if (await userMenu.isVisible()) {
+    return;
+  }
+
+  if (providerLink && (await providerLink.isVisible())) {
+    await providerLink.click();
+    await expect(userMenu.or(usernameInput).first()).toBeVisible({ timeout: 60_000 });
+    if (await userMenu.isVisible()) {
+      return;
+    }
   }
 
   if (!password) {
     throw new Error('Password is required for the OpenShift Console login. Set PLAYWRIGHT_PASSWD (or PASSWD).');
   }
 
-  await clickAuthProviderIfPresent(page, authProvider);
-
-  await page.locator('#inputUsername').waitFor({ state: 'visible', timeout: 60_000 });
-  await page.locator('#inputUsername').fill(username);
+  await usernameInput.fill(username);
   await page.locator('#inputPassword').fill(password);
   await page.locator('button[type="submit"]').click();
 
-  // Land back on the console after the OAuth redirect
-  await expect(page).toHaveURL(/\/(console|ossmconsole)/, { timeout: 120_000 });
-}
-
-async function clickAuthProviderIfPresent(page: Page, authProvider?: string): Promise<void> {
-  if (!authProvider) {
-    return;
-  }
-  // The IdP list is rendered client-side after the console SPA boots, well
-  // after the load event, so the click must wait for it (isVisible() returns
-  // immediately and would silently skip the click). A click timeout means
-  // there is no IdP selection page (active session or single-IdP redirect).
-  const idp = page.getByRole('link', { name: authProvider, exact: true });
-  await idp.click({ timeout: 15_000 }).catch(() => undefined);
+  // A Console URL alone does not confirm that the authenticated SPA is ready.
+  await expect(userMenu).toBeVisible({ timeout: 120_000 });
 }
 
 export function consoleCredentials(): {

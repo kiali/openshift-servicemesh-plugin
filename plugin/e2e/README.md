@@ -21,8 +21,8 @@ Layout:
   Kubernetes resource tabs. Kiali `/api` paths are routed through the Console service proxy
   at `/api/proxy/plugin/ossmconsole/kiali/api`; existing proxy URLs pass through unchanged.
 - `global-setup/auth.setup.ts` — OSSMC-owned. OpenShift Console OAuth login (htpasswd IdP),
-  persists `storageState` for the suite projects. OSSMC always runs on OpenShift; there is no
-  anonymous strategy.
+  persists `storageState` for the suite projects. The local Console bridge supports disabled
+  authentication without credentials.
 - `ossmc/` — OSSMC-owned specs and helpers (Console login, sidebar navigation).
 - `tsconfig.json` — typechecks only the OSSMC-owned files that do not import the vendored
   tree (`global-setup/`, `ossmc/utils/`). The vendored tree — and the `ossmc/` specs, pages
@@ -55,7 +55,7 @@ Environment variables:
 | -------------------------------------------- | ----------------------- | ------------------------------------------------------------------- |
 | `PLAYWRIGHT_BASE_URL`                        | `http://localhost:9000` | Console URL                                                         |
 | `PLAYWRIGHT_USERNAME` / `USERNAME`           | `jenkins`               | Console login user                                                  |
-| `PLAYWRIGHT_PASSWD` / `PASSWD`               | —                       | Console login password (required)                                   |
+| `PLAYWRIGHT_PASSWD` / `PASSWD`               | —                       | Console login password (required when the login form is shown)      |
 | `PLAYWRIGHT_AUTH_PROVIDER` / `AUTH_PROVIDER` | —                       | OAuth IdP to select when several are configured                     |
 | `PLAYWRIGHT_IGNORE_HTTPS_ERRORS`             | auto for `https://`     | Accept self-signed console certs                                    |
 | `PLAYWRIGHT_GREP` / `PLAYWRIGHT_GREP_INVERT` | —                       | Jenkins TEST_TAGS filtering (see `playwright:run:test-group:junit`) |
@@ -71,3 +71,8 @@ yarn test:e2e:routes
 ```
 
 These checks use a `.unit.ts` suffix so Playwright does not collect them as browser tests.
+
+Playwright test images package the committed frontend and e2e files, including OSSMC fixes.
+`container-build-playwright-tests` downloads the Kiali setup scripts selected by `KIALI_BRANCH`
+without re-syncing the tests. Refresh vendored code explicitly with the sync command above,
+review the changes, and commit them before building an image.

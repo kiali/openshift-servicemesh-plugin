@@ -3,14 +3,13 @@
 # Instead, the containers built are tagged for publishing to quay.io and/or docker.io.
 #
 
-# Kiali ref used when vendoring the frontend and e2e tests into the test images.
+# Kiali ref used for the test setup scripts and the Cypress frontend sync.
 # Empty (default) = the matching OSSMC release branch for v*.* branches, master
-# otherwise. While the Playwright migration lives on kiali epic/playwright-migration,
-# pass KIALI_BRANCH=epic/playwright-migration to build images containing the
-# frontend/e2e tree (kiali master does not have it until that branch merges).
+# otherwise. Playwright images use the committed frontend and e2e files; refresh
+# those explicitly with hack/copy-frontend-src-to-ossmc.sh before committing.
 KIALI_BRANCH ?=
 
-define ossmc-sync-kiali
+define ossmc-prepare-test-image
 @OSSMC_BRANCH=$${OSSMC_BRANCH:-$$(git rev-parse --abbrev-ref HEAD)}; \
 	KIALI_BRANCH="$(KIALI_BRANCH)"; \
 	if [ -z "$$KIALI_BRANCH" ]; then \
@@ -24,13 +23,15 @@ define ossmc-sync-kiali
 	fi; \
 	echo "OSSMC_BRANCH: $$OSSMC_BRANCH"; \
 	echo "KIALI_BRANCH: $$KIALI_BRANCH"; \
-	./hack/copy-frontend-src-to-ossmc.sh --source-ref "$$KIALI_BRANCH"; \
+	if [ "$(1)" = "sync-frontend" ]; then \
+		./hack/copy-frontend-src-to-ossmc.sh --source-ref "$$KIALI_BRANCH" || exit $$?; \
+	fi; \
 	./hack/download-hack-scripts.sh --kiali-branch "$$KIALI_BRANCH"
 endef
 
 ## container-build-cypress-tests: Build Kiali cypress tests container image
 container-build-cypress-tests:
-	$(ossmc-sync-kiali)
+	$(call ossmc-prepare-test-image,sync-frontend)
 ifeq ($(DORP),docker)
 	@echo Building container image for Kiali cypress tests using docker
 	docker build --pull -t ${CYPRESS_TESTS_QUAY_TAG} -f deploy/docker/Dockerfile-cypress .
@@ -51,7 +52,7 @@ endif
 
 ## container-build-playwright-tests: Build Kiali playwright tests container image
 container-build-playwright-tests:
-	$(ossmc-sync-kiali)
+	$(call ossmc-prepare-test-image)
 ifeq ($(DORP),docker)
 	@echo Building container image for Kiali playwright tests using docker
 	docker build --pull -t ${PLAYWRIGHT_TESTS_QUAY_TAG} -f deploy/docker/Dockerfile-playwright .
