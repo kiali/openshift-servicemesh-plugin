@@ -1,0 +1,52 @@
+# don't forget to pass environment variables to docker run like this:
+# podman run -e PLAYWRIGHT_BASE_URL=<OCP_URL> -e PLAYWRIGHT_USERNAME=<username> -e PLAYWRIGHT_PASSWD=<passwd> quay.io/kiali/kiali-ossmc-playwright-tests:dev
+# this runs the core suites by default; set or empty PLAYWRIGHT_GREP to change the selection
+# more details in plugin/e2e/README.md
+
+# same node major version as plugin/package.json engines
+FROM node:24
+
+# we need to set HOME when running on OCP with random UID, otherwise the home is set to / and any writing there will fail with permission denied
+ENV HOME=/tmp/kiali
+
+# install required packages and oc bin
+WORKDIR /usr/bin
+RUN apt -y update && \
+    apt install -y tar gzip bash gettext curl && \
+    apt-get clean && \
+    curl -Lo ./oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz && \
+    tar -xf oc.tar.gz && \
+    rm -f oc.tar.gz
+
+# Copy the repo preserving the layout the e2e utils expect: demoApps resolves
+# the repo root from plugin/e2e/utils (../../..) and reads hack/ and
+# _output/kiali/hack from it. _output holds the kiali istio hack scripts
+# downloaded by hack/download-hack-scripts.sh, which the make
+# container-build-playwright-tests target runs before the image build.
+COPY hack $HOME/hack
+COPY plugin $HOME/plugin
+COPY _output $HOME/_output
+
+WORKDIR $HOME/plugin
+
+# Install and enable corepack to use yarn
+RUN npm install -g corepack && corepack enable
+
+RUN yarn install --immutable
+
+# Chromium + OS deps for headless runs; version matches the installed @playwright/test
+RUN yarn playwright install --with-deps chromium
+
+# Set required permissions for OpenShift usage
+RUN chgrp -R 0 $HOME && \
+    chmod -R g=u $HOME
+
+# CI=1 enables blob+junit reporting, retries and the capped worker count (see playwright.config.ts)
+ENV CI=1
+
+# Default to the core suites, like the Cypress image (the ambient/waypoint suites
+# need cluster configurations the default target does not have). Override or
+# empty PLAYWRIGHT_GREP to select a different set (see plugin/e2e/README.md).
+ENV PLAYWRIGHT_GREP="@core-1|@core-2"
+
+CMD ["yarn", "playwright:run:test-group:junit"]

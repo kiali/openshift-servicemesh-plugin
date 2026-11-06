@@ -5,6 +5,7 @@ on:
     branches:
     - main
     - v*.*
+    - epic/*
     paths-ignore:
     - 'docs/**'
     - '**/*.md'
