@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TrustStatusCard } from '../TrustStatusCard';
@@ -5,6 +6,10 @@ import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
 import type { Certificate } from '../../types/certManager';
 import type { ClusterMeshStatus } from '../../types/multiClusterMesh';
 import type { K8sCondition } from '../../types/common';
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 const CLUSTER_NAME_LABEL = 'mesh.open-cluster-management.io/cluster-name';
 const MESH_NAME_LABEL = 'mesh.open-cluster-management.io/mesh-name';

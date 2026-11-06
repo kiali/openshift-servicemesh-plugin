@@ -1,7 +1,12 @@
+import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { PlacementSummaryCard } from '../PlacementSummaryCard';
 import type { MeshPlacementResult } from '../../hooks/useMeshPlacement';
 import { makeCluster } from '../../__fixtures__/testFactories';
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 const readyResult: MeshPlacementResult = {
   decisionError: null,

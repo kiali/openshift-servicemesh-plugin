@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { FC } from 'react';
-import { Link } from 'react-router-dom-v5-compat';
+import { Link } from 'react-router';
 import { Card, CardBody, CardTitle, Label } from '@patternfly/react-core';
 import type { EnrichedControlPlane } from '../types/istio';
 import type { KialiLink } from '../types/kiali';

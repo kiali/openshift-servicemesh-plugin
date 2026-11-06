@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useMemo } from 'react';
 import type { FC } from 'react';
-import { Link, useParams } from 'react-router-dom-v5-compat';
+import { Link, useParams } from 'react-router';
 import { ResourceLink, Timestamp, useAccessReview, useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Alert,
