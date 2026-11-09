@@ -10,6 +10,7 @@ on:
     # ignore src folder
     - '!plugin/src/**'
     - 'deploy/docker/Dockerfile-cypress'
+    - 'deploy/docker/Dockerfile-playwright'
 
 jobs:
   push_test_images:
