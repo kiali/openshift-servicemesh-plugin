@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 
 # Identifies the current build. Match the same version of Kiali Server and Operator.
-VERSION ?= v2.34.0-SNAPSHOT
+VERSION ?= v2.35.0-SNAPSHOT
 COMMIT_HASH ?= $(shell git rev-parse HEAD)
 
 # Directories based on the root project directory
@@ -33,6 +33,12 @@ CYPRESS_TESTS_CONTAINER_NAME ?= ${IMAGE_ORG}/kiali-ossmc-cypress-tests
 CYPRESS_TESTS_CONTAINER_VERSION ?= ${CONTAINER_VERSION}
 CYPRESS_TESTS_QUAY_NAME ?= quay.io/${CYPRESS_TESTS_CONTAINER_NAME}
 CYPRESS_TESTS_QUAY_TAG ?= ${CYPRESS_TESTS_QUAY_NAME}:${CYPRESS_TESTS_CONTAINER_VERSION}
+
+# Identifies the Kiali OSSMC playwright tests container image that will be built
+PLAYWRIGHT_TESTS_CONTAINER_NAME ?= ${IMAGE_ORG}/kiali-ossmc-playwright-tests
+PLAYWRIGHT_TESTS_CONTAINER_VERSION ?= ${CONTAINER_VERSION}
+PLAYWRIGHT_TESTS_QUAY_NAME ?= quay.io/${PLAYWRIGHT_TESTS_CONTAINER_NAME}
+PLAYWRIGHT_TESTS_QUAY_TAG ?= ${PLAYWRIGHT_TESTS_QUAY_NAME}:${PLAYWRIGHT_TESTS_CONTAINER_VERSION}
 
 include make/Makefile.plugin.mk
 include make/Makefile.cluster.mk
