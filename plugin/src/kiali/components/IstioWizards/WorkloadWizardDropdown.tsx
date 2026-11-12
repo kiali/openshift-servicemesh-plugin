@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { MenuToggleElement} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { DropdownList, MenuToggle, TooltipPosition } from '@patternfly/react-core';
 import { Dropdown } from '@patternfly/react-core';
 import { serverConfig } from '../../config';

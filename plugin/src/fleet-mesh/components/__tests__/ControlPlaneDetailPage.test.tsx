@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import ControlPlaneDetailPage from '../ControlPlaneDetailPage';
-import { useParams } from 'react-router-dom-v5-compat';
+import { useParams } from 'react-router';
 import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
 import { fleetK8sGet } from '@stolostron/multicluster-sdk';
 import { setInEnrichmentCache, __resetEnrichmentCache } from '../../hooks/useEnrichedControlPlanes';
@@ -10,6 +11,10 @@ import type { Istio } from '../../types/istio';
 import type { DiscoveredKiali, DiscoveredOssmc } from '../../types/kiali';
 import type { ManagedCluster } from '../../types/managedCluster';
 
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 rstest.mock('../../hooks/useDiscoveredKialis', { mock: true });
 rstest.mock('../../hooks/useManagedClusterMap', { mock: true });
 

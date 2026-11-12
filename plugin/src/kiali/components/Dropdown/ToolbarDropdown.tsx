@@ -1,14 +1,6 @@
 import * as React from 'react';
-import type {
-  MenuToggleElement} from '@patternfly/react-core';
-import {
-  MenuToggle,
-  Select,
-  SelectList,
-  SelectOption,
-  Tooltip,
-  TooltipPosition
-} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
+import { MenuToggle, Select, SelectList, SelectOption, Tooltip, TooltipPosition } from '@patternfly/react-core';
 import { kialiStyle } from 'styles/StyleUtils';
 import { classes } from 'typestyle';
 

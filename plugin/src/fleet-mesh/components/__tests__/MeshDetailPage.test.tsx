@@ -1,12 +1,18 @@
+import type { ReactNode } from 'react';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MeshDetailPage, { ClusterStatusSection } from '../MeshDetailPage';
-import { useParams } from 'react-router-dom-v5-compat';
+import { useParams } from 'react-router';
 import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
 import { makeMesh, makeCluster } from '../../__fixtures__/testFactories';
 import type { K8sCondition } from '../../types/common';
 import type { ManagedCluster } from '../../types/managedCluster';
 import type { SelectionState } from '../../hooks/useMeshPlacement';
+
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 // TrustStatusCard has its own test file; stub it here to avoid consuming
 // useK8sWatchResource mock slots meant for the mesh watch.
