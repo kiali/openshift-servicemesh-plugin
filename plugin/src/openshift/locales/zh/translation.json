@@ -298,6 +298,7 @@
   "Tolerations configured": "Tolerations configured",
   "total": "total",
   "Traffic Graph": "图",
+  "Troubleshooting": "Troubleshooting",
   "Trust": "Trust",
   "Trust distributed": "信任已分发",
   "Trust is not configured for this mesh. Set <code>spec.security.trust.certManager.issuerRef</code> on the MultiClusterMesh to enable CA trust distribution.": "此网格未配置信任。在 MultiClusterMesh 上设置 <code>spec.security.trust.certManager.issuerRef</code> 以启用 CA 信任分发。",

@@ -314,6 +314,7 @@
   "Tolerations configured": "Tolerations configured",
   "total": "total",
   "Traffic Graph": "Gráfico de tráfico",
+  "Troubleshooting": "Troubleshooting",
   "Trust": "Trust",
   "Trust distributed": "Confianza distribuida",
   "Trust is not configured for this mesh. Set <code>spec.security.trust.certManager.issuerRef</code> on the MultiClusterMesh to enable CA trust distribution.": "La confianza no está configurada para esta malla. Establezca <code>spec.security.trust.certManager.issuerRef</code> en MultiClusterMesh para habilitar la distribución de confianza de CA.",

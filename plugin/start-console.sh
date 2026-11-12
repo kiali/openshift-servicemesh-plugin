@@ -4,11 +4,13 @@
 #
 # ACM/MCE console plugins are port-forwarded automatically so the Fleet Management
 # perspective and cross-plugin links work; set LOAD_ACM_PLUGINS=false to skip them.
+# OpenShift Lightspeed (OLS) console plugins are port-forwarded the same way; set
+# LOAD_OLS_PLUGINS=false to skip them.
 # Set KIALI_URL to also proxy a Kiali backend so the OSSMC/Service Mesh perspective
 # is usable at the same time (optional: leave unset to skip wiring the Kiali proxy).
 #
 # Prerequisites:
-#   - oc login to an OpenShift cluster (ACM/MCE optional; port-forwards are skipped
+#   - oc login to an OpenShift cluster (ACM/MCE/OLS optional; port-forwards are skipped
 #     with a warning if the ConsolePlugins aren't found)
 #   - make start (or: cd plugin && yarn start) running in another terminal
 
@@ -25,10 +27,17 @@ PLUGIN_NAME="ossmconsole"
 PLUGIN_DEV_PORT=${PLUGIN_DEV_PORT:=9001}
 ACM_PORT=${ACM_PORT:=9002}
 MCE_PORT=${MCE_PORT:=9003}
+OLS_PLUGIN_PORT=${OLS_PLUGIN_PORT:=9004}
+OLS_API_PORT=${OLS_API_PORT:=9005}
+OLS_AGENTIC_PORT=${OLS_AGENTIC_PORT:=9006}
 
 # Set LOAD_ACM_PLUGINS=false to skip ACM/MCE port-forwards.
 # Fleet Management links in the UI will not work without them.
 LOAD_ACM_PLUGINS=${LOAD_ACM_PLUGINS:=true}
+
+# Set LOAD_OLS_PLUGINS=false to skip OpenShift Lightspeed (OLS) port-forwards.
+# The Lightspeed chat UI will not appear without them.
+LOAD_OLS_PLUGINS=${LOAD_OLS_PLUGINS:=true}
 
 # Set KIALI_URL to the Kiali server URL if you also want to test the OSSMC/Kiali
 # perspective. Leave unset or empty to skip wiring the Kiali proxy.
@@ -38,6 +47,13 @@ ACM_SERVICE=${ACM_SERVICE:=console-chart-console-v2}
 ACM_NAMESPACE=${ACM_NAMESPACE:=open-cluster-management}
 MCE_SERVICE=${MCE_SERVICE:=console-mce-console}
 MCE_NAMESPACE=${MCE_NAMESPACE:=multicluster-engine}
+
+OLS_PLUGIN_NAME="lightspeed-console-plugin"
+OLS_AGENTIC_PLUGIN_NAME="lightspeed-agentic-console-plugin"
+OLS_NAMESPACE=${OLS_NAMESPACE:=openshift-lightspeed}
+OLS_PLUGIN_SERVICE=${OLS_PLUGIN_SERVICE:=lightspeed-console-plugin}
+OLS_AGENTIC_SERVICE=${OLS_AGENTIC_SERVICE:=lightspeed-agentic-console-plugin}
+OLS_API_SERVICE=${OLS_API_SERVICE:=lightspeed-app-server}
 
 PORT_FORWARD_PIDS=()
 CLEANUP_RAN=false
@@ -49,9 +65,31 @@ free_local_port() {
     fi
 }
 
+kill_port_forward_matches() {
+    local pattern=$1
+    local stopped=0
+    local pid
+
+    if ! command -v pgrep >/dev/null 2>&1; then
+        echo "$stopped"
+        return 0
+    fi
+
+    while read -r pid; do
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+            wait "$pid" 2>/dev/null || true
+            stopped=$((stopped + 1))
+        fi
+    done < <(pgrep -f "$pattern" 2>/dev/null || true)
+
+    echo "$stopped"
+}
+
 stop_port_forwards() {
     local pid
     local stopped=0
+    local extra
 
     for pid in "${PORT_FORWARD_PIDS[@]}"; do
         if kill -0 "$pid" 2>/dev/null; then
@@ -62,25 +100,22 @@ stop_port_forwards() {
     done
 
     # Fallback when Ctrl+C races the tracked PID list (common when run via make).
-    if command -v pgrep >/dev/null 2>&1; then
-        while read -r pid; do
-            if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-                kill "$pid" 2>/dev/null || true
-                wait "$pid" 2>/dev/null || true
-                stopped=$((stopped + 1))
-            fi
-        done < <(pgrep -f "port-forward.*:${ACM_PORT}:3000" 2>/dev/null || true)
-        while read -r pid; do
-            if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-                kill "$pid" 2>/dev/null || true
-                wait "$pid" 2>/dev/null || true
-                stopped=$((stopped + 1))
-            fi
-        done < <(pgrep -f "port-forward.*:${MCE_PORT}:3000" 2>/dev/null || true)
-    fi
+    extra=$(kill_port_forward_matches "port-forward.*:${ACM_PORT}:3000")
+    stopped=$((stopped + extra))
+    extra=$(kill_port_forward_matches "port-forward.*:${MCE_PORT}:3000")
+    stopped=$((stopped + extra))
+    extra=$(kill_port_forward_matches "port-forward.*:${OLS_PLUGIN_PORT}:9443")
+    stopped=$((stopped + extra))
+    extra=$(kill_port_forward_matches "port-forward.*:${OLS_API_PORT}:8443")
+    stopped=$((stopped + extra))
+    extra=$(kill_port_forward_matches "port-forward.*:${OLS_AGENTIC_PORT}:9443")
+    stopped=$((stopped + extra))
 
     free_local_port "$ACM_PORT"
     free_local_port "$MCE_PORT"
+    free_local_port "$OLS_PLUGIN_PORT"
+    free_local_port "$OLS_API_PORT"
+    free_local_port "$OLS_AGENTIC_PORT"
     echo "$stopped"
 }
 
@@ -90,13 +125,13 @@ cleanup() {
     fi
     CLEANUP_RAN=true
 
-    if [ "$LOAD_ACM_PLUGINS" != "true" ]; then
+    if [ "$LOAD_ACM_PLUGINS" != "true" ] && [ "$LOAD_OLS_PLUGINS" != "true" ]; then
         return 0
     fi
 
     local stopped
     stopped=$(stop_port_forwards)
-    echo "Stopped ACM/MCE port-forwards on localhost:${ACM_PORT} and localhost:${MCE_PORT} (cleaned ${stopped} process(es))."
+    echo "Stopped console plugin port-forwards (cleaned ${stopped} process(es))."
 }
 
 on_interrupt() {
@@ -110,10 +145,15 @@ trap on_interrupt INT TERM HUP
 wait_for_https() {
     local url=$1
     local label=$2
+    local require_success=${3:-true}
     local attempts=60
 
     while [ "$attempts" -gt 0 ]; do
-        if curl -sk -o /dev/null --fail "$url" 2>/dev/null; then
+        if [ "$require_success" = "true" ]; then
+            if curl -sk -o /dev/null --fail "$url" 2>/dev/null; then
+                return 0
+            fi
+        elif curl -sk -o /dev/null "$url" 2>/dev/null; then
             return 0
         fi
         sleep 0.5
@@ -127,7 +167,10 @@ start_port_forward() {
     local namespace=$1
     local service=$2
     local local_port=$3
-    local label=$4
+    local remote_port=$4
+    local label=$5
+    local readiness_url=$6
+    local require_success=${7:-true}
 
     if ! command -v curl >/dev/null 2>&1; then
         echo "Error: curl is required to verify ${label} port-forward readiness" >&2
@@ -136,18 +179,19 @@ start_port_forward() {
 
     free_local_port "$local_port"
 
-    oc port-forward -n "$namespace" "svc/${service}" "${local_port}:3000" >/dev/null 2>&1 &
+    oc port-forward -n "$namespace" "svc/${service}" "${local_port}:${remote_port}" >/dev/null 2>&1 &
     PORT_FORWARD_PIDS+=("$!")
-    echo "  ${label} port-forward PID $! (localhost:${local_port})" >&2
-    wait_for_https "https://127.0.0.1:${local_port}/plugin/plugin-manifest.json" "$label"
+    echo "  ${label} port-forward PID $! (localhost:${local_port} -> ${remote_port})" >&2
+    wait_for_https "$readiness_url" "$label" "$require_success"
 }
 
-# Build BRIDGE_PLUGIN_PROXY with ACM/MCE services and optionally the Kiali proxy.
+# Build BRIDGE_PLUGIN_PROXY with ACM/MCE/OLS services and optionally the Kiali proxy.
 build_plugin_proxy_json() {
     local host=$1
     local load_acm=$2
     local load_mce=$3
-    local kiali_url=$4
+    local load_ols=$4
+    local kiali_url=$5
 
     local services="[]"
 
@@ -180,6 +224,14 @@ build_plugin_proxy_json() {
             '. + [{"consoleAPIPath":"/api/proxy/plugin/mce/console/","endpoint":$ep,"authorize":true}]')
     fi
 
+    if [ "$load_ols" = "true" ] && command -v jq >/dev/null 2>&1; then
+        # Matches ConsolePlugin proxy alias "ols" with authorization: UserToken.
+        services=$(echo "$services" | jq \
+            --arg path "/api/proxy/plugin/${OLS_PLUGIN_NAME}/ols/" \
+            --arg ep "https://${host}:${OLS_API_PORT}" \
+            '. + [{"consoleAPIPath":$path,"endpoint":$ep,"authorize":true}]')
+    fi
+
     if command -v jq >/dev/null 2>&1; then
         jq -cn --argjson services "$services" '{"services":$services}'
     else
@@ -187,60 +239,105 @@ build_plugin_proxy_json() {
     fi
 }
 
+append_i18n_namespace() {
+    local ns=$1
+    case ",${BRIDGE_I18N_NAMESPACES}," in
+        *",${ns},"*) ;;
+        *) BRIDGE_I18N_NAMESPACES="${BRIDGE_I18N_NAMESPACES},${ns}" ;;
+    esac
+}
+
 setup_plugins() {
     local host=$1
     local load_acm=false
     local load_mce=false
+    local load_ols=false
+    local load_ols_agentic=false
 
     BRIDGE_PLUGIN_PROXY=""
-
-    if [ "$LOAD_ACM_PLUGINS" != "true" ]; then
-        echo "LOAD_ACM_PLUGINS=false — skipping ACM/MCE (Fleet Management links will not work)" >&2
-        BRIDGE_PLUGINS="${PLUGIN_NAME}=http://${host}:${PLUGIN_DEV_PORT}"
-        if [ -n "$KIALI_URL" ]; then
-            local kiali_proxy
-            kiali_proxy=$(build_plugin_proxy_json "$host" false false "$KIALI_URL")
-            BRIDGE_PLUGIN_PROXY="$kiali_proxy"
-        fi
-        return 0
-    fi
-
-    if oc get consoleplugin acm >/dev/null 2>&1; then
-        load_acm=true
-    else
-        echo "Warning: ConsolePlugin 'acm' not found — Fleet Management perspective unavailable" >&2
-    fi
-
-    if oc get consoleplugin mce >/dev/null 2>&1; then
-        load_mce=true
-    else
-        echo "Warning: ConsolePlugin 'mce' not found — ACM plugin requires MCE" >&2
-    fi
-
-    if [ "$load_acm" = "true" ]; then
-        echo "Port-forwarding ACM plugin (${ACM_NAMESPACE}/${ACM_SERVICE}) to localhost:${ACM_PORT}..." >&2
-        start_port_forward "$ACM_NAMESPACE" "$ACM_SERVICE" "$ACM_PORT" "ACM plugin"
-    fi
-
-    if [ "$load_mce" = "true" ]; then
-        echo "Port-forwarding MCE plugin (${MCE_NAMESPACE}/${MCE_SERVICE}) to localhost:${MCE_PORT}..." >&2
-        start_port_forward "$MCE_NAMESPACE" "$MCE_SERVICE" "$MCE_PORT" "MCE plugin"
-    fi
-
-    # Build the plugin list starting with ossmconsole
     BRIDGE_PLUGINS="${PLUGIN_NAME}=http://${host}:${PLUGIN_DEV_PORT}"
-    if [ "$load_mce" = "true" ]; then
-        BRIDGE_PLUGINS="${BRIDGE_PLUGINS},mce=https://${host}:${MCE_PORT}/plugin/"
-    fi
-    if [ "$load_acm" = "true" ]; then
-        BRIDGE_PLUGINS="${BRIDGE_PLUGINS},acm=https://${host}:${ACM_PORT}/plugin/"
+
+    if [ "$LOAD_ACM_PLUGINS" = "true" ]; then
+        if oc get consoleplugin acm >/dev/null 2>&1; then
+            load_acm=true
+        else
+            echo "Warning: ConsolePlugin 'acm' not found — Fleet Management perspective unavailable" >&2
+        fi
+
+        if oc get consoleplugin mce >/dev/null 2>&1; then
+            load_mce=true
+        else
+            echo "Warning: ConsolePlugin 'mce' not found — ACM plugin requires MCE" >&2
+        fi
+
+        if [ "$load_acm" = "true" ]; then
+            echo "Port-forwarding ACM plugin (${ACM_NAMESPACE}/${ACM_SERVICE}) to localhost:${ACM_PORT}..." >&2
+            start_port_forward "$ACM_NAMESPACE" "$ACM_SERVICE" "$ACM_PORT" 3000 "ACM plugin" \
+                "https://127.0.0.1:${ACM_PORT}/plugin/plugin-manifest.json"
+        fi
+
+        if [ "$load_mce" = "true" ]; then
+            echo "Port-forwarding MCE plugin (${MCE_NAMESPACE}/${MCE_SERVICE}) to localhost:${MCE_PORT}..." >&2
+            start_port_forward "$MCE_NAMESPACE" "$MCE_SERVICE" "$MCE_PORT" 3000 "MCE plugin" \
+                "https://127.0.0.1:${MCE_PORT}/plugin/plugin-manifest.json"
+        fi
+
+        if [ "$load_mce" = "true" ]; then
+            BRIDGE_PLUGINS="${BRIDGE_PLUGINS},mce=https://${host}:${MCE_PORT}/plugin/"
+        fi
+        if [ "$load_acm" = "true" ]; then
+            BRIDGE_PLUGINS="${BRIDGE_PLUGINS},acm=https://${host}:${ACM_PORT}/plugin/"
+        fi
+
+        if [ "$load_acm" = "true" ] || [ "$load_mce" = "true" ]; then
+            append_i18n_namespace "plugin__acm"
+            append_i18n_namespace "plugin__mce"
+        fi
+    else
+        echo "LOAD_ACM_PLUGINS=false — skipping ACM/MCE (Fleet Management links will not work)" >&2
     fi
 
-    BRIDGE_PLUGIN_PROXY=$(build_plugin_proxy_json "$host" "$load_acm" "$load_mce" "${KIALI_URL:-}")
+    if [ "$LOAD_OLS_PLUGINS" = "true" ]; then
+        if oc get consoleplugin "$OLS_PLUGIN_NAME" >/dev/null 2>&1; then
+            load_ols=true
+        else
+            echo "Warning: ConsolePlugin '${OLS_PLUGIN_NAME}' not found — Lightspeed chat UI unavailable" >&2
+        fi
 
-    # Include the ACM/MCE plugin namespaces so Console loads their translations too
-    if [ "$load_acm" = "true" ] || [ "$load_mce" = "true" ]; then
-        BRIDGE_I18N_NAMESPACES="plugin__${PLUGIN_NAME},plugin__acm,plugin__mce"
+        if oc get consoleplugin "$OLS_AGENTIC_PLUGIN_NAME" >/dev/null 2>&1; then
+            load_ols_agentic=true
+        else
+            echo "Warning: ConsolePlugin '${OLS_AGENTIC_PLUGIN_NAME}' not found — skipping agentic Lightspeed plugin" >&2
+        fi
+
+        if [ "$load_ols" = "true" ]; then
+            echo "Port-forwarding OLS console plugin (${OLS_NAMESPACE}/${OLS_PLUGIN_SERVICE}) to localhost:${OLS_PLUGIN_PORT}..." >&2
+            start_port_forward "$OLS_NAMESPACE" "$OLS_PLUGIN_SERVICE" "$OLS_PLUGIN_PORT" 9443 "OLS console plugin" \
+                "https://127.0.0.1:${OLS_PLUGIN_PORT}/plugin-manifest.json"
+
+            echo "Port-forwarding OLS app server (${OLS_NAMESPACE}/${OLS_API_SERVICE}) to localhost:${OLS_API_PORT}..." >&2
+            # App server may return non-2xx before fully ready; TLS accept is enough to wire the proxy.
+            start_port_forward "$OLS_NAMESPACE" "$OLS_API_SERVICE" "$OLS_API_PORT" 8443 "OLS app server" \
+                "https://127.0.0.1:${OLS_API_PORT}/" false
+
+            BRIDGE_PLUGINS="${BRIDGE_PLUGINS},${OLS_PLUGIN_NAME}=https://${host}:${OLS_PLUGIN_PORT}/"
+            append_i18n_namespace "plugin__${OLS_PLUGIN_NAME}"
+        fi
+
+        if [ "$load_ols_agentic" = "true" ]; then
+            echo "Port-forwarding OLS agentic plugin (${OLS_NAMESPACE}/${OLS_AGENTIC_SERVICE}) to localhost:${OLS_AGENTIC_PORT}..." >&2
+            start_port_forward "$OLS_NAMESPACE" "$OLS_AGENTIC_SERVICE" "$OLS_AGENTIC_PORT" 9443 "OLS agentic plugin" \
+                "https://127.0.0.1:${OLS_AGENTIC_PORT}/plugin-manifest.json"
+
+            BRIDGE_PLUGINS="${BRIDGE_PLUGINS},${OLS_AGENTIC_PLUGIN_NAME}=https://${host}:${OLS_AGENTIC_PORT}/"
+            append_i18n_namespace "plugin__${OLS_AGENTIC_PLUGIN_NAME}"
+        fi
+    else
+        echo "LOAD_OLS_PLUGINS=false — skipping OpenShift Lightspeed (chat UI will not appear)" >&2
+    fi
+
+    if [ -n "${KIALI_URL:-}" ] || [ "$load_acm" = "true" ] || [ "$load_mce" = "true" ] || [ "$load_ols" = "true" ]; then
+        BRIDGE_PLUGIN_PROXY=$(build_plugin_proxy_json "$host" "$load_acm" "$load_mce" "$load_ols" "${KIALI_URL:-}")
     fi
 }
 
@@ -253,7 +350,7 @@ BRIDGE_K8S_MODE_OFF_CLUSTER_SKIP_VERIFY_TLS=true
 BRIDGE_K8S_MODE_OFF_CLUSTER_ENDPOINT=$(oc whoami --show-server)
 BRIDGE_K8S_AUTH_BEARER_TOKEN=$(oc whoami --show-token 2>/dev/null)
 BRIDGE_USER_SETTINGS_LOCATION="localstorage"
-# Start with the plugin namespace; setup_plugins may extend this for ACM/MCE
+# Start with the plugin namespace; setup_plugins may extend this for ACM/MCE/OLS
 BRIDGE_I18N_NAMESPACES="plugin__${PLUGIN_NAME}"
 
 PLUGIN_HOST="host.docker.internal"
