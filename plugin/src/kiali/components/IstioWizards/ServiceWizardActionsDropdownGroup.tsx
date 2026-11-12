@@ -62,21 +62,20 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
     );
   };
 
-  const handleActionClick = (eventKey: string): void => {
-    if (props.onAction) {
-      props.onAction(eventKey as WizardAction, updateLabel.length === 0 ? 'create' : 'update');
-    }
-    dismissContextMenu();
-  };
-
-  const triggerAction = (eventKey: string): void => {
-    const now = Date.now();
-    if (now - lastTriggerRef.current < 400) {
-      return;
-    }
-    lastTriggerRef.current = now;
-    handleActionClick(eventKey);
-  };
+  const triggerAction = React.useCallback(
+    (eventKey: string): void => {
+      const now = Date.now();
+      if (now - lastTriggerRef.current < 400) {
+        return;
+      }
+      lastTriggerRef.current = now;
+      if (props.onAction) {
+        props.onAction(eventKey as WizardAction, updateLabel.length === 0 ? 'create' : 'update');
+      }
+      dismissContextMenu();
+    },
+    [props, updateLabel]
+  );
 
   const triggerDelete = React.useCallback((): void => {
     const now = Date.now();
@@ -87,6 +86,7 @@ export const ServiceWizardActionsDropdownGroup: React.FunctionComponent<Props> =
     if (props.onDelete) {
       props.onDelete(DELETE_TRAFFIC_ROUTING);
     }
+    dismissContextMenu();
   }, [props]);
 
   const getDropdownItemTooltipMessage = (isGatewayAPI: boolean, hasExistingTrafficRouting: boolean): string => {
