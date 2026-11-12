@@ -1,3 +1,4 @@
+// Assisted-by: Codex
 import * as React from 'react';
 import {
   Button,
@@ -38,6 +39,7 @@ import { layoutMesh } from '../Mesh';
 import type { MeshLayout } from '../layouts/LayoutFactory';
 import { MeshLayoutType } from '../layouts/LayoutFactory';
 import type { TimeInMilliseconds } from 'types/Common';
+import type { MeshData } from 'pages/Mesh/MeshPage';
 import { t } from 'utils/I18nUtils';
 
 type ReduxStateProps = {
@@ -216,7 +218,9 @@ export class MeshFindComponent extends React.Component<MeshFindProps, MeshFindSt
       if (this.state.hideInputValue !== this.props.hideValue) {
         this.setHide(this.props.hideValue);
       }
-      this.handleHide(this.props.controller);
+      const meshData = this.props.controller.getGraph().getData()?.meshData as MeshData | undefined;
+      const reset = controllerChanged || hideChanged || (updateTimeChanged && !!meshData?.elementsChanged);
+      this.handleHide(this.props.controller, reset);
     }
   }
 
@@ -476,7 +480,7 @@ export class MeshFindComponent extends React.Component<MeshFindProps, MeshFindSt
     });
   };
 
-  private handleHide = (controller: Controller): void => {
+  private handleHide = (controller: Controller, reset: boolean): void => {
     const selector = this.parseValue(this.props.hideValue, false);
     const checkRemovals = selector.nodeSelector || selector.edgeSelector;
     const mesh = controller.getGraph();
@@ -551,9 +555,10 @@ export class MeshFindComponent extends React.Component<MeshFindProps, MeshFindSt
       this.hiddenElements = finalNodes.concat(finalEdges);
     }
 
-    // always perform a full layout, because if this function is invoked at all, we know either we're dealing with either
-    // a new controller, a different topology, a new hide expression, etc
-    layoutMesh(controller, MeshLayoutType.Layout);
+    // Preserve the view only for model updates with unchanged topology. Read topology changes
+    // from the applied model so find/hide still runs after updateModel, not before it.
+    // New controllers, topology changes and explicit filter changes still reset and fit.
+    layoutMesh(controller, reset ? MeshLayoutType.Layout : MeshLayoutType.LayoutNoFit, reset);
   };
 
   private handleFind = (controller: Controller): void => {

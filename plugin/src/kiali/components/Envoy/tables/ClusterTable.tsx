@@ -215,7 +215,7 @@ export class ClusterTable implements SummaryTable {
         info: { tooltip: this.render_cluster_type() }
       },
       {
-        title: t('DestinationRule'),
+        title: 'DestinationRule',
         sortable: true
       }
     ];

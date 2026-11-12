@@ -53,9 +53,9 @@ export const IstioActionsNamespaceDropdown: React.FC = () => {
   const isDisabled = (label: string, disabled: boolean): boolean => {
     if (label.includes('K8s')) {
       return !serverConfig.gatewayAPIEnabled;
-    } else if (label === t('Gateway')) {
+    } else if (label === 'Gateway') {
       return !serverConfig.istioGatewayInstalled;
-    } else if (label === t('ServiceEntry') || label === t('Sidecar')) {
+    } else if (label === 'ServiceEntry' || label === 'Sidecar') {
       return !serverConfig.istioAPIInstalled;
     } else {
       return disabled;

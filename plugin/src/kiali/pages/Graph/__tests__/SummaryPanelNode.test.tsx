@@ -107,6 +107,18 @@ describe('SummaryPanelNodeComponent', () => {
     expect(wlLinks.length).toBe(1);
   });
 
+  it('renders a workload details link when the node is a waypoint proxy', () => {
+    nodeData = {
+      ...nodeData,
+      app: '',
+      isWaypoint: true,
+      nodeType: NodeType.WORKLOAD,
+      workload: 'waypoint'
+    };
+    const { container } = renderPanel();
+    expect(container.querySelector('a[href$="/namespaces/bookinfo/workloads/waypoint"]')).toBeInTheDocument();
+  });
+
   it('shows the VS host count inline and opens its popover with the keyboard', async () => {
     nodeData = {
       ...nodeData,

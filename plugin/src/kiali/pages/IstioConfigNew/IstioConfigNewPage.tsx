@@ -328,7 +328,7 @@ const IstioConfigNewPageComponent: React.FC<Props> = (props: Props) => {
           break;
         case getGVKTypeString(gvkType.Gateway):
           items.push({
-            title: t('Gateway'),
+            title: 'Gateway',
             objectGVK: props.objectGVK,
             items: [buildGateway(annotations, labels, name, ns.name, gateway)]
           });
@@ -370,7 +370,7 @@ const IstioConfigNewPageComponent: React.FC<Props> = (props: Props) => {
           break;
         case getGVKTypeString(gvkType.Sidecar):
           items.push({
-            title: t('Sidecar'),
+            title: 'Sidecar',
             objectGVK: props.objectGVK,
             items: [buildSidecar(annotations, labels, name, ns.name, sidecar)]
           });

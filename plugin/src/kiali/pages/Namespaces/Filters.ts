@@ -42,7 +42,7 @@ const statusMap = new Map<string, string>([
 ]);
 
 export const mtlsFilter: RunnableFilter<NamespaceInfo> = {
-  category: t('mTLS'),
+  category: 'mTLS',
   placeholder: t('Filter by mTLS'),
   filterType: AllFilterTypes.select,
   action: FILTER_ACTION_APPEND,
@@ -222,8 +222,8 @@ export const categoryFilter: RunnableFilter<NamespaceInfo> = {
 };
 
 const modeValues: FilterValue[] = [
-  { id: 'ambient', title: t('Ambient') },
-  { id: 'sidecar', title: t('Sidecar') },
+  { id: 'ambient', title: 'Ambient' },
+  { id: 'sidecar', title: 'Sidecar' },
   { id: 'notApplicable', title: t('Not applicable') }
 ];
 
@@ -240,7 +240,7 @@ export const modeFilter: RunnableFilter<NamespaceInfo> = {
 
     const mode = getNamespaceMode(ns);
     const modeId = mode === 'ambient' ? 'ambient' : mode === 'sidecar' ? 'sidecar' : 'notApplicable';
-    const modeTitle = mode === 'ambient' ? t('Ambient') : mode === 'sidecar' ? t('Sidecar') : t('Not applicable');
+    const modeTitle = mode === 'ambient' ? 'Ambient' : mode === 'sidecar' ? 'Sidecar' : t('Not applicable');
 
     // Filters in URL usually use titles; accept both id/title for stability.
     return filters.filters.some(f => f.value === modeId || f.value === modeTitle);

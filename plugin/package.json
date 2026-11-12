@@ -72,7 +72,6 @@
     "react": "^18.3.1",
     "react-copy-to-clipboard": "5.x",
     "react-dom": "^18.3.1",
-    "react-flexview": "4.0.3",
     "react-i18next": "~16.5.8",
     "react-redux": "~9.2.0",
     "react-resize-detector": "^12.3.0",

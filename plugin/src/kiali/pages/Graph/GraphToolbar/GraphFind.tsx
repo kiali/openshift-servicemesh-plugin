@@ -1,3 +1,4 @@
+// Assisted-by: Codex
 import * as React from 'react';
 import {
   Button,
@@ -38,6 +39,7 @@ import { descendents } from 'helpers/GraphHelpers';
 import { isArray } from 'lodash-es';
 import { graphLayout } from 'pages/Graph/Graph';
 import type { TimeInMilliseconds } from 'types/Common';
+import type { GraphData } from 'pages/Graph/GraphPage';
 import { t } from 'utils/I18nUtils';
 
 type ReduxStateProps = {
@@ -285,7 +287,10 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
       if (this.state.hideInputValue !== this.props.hideValue) {
         this.setHide(this.props.hideValue);
       }
-      this.handleHide(this.props.controller);
+      const graphData = this.props.controller.getGraph().getData()?.graphData as GraphData | undefined;
+      const reset =
+        controllerChanged || hideChanged || edgeModeChanged || (updateTimeChanged && !!graphData?.elementsChanged);
+      this.handleHide(this.props.controller, reset);
     }
   }
 
@@ -543,7 +548,7 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
     });
   };
 
-  private handleHide = (controller: Controller): void => {
+  private handleHide = (controller: Controller, reset: boolean): void => {
     const selector = this.parseValue(this.props.hideValue, false);
     const checkRemovals = selector.nodeSelector || selector.edgeSelector || this.props.edgeMode !== EdgeMode.ALL;
     const graph = controller.getGraph();
@@ -639,9 +644,10 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
       this.hiddenElements = finalNodes.concat(finalEdges);
     }
 
-    // always perform a full layout, because if this function is invoked at all, we know either we're dealing with either
-    // a new controller, a different topology, a new hide expression, etc
-    graphLayout(controller, LayoutType.Layout);
+    // Preserve the view only for model updates with unchanged topology. Read topology changes
+    // from the applied model so find/hide still runs after updateModel, not before it.
+    // New controllers, topology changes and explicit filter changes still reset and fit.
+    graphLayout(controller, reset ? LayoutType.Layout : LayoutType.LayoutNoFit, reset);
   };
 
   private handleFind = (controller: Controller): void => {
