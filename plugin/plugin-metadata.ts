@@ -26,6 +26,7 @@ const metadata: ConsolePluginBuildMetadata = {
     ServiceListPage: './openshift/pages/ServiceListPage',
     WorkloadDetailsTab: './openshift/pages/ServiceMeshTabs/WorkloadDetailsTab',
     WorkloadListPage: './openshift/pages/WorkloadListPage',
+    TroubleshootingPage: './openshift/pages/TroubleshootingPage',
     ...fleetMeshModules,
     ...liteModules
   },

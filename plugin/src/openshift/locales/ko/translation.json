@@ -298,6 +298,7 @@
   "Tolerations configured": "Tolerations configured",
   "total": "total",
   "Traffic Graph": "트래픽 그래프",
+  "Troubleshooting": "Troubleshooting",
   "Trust": "Trust",
   "Trust distributed": "신뢰 분산",
   "Trust is not configured for this mesh. Set <code>spec.security.trust.certManager.issuerRef</code> on the MultiClusterMesh to enable CA trust distribution.": "이 메시에는 신뢰가 구성되어 있지 않습니다. CA 신뢰 분배를 활성화하려면 MultiClusterMesh에 <code>spec.security.trust.certManager.issuerRef</code>를 설정하십시오.",

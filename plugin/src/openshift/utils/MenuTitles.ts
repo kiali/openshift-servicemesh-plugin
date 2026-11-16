@@ -4,6 +4,7 @@ import { t } from 'utils/I18nUtils';
 export const overview = t('Overview');
 export const graph = t('Traffic Graph');
 export const mesh = t('Mesh');
+export const troubleshooting = t('Troubleshooting');
 export const namespaces = t('Namespaces');
 export const appList = t('Applications');
 export const istioConfig = t('Istio Config');

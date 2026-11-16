@@ -19,6 +19,7 @@ const enum Page {
   OVERVIEW = 'OverviewPage',
   SERVICE_DETAIL = 'ServiceDetailsPage',
   SERVICES = 'ServiceListPage',
+  TROUBLESHOOTING = 'TroubleshootingPage',
   WORKLOADS = 'WorkloadListPage'
 }
 
@@ -277,6 +278,9 @@ const extensions: EncodedExtension[] = [
     `/${OSSM_CONSOLE}/graph/ns/:namespace/workloads/:workload`
   ]),
   ...consoleRoute('mesh', 'Mesh', Page.MESH, [`/${OSSM_CONSOLE}/mesh`]),
+  ...consoleRoute('troubleshooting', 'Troubleshooting', Page.TROUBLESHOOTING, [
+    `/${OSSM_CONSOLE}/troubleshooting`
+  ]),
   {
     flags: { required: ['KIALI_AVAILABLE'] },
     type: 'console.navigation/separator',
