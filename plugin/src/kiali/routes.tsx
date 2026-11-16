@@ -83,8 +83,8 @@ const navMenuItems: MenuItem[] = [
   {
     id: 'troubleshooting',
     title: t('Troubleshooting'),
-    to: '/troubleshooting',
-    pathsActive: [/^\/troubleshooting\/(.*)/]
+    to: `/${Paths.TROUBLESHOOTING}`,
+    pathsActive: [new RegExp(`^/${Paths.TROUBLESHOOTING}(?:\\?.*)?$`)]
   },
   {
     id: 'ai',
@@ -100,7 +100,7 @@ const pathRoutes: RouteObject[] = [
     element: <AIDashboardPage />
   },
   {
-    path: '/troubleshooting',
+    path: `/${Paths.TROUBLESHOOTING}`,
     element: <TroubleshootingPage />
   },
   {

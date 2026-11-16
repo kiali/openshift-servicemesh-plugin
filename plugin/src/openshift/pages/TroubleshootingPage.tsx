@@ -5,13 +5,13 @@ import { useLocation } from 'react-router-dom-v5-compat';
 
 import { KialiContainer } from 'openshift/components/KialiContainer';
 import { TroubleshootingPage } from 'pages/Troubleshooting/TroubleshootingPage';
-import type { OpenOLSFn, UseOpenOLS } from 'pages/Troubleshooting/types';
+import type { OpenAIChatFn, UseOpenAIChat } from 'pages/Troubleshooting/types';
 
 import { setRouterBasename, useInitKialiListeners } from '../utils/KialiIntegration';
 
 type OpenOLSHandlerProps = {
   contextId: string;
-  provider: UseOpenOLS;
+  provider: UseOpenAIChat;
 };
 
 type OpenOLSHandlerExtension = ExtensionDeclaration<'console.action/provider', OpenOLSHandlerProps>;
@@ -20,16 +20,16 @@ const isOpenOLSHandlerExtension = (e: Extension): e is OpenOLSHandlerExtension =
   e.type === 'console.action/provider' && e.properties?.contextId === 'ols-open-handler';
 
 type TroubleshootingWithOLSProps = {
-  useOpenOLS: UseOpenOLS;
+  useOpenOLS: UseOpenAIChat;
 };
 
 // Invokes the Lightspeed provider hook outside KialiContainer's Redux Provider.
 const TroubleshootingWithOLS: React.FC<TroubleshootingWithOLSProps> = ({ useOpenOLS }) => {
-  const openOLS: OpenOLSFn = useOpenOLS();
+  const openAIChat: OpenAIChatFn = useOpenOLS();
 
   return (
     <KialiContainer>
-      <TroubleshootingPage isLightspeedRunning openOLS={openOLS} />
+      <TroubleshootingPage openAIChat={openAIChat} />
     </KialiContainer>
   );
 };
@@ -39,7 +39,7 @@ const TroubleshootingPageOSSMC: React.FC<void> = () => {
   // Console SDK hooks must run outside KialiContainer — its Redux Provider replaces Console state.
   const isLightspeedRunning = !!useFlag('LIGHTSPEED_PLUGIN');
   const [extensions, resolved] = useResolvedExtensions(isOpenOLSHandlerExtension);
-  const useOpenOLS = (resolved ? extensions[0]?.properties?.provider : undefined) as UseOpenOLS | undefined;
+  const useOpenOLS = (resolved ? extensions[0]?.properties?.provider : undefined) as UseOpenAIChat | undefined;
 
   setRouterBasename(pathname);
 
@@ -51,7 +51,7 @@ const TroubleshootingPageOSSMC: React.FC<void> = () => {
 
   return (
     <KialiContainer>
-      <TroubleshootingPage isLightspeedRunning={isLightspeedRunning} />
+      <TroubleshootingPage />
     </KialiContainer>
   );
 };
