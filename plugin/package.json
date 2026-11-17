@@ -151,7 +151,7 @@
     "typescript-eslint": "^8.65.0",
     "webpack": "^5.104.1",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.2.1"
+    "webpack-dev-server": "^5.2.7"
   },
   "resolutions": {
     "@patternfly/react-code-editor": "~6.7.0",
