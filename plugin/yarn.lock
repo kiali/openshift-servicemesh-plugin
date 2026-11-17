@@ -12253,6 +12253,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"launch-editor@npm:^2.14.1":
+  version: 2.14.2
+  resolution: "launch-editor@npm:2.14.2"
+  dependencies:
+    picocolors: "npm:^1.1.1"
+    shell-quote: "npm:^1.10.0"
+  checksum: 10c0/cf66c75534170142269bfc1749df8a4b5178ad644d358aa08d4feda9ecb1ba7a26191a76ea2cecea95c59235c142486b928b58eaf0cd77377d21e42ed5c3e100
+  languageName: node
+  linkType: hard
+
 "launch-editor@npm:^2.6.1":
   version: 2.6.1
   resolution: "launch-editor@npm:2.6.1"
@@ -14419,7 +14429,7 @@ __metadata:
     visibilityjs: "npm:2.0.2"
     webpack: "npm:^5.104.1"
     webpack-cli: "npm:^5.1.4"
-    webpack-dev-server: "npm:^5.2.1"
+    webpack-dev-server: "npm:^5.2.7"
   languageName: unknown
   linkType: soft
 
@@ -15102,13 +15112,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"proxy-addr@npm:~2.0.7":
-  version: 2.0.7
-  resolution: "proxy-addr@npm:2.0.7"
+"proxy-addr@npm:^2.0.8":
+  version: 2.0.8
+  resolution: "proxy-addr@npm:2.0.8"
   dependencies:
     forwarded: "npm:0.2.0"
     ipaddr.js: "npm:1.9.1"
-  checksum: 10c0/c3eed999781a35f7fd935f398b6d8920b6fb00bbc14287bc6de78128ccc1a02c89b95b56742bf7cf0362cc333c61d138532049c7dedc7a328ef13343eff81210
+  checksum: 10c0/58398f36e5b1f72b1011ca21844c0c41a9a3b6f2f0d101bcdb19abb3f3dd9626b27a96e53da777ded901eb67faed0304a4bc1d435b235e436f66f8e5e1fe1f5e
   languageName: node
   linkType: hard
 
@@ -16656,10 +16666,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shell-quote@npm:^1.8.1":
-  version: 1.8.1
-  resolution: "shell-quote@npm:1.8.1"
-  checksum: 10c0/8cec6fd827bad74d0a49347057d40dfea1e01f12a6123bf82c4649f3ef152fc2bc6d6176e6376bffcd205d9d0ccb4f1f9acae889384d20baff92186f01ea455a
+"shell-quote@npm:^1.10.0, shell-quote@npm:^1.8.1":
+  version: 1.12.0
+  resolution: "shell-quote@npm:1.12.0"
+  checksum: 10c0/1605a4ed6a758bf13de7cb8197a4184d8015f7a4dbdcd6cd4a717d5b30b3ae7666300cc4ae7f3155cf80ace9739e9e82061ee5aa1a648f53f5fab31a220816d0
   languageName: node
   linkType: hard
 
@@ -19092,7 +19102,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"webpack-dev-server@npm:*, webpack-dev-server@npm:^5.2.1":
+"webpack-dev-server@npm:*":
   version: 5.2.3
   resolution: "webpack-dev-server@npm:5.2.3"
   dependencies:
@@ -19134,6 +19144,51 @@ __metadata:
   bin:
     webpack-dev-server: bin/webpack-dev-server.js
   checksum: 10c0/a716f1d509635ad9f2779baf242657740e6ad516ce210fe094cbf3b16f25f114e477c45a751ad2bbf1c601cbbe67b6ba9b8b43159b7c01fc3342c95b985fe963
+  languageName: node
+  linkType: hard
+
+"webpack-dev-server@npm:^5.2.7":
+  version: 5.2.7
+  resolution: "webpack-dev-server@npm:5.2.7"
+  dependencies:
+    "@types/bonjour": "npm:^3.5.13"
+    "@types/connect-history-api-fallback": "npm:^1.5.4"
+    "@types/express": "npm:^4.17.25"
+    "@types/express-serve-static-core": "npm:^4.17.21"
+    "@types/serve-index": "npm:^1.9.4"
+    "@types/serve-static": "npm:^1.15.5"
+    "@types/sockjs": "npm:^0.3.36"
+    "@types/ws": "npm:^8.5.10"
+    ansi-html-community: "npm:^0.0.8"
+    bonjour-service: "npm:^1.2.1"
+    chokidar: "npm:^3.6.0"
+    colorette: "npm:^2.0.10"
+    compression: "npm:^1.8.1"
+    connect-history-api-fallback: "npm:^2.0.0"
+    express: "npm:^4.22.1"
+    graceful-fs: "npm:^4.2.6"
+    http-proxy-middleware: "npm:^2.0.9"
+    ipaddr.js: "npm:^2.1.0"
+    launch-editor: "npm:^2.14.1"
+    open: "npm:^10.0.3"
+    p-retry: "npm:^6.2.0"
+    schema-utils: "npm:^4.2.0"
+    selfsigned: "npm:^5.5.0"
+    serve-index: "npm:^1.9.1"
+    sockjs: "npm:^0.3.24"
+    spdy: "npm:^4.0.2"
+    webpack-dev-middleware: "npm:^7.4.2"
+    ws: "npm:^8.18.0"
+  peerDependencies:
+    webpack: ^5.0.0
+  peerDependenciesMeta:
+    webpack:
+      optional: true
+    webpack-cli:
+      optional: true
+  bin:
+    webpack-dev-server: bin/webpack-dev-server.js
+  checksum: 10c0/3d95e40f2945084b5d6ca8bffe5e032757c06443a34f3c799a69e98b908322532049d1e2698a6774bfb8c69c226e256ddf37dab9c1f0547d1bea1ebd2ce95242
   languageName: node
   linkType: hard
 
@@ -19193,14 +19248,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"websocket-driver@npm:>=0.5.1, websocket-driver@npm:^0.7.4":
-  version: 0.7.4
-  resolution: "websocket-driver@npm:0.7.4"
+"websocket-driver@npm:^0.7.5":
+  version: 0.7.5
+  resolution: "websocket-driver@npm:0.7.5"
   dependencies:
     http-parser-js: "npm:>=0.5.1"
     safe-buffer: "npm:>=5.1.0"
     websocket-extensions: "npm:>=0.1.1"
-  checksum: 10c0/5f09547912b27bdc57bac17b7b6527d8993aa4ac8a2d10588bb74aebaf785fdcf64fea034aae0c359b7adff2044dd66f3d03866e4685571f81b13e548f9021f1
+  checksum: 10c0/843a3c9f529ce07f2721829f70f62986247525ab22625e857b69da13dc90967bacfe57b85e196801b565cd797e309ddd5b06fa8435732e34e8a8ab6201d7abed
   languageName: node
   linkType: hard
 
