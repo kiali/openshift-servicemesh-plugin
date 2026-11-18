@@ -214,6 +214,8 @@ find ${ABS_DEST_TESTS_DIR} -name '*.ts' -exec \
 cat > ${ABS_DEST_DIR}/README.md <<EOM
 **WARNING**: The code in this directory comes from the kiali/kiali repository and should never be modified here.
 
+Upstream Kiali unit tests (\`__tests__/\` under \`frontend/src\`) are not copied here. OSSMC runs its own Rstest suite and vendored Cypress tests under \`plugin/cypress/integration/kiali/\`.
+
 ${COMMIT_MESSAGE}
 EOM
 

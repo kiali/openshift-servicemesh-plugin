@@ -309,7 +309,7 @@ make test
 # or: cd plugin && yarn test
 ```
 
-Unit tests for plugin-owned code are co-located under `plugin/src/` as `*.test.ts` and `*.test.tsx` files (typically in `__tests__/` directories). The suite uses Rstest and is configured in `plugin/rstest.config.ts`. Vendored `plugin/src/kiali/` tests are not included.
+Unit tests for plugin-owned code are co-located under `plugin/src/` as `*.test.ts` and `*.test.tsx` files (typically in `__tests__/` directories). The suite uses Rstest and is configured in `plugin/rstest.config.ts`. Kiali frontend unit tests (`__tests__/` under `frontend/src`) are not copied into `plugin/src/kiali/` during sync. Vendored Kiali E2E tests live under `plugin/cypress/integration/kiali/` and are run via Cypress (see below).
 
 #### E2E Tests (Cypress + Cucumber)
 
@@ -425,7 +425,7 @@ hack/copy-frontend-src-to-ossmc.sh
 hack/copy-frontend-src-to-ossmc.sh --source-ref v2.25.0
 ```
 
-This copies `frontend/src` → `plugin/src/kiali/`, locales, and Cypress tests → `plugin/cypress/integration/kiali/`.
+This copies `frontend/src` → `plugin/src/kiali/` (excluding `__tests__/`, since OSSMC does not run vendored Kiali unit tests), locales, and Cypress tests → `plugin/cypress/integration/kiali/`.
 
 ### Version Bumping
 
