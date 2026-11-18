@@ -196,7 +196,8 @@ if [ "${SKIP_BRANCH}" == "false" ]; then
 fi
 
 rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
-cp -R ${ABS_SOURCE_DIR}/* ${ABS_DEST_DIR}
+# OSSMC does not run vendored Kiali unit tests (see plugin/rstest.config.ts).
+rsync -a --exclude='__tests__' "${ABS_SOURCE_DIR}/" "${ABS_DEST_DIR}/"
 cp -R ${ABS_SOURCE_LOCALES_DIR} ${ABS_DEST_DIR}
 
 rm -rf ${ABS_DEST_TESTS_DIR}/{*,.[!.]*}
