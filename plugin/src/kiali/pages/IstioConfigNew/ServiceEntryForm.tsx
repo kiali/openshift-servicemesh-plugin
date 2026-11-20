@@ -1,7 +1,8 @@
 import * as React from 'react';
 import type { Port, ServiceEntrySpec } from '../../types/IstioObjects';
 import { MAX_PORT, MIN_PORT } from '../../types/IstioObjects';
-import type { MenuToggleElement } from '@patternfly/react-core';
+import type {
+  MenuToggleElement} from '@patternfly/react-core';
 import {
   Button,
   ButtonVariant,

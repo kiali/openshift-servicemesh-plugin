@@ -14,7 +14,9 @@ import type { KialiAppState } from 'store/Store';
 import { TracingThunkActions } from 'actions/TracingThunkActions';
 import { getTraceId } from 'utils/SearchParamUtils';
 import { average } from 'utils/MathUtils';
-import type { StatsMatrix } from 'utils/tracing/TraceStats';
+import type {
+  StatsMatrix
+} from 'utils/tracing/TraceStats';
 import {
   averageSpanDuration,
   buildQueriesFromSpans,

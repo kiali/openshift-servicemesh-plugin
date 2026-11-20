@@ -1,5 +1,6 @@
 import * as React from 'react';
-import type { MenuToggleElement } from '@patternfly/react-core';
+import type {
+  MenuToggleElement} from '@patternfly/react-core';
 import {
   FormGroup,
   FormHelperText,

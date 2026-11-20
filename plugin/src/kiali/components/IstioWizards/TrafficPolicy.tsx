@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import type { MenuToggleElement } from '@patternfly/react-core';
+import type {
+  MenuToggleElement} from '@patternfly/react-core';
 import {
   Form,
   FormGroup,
@@ -23,9 +24,10 @@ import type {
   ConnectionPoolSettings,
   HTTPCookie,
   LoadBalancerSettings,
-  OutlierDetection as OutlierDetectionProps
+  OutlierDetection as OutlierDetectionProps} from '../../types/IstioObjects';
+import {
+  PeerAuthenticationMutualTLSMode
 } from '../../types/IstioObjects';
-import { PeerAuthenticationMutualTLSMode } from '../../types/IstioObjects';
 import { LOAD_BALANCER_TOOLTIP, PEER_AUTHENTICATION_TOOLTIP, wizardTooltip } from './WizardHelp';
 import { isValid } from 'utils/Common';
 import { t } from 'utils/I18nUtils';
