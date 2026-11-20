@@ -1,8 +1,14 @@
+import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
-import { useParams } from 'react-router-dom-v5-compat';
+import { useParams } from 'react-router';
 import IstioDetailPage from '../IstioDetailPage';
 import { makeIstioResource } from '../../__fixtures__/testFactories';
+
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 afterEach(() => rstest.clearAllMocks());
 

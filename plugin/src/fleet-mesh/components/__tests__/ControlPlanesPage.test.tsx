@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import ControlPlanesPage from '../ControlPlanesPage';
 import { useFleetSearchPoll } from '@stolostron/multicluster-sdk';
@@ -6,6 +7,11 @@ import { useEnrichedControlPlanes } from '../../hooks/useEnrichedControlPlanes';
 import { useDiscoveredKialis } from '../../hooks/useDiscoveredKialis';
 import { makeSearchResult, makeEnrichedCP } from '../../__fixtures__/testFactories';
 import type { DiscoveredKiali } from '../../types/kiali';
+
+rstest.mock('react-router', () => ({
+  Link: ({ to, children }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useParams: rstest.fn(() => ({}))
+}));
 
 rstest.mock('../../hooks/useEnrichedControlPlanes', { mock: true });
 rstest.mock('../../hooks/useDiscoveredKialis', { mock: true });
