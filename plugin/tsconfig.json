@@ -42,6 +42,7 @@
   "exclude": [
     "src/**/mocks/**/*",
     "src/**/__mocks__/**/*",
+    "src/kiali/**/__tests__/**/*",
     "src/lite/**/__tests__/**/*",
     "src/fleet-mesh/**/__tests__/**/*",
     "src/**/rstest*",
