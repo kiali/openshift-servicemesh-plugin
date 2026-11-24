@@ -5,5 +5,5 @@ Upstream Kiali unit tests (`__tests__/` under `frontend/src`) are not copied her
 Copy of Kiali frontend source code
 Kiali frontend source originated from:
 * git ref:    playwright-migration-rebase3
-* git commit: 0aafcfccb5b4b5933a373875237df147bdc5b9ed
-* GitHub URL: https://github.com/kiali/kiali/tree/0aafcfccb5b4b5933a373875237df147bdc5b9ed/frontend/src
+* git commit: 8caf8320da889f7c7205342e939679a2e23a7853
+* GitHub URL: https://github.com/kiali/kiali/tree/8caf8320da889f7c7205342e939679a2e23a7853/frontend/src

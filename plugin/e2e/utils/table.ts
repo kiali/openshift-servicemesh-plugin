@@ -52,8 +52,8 @@ export const expectLabelsInRow = async (page: Page, rowSearchText: string, ...la
 };
 
 export const ensureObjectsInTable = async (page: Page, ...names: string[]): Promise<void> => {
-  // Rows stream in after the loading spinner clears (extra proxy hop in OSSMC),
-  // so the count must poll — a one-shot count() races the table population.
+  // Rows stream in after the loading spinner clears, so the count must poll —
+  // a one-shot count() races table population.
   const rows = page.locator('tbody tr');
   await expect.poll(async () => rows.count(), { timeout: 40_000 }).toBeGreaterThanOrEqual(names.length);
 
