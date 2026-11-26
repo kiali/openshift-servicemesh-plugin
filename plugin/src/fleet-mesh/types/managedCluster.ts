@@ -31,8 +31,15 @@ export function availabilityColor(availability: ClusterAvailability): 'green' | 
   return 'grey';
 }
 
-export function availabilityLabelKey(availability: ClusterAvailability): string {
-  if (availability === 'available') return 'Available';
-  if (availability === 'unavailable') return 'Unavailable';
-  return 'Unreachable';
+// A dynamic t(variable) call is invisible to the locale extractor; switching
+// over literal keys keeps the availability labels extractable.
+export function translateAvailabilityLabel(availability: ClusterAvailability, t: (key: string) => string): string {
+  switch (availability) {
+    case 'available':
+      return t('Available');
+    case 'unavailable':
+      return t('Unavailable');
+    default:
+      return t('Unreachable');
+  }
 }

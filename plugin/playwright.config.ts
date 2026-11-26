@@ -18,9 +18,9 @@ const videoMode = (process.env.PLAYWRIGHT_VIDEO ?? 'retain-on-failure') as 'on' 
  * idea as Cypress results-[hash].xml. combine:reports then jrm-merges the XMLs
  * (and optionally merge-reports the blobs). Never overwrite a shared
  * junit-results.xml across suites or Jenkins only sees the last suite.
- * Each suite also gets its own blob directory: Playwright clears the whole
- * blob outputDir at the start of a run, so sibling suites sharing one
- * directory would keep only the last suite's zip.
+ * Each suite also gets its own blob and test-results directory: Playwright
+ * clears those directories at the start of a run, so sibling suites sharing
+ * one would keep only the last suite's zip / failure artifacts.
  */
 const suiteReportName = process.env.PLAYWRIGHT_BLOB_NAME ?? 'results';
 const junitOutputFile = `playwright/results/junit-${suiteReportName}.xml`;
@@ -77,8 +77,9 @@ export default defineConfig({
   // Specs live in the vendored kiali tree (e2e/tests) and OSSMC-specific specs
   // (e2e/ossmc). Setup files are matched per-project via testMatch/testDir.
   testDir: './e2e',
-  // Failure artifacts (screenshots, videos, traces) under playwright/ like Cypress outputs.
-  outputDir: 'playwright/test-results',
+  // Failure artifacts (screenshots, videos, traces) under playwright/ like Cypress
+  // outputs. Per-suite for the same reason as the blob dir (see suiteReportName).
+  outputDir: `playwright/test-results/${suiteReportName}`,
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,

@@ -90,36 +90,61 @@ openshift-servicemesh-plugin issue when both repos need work.
 
 ### 1. Read the fleet-mesh plugin source code
 
-Read ALL source files under `plugin/src/fleet-mesh/` — every component, hook, type
-definition, and utility. Pay special attention to:
+The plugin grows quickly, so never rely on a memorized file list. Start by
+listing what is actually there, then read ALL non-test source files under
+`plugin/src/fleet-mesh/` — every component, hook, type definition, and utility
+(skip `__tests__/`, `__mocks__/`, `__fixtures__/`, and test setup/config files):
 
-- `types/` — the CRD shape the plugin expects (`multiClusterMesh.ts`, `fleetMesh.ts`,
-  `istio.ts`, `certManager.ts`, `manifestWork.ts`, `managedCluster.ts`)
-- `hooks/` — what resources are watched and how (`useMultiClusterMeshes`,
-  `useFleetMeshItems`, `useEnrichedControlPlanes`, `useDiscoveredControlPlanes`,
-  `useMeshControlPlanes`, `useManagedClusters`, `useManagedClusterMap`,
-  `useDiscoveredKialis`)
-- `utils/statusUtils.ts` — condition reason mapping (`friendlyReasons`, `deriveStatus`)
+```
+find plugin/src/fleet-mesh -type f \( -name '*.ts' -o -name '*.tsx' \) \
+  ! -path '*__tests__*' ! -path '*__mocks__*' ! -path '*__fixtures__*'
+```
+
+While reading, pay special attention to the files where backend changes most
+often surface:
+
+- `types/` — the resource shapes the plugin expects. Notably
+  `multiClusterMesh.ts` (MultiClusterMesh CRD spec/status, per-cluster
+  `ClusterMeshStatus`), `placement.ts` (Placement/PlacementDecision),
+  `kiali.ts` (DiscoveredKiali/DiscoveredOssmc/KialiLink), `certManager.ts`,
+  `istio.ts`, `managedCluster.ts`, `fleetMesh.ts`, `common.ts` (K8sCondition)
+- `hooks/` — what resources are watched and how: meshes, control planes,
+  managed clusters, discovered Kialis, plus `useMeshPlacement`
+  (Placement/PlacementDecision selection state) and `useOperatorPresence`
+  (fleet-wide OSSM operator presence derived from ACM Search)
+- `utils/statusUtils.ts` — condition-to-status derivation (`deriveStatus`,
+  `getStatusRank`, `isConditionStale`) and the internal `friendlyReasons`
+  reason-string map used for new condition types/reasons
 - `components/MeshStatus.tsx` — renders status labels via `deriveStatus`
-- `components/TrustStatusCard.tsx` — how trust status is derived from Certificates
-  and ManifestWorks (workaround for missing per-cluster trust status)
-- `components/MeshDetailPage.tsx` — per-cluster status categorization, what
-  conditions are checked, how the overview card displays spec fields
-- `components/OverviewPage.tsx` — health counts, recent issues collection
-- `components/ServiceMeshPage.tsx` — list columns, what fields are displayed
-- `components/ControlPlanesPage.tsx` and `ControlPlaneDetailPage.tsx` — enrichment,
-  MCM correlation
+- `components/TrustStatusCard.tsx` — per-cluster trust status from the
+  `TrustDistributed` condition on MultiClusterMesh status; the cert-manager
+  Certificate watch supplies only expiry/renewal timestamps
+- `components/MeshDetailPage.tsx` and `components/DiscoveredMeshDetailPage.tsx` —
+  per-cluster status categorization, placement summary, operator presence,
+  observability links
+- `components/OverviewPage.tsx` — status donuts, health counts, recent issues
+- `components/ServiceMeshPage.tsx` — virtualized mesh list columns
+- `components/ControlPlanesPage.tsx` and `ControlPlaneDetailPage.tsx` —
+  enrichment, MCM correlation
 - `utils/correlateMCM.ts` — how control planes are matched to meshes
-- `utils/enrichmentUtils.ts`, `utils/kialiLinkUtils.ts` — Kiali link and enrichment logic
+- `utils/kialiLinkUtils.ts` (with `observabilityReady.ts` and
+  `observabilityLinkLabels.ts`) — Kiali/OSSMC observability link construction
+- `utils/enrichmentUtils.ts` — control-plane enrichment logic
+- `utils/placementSelection.ts`, `utils/operatorPresence.ts`,
+  `utils/worstConditions.ts` — placement aggregation, operator status
+  derivation, condition merging
 
 Also read supporting docs for context on known limitations, workarounds, and
-planned features:
+planned features (read whatever exists under `docs/fleet-mesh/` and
+`hack/fleet-mesh/`; the usual set):
 
 - `docs/fleet-mesh/ROADMAP.md` — planned features, blocked-on-addon-controller items,
   and tracking-issue workflow
 - `docs/fleet-mesh/PERFORMANCE.md` — scale constraints, optimizations, and monitoring
   checklist
 - `docs/fleet-mesh/DESIGN-KIALI-LINKS.md` — Kiali/OSSMC observability link design
+- `hack/fleet-mesh/ENABLE-MESH-OBSERVABILITY.md` — mesh observability enablement
+  and link prerequisites
 - `hack/fleet-mesh/DEV-INSTALL.md` — dev setup and architecture notes
 
 Addon controller CRD reference: `pkg/apis/mesh/v1alpha1/types.go` in
@@ -211,12 +236,19 @@ a. Does the plugin have a workaround for this issue that will need updating when
 b. Does this issue cause the plugin to display misleading information?
 c. Will fixing this issue require TypeScript type changes in `plugin/src/fleet-mesh/types/`?
 d. Will fixing this issue add new condition types, reasons, or status fields that
-   the plugin should display (check `statusUtils.ts` `friendlyReasons`)?
-e. Does this issue affect planned plugin features (see `docs/fleet-mesh/ROADMAP.md`
-   and `docs/fleet-mesh/DESIGN-KIALI-LINKS.md`)?
+   the plugin should display (check the reason map consulted by `deriveStatus`
+   in `utils/statusUtils.ts`)?
+e. Does this issue affect planned plugin features (see `docs/fleet-mesh/ROADMAP.md`,
+   `docs/fleet-mesh/DESIGN-KIALI-LINKS.md`, and
+   `hack/fleet-mesh/ENABLE-MESH-OBSERVABILITY.md`)?
 f. Is the plugin actually broken due to this issue without us realizing?
 g. Does the fix require Kiali server changes instead of (or in addition to)
    fleet-mesh plugin changes?
+h. Does this issue affect the placement-selection, operator-presence, or
+   observability-link surfaces (`useMeshPlacement`/`placementSelection.ts`,
+   `useOperatorPresence`/`operatorPresence.ts`, `kialiLinkUtils.ts` and the
+   observability utils)? These consume backend data directly and are easy to
+   miss when reasoning only about MultiClusterMesh status conditions.
 
 ### 5. Classify each issue's frontend impact
 
@@ -225,7 +257,7 @@ g. Does the fix require Kiali server changes instead of (or in addition to)
 - **MEDIUM:** Plugin will need non-trivial changes when fixed (new code paths,
   type updates, new UI elements).
 - **LOW:** Plugin needs trivial updates when fixed (e.g., adding a reason string
-  to `friendlyReasons`, minor display tweak).
+  to the reason map in `utils/statusUtils.ts`, minor display tweak).
 - **NONE:** No plugin code changes needed — even if the addon controller bug
   causes suboptimal UX, the plugin displays whatever the backend reports and will
   automatically benefit from the fix. Also includes test infra, CI, controller

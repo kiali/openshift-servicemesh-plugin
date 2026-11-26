@@ -1,7 +1,9 @@
 **WARNING**: The code in this directory comes from the kiali/kiali repository and should never be modified here.
 
+Upstream Kiali unit tests (`__tests__/` under `frontend/src`) are not copied here. OSSMC runs its own Rstest suite and vendored Cypress tests under `plugin/cypress/integration/kiali/`.
+
 Copy of Kiali frontend source code
 Kiali frontend source originated from:
-* git ref:    v2.34
-* git commit: f74abbb75e4ddbc014b874561df26ec49cbaec2e
-* GitHub URL: https://github.com/kiali/kiali/tree/f74abbb75e4ddbc014b874561df26ec49cbaec2e/frontend/src
+* git ref:    playwright-migration-rebase3
+* git commit: 8caf8320da889f7c7205342e939679a2e23a7853
+* GitHub URL: https://github.com/kiali/kiali/tree/8caf8320da889f7c7205342e939679a2e23a7853/frontend/src

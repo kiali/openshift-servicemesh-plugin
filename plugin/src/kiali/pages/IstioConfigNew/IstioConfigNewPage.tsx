@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { KialiAppState } from '../../store/Store';
+import type { KialiAppState } from '../../store/Store';
 import { activeClustersSelector, activeNamespacesSelector, namespacesPerClusterSelector } from '../../store/Selectors';
 import { connect } from 'react-redux';
-import { Namespace } from '../../types/Namespace';
-import { MeshCluster } from '../../types/Mesh';
+import type { Namespace } from '../../types/Namespace';
+import type { MeshCluster } from '../../types/Mesh';
 import {
   ActionGroup,
   Button,
@@ -17,20 +17,18 @@ import {
 } from '@patternfly/react-core';
 import { RenderContent } from '../../components/Nav/Page';
 import { kialiStyle } from 'styles/StyleUtils';
-import { GatewayForm, GatewayState, initGateway, isGatewayStateValid } from './GatewayForm';
-import { K8sGatewayForm, K8sGatewayState, initK8sGateway, isK8sGatewayStateValid } from './K8sGatewayForm';
-import {
-  K8sReferenceGrantForm,
-  K8sReferenceGrantState,
-  initK8sReferenceGrant,
-  isK8sReferenceGrantStateValid
-} from './K8sReferenceGrantForm';
-import { SidecarForm, initSidecar, isSidecarStateValid, SidecarState } from './SidecarForm';
+import type { GatewayState } from './GatewayForm';
+import { GatewayForm, initGateway, isGatewayStateValid } from './GatewayForm';
+import type { K8sGatewayState } from './K8sGatewayForm';
+import { K8sGatewayForm, initK8sGateway, isK8sGatewayStateValid } from './K8sGatewayForm';
+import type { K8sReferenceGrantState } from './K8sReferenceGrantForm';
+import { K8sReferenceGrantForm, initK8sReferenceGrant, isK8sReferenceGrantStateValid } from './K8sReferenceGrantForm';
+import type { SidecarState } from './SidecarForm';
+import { SidecarForm, initSidecar, isSidecarStateValid } from './SidecarForm';
 import { Paths, serverConfig } from '../../config';
-import { KialiIcon } from '../../config/KialiIcon';
 import { PromisesRegistry } from '../../utils/CancelablePromises';
 import * as API from '../../services/Api';
-import { IstioPermissions } from '../../types/IstioConfigDetails';
+import type { IstioPermissions } from '../../types/IstioConfigDetails';
 import { addError, addInfo, addSuccess, addWarning } from '../../utils/AlertUtils';
 import { router } from '../../app/History';
 import {
@@ -43,37 +41,39 @@ import {
   buildServiceEntry,
   buildSidecar
 } from '../../components/IstioWizards/WizardActions';
+import type { AuthorizationPolicyState } from './AuthorizationPolicyForm';
 import {
   AuthorizationPolicyForm,
-  AuthorizationPolicyState,
   initAuthorizationPolicy,
   isAuthorizationPolicyStateValid
 } from './AuthorizationPolicyForm';
+import type { PeerAuthenticationState } from './PeerAuthenticationForm';
 import {
   PeerAuthenticationForm,
   initPeerAuthentication,
-  isPeerAuthenticationStateValid,
-  PeerAuthenticationState
+  isPeerAuthenticationStateValid
 } from './PeerAuthenticationForm';
+import type { RequestAuthenticationState } from './RequestAuthenticationForm';
 import {
   RequestAuthenticationForm,
   initRequestAuthentication,
-  isRequestAuthenticationStateValid,
-  RequestAuthenticationState
+  isRequestAuthenticationStateValid
 } from './RequestAuthenticationForm';
 import { isValidK8SName } from '../../helpers/ValidationHelpers';
 import { DefaultSecondaryMasthead } from '../../components/DefaultSecondaryMasthead/DefaultSecondaryMasthead';
-import { ServiceEntryForm, initServiceEntry, isServiceEntryValid, ServiceEntryState } from './ServiceEntryForm';
-import { ConfigPreviewItem, IstioConfigPreview } from 'components/IstioConfigPreview/IstioConfigPreview';
+import type { ServiceEntryState } from './ServiceEntryForm';
+import { ServiceEntryForm, initServiceEntry, isServiceEntryValid } from './ServiceEntryForm';
+import type { ConfigPreviewItem } from 'components/IstioConfigPreview/IstioConfigPreview';
+import { IstioConfigPreview } from 'components/IstioConfigPreview/IstioConfigPreview';
 import { isValid } from 'utils/Common';
 import { ClusterDropdown } from './ClusterDropdown';
 import { NamespaceDropdown } from '../../components/Dropdown/NamespaceDropdown';
-import { Labels } from '../../components/Label/Labels';
-import { WizardLabels } from '../../components/IstioWizards/WizardLabels';
+import { EditableLabelsCard } from '../../components/Label/EditableLabelsCard';
+import { EditableAnnotationsCard } from '../../components/Label/EditableAnnotationsCard';
 import { isParentKiosk, kioskNavigateAction } from 'components/Kiosk/KioskActions';
 import { dicTypeToGVK, gvkType } from '../../types/IstioConfigList';
 import { getGVKTypeString } from '../../utils/IstioConfigUtils';
-import { GroupVersionKind } from '../../types/IstioObjects';
+import type { GroupVersionKind } from '../../types/IstioObjects';
 import { useKialiTranslation } from 'utils/I18nUtils';
 import { usePreviousValue } from 'utils/ReactUtils';
 import { istioNamespaces } from 'config/ServerConfig';
@@ -91,22 +91,6 @@ type Props = ReduxProps & {
 
 const formPadding = kialiStyle({ padding: '2rem 1.25rem' });
 
-const editIcon = kialiStyle({
-  marginLeft: '0.25rem',
-  marginBottom: '0.20rem'
-});
-
-const editButton = kialiStyle({
-  marginLeft: '0.5rem',
-  display: 'flex',
-  alignItems: 'center'
-});
-
-const editStyle = kialiStyle({
-  display: 'flex',
-  paddingTop: '0.25rem'
-});
-
 // Used in the Istio Config list Actions
 export const NEW_ISTIO_RESOURCE = [
   { value: dicTypeToGVK[gvkType.AuthorizationPolicy], disabled: false },
@@ -121,10 +105,10 @@ export const NEW_ISTIO_RESOURCE = [
 
 const IstioConfigNewPageComponent: React.FC<Props> = (props: Props) => {
   const [annotations, setAnnotations] = React.useState<{ [key: string]: string }>({});
-  const [authorizationPolicy, setAuthorizationPolicy] = React.useState<AuthorizationPolicyState>(
-    initAuthorizationPolicy()
-  );
+  const [authorizationPolicy, setAuthorizationPolicy] =
+    React.useState<AuthorizationPolicyState>(initAuthorizationPolicy());
   const [gateway, setGateway] = React.useState<GatewayState>(initGateway());
+  const [isEditingLabels, setIsEditingLabels] = React.useState(false);
   const [istioPermissions, setIstioPermissions] = React.useState<IstioPermissions>({});
   const [itemsPreview, setItemsPreview] = React.useState<ConfigPreviewItem[]>([]);
   const [k8sGateway, setK8sGateway] = React.useState<K8sGatewayState>(initK8sGateway());
@@ -132,12 +116,9 @@ const IstioConfigNewPageComponent: React.FC<Props> = (props: Props) => {
   const [labels, setLabels] = React.useState<{ [key: string]: string }>({});
   const [name, setName] = React.useState<string>('');
   const [peerAuthentication, setPeerAuthentication] = React.useState<PeerAuthenticationState>(initPeerAuthentication());
-  const [requestAuthentication, setRequestAuthentication] = React.useState<RequestAuthenticationState>(
-    initRequestAuthentication()
-  );
+  const [requestAuthentication, setRequestAuthentication] =
+    React.useState<RequestAuthenticationState>(initRequestAuthentication());
   const [serviceEntry, setServiceEntry] = React.useState<ServiceEntryState>(initServiceEntry());
-  const [showAnnotationsWizard, setShowAnnotationsWizard] = React.useState<boolean>(false);
-  const [showLabelsWizard, setShowLabelsWizard] = React.useState<boolean>(false);
   const [showPreview, setShowPreview] = React.useState<boolean>(false);
   const [sidecar, setSidecar] = React.useState<SidecarState>(initSidecar(`${istioNamespaces()[0]}/*`));
 
@@ -246,24 +227,6 @@ const IstioConfigNewPageComponent: React.FC<Props> = (props: Props) => {
     setName(value);
   };
 
-  const onLabelsWizardToggle = (value: boolean): void => {
-    setShowLabelsWizard(value);
-  };
-
-  const onAddLabels = (value: { [key: string]: string }): void => {
-    setLabels(value);
-    setShowLabelsWizard(false);
-  };
-
-  const onAnnotationsWizardToggle = (value: boolean): void => {
-    setShowAnnotationsWizard(value);
-  };
-
-  const onAddAnnotations = (value: { [key: string]: string }): void => {
-    setAnnotations(value);
-    setShowAnnotationsWizard(false);
-  };
-
   const onIstioResourceCreate = (): void => {
     if (props.activeClusters.length > 0) {
       props.activeClusters.forEach(cluster => {
@@ -329,7 +292,7 @@ const IstioConfigNewPageComponent: React.FC<Props> = (props: Props) => {
           break;
         case getGVKTypeString(gvkType.Gateway):
           items.push({
-            title: t('Gateway'),
+            title: 'Gateway',
             objectGVK: props.objectGVK,
             items: [buildGateway(annotations, labels, name, ns.name, gateway)]
           });
@@ -371,7 +334,7 @@ const IstioConfigNewPageComponent: React.FC<Props> = (props: Props) => {
           break;
         case getGVKTypeString(gvkType.Sidecar):
           items.push({
-            title: t('Sidecar'),
+            title: 'Sidecar',
             objectGVK: props.objectGVK,
             items: [buildSidecar(annotations, labels, name, ns.name, sidecar)]
           });
@@ -586,64 +549,32 @@ const IstioConfigNewPageComponent: React.FC<Props> = (props: Props) => {
               <SidecarForm sidecar={sidecar} onChange={onChangeSidecar} />
             )}
 
-            <FormGroup fieldId="labels" label={t('Labels')}>
-              <div className={editStyle}>
-                <Labels labels={labels} expanded={true} />
-
-                <Button
-                  className={editButton}
-                  type="button"
-                  variant="link"
-                  isInline
-                  onClick={() => onLabelsWizardToggle(true)}
-                  data-test={'edit-labels'}
-                >
-                  {t('Edit')}
-                  <KialiIcon.PencilAlt className={editIcon} />
-                </Button>
-              </div>
-
-              <WizardLabels
-                showAnotationsWizard={showLabelsWizard}
-                type={'labels'}
-                onChange={labels => onAddLabels(labels)}
-                onClose={() => onLabelsWizardToggle(false)}
+            <div data-test="istio-config-labels-card">
+              <EditableLabelsCard
+                canEdit={true}
+                isVertical={false}
                 labels={labels}
-                canEdit={true}
+                onEditingChange={setIsEditingLabels}
+                onSave={setLabels}
+                prioritizeIstio
+                title={t('Labels')}
               />
-            </FormGroup>
+            </div>
 
-            <FormGroup fieldId="annotations" label={t('Annotations')}>
-              <div className={editStyle}>
-                <Labels labels={annotations} type={'annotations'} expanded={true} />
-
-                <Button
-                  className={editButton}
-                  type="button"
-                  variant="link"
-                  isInline
-                  onClick={() => onAnnotationsWizardToggle(true)}
-                  data-test={'edit-annotations'}
-                >
-                  {t('Edit')}
-                  <KialiIcon.PencilAlt className={editIcon} />
-                </Button>
-              </div>
-
-              <WizardLabels
-                showAnotationsWizard={showAnnotationsWizard}
-                type={'annotations'}
-                onChange={annotations => onAddAnnotations(annotations)}
-                onClose={() => onAnnotationsWizardToggle(false)}
-                labels={annotations}
+            <div data-test="istio-config-annotations-card">
+              <EditableAnnotationsCard
+                annotations={annotations}
                 canEdit={true}
+                onSave={setAnnotations}
+                prioritizeIstio
+                title={t('Annotations')}
               />
-            </FormGroup>
+            </div>
 
             <ActionGroup>
               <Button
                 variant={ButtonVariant.primary}
-                isDisabled={!isFormValid}
+                isDisabled={!isFormValid || isEditingLabels}
                 onClick={() => openPreview()}
                 data-test={'preview'}
               >

@@ -5,7 +5,6 @@ Plugin code lives in `plugin/src/fleet-mesh/` within the OpenShift Service Mesh 
 
 ## What's next (not blocked)
 
-- **Placement-based managed meshes** — Track [OSSMC #870](https://github.com/kiali/openshift-servicemesh-plugin/issues/870) with [add-on PR #286](https://github.com/stolostron/multicluster-mesh-addon/pull/286). Managed meshes reference a user-owned Placement in the MCM namespace. A namespace needs a ManagedClusterSetBinding for each ClusterSet its Placement uses. The read-only Fleet view shows selection separately from MCM operational status; it does not create or delete these ACM resources.
 - **Data plane visibility** — Meshes have control planes but also data planes — the
   namespaces within clusters where application workloads run with sidecar proxies. The
   UI needs a way to discover and visualize data planes (which clusters, which
@@ -35,25 +34,32 @@ Plugin code lives in `plugin/src/fleet-mesh/` within the OpenShift Service Mesh 
 
 ## Blocked on addon controller
 
-- **Per-cluster trust status** —
+- **Trust establishment status** —
   [stolostron/multicluster-mesh-addon#118](https://github.com/stolostron/multicluster-mesh-addon/issues/118)
-  proposes a `TrustEstablished` condition in `status.clusterStatus[].conditions[]`.
-  Today the plugin derives trust from cert-manager Certificates and ManifestWorks in
-  `TrustStatusCard`. When the addon reports trust per cluster, refactor the trust card
-  and cluster status categorization in `MeshDetailPage` to use CR status as the primary
-  source (keep cert/MW watches for expiry detail only).
+  may add a `TrustEstablished` condition in `status.clusterStatus[].conditions[]`.
+  Per-cluster trust *distribution* is no longer blocked: `TrustStatusCard` consumes the
+  `TrustDistributed` condition as its primary status source
+  ([#882](https://github.com/kiali/openshift-servicemesh-plugin/issues/882), PR #883),
+  keeping the Certificate watch only for expiry/renewal timestamps. What remains
+  blocked is establishment semantics — distinguishing "distributed" from "verified
+  working on the spoke" — tracked in
+  [#828](https://github.com/kiali/openshift-servicemesh-plugin/issues/828).
 - **Endpoint discovery status UI** — The addon creates `ManagedServiceAccount`
   resources and `spec.security.discovery` exists on the CRD, but per-cluster discovery
   status is not yet surfaced on the CR (token issuance, expiry, remote secret
-  distribution). Related backend work includes
+  distribution). Related backend work:
   [stolostron/multicluster-mesh-addon#214](https://github.com/stolostron/multicluster-mesh-addon/issues/214)
-  (remote access secret construction). When status fields are available, add a discovery
-  card similar to the Trust Status card.
+  (closed — remote access secret construction) and
+  [stolostron/multicluster-mesh-addon#273](https://github.com/stolostron/multicluster-mesh-addon/issues/273)
+  (per-cluster `DiscoveryConfigured` condition). Tracked in
+  [#830](https://github.com/kiali/openshift-servicemesh-plugin/issues/830); when status
+  fields are available, add a discovery card similar to the Trust Status card.
 - **BYO CA / trust model changes** —
   [stolostron/multicluster-mesh-addon#112](https://github.com/stolostron/multicluster-mesh-addon/issues/112)
   discusses cert-manager requirements and bring-your-own CA support. If trust moves
   beyond cert-manager, `TrustStatusCard`, the Meshes trust column, and mesh detail
-  overview will need alternate code paths driven by spec.
+  overview will need alternate code paths driven by spec. Tracked in
+  [#829](https://github.com/kiali/openshift-servicemesh-plugin/issues/829).
 
 ## Related
 

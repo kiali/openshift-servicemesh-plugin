@@ -1,3 +1,4 @@
+// Assisted-by: Codex
 import * as React from 'react';
 import {
   Button,
@@ -12,10 +13,10 @@ import {
   FormGroup,
   GridItem
 } from '@patternfly/react-core';
-import { Controller, Graph, GraphElement } from '@patternfly/react-topology';
+import type { Controller, Graph, GraphElement } from '@patternfly/react-topology';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { KialiAppState } from '../../../store/Store';
+import type { KialiAppState } from '../../../store/Store';
 import { findValueSelector, hideValueSelector, edgeLabelsSelector, edgeModeSelector } from '../../../store/Selectors';
 import { GraphToolbarActions } from '../../../actions/GraphToolbarActions';
 import { GraphHelpFind } from '../../../pages/Graph/GraphHelpFind';
@@ -25,18 +26,20 @@ import { KialiIcon } from 'config/KialiIcon';
 import { kialiStyle } from 'styles/StyleUtils';
 import { TourStop } from 'components/Tour/TourStop';
 import { GraphTourStops } from 'pages/Graph/GraphHelpTour';
-import { KialiDispatch } from 'types/Redux';
+import type { KialiDispatch } from 'types/Redux';
 import { AutoComplete } from 'utils/AutoComplete';
 import { HEALTHY, NA, NOT_READY } from 'types/Health';
 import { GraphFindOptions } from './GraphFindOptions';
 import { location, HistoryManager, URLParam } from '../../../app/History';
 import { isValid } from 'utils/Common';
-import { EdgeData, NodeData } from 'pages/Graph/GraphElems';
-import { elems, SelectAnd, SelectExp, selectOr, SelectOr, setObserved, toSafeFieldName } from 'helpers/GraphHelpers';
+import type { EdgeData, NodeData } from 'pages/Graph/GraphElems';
+import type { SelectAnd, SelectExp, SelectOr } from 'helpers/GraphHelpers';
+import { elems, selectOr, setObserved, toSafeFieldName } from 'helpers/GraphHelpers';
 import { descendents } from 'helpers/GraphHelpers';
 import { isArray } from 'lodash-es';
 import { graphLayout } from 'pages/Graph/Graph';
-import { TimeInMilliseconds } from 'types/Common';
+import type { TimeInMilliseconds } from 'types/Common';
+import type { GraphData } from 'pages/Graph/GraphPage';
 import { t } from 'utils/I18nUtils';
 
 type ReduxStateProps = {
@@ -163,10 +166,6 @@ const operands: string[] = [
 ];
 
 export class GraphFindComponent extends React.Component<GraphFindProps, GraphFindState> {
-  static contextTypes = {
-    router: (): null => null
-  };
-
   private findAutoComplete: AutoComplete;
   private findInputRef;
   private findElements: GraphElement[] | undefined;
@@ -288,7 +287,10 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
       if (this.state.hideInputValue !== this.props.hideValue) {
         this.setHide(this.props.hideValue);
       }
-      this.handleHide(this.props.controller);
+      const graphData = this.props.controller.getGraph().getData()?.graphData as GraphData | undefined;
+      const reset =
+        controllerChanged || hideChanged || edgeModeChanged || (updateTimeChanged && !!graphData?.elementsChanged);
+      this.handleHide(this.props.controller, reset);
     }
   }
 
@@ -410,7 +412,8 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
   private checkSpecialKeyFind = (event: React.KeyboardEvent): void => {
     const keyCode = event.keyCode ? event.keyCode : event.which;
     switch (keyCode) {
-      case 9: // tab (autocomplete)
+      case 9: {
+        // tab (autocomplete)
         event.preventDefault();
         const next = this.findAutoComplete.next();
         if (next) {
@@ -419,6 +422,7 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
           this.setState({ findInputValue: next, findError: undefined });
         }
         break;
+      }
       case 13: // return (submit)
         event.preventDefault();
         this.submitFind();
@@ -470,7 +474,8 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
   private checkSpecialKeyHide = (event: React.KeyboardEvent): void => {
     const keyCode = event.keyCode ? event.keyCode : event.which;
     switch (keyCode) {
-      case 9: // tab (autocomplete)
+      case 9: {
+        // tab (autocomplete)
         event.preventDefault();
         const next = this.hideAutoComplete.next();
 
@@ -481,6 +486,7 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
         }
 
         break;
+      }
       case 13: // return (submit)
         event.preventDefault();
         this.submitHide();
@@ -542,7 +548,7 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
     });
   };
 
-  private handleHide = (controller: Controller): void => {
+  private handleHide = (controller: Controller, reset: boolean): void => {
     const selector = this.parseValue(this.props.hideValue, false);
     const checkRemovals = selector.nodeSelector || selector.edgeSelector || this.props.edgeMode !== EdgeMode.ALL;
     const graph = controller.getGraph();
@@ -638,9 +644,10 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
       this.hiddenElements = finalNodes.concat(finalEdges);
     }
 
-    // always perform a full layout, because if this function is invoked at all, we know either we're dealing with either
-    // a new controller, a different topology, a new hide expression, etc
-    graphLayout(controller, LayoutType.Layout);
+    // Preserve the view only for model updates with unchanged topology. Read topology changes
+    // from the applied model so find/hide still runs after updateModel, not before it.
+    // New controllers, topology changes and explicit filter changes still reset and fit.
+    graphLayout(controller, reset ? LayoutType.Layout : LayoutType.LayoutNoFit, reset);
   };
 
   private handleFind = (controller: Controller): void => {
@@ -697,7 +704,7 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
     val: string,
     isFind: boolean
   ): { edgeSelector: SelectOr | undefined; nodeSelector: SelectOr | undefined } => {
-    let preparedVal = this.prepareValue(val);
+    const preparedVal = this.prepareValue(val);
     this.rankAutoEnabled = false;
 
     if (!preparedVal) {
@@ -707,14 +714,14 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
     // generate separate selectors for each disjunctive clause and then stitch them together. This
     // lets us mix node and edge criteria.
     const orClauses = preparedVal.split(' OR ');
-    let orNodeSelector: SelectOr = [];
-    let orEdgeSelector: SelectOr = [];
+    const orNodeSelector: SelectOr = [];
+    const orEdgeSelector: SelectOr = [];
 
     for (const clause of orClauses) {
       const expressions = clause.split(' AND ');
       const conjunctive = expressions.length > 1;
-      let nodeSelector: SelectAnd = [];
-      let edgeSelector: SelectAnd = [];
+      const nodeSelector: SelectAnd = [];
+      const edgeSelector: SelectAnd = [];
       let target;
 
       for (const expression of expressions) {
@@ -882,7 +889,7 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
 
         return { target: 'node', selector: isNegation ? [[agg, app, svc, wl]] : [[agg], [app], [svc], [wl]] };
       }
-      case 'node':
+      case 'node': {
         let nodeType = val.toLowerCase();
         switch (nodeType) {
           case 'op':
@@ -913,6 +920,7 @@ export class GraphFindComponent extends React.Component<GraphFindProps, GraphFin
             );
         }
         return undefined;
+      }
       case 'ns':
       case 'namespace':
         return { target: 'node', selector: { prop: NodeAttr.namespace, op: op, val: val } };

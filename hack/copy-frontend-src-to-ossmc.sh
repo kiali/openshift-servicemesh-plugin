@@ -202,7 +202,8 @@ if [ "${SKIP_BRANCH}" == "false" ]; then
 fi
 
 rm -rf ${ABS_DEST_DIR}/{*,.[!.]*}
-cp -R ${ABS_SOURCE_DIR}/* ${ABS_DEST_DIR}
+# OSSMC does not run vendored Kiali unit tests (see plugin/rstest.config.ts).
+rsync -a --exclude='__tests__' "${ABS_SOURCE_DIR}/" "${ABS_DEST_DIR}/"
 cp -R ${ABS_SOURCE_LOCALES_DIR} ${ABS_DEST_DIR}
 
 rm -rf ${ABS_DEST_TESTS_DIR}/{*,.[!.]*}
@@ -257,6 +258,8 @@ fi
 
 cat > ${ABS_DEST_DIR}/README.md <<EOM
 **WARNING**: The code in this directory comes from the kiali/kiali repository and should never be modified here.
+
+Upstream Kiali unit tests (\`__tests__/\` under \`frontend/src\`) are not copied here. OSSMC runs its own Rstest suite and vendored Cypress tests under \`plugin/cypress/integration/kiali/\`.
 
 ${COMMIT_MESSAGE}
 EOM

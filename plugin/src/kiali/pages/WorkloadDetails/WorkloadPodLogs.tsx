@@ -24,10 +24,13 @@ import {
   Toolbar,
   ToolbarGroup,
   ToolbarItem,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Tooltip,
   TooltipPosition
 } from '@patternfly/react-core';
-import { Modal } from '@patternfly/react-core/deprecated';
 import memoize from 'micro-memoize';
 import { AutoSizer, List } from 'react-virtualized';
 import { kialiStyle } from 'styles/StyleUtils';
@@ -40,7 +43,7 @@ import { ToolbarDropdown } from '../../components/Dropdown/ToolbarDropdown';
 import type { TimeInMilliseconds, TimeInSeconds, TimeRange } from '../../types/Common';
 import { evalTimeRange, isEqualTimeRange, ColorScheme } from '../../types/Common';
 import { mapAppearanceFromState, resolveColorScheme } from '../../utils/AppearanceUtils';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
+import { CopyToClipboardButton } from 'components/Copy/CopyToClipboardButton';
 import { KialiIcon } from '../../config/KialiIcon';
 import type { KialiAppState } from '../../store/Store';
 import { connect } from 'react-redux';
@@ -176,6 +179,8 @@ const MaxLinesOptions = {
   '10000': '10000 lines',
   '25000': '25000 lines'
 };
+
+const jsonLogModalTitleId = 'json-log-modal-title';
 
 const modalStyle = kialiStyle({
   display: 'flex',
@@ -612,7 +617,9 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                               <Tooltip
                                 key="show_hide_log_help"
                                 position="top"
-                                content={t('Show only, or Hide all, matching log entries. Match by case-sensitive substring (default) or regular expression (as set in the kebab menu).')}
+                                content={t(
+                                  'Show only, or Hide all, matching log entries. Match by case-sensitive substring (default) or regular expression (as set in the kebab menu).'
+                                )}
                               >
                                 <KialiIcon.Info className={infoStyle} />
                               </Tooltip>
@@ -741,7 +748,9 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                       key={`al-tt-tl`}
                       position={TooltipPosition.auto}
                       entryDelay={1000}
-                      content={t("A filtered subset of log entries from the ztunnel's (ambient node proxy) pod logs, relevant to the selected workload pod")}
+                      content={t(
+                        "A filtered subset of log entries from the ztunnel's (ambient node proxy) pod logs, relevant to the selected workload pod"
+                      )}
                     >
                       <KialiIcon.Info key={`al-i-ki`} className={checkInfoIcon} color={proxyContainerColor} />
                     </Tooltip>
@@ -769,7 +778,9 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
                           key={`al-tt-tl`}
                           position={TooltipPosition.auto}
                           entryDelay={1000}
-                          content={t("A filtered - by app name - subset of log entries from the waypoint's (ambient node proxy) pod logs, relevant to the selected workload pod")}
+                          content={t(
+                            "A filtered - by app name - subset of log entries from the waypoint's (ambient node proxy) pod logs, relevant to the selected workload pod"
+                          )}
                         >
                           <KialiIcon.Info key={`al-i-ki`} className={checkInfoIcon} color={waypointContainerColor} />
                         </Tooltip>
@@ -849,7 +860,7 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
               }}
             />
           </Tooltip>
-          <p key={`al-p-${index}`} className={logMessageStyle} style={{ color: spanColor }}>
+          <p key={`al-p-${index}`} className={logMessageStyle} style={{ color: spanColor }} data-test="span-log-line">
             {this.entryToString(e)}
           </p>
         </div>
@@ -988,14 +999,16 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
           <ToolbarGroup style={{ margin: 0 }}>
             <ToolbarItem>{this.getContainerLegend()}</ToolbarItem>
             <ToolbarItem className={copyActionStyle}>
-              <Tooltip key="copy_logs" position="top" content={t('Copy logs to clipboard')}>
-                <CopyToClipboard text={this.entriesToString(this.state.entries)}>
-                  <Button variant={ButtonVariant.link} isInline>
-                    <KialiIcon.Copy />
-                    <span className={iconStyle}>Copy</span>
-                  </Button>
-                </CopyToClipboard>
-              </Tooltip>
+              <CopyToClipboardButton
+                ariaLabel={t('Copy logs to clipboard')}
+                copiedTooltip={t('Copied')}
+                copyTooltip={t('Copy logs to clipboard')}
+                id="pod-logs-copy"
+                label={t('Copy')}
+                labelClassName={iconStyle}
+                text={this.entriesToString(this.state.entries)}
+                variant={ButtonVariant.link}
+              />
             </ToolbarItem>
 
             <ToolbarItem className={expandActionStyle}>
@@ -1109,58 +1122,70 @@ export class WorkloadPodLogsComponent extends React.Component<WorkloadPodLogsPro
   private getJSONLogModal = (): React.ReactNode => {
     return (
       <Modal
+        aria-labelledby={jsonLogModalTitleId}
         data-test="json-modal"
         className={modalStyle}
         disableFocusTrap={true}
-        title={t('JSON Log Entry')}
         isOpen={this.state.isJSONModalOpen}
         onClose={this.closeJSONModal}
-        actions={[
+      >
+        <ModalHeader labelId={jsonLogModalTitleId} title={t('JSON Log Entry')} />
+        <ModalBody>
+          {this.state.showCopyMessage && (
+            <Alert
+              style={{ marginBottom: '20px' }}
+              title={t('The JSON Log entry has been copied to your clipboard.')}
+              variant={AlertVariant.success}
+              isInline={true}
+              actionClose={
+                <AlertActionCloseButton
+                  onClose={() => this.setState({ showCopyMessage: !this.state.showCopyMessage })}
+                />
+              }
+            />
+          )}
+          <p className={previewLogLineStyle}>{this.state.jsonModalContent}</p>
+          <div className={classes(flexFillStyle, constrainedScrollStyle)}>
+            <ParameterizedTabs
+              id="json-log-details-tabs"
+              className={classes(basicTabStyle, tabStyle)}
+              onSelect={tabValue => {
+                this.setState({ currentTab: tabValue });
+              }}
+              tabMap={tabIndex}
+              defaultTab={defaultTab}
+              activeTab={this.state.currentTab}
+              mountOnEnter={true}
+              unmountOnExit={true}
+            >
+              {this.renderTabs()}
+            </ParameterizedTabs>
+          </div>
+        </ModalBody>
+        <ModalFooter>
           <Button key="close" onClick={this.closeJSONModal}>
             {t('Close')}
-          </Button>,
-          this.state.jsonModalContent && (
-            <CopyToClipboard
-              key="copy"
-              onCopy={() => this.setState({ showCopyMessage: !this.state.showCopyMessage })}
+          </Button>
+          {this.state.jsonModalContent && (
+            <CopyToClipboardButton
+              ariaLabel={t('Copy')}
+              copiedTooltip={t('Copied')}
+              copyTooltip={t('Copy')}
+              id="pod-logs-json-copy"
+              label={t('Copy')}
+              onCopy={success => {
+                if (success) {
+                  this.setState({ showCopyMessage: !this.state.showCopyMessage });
+                }
+              }}
               text={this.state.jsonModalContent}
-            >
-              <Button variant={ButtonVariant.secondary}>{t('Copy')}</Button>
-            </CopyToClipboard>
-          ),
+              variant={ButtonVariant.secondary}
+            />
+          )}
           <Button key="download" variant={ButtonVariant.secondary} onClick={this.downloadFile}>
             {t('Download')}
           </Button>
-        ]}
-      >
-        {this.state.showCopyMessage && (
-          <Alert
-            style={{ marginBottom: '20px' }}
-            title={t('The JSON Log entry has been copied to your clipboard.')}
-            variant={AlertVariant.success}
-            isInline={true}
-            actionClose={
-              <AlertActionCloseButton onClose={() => this.setState({ showCopyMessage: !this.state.showCopyMessage })} />
-            }
-          />
-        )}
-        <p className={previewLogLineStyle}>{this.state.jsonModalContent}</p>
-        <div className={classes(flexFillStyle, constrainedScrollStyle)}>
-          <ParameterizedTabs
-            id="json-log-details-tabs"
-            className={classes(basicTabStyle, tabStyle)}
-            onSelect={tabValue => {
-              this.setState({ currentTab: tabValue });
-            }}
-            tabMap={tabIndex}
-            defaultTab={defaultTab}
-            activeTab={this.state.currentTab}
-            mountOnEnter={true}
-            unmountOnExit={true}
-          >
-            {this.renderTabs()}
-          </ParameterizedTabs>
-        </div>
+        </ModalFooter>
       </Modal>
     );
   };

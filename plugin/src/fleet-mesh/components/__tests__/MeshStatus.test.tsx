@@ -38,8 +38,9 @@ describe('MeshStatus', () => {
 
   describe('friendly reason codes', () => {
     const cases: [string, string][] = [
-      ['CacertsPending', 'Trust Pending'],
+      ['CertificatePending', 'Certificate Pending'],
       ['ClustersNotReady', 'Clusters Not Ready'],
+      ['DistributionPending', 'Distribution Pending'],
       ['MissingProductClaim', 'Missing Product Claim'],
       ['ReconcileError', 'Reconcile Error']
     ];
@@ -68,10 +69,13 @@ describe('MeshStatus', () => {
       expect(screen.getByText('Reconcile Error')).toBeInTheDocument();
     });
 
-    it('renders an orange label for the transient CacertsPending reason', () => {
-      const condition: K8sCondition = { type: 'TrustDistributed', status: 'False', reason: 'CacertsPending' };
+    it.each([
+      ['CertificatePending', 'Certificate Pending'],
+      ['DistributionPending', 'Distribution Pending']
+    ])('renders an orange label for the transient %s reason', (reason, label) => {
+      const condition: K8sCondition = { type: 'TrustDistributed', status: 'False', reason };
       render(<MeshStatus conditions={[condition]} conditionType="TrustDistributed" />);
-      expect(screen.getByText('Trust Pending').closest('.pf-v6-c-label')).toHaveClass('pf-m-orange');
+      expect(screen.getByText(label).closest('.pf-v6-c-label')).toHaveClass('pf-m-orange');
     });
   });
 

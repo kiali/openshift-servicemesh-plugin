@@ -37,9 +37,17 @@ describe('deriveStatus', () => {
   });
 
   it('returns orange with the friendly label for a transient TrustDistributed reason', () => {
-    expect(deriveStatus([makeCondition('TrustDistributed', 'False', 'CacertsPending')], 'TrustDistributed')).toEqual({
+    expect(
+      deriveStatus([makeCondition('TrustDistributed', 'False', 'CertificatePending')], 'TrustDistributed')
+    ).toEqual({
       color: 'orange',
-      label: 'Trust Pending'
+      label: 'Certificate Pending'
+    });
+    expect(
+      deriveStatus([makeCondition('TrustDistributed', 'False', 'DistributionPending')], 'TrustDistributed')
+    ).toEqual({
+      color: 'orange',
+      label: 'Distribution Pending'
     });
   });
 
@@ -102,7 +110,12 @@ describe('getStatusRank', () => {
   });
 
   it('returns 2 for a transient reason (pending, not failed)', () => {
-    expect(getStatusRank([makeCondition('TrustDistributed', 'False', 'CacertsPending')], 'TrustDistributed')).toBe(2);
+    expect(getStatusRank([makeCondition('TrustDistributed', 'False', 'CertificatePending')], 'TrustDistributed')).toBe(
+      2
+    );
+    expect(getStatusRank([makeCondition('TrustDistributed', 'False', 'DistributionPending')], 'TrustDistributed')).toBe(
+      2
+    );
   });
 
   it('returns 1 for undefined conditions', () => {

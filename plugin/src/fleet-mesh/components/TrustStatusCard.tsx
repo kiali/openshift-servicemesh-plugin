@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { FC } from 'react';
-import { Link } from 'react-router-dom-v5-compat';
+import { Link } from 'react-router';
 import { Trans } from 'react-i18next';
 import { useK8sWatchResource, Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import { Card, CardBody, CardTitle, EmptyState, EmptyStateBody, Spinner, Title } from '@patternfly/react-core';
@@ -9,6 +9,7 @@ import type { Certificate } from '../types/certManager';
 import type { K8sCondition } from '../types/common';
 import { certificateGroupVersionKind } from '../types/certManager';
 import { clusterDetailLink } from '../utils/linkUtils';
+import { transientReasons } from '../utils/statusUtils';
 import { MeshStatus } from './MeshStatus';
 import { VirtualFilterTable } from './VirtualFilterTable';
 import type { CategoryLabel, VirtualFilterColumn } from './VirtualFilterTable';
@@ -28,7 +29,7 @@ function categorizeTrust(cs: ClusterMeshStatus): TrustCategory {
   const trust = findCondition(cs.conditions, 'TrustDistributed');
   if (!trust || trust.status === 'Unknown') return 'pending';
   if (trust.status === 'True') return 'ready';
-  return trust.reason === 'CacertsPending' ? 'pending' : 'failed';
+  return trust.reason !== undefined && transientReasons.has(trust.reason) ? 'pending' : 'failed';
 }
 
 interface TrustStatusCardProps {
