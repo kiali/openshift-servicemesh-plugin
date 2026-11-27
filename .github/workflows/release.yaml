@@ -208,9 +208,10 @@ jobs:
         echo "Kiali Source Code Version to Copy: ${{ env.kiali_src_code_version }}"
 
   release:
+    # GITHUB_TOKEN: gh release create and gh pr create. Git push uses KIALI_BOT_TOKEN.
     permissions:
-      contents: write # gh release create (git push uses KIALI_BOT_TOKEN)
-      pull-requests: write # gh pr create
+      contents: write
+      pull-requests: write
     name: Release
     if: ${{ needs.initialize.outputs.release_type != 'skip' && ((github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule') }}
     runs-on: ubuntu-latest
