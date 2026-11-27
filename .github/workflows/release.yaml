@@ -208,13 +208,13 @@ jobs:
         echo "Kiali Source Code Version to Copy: ${{ env.kiali_src_code_version }}"
 
   release:
+    permissions:
+      contents: write # needs to push tags and branches
+      pull-requests: write # needs to create PRs
     name: Release
     if: ${{ needs.initialize.outputs.release_type != 'skip' && ((github.event_name == 'schedule' && github.repository == 'kiali/openshift-servicemesh-plugin') || github.event_name != 'schedule') }}
     runs-on: ubuntu-latest
     needs: [initialize]
-    permissions:
-      contents: write # needs to push tags and branches
-      pull-requests: write # needs to create PRs
     env:
       RELEASE_VERSION: ${{ needs.initialize.outputs.release_version }}
       BRANCH_VERSION: ${{ needs.initialize.outputs.branch_version }}
@@ -237,11 +237,6 @@ jobs:
       run: rm -rf /opt/hostedtoolcache
     - name: Print disk space after
       run: df -h
-
-    - name: Configure git
-      run: |
-        git config user.email 'kiali-dev@googlegroups.com'
-        git config user.name 'kiali-bot'
 
     - name: Check Kiali release is available
       env:
@@ -271,6 +266,11 @@ jobs:
 
     - name: Build and push images
       run: make build-push-plugin-multi-arch
+
+    - name: Configure kiali-bot git
+      uses: ./.github/actions/configure-kiali-bot-git
+      with:
+        signing-key: ${{ secrets.KIALI_BOT_SIGNING_KEY }}
 
     - name: Create tag
       run: |

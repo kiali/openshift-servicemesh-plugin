@@ -48,11 +48,12 @@ jobs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       with:
         ref: ${{ matrix.branch }}
+        token: ${{ secrets.KIALI_BOT_TOKEN }}
 
-    - name: Configure git
-      run: |
-        git config user.email 'kiali-dev@googlegroups.com'
-        git config user.name 'kiali-bot'
+    - name: Configure kiali-bot git
+      uses: ./.github/actions/configure-kiali-bot-git
+      with:
+        signing-key: ${{ secrets.KIALI_BOT_SIGNING_KEY }}
 
     - name: Copy Kiali source code
       env:
@@ -65,6 +66,6 @@ jobs:
         if git diff-index --quiet HEAD --; then
           echo "No frontend changes to sync for $BRANCH"
         else
-          git commit --signoff -m "Copy of Kiali frontend source code from $BRANCH"
+          git commit -m "Copy of Kiali frontend source code from $BRANCH"
           git push origin HEAD:refs/heads/$BRANCH
         fi
