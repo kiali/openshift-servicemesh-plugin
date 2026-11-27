@@ -16,8 +16,6 @@ permissions: read-all
 jobs:
   initialize:
     name: Initialize
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
     outputs:
       branches: ${{ steps.resolve.outputs.branches }}
@@ -34,8 +32,6 @@ jobs:
 
   copy_kiali:
     needs: [initialize]
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
     concurrency:
       group: copy-kiali-${{ matrix.branch }}

@@ -14,8 +14,6 @@ permissions: read-all
 jobs:
   initialize:
     name: Initialize
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
     outputs:
       branches: ${{ env.branches }}
@@ -79,8 +77,6 @@ jobs:
         fi
 
   bump_version:
-    permissions:
-      contents: read
     name: Bump to Next Version
     needs: [initialize, release_tag]
     # Allow other branches to bump to the next version even if one of the branches failed to create the release tag

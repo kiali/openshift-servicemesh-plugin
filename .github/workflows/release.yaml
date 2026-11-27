@@ -34,8 +34,6 @@ permissions: read-all
 jobs:
   initialize:
     name: Initialize
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
     outputs:
       target_branch: ${{ github.ref_name }}
