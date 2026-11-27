@@ -34,7 +34,6 @@ jobs:
 
   copy_kiali:
     needs: [initialize]
-    # Git push uses KIALI_BOT_TOKEN; GITHUB_TOKEN needs read-only contents.
     permissions:
       contents: read
     runs-on: ubuntu-latest

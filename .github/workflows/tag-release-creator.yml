@@ -42,7 +42,6 @@ jobs:
 
   release_tag:
     needs: [initialize]
-    # Tag push/delete uses GITHUB_TOKEN.
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -80,7 +79,6 @@ jobs:
         fi
 
   bump_version:
-    # Reusable workflow; git push uses KIALI_BOT_TOKEN.
     permissions:
       contents: read
     name: Bump to Next Version
